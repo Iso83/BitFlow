@@ -1,17 +1,17 @@
 #pragma once
 
-#include <BitFlow/core/Expression.h>
+#include <BitFlow/core/ast/OpType.h>
+
 #include <vector>
 
-namespace BitFlow::Core {
+namespace BitFlow::Core::Expression {
 
 struct ExprKey {
-    OpType op{};
+    AST::OpType op{};
     std::vector<uint32_t> inputs;
     bool isConst{false};
     uint32_t constValue{0};
 
-    // voor symbolische leafs / variables
     bool hasSymbolId{false};
     uint32_t symbolId{0};
 
@@ -21,4 +21,4 @@ struct ExprKey {
     }
 };
 
-} // namespace BitFlow::Core
+} // namespace BitFlow::Core::Expression

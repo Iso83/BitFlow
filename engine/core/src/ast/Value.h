@@ -1,10 +1,11 @@
 #pragma once
 
-namespace BitFlow::Core {
+namespace BitFlow::Core::AST {
+
 struct Value {
-    // kan later:
     // - constant
     // - symbolic
     // - unknown
 };
-} // namespace BitFlow::Core
+
+} // namespace BitFlow::Core::AST

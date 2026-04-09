@@ -1,44 +1,20 @@
-#include <BitFlow/core/ConstPool.h>
-#include <BitFlow/core/Expression.h>
-#include <BitFlow/core/Rule.h>
-#include <BitFlow/core/RuleEngine.h>
-#include <BitFlow/core/RulePipeline.h>
+#include <BitFlow/core/rules/RuleEngine.h>
+#include <BitFlow/core/rules/RulePipeline.h>
+#include <Core_Expr.h>
 #include <TestAssert.h>
 
-using namespace BitFlow::Core;
+using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Rules;
 
-static Expr* MakeVar(uint32_t id) {
-    Expr* e = new Expr{};
-    e->id = Ids::ExprId{id};
-    e->op = OpType::Xor;
-    return e;
-}
-
-static Expr* MakeConst(uint32_t id, uint32_t v) {
-    Expr* e = new Expr{};
-    e->id = Ids::ExprId{id};
-    e->isConst = true;
-    e->constValue = v;
-    return e;
-}
-
-static Expr* MakeOp(uint32_t id, OpType op, std::initializer_list<Expr*> in) {
-    Expr* e = new Expr{};
-    e->id = Ids::ExprId{id};
-    e->op = op;
-    e->inputs = in;
-    return e;
-}
-
-int TestZero() {
-    auto x = MakeVar(10);
+int TestXorZero() {
+    auto x = MakeVar(10, OpType::Xor);
     auto zero = ConstPool::Get(0);
 
     auto xor1 = MakeOp(12, OpType::Xor, {x, zero});
     auto xor2 = MakeOp(13, OpType::Xor, {zero, xor1});
 
     RuleEngine engine;
-    engine.AddRule(Get_Xor_Zero_Rule());
+    engine.AddRule(Simplify::Get_Simplify_Xor_Zero_Rule());
 
     Expr* result = engine.ApplyUntilStable(xor2);
 
@@ -46,14 +22,14 @@ int TestZero() {
     return 0;
 }
 
-int TestCancel() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
+int TestXorCancel() {
+    auto x = MakeVar(1, OpType::Xor);
+    auto y = MakeVar(2, OpType::Xor);
 
     auto expr = MakeOp(3, OpType::Xor, {x, x, y});
 
     RuleEngine engine;
-    engine.AddRule(Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Get_Simplify_Xor_Cancel_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -62,15 +38,15 @@ int TestCancel() {
     return 0;
 }
 
-int TestOrdering() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
+int TestXorOrdering() {
+    auto x = MakeVar(1, OpType::Xor);
+    auto y = MakeVar(2, OpType::Xor);
 
     // bewust unsorted
     auto expr = MakeOp(3, OpType::Xor, {y, x, y, x});
 
     RuleEngine engine;
-    engine.AddRule(Get_Order_Rule());
+    engine.AddRule(Normalize::Get_Normalize_Order_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -79,20 +55,19 @@ int TestOrdering() {
     BF_TEST(result->inputs[1]->id == x->id);
     BF_TEST(result->inputs[2]->id == y->id);
     BF_TEST(result->inputs[3]->id == y->id);
-
     return 0;
 }
 
-int TestFlatten() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
-    auto z = MakeVar(3);
+int TestXorFlatten() {
+    auto x = MakeVar(1, OpType ::Xor);
+    auto y = MakeVar(2, OpType ::Xor);
+    auto z = MakeVar(3, OpType ::Xor);
 
     auto inner = MakeOp(4, OpType::Xor, {x, y});
     auto outer = MakeOp(5, OpType::Xor, {inner, z});
 
     RuleEngine engine;
-    engine.AddRule(Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Normalize_Flatten_Rule());
 
     Expr* result = engine.ApplyUntilStable(outer);
 
@@ -100,12 +75,11 @@ int TestFlatten() {
     BF_TEST(result->inputs[0]->id == x->id);
     BF_TEST(result->inputs[1]->id == y->id);
     BF_TEST(result->inputs[2]->id == z->id);
-
     return 0;
 }
 
 int TestXorFold() {
-    auto x = MakeVar(1);
+    auto x = MakeVar(1, OpType ::Xor);
     auto c1 = MakeConst(2, 1);
     auto c2 = MakeConst(3, 1);
 
@@ -123,11 +97,10 @@ int TestXorFold() {
 }
 
 int main() {
-    BF_RUN_TEST(TestZero);
-    BF_RUN_TEST(TestCancel);
-    BF_RUN_TEST(TestOrdering);
-    BF_RUN_TEST(TestFlatten);
+    BF_RUN_TEST(TestXorZero);
+    BF_RUN_TEST(TestXorCancel);
+    BF_RUN_TEST(TestXorOrdering);
+    BF_RUN_TEST(TestXorFlatten);
     BF_RUN_TEST(TestXorFold);
-
     return 0;
 }

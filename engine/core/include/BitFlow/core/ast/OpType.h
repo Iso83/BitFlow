@@ -1,6 +1,7 @@
 #pragma once
 
-namespace BitFlow::Core {
+namespace BitFlow::Core::AST {
+
 enum class OpType {
     Add,
     Xor,
@@ -12,4 +13,5 @@ enum class OpType {
     Maj,
     RotR,
 };
-} // namespace BitFlow::Core
+
+} // namespace BitFlow::Core::AST

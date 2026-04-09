@@ -1,13 +1,18 @@
-#include <BitFlow/core/ConstPool.h>
-#include <BitFlow/core/Expression.h>
-#include <BitFlow/core/Rule.h>
+#include "rules/RuleStage.h"
+#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/rules/Rule.h>
+
 #include <unordered_map>
 #include <vector>
 
-namespace BitFlow::Core {
+namespace BitFlow::Core::Rules::Simplify {
+
+using Expr = AST::Expr;
 
 static bool Match_Xor_Cancel(const Expr& e) {
-    if (e.op != OpType::Xor)
+    if (e.op != AST::OpType::Xor)
         return false;
 
     if (e.inputs.size() < 2)
@@ -15,9 +20,8 @@ static bool Match_Xor_Cancel(const Expr& e) {
 
     std::unordered_map<uint32_t, int> counts;
 
-    for (const Expr* in : e.inputs) {
+    for (const Expr* in : e.inputs)
         counts[in->id.value()]++;
-    }
 
     for (const auto& [_, count] : counts) {
         if (count > 1)
@@ -44,9 +48,8 @@ static Expr* Rewrite_Xor_Cancel(Expr& e) {
             newInputs.push_back(lookup[id]);
     }
 
-    if (newInputs.empty()) {
-        return ConstPool::Get(0);
-    }
+    if (newInputs.empty())
+        return Expression::ConstPool::Get(0);
 
     if (newInputs.size() == 1)
         return newInputs[0];
@@ -57,8 +60,8 @@ static Expr* Rewrite_Xor_Cancel(Expr& e) {
     return n;
 }
 
-Rule Get_Xor_Cancel_Rule() {
-    return Rule{&Match_Xor_Cancel, &Rewrite_Xor_Cancel};
+Rule Get_Simplify_Xor_Cancel_Rule() {
+    return Rule{&Match_Xor_Cancel, &Rewrite_Xor_Cancel, Stage_Factorize};
 }
 
-} // namespace BitFlow::Core
+} // namespace BitFlow::Core::Rules::Simplify

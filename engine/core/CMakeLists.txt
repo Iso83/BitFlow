@@ -37,9 +37,10 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 if(BF_BUILD_TESTS)
-    bf_add_module_test(BitFlowCore core BF_Add)
-    bf_add_module_test(BitFlowCore core BF_Or)
+    bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_Zero) #ok
+    bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_Fold) #ok
+    bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_Cancel) 
     bf_add_module_test(BitFlowCore core BF_Xor)
-    bf_add_module_test(BitFlowCore core BF_Dedup)
+    bf_add_module_test(BitFlowCore core BF_Dedup) #ok
     bf_add_module_test(BitFlowCore core BF_Pattern)
 endif()
