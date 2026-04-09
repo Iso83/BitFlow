@@ -1,5 +1,6 @@
 #pragma once
 
+#include <BitFlow/core/ExprIntern.h>
 #include <BitFlow/core/Expression.h>
 #include <BitFlow/core/Rule.h>
 #include <vector>
@@ -12,21 +13,76 @@ class RuleEngine {
         rules.push_back(r);
     }
 
+    // Expr* ApplyOnce(Expr* expr) const {
+    //     bool changed = true;
+
+    //    while (changed) {
+    //        changed = false;
+
+    //        for (const auto& r : rules) {
+    //            if (r.match(*expr)) {
+    //                Expr* next = r.rewrite(*expr);
+
+    //                if (next != expr) {
+    //                    expr = next;
+    //                    changed = true;
+    //                    break; // restart rules op nieuwe expr
+    //                }
+    //            }
+    //        }
+    //    }
+
+    //    return expr;
+    //}
+
     Expr* ApplyOnce(Expr* expr) const {
-        for (const auto& r : rules) {
-            if (r.match(*expr)) {
-                return r.rewrite(*expr);
+        bool changed = true;
+
+        while (changed) {
+            changed = false;
+
+            for (const auto& r : rules) {
+                if (r.match(*expr)) {
+                    Expr* next = r.rewrite(*expr);
+
+                    if (next != expr) {
+                        expr = next;
+                        changed = true;
+                        break;
+                    }
+                }
             }
         }
-        return expr;
+
+        return ExprIntern::Intern(expr);
     }
 
     Expr* ApplyRecursive(Expr* expr) const {
-        for (auto& input : expr->inputs) {
-            input = ApplyRecursive(input);
+        bool changed = false;
+        std::vector<Expr*> newInputs;
+        newInputs.reserve(expr->inputs.size());
+
+        for (Expr* input : expr->inputs) {
+            Expr* rewritten = ApplyRecursive(input);
+            newInputs.push_back(rewritten);
+
+            if (rewritten != input)
+                changed = true;
         }
 
-        return ApplyOnce(expr);
+        Expr* current = expr;
+
+        if (changed) {
+            Expr* n = new Expr{};
+            n->op = expr->op;
+            n->isConst = expr->isConst;
+            n->constValue = expr->constValue;
+            n->inputs = std::move(newInputs);
+
+            current = n;
+        }
+
+        return ApplyOnce(current);
     }
 
     Expr* ApplyUntilStable(Expr* expr) const {

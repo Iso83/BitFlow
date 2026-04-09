@@ -1,6 +1,8 @@
 #include <BitFlow/core/Expression.h>
 #include <BitFlow/core/Rule.h>
 #include <BitFlow/core/RuleEngine.h>
+#include <BitFlow/core/RulePipeline.h>
+#include <BitFlow/core/ConstPool.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core;
@@ -28,18 +30,28 @@ static Expr* MakeOp(uint32_t id, OpType op, std::initializer_list<Expr*> in) {
     return e;
 }
 
-int main() {
-    auto x = MakeVar(10);
-    auto zero = MakeConst(11, 0);
+int TestOrFold() {
+    auto x = MakeVar(1);
+    auto zero = ConstPool::Get(0);
+    auto one = ConstPool::Get(1);
 
-    auto xor1 = MakeOp(12, OpType::Xor, {x, zero});
-    auto xor2 = MakeOp(13, OpType::Xor, {zero, xor1});
+    auto expr = MakeOp(2, OpType::Or, {x, zero, zero});
+    auto expr2 = MakeOp(3, OpType::Or, {x, one, zero});
 
     RuleEngine engine;
-    engine.AddRule(Get_Xor_Zero_Rule());
+    Add_Bitwise_Simplify_Pipeline(engine);
 
-    Expr* result = engine.ApplyUntilStable(xor2);
+    Expr* r1 = engine.ApplyUntilStable(expr);
+    BF_TEST(r1->id == x->id);
 
-    BF_TEST(result->id == x->id);
+    Expr* r2 = engine.ApplyUntilStable(expr2);
+    BF_TEST(r2->id == one->id);
+
+    return 0;
+}
+
+int main() {
+    BF_RUN_TEST(TestOrFold);
+
     return 0;
 }
