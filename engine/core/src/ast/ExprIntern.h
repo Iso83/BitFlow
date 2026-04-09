@@ -1,16 +1,17 @@
 #pragma once
 
-#include <BitFlow/core/ExprKey.h>
-#include <BitFlow/core/ExprKeyHash.h>
-#include <BitFlow/core/Expression.h>
+#include "expression/ExprKey.h"
+#include "expression/ExprKeyHash.h"
+
+#include <BitFlow/core/ast/Expression.h>
 #include <unordered_map>
 
-namespace BitFlow::Core {
+namespace BitFlow::Core::AST {
 
 class ExprIntern {
   public:
     static Expr* Intern(Expr* e) {
-        ExprKey key = BuildKey(e);
+        Expression::ExprKey key = BuildKey(e);
 
         auto& map = storage();
         auto it = map.find(key);
@@ -24,17 +25,15 @@ class ExprIntern {
     }
 
   private:
-    static ExprKey BuildKey(const Expr* e) {
-        ExprKey k;
+    static Expression::ExprKey BuildKey(const Expr* e) {
+        Expression::ExprKey k;
         k.op = e->op;
         k.isConst = e->isConst;
         k.constValue = e->constValue;
 
-        for (const Expr* in : e->inputs) {
+        for (const Expr* in : e->inputs)
             k.inputs.push_back(in->id.value());
-        }
 
-        // symbolische leafs moeten unieke identity behouden
         if (!e->isConst && e->inputs.empty()) {
             k.hasSymbolId = true;
             k.symbolId = e->id.value();
@@ -43,10 +42,10 @@ class ExprIntern {
         return k;
     }
 
-    static std::unordered_map<ExprKey, Expr*, ExprKeyHash>& storage() {
-        static std::unordered_map<ExprKey, Expr*, ExprKeyHash> s;
+    static std::unordered_map<Expression::ExprKey, Expr*, Expression::ExprKeyHash>& storage() {
+        static std::unordered_map<Expression::ExprKey, Expr*, Expression::ExprKeyHash> s;
         return s;
     }
 };
 
-} // namespace BitFlow::Core
+} // namespace BitFlow::Core::AST

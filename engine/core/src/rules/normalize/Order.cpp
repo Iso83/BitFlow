@@ -1,11 +1,13 @@
 #include "rules/RuleCommon.h"
+#include "rules/RuleStage.h"
 
-#include <BitFlow/core/Rule.h>
+#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/rules/Rule.h>
 #include <algorithm>
 
-namespace BitFlow::Core {
+namespace BitFlow::Core::Rules::Normalize {
 
-// Canonical form
+using Expr = AST::Expr;
 
 static bool Match_Order(const Expr& e) {
     if (!IsCommutative(e.op))
@@ -29,7 +31,7 @@ static Expr* Rewrite_Order(Expr& e) {
 }
 
 Rule Get_Order_Rule() {
-    return Rule{&Match_Order, &Rewrite_Order};
+    return Rule{&Match_Order, &Rewrite_Order, Stage_Normalize};
 }
 
-} // namespace BitFlow::Core
+} // namespace BitFlow::Core::Rules::Normalize

@@ -1,11 +1,17 @@
-#include <BitFlow/core/Expression.h>
-#include <BitFlow/core/Rule.h>
+#include "rules/RuleStage.h"
 
-namespace BitFlow::Core {
+#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/rules/Rule.h>
+
+namespace BitFlow::Core::Rules::Factorize {
+
+using Expr = AST::Expr;
+using OpType = AST::OpType;
 
 #pragma region Match
 static bool Match_Xor_And_CommonFactor(const Expr& e) {
-    if (e.op != OpType::Xor)
+    if (e.op != AST::OpType::Xor)
         return false;
 
     if (e.inputs.size() != 2)
@@ -14,7 +20,7 @@ static bool Match_Xor_And_CommonFactor(const Expr& e) {
     Expr* left = e.inputs[0];
     Expr* right = e.inputs[1];
 
-    if (left->op != OpType::And || right->op != OpType::And)
+    if (left->op != AST::OpType::And || right->op != AST::OpType::And)
         return false;
 
     if (left->inputs.size() != 2 || right->inputs.size() != 2)
@@ -29,7 +35,7 @@ static bool Match_Xor_And_CommonFactor(const Expr& e) {
 }
 
 static bool Match_Xor_Xor_CancelPair(const Expr& e) {
-    if (e.op != OpType::Xor)
+    if (e.op != AST::OpType::Xor)
         return false;
 
     if (e.inputs.size() != 2)
@@ -38,7 +44,7 @@ static bool Match_Xor_Xor_CancelPair(const Expr& e) {
     Expr* l = e.inputs[0];
     Expr* r = e.inputs[1];
 
-    if (l->op != OpType::Xor || r->op != OpType::Xor)
+    if (l->op != AST::OpType::Xor || r->op != AST::OpType::Xor)
         return false;
 
     if (l->inputs.size() != 2 || r->inputs.size() != 2)
@@ -123,18 +129,18 @@ static Expr* Rewrite_Xor_Xor_CancelPair(Expr& e) {
     }
 
     Expr* n = new Expr{};
-    n->op = OpType::Xor;
+    n->op = AST::OpType::Xor;
     n->inputs = {otherL, otherR};
     return n;
 }
 #pragma endregion
 
-Rule Get_Xor_And_CommonFactor_Rule() {
-    return Rule{&Match_Xor_And_CommonFactor, &Rewrite_Xor_And_CommonFactor};
+Rule Get_Xor_And_Rule() {
+    return Rule{&Match_Xor_And_CommonFactor, &Rewrite_Xor_And_CommonFactor, Stage_Factorize};
 }
 
-Rule Get_Xor_Xor_CancelPair_Rule() {
-    return Rule{&Match_Xor_Xor_CancelPair, &Rewrite_Xor_Xor_CancelPair};
+Rule Get_Xor_Pair_Cancel_Rule() {
+    return Rule{&Match_Xor_Xor_CancelPair, &Rewrite_Xor_Xor_CancelPair, Stage_Factorize};
 }
 
-} // namespace BitFlow::Core
+} // namespace BitFlow::Core::Rules::Factorize

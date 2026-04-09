@@ -1,31 +1,30 @@
 #pragma once
 
-#include <BitFlow/core/Expression.h>
+#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/ast/OpType.h>
 
-namespace BitFlow::Core {
+namespace BitFlow::Core::Rules {
 
-// commutative check
-inline bool IsCommutative(OpType op) {
+inline bool IsCommutative(AST::OpType op) {
     switch (op) {
-    case OpType::Add:
-    case OpType::Xor:
-    case OpType::And:
-    case OpType::Or:
+    case AST::OpType::Add:
+    case AST::OpType::Xor:
+    case AST::OpType::And:
+    case AST::OpType::Or:
         return true;
     default:
         return false;
     }
 }
 
-// generic zero match
-template <OpType Op> inline bool Match_Zero(const Expr& e) {
+template <AST::OpType Op> inline bool Match_Zero(const AST::Expr& e) {
     if (e.op != Op)
         return false;
 
     if (e.inputs.empty())
         return false;
 
-    for (const Expr* in : e.inputs) {
+    for (const AST::Expr* in : e.inputs) {
         if (in->isConst && in->constValue == 0)
             return true;
     }
@@ -33,4 +32,4 @@ template <OpType Op> inline bool Match_Zero(const Expr& e) {
     return false;
 }
 
-} // namespace BitFlow::Core
+} // namespace BitFlow::Core::Rules

@@ -4,6 +4,7 @@
 #include <type_traits>
 
 namespace BitFlow::Core::Ids {
+
 template <typename Tag, typename ValueT = std::uint32_t> class StrongId {
     static_assert(std::is_integral_v<ValueT>, "StrongId requires an integral value type.");
 
@@ -33,4 +34,5 @@ template <typename Tag, typename ValueT = std::uint32_t> class StrongId {
         return !(lhs == rhs);
     }
 };
-} // namespace ScopeCanvas::Core::Ids
+
+} // namespace BitFlow::Core::Ids

@@ -1,9 +1,12 @@
-#include "..\ExprClone.h"
+#include "expression/ExprClone.h"
+#include "rules/RuleStage.h"
 
-#include <BitFlow/core/Expression.h>
-#include <BitFlow/core/Rule.h>
+#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/rules/Rule.h>
 
-namespace BitFlow::Core {
+namespace BitFlow::Core::Rules::Normalize {
+
+using Expr = AST::Expr;
 
 static bool Match_Flatten(const Expr& e) {
     if (e.inputs.empty())
@@ -24,18 +27,17 @@ static Expr* Rewrite_Flatten(Expr& e) {
         if (!in->isConst && !in->inputs.empty() && in->op == e.op) {
             for (Expr* sub : in->inputs)
                 newInputs.push_back(sub);
-        } else {
+        } else
             newInputs.push_back(in);
-        }
     }
 
-    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
     target->inputs = std::move(newInputs);
     return target;
 }
 
 Rule Get_Flatten_Rule() {
-    return Rule{&Match_Flatten, &Rewrite_Flatten};
+    return Rule{&Match_Flatten, &Rewrite_Flatten, Stage_Normalize};
 }
 
-} // namespace BitFlow::Core
+} // namespace BitFlow::Core::Rules::Normalize
