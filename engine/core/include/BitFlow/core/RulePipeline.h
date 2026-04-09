@@ -9,6 +9,9 @@ inline void Add_Bitwise_Simplify_Pipeline(RuleEngine& engine) {
     engine.AddRule(Get_Flatten_Rule());
     engine.AddRule(Get_Order_Rule());
 
+    engine.AddRule(Get_Xor_And_CommonFactor_Rule());
+    engine.AddRule(Get_Xor_Xor_CancelPair_Rule());
+
     engine.AddRule(Get_Xor_Cancel_Rule());
     engine.AddRule(Get_Xor_Fold_Rule());
     engine.AddRule(Get_Xor_Zero_Rule());
