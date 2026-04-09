@@ -1,7 +1,7 @@
 #pragma once
 
-#include <BitFlow/core/ids/ExprId.h>
 #include <BitFlow/core/OpType.h>
+#include <BitFlow/core/ids/ExprId.h>
 #include <cstdint>
 #include <vector>
 
@@ -15,6 +15,7 @@ struct Expr {
 
     bool isConst{false};
     uint32_t constValue{0};
+    bool frozen = false;
 };
 
 } // namespace BitFlow::Core

@@ -1,3 +1,5 @@
+#include "..\ExprClone.h"
+
 #include <BitFlow/core/ConstPool.h>
 #include <BitFlow/core/Expression.h>
 #include <BitFlow/core/Rule.h>
@@ -64,8 +66,9 @@ static Expr* Rewrite_And_Fold(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    e.inputs = std::move(newInputs);
-    return &e;
+    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+    target->inputs = std::move(newInputs);
+    return target;
 }
 
 static Expr* Rewrite_Or_Fold(Expr& e) {
@@ -87,8 +90,9 @@ static Expr* Rewrite_Or_Fold(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    e.inputs = std::move(newInputs);
-    return &e;
+    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+    target->inputs = std::move(newInputs);
+    return target;
 }
 
 static Expr* Rewrite_Xor_Fold(Expr& e) {
@@ -96,11 +100,10 @@ static Expr* Rewrite_Xor_Fold(Expr& e) {
     std::vector<Expr*> nonConst;
 
     for (Expr* in : e.inputs) {
-        if (in->isConst) {
+        if (in->isConst)
             acc ^= in->constValue;
-        } else {
+        else
             nonConst.push_back(in);
-        }
     }
 
     if (acc != 0) {
@@ -116,12 +119,12 @@ static Expr* Rewrite_Xor_Fold(Expr& e) {
         return c;
     }
 
-    if (nonConst.size() == 1) {
+    if (nonConst.size() == 1)
         return nonConst[0];
-    }
 
-    e.inputs = std::move(nonConst);
-    return &e;
+    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+    target->inputs = std::move(nonConst);
+    return target;
 }
 #pragma endregion
 

@@ -8,32 +8,13 @@
 namespace BitFlow::Core {
 
 class RuleEngine {
+  private:
+    std::vector<Rule> rules;
+
   public:
     void AddRule(const Rule& r) {
         rules.push_back(r);
     }
-
-    // Expr* ApplyOnce(Expr* expr) const {
-    //     bool changed = true;
-
-    //    while (changed) {
-    //        changed = false;
-
-    //        for (const auto& r : rules) {
-    //            if (r.match(*expr)) {
-    //                Expr* next = r.rewrite(*expr);
-
-    //                if (next != expr) {
-    //                    expr = next;
-    //                    changed = true;
-    //                    break; // restart rules op nieuwe expr
-    //                }
-    //            }
-    //        }
-    //    }
-
-    //    return expr;
-    //}
 
     Expr* ApplyOnce(Expr* expr) const {
         bool changed = true;
@@ -95,9 +76,6 @@ class RuleEngine {
             expr = next;
         }
     }
-
-  private:
-    std::vector<Rule> rules;
 };
 
 } // namespace BitFlow::Core

@@ -1,5 +1,7 @@
+#include "ExprClone.h"
 #include "rules/RuleCommon.h"
 
+#include <BitFlow/core/ConstPool.h>
 #include <BitFlow/core/Rule.h>
 #include <vector>
 
@@ -14,13 +16,15 @@ static Expr* Rewrite_Remove_Zero(Expr& e) {
     }
 
     if (newInputs.empty())
-        return e.inputs[0];
+        return ConstPool::Get(0);
 
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    e.inputs = std::move(newInputs);
-    return &e;
+    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+
+    target->inputs = std::move(newInputs);
+    return target;
 }
 
 Rule Get_Add_Zero_Rule() {

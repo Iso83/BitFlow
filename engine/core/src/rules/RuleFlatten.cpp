@@ -1,3 +1,5 @@
+#include "..\ExprClone.h"
+
 #include <BitFlow/core/Expression.h>
 #include <BitFlow/core/Rule.h>
 
@@ -27,8 +29,9 @@ static Expr* Rewrite_Flatten(Expr& e) {
         }
     }
 
-    e.inputs = std::move(newInputs);
-    return &e;
+    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+    target->inputs = std::move(newInputs);
+    return target;
 }
 
 Rule Get_Flatten_Rule() {

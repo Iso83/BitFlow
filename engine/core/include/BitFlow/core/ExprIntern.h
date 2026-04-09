@@ -14,9 +14,10 @@ class ExprIntern {
 
         auto& map = storage();
         auto it = map.find(key);
-        if (it != map.end()) {
+        if (it != map.end())
             return it->second;
-        }
+
+        e->frozen = true;
 
         map[key] = e;
         return e;

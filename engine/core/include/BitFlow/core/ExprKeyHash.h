@@ -1,7 +1,6 @@
 #pragma once
 
 #include <BitFlow/core/ExprKey.h>
-#include <functional>
 
 namespace BitFlow::Core {
 
