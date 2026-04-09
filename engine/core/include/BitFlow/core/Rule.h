@@ -26,4 +26,8 @@ Rule Get_Xor_Fold_Rule();
 // --- XOR ---
 Rule Get_Xor_Cancel_Rule();
 
+// -- Patterns
+Rule Get_Xor_And_CommonFactor_Rule();
+Rule Get_Xor_Xor_CancelPair_Rule();
+
 } // namespace BitFlow::Core
