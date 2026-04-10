@@ -1,4 +1,5 @@
 #include "rules/RuleStage.h"
+
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
@@ -6,6 +7,7 @@
 namespace BitFlow::Core::Rules::Factorize {
 
 using Expr = AST::Expr;
+using OpType = AST::OpType;
 
 #pragma region Match
 static bool Match_Xor_And_CommonFactor(const Expr& e) {
@@ -90,11 +92,11 @@ static Expr* Rewrite_Xor_And_CommonFactor(Expr& e) {
     }
 
     Expr* innerXor = new Expr{};
-    innerXor->op = AST::OpType::Xor;
+    innerXor->op = OpType::Xor;
     innerXor->inputs = {otherLeft, otherRight};
 
     Expr* result = new Expr{};
-    result->op = AST::OpType::And;
+    result->op = OpType::And;
     result->inputs = {common, innerXor};
 
     return result;
@@ -133,11 +135,11 @@ static Expr* Rewrite_Xor_Xor_CancelPair(Expr& e) {
 }
 #pragma endregion
 
-Rule Get_Factorize_Xor_And_Rule() {
+Rule Get_Xor_And_Rule() {
     return Rule{&Match_Xor_And_CommonFactor, &Rewrite_Xor_And_CommonFactor, Stage_Factorize};
 }
 
-Rule Get_Factorize_Xor_Pair_Cancel_Rule() {
+Rule Get_Xor_Pair_Cancel_Rule() {
     return Rule{&Match_Xor_Xor_CancelPair, &Rewrite_Xor_Xor_CancelPair, Stage_Factorize};
 }
 

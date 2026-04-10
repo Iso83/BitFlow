@@ -1,5 +1,6 @@
 #include "expression/ExprClone.h"
 #include "rules/RuleStage.h"
+
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
@@ -131,15 +132,15 @@ static Expr* Rewrite_Xor_Fold(Expr& e) {
 }
 #pragma endregion
 
-Rule Get_Simplify_And_Fold_Rule() {
+Rule Get_And_Fold_Rule() {
     return Rule{&Match_And_Fold, &Rewrite_And_Fold, Stage_Simplify};
 }
 
-Rule Get_Simplify_Or_Fold_Rule() {
+Rule Get_Or_Fold_Rule() {
     return Rule{&Match_Or_Fold, &Rewrite_Or_Fold, Stage_Simplify};
 }
 
-Rule Get_Simplify_Xor_Fold_Rule() {
+Rule Get_Xor_Fold_Rule() {
     return Rule{&Match_Xor_Fold, &Rewrite_Xor_Fold, Stage_Simplify};
 }
 

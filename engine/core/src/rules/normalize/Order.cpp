@@ -1,8 +1,9 @@
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
-#include <algorithm>
+
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <algorithm>
 
 namespace BitFlow::Core::Rules::Normalize {
 
@@ -29,7 +30,7 @@ static Expr* Rewrite_Order(Expr& e) {
     return &e;
 }
 
-Rule Get_Normalize_Order_Rule() {
+Rule Get_Order_Rule() {
     return Rule{&Match_Order, &Rewrite_Order, Stage_Normalize};
 }
 

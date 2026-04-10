@@ -2,8 +2,8 @@
 
 #include "expression/ExprKey.h"
 #include "expression/ExprKeyHash.h"
-#include <BitFlow/core/ast/Expression.h>
 
+#include <BitFlow/core/ast/Expression.h>
 #include <unordered_map>
 
 namespace BitFlow::Core::AST {
@@ -31,9 +31,8 @@ class ExprIntern {
         k.isConst = e->isConst;
         k.constValue = e->constValue;
 
-        for (const Expr* in : e->inputs) {
+        for (const Expr* in : e->inputs)
             k.inputs.push_back(in->id.value());
-        }
 
         if (!e->isConst && e->inputs.empty()) {
             k.hasSymbolId = true;

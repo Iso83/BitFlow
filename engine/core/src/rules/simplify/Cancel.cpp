@@ -1,9 +1,9 @@
 #include "rules/RuleStage.h"
+
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
 #include <BitFlow/core/rules/Rule.h>
-
 #include <unordered_map>
 #include <vector>
 
@@ -60,8 +60,8 @@ static Expr* Rewrite_Xor_Cancel(Expr& e) {
     return n;
 }
 
-Rule Get_Simplify_Xor_Cancel_Rule() {
-    return Rule{&Match_Xor_Cancel, &Rewrite_Xor_Cancel, Stage_Factorize};
+Rule Get_Xor_Cancel_Rule() {
+    return Rule{&Match_Xor_Cancel, &Rewrite_Xor_Cancel, Stage_Simplify};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify

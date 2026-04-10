@@ -14,7 +14,7 @@ int TestAndZero() {
     auto add2 = MakeOp(4, OpType::Add, {add1, zero});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Get_Simplify_Add_Zero_Rule());
+    engine.AddRule(Simplify::Get_Add_Zero_Rule());
 
     Expr* result = engine.ApplyUntilStable(add2);
 
@@ -30,7 +30,7 @@ int TestXorZero() {
     auto xor2 = MakeOp(13, OpType::Xor, {zero, xor1});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Get_Simplify_Xor_Zero_Rule());
+    engine.AddRule(Simplify::Get_Xor_Zero_Rule());
 
     Expr* result = engine.ApplyUntilStable(xor2);
 

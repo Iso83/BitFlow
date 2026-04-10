@@ -1,5 +1,6 @@
 #include "expression/ExprClone.h"
 #include "rules/RuleStage.h"
+
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 
@@ -35,7 +36,7 @@ static Expr* Rewrite_Flatten(Expr& e) {
     return target;
 }
 
-Rule Get_Normalize_Flatten_Rule() {
+Rule Get_Flatten_Rule() {
     return Rule{&Match_Flatten, &Rewrite_Flatten, Stage_Normalize};
 }
 

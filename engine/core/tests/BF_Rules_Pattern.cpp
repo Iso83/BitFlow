@@ -6,29 +6,6 @@
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
-// static Expr* MakeVar(uint32_t id) {
-//     Expr* e = new Expr{};
-//     e->id = Ids::ExprId{id};
-//     e->op = OpType::Xor;
-//     return e;
-// }
-//
-// static Expr* MakeConst(uint32_t id, uint32_t v) {
-//     Expr* e = new Expr{};
-//     e->id = Ids::ExprId{id};
-//     e->isConst = true;
-//     e->constValue = v;
-//     return e;
-// }
-//
-// static Expr* MakeOp(uint32_t id, OpType op, std::initializer_list<Expr*> in) {
-//     Expr* e = new Expr{};
-//     e->id = Ids::ExprId{id};
-//     e->op = op;
-//     e->inputs = in;
-//     return e;
-// }
-
 int TestXorAndCommonFactor() {
     auto a = MakeVar(1, OpType::Xor);
     auto b = MakeVar(2, OpType::Xor);

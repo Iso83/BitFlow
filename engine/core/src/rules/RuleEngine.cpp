@@ -10,14 +10,14 @@ namespace BitFlow::Core::Rules {
 using Expr = AST::Expr;
 
 void RuleEngine::AddRule(const Rule& r) {
-    // #ifndef NDEBUG
-    //     if (!rules.empty()) {
-    //         const Rule& last = rules.back();
-    //
-    //         if (r.stage < last.stage)
-    //             throw RuleOrderException("Rule stage regression");
-    //     }
-    // #endif
+#ifndef NDEBUG
+    if (!rules.empty()) {
+        const Rule& last = rules.back();
+
+        if (r.stage < last.stage)
+            throw RuleOrderException("Rule stage regression");
+    }
+#endif
 
     rules.push_back(r);
 }

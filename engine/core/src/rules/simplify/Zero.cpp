@@ -32,11 +32,11 @@ static Expr* Rewrite_Remove_Zero(Expr& e) {
     return target;
 }
 
-Rule Get_Simplify_Add_Zero_Rule() {
+Rule Get_Add_Zero_Rule() {
     return Rule{&Match_Zero<AST::OpType::Add>, &Rewrite_Remove_Zero, Stage_Simplify};
 }
 
-Rule Get_Simplify_Xor_Zero_Rule() {
+Rule Get_Xor_Zero_Rule() {
     return Rule{&Match_Zero<AST::OpType::Xor>, &Rewrite_Remove_Zero, Stage_Simplify};
 }
 
