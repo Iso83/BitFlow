@@ -13,7 +13,7 @@ Dit document beschrijft de huidige rule-engine in `engine/core`, inclusief:
 Na rewrites wordt geïnternd zodat structureel gelijke expressies dezelfde instance/id krijgen.
 
 Voorbeeld (commutatief equivalent):
-- \((A \oplus B) \equiv (B \oplus A)\)
+- $(A \oplus B) \equiv (B \oplus A)$<br>
 - na canonicalization/intering kunnen beide naar dezelfde interned representatie wijzen.
 
 ---
@@ -39,7 +39,7 @@ De stage-enum is:
 2. `Stage_Simplify`
 3. `Stage_Factorize`
 
-Dit borgt: normaliseren \(\rightarrow\) vereenvoudigen \(\rightarrow\) factoriseren.
+Dit borgt: normaliseren $\rightarrow$ vereenvoudigen $\rightarrow$ factoriseren.<br>
 
 ---
 
@@ -74,8 +74,8 @@ Rules worden exact in deze volgorde toegevoegd:
 Doel: geneste knopen met dezelfde operator 1 niveau omhoog trekken.
 
 Voorbeelden:
-- \((X \oplus Y) \oplus Z \rightarrow X \oplus Y \oplus Z\)
-- \(X \oplus (Y \oplus Z) \rightarrow X \oplus Y \oplus Z\)
+- $(X \oplus Y) \oplus Z \rightarrow X \oplus Y \oplus Z$<br>
+- $X \oplus (Y \oplus Z) \rightarrow X \oplus Y \oplus Z$<br>
 - analoog voor andere operators met identieke parent/child-op.
 
 Mechaniek:
@@ -84,13 +84,13 @@ Mechaniek:
 ---
 
 ### 5.2 Order (alleen commutatieve ops)
-Commutatieve operators: \(+, \oplus, \land, \lor\).
+Commutatieve operators: $+, \oplus, \land, \lor$.
 
 Stap:
 - sorteer inputs oplopend op expr-id.
 
 Effect:
-- canonical order, bv. \(Y \oplus X \oplus X \rightarrow X \oplus X \oplus Y\)
+- canonical order, bv. $Y \oplus X \oplus X \rightarrow X \oplus X \oplus Y$<br>
 - hierdoor worden cancel/fold-matches later deterministischer.
 
 ---
@@ -101,13 +101,13 @@ Effect:
 Regel: gelijke termen in XOR heffen elkaar paarsgewijs op.
 
 Wiskundig:
-- \(A \oplus A = 0\)
+- $A \oplus A = 0$<br>
 - algemeen: termen met even multipliciteit verdwijnen; oneven multipliciteit blijft 1x staan.
 
 Voorbeelden:
-- \(A \oplus B \oplus A \rightarrow B\)
-- \(A \oplus A \rightarrow 0\)
-- \(A \oplus A \oplus A \rightarrow A\)
+- $A \oplus B \oplus A \rightarrow B$<br>
+- $A \oplus A \rightarrow 0$<br>
+- $A \oplus A \oplus A \rightarrow A$<br>
 
 ---
 
@@ -115,13 +115,13 @@ Voorbeelden:
 Regel: XOR alle constanten samen tot 1 constante accumulator.
 
 Wiskundig:
-- \((C_1 \oplus C_2 \oplus \dots \oplus C_n) = C_{acc}\)
-- expressie wordt: niet-constante termen \(\oplus\) eventueel \(C_{acc}\) (alleen als \(C_{acc} \neq 0\)).
+- $(C_1 \oplus C_2 \oplus \dots \oplus C_n) = C_{acc}$<br>
+- expressie wordt: niet-constante termen $\oplus$ eventueel $C_{acc}$ (alleen als $C_{acc} \neq 0$).
 
 Voorbeelden:
-- \(A \oplus 5 \oplus 3 \rightarrow A \oplus 6\)
-- \(A \oplus 1 \oplus 1 \rightarrow A\)
-- \(7 \oplus 7 \rightarrow 0\)
+- $A \oplus 5 \oplus 3 \rightarrow A \oplus 6$<br>
+- $A \oplus 1 \oplus 1 \rightarrow A$<br>
+- $7 \oplus 7 \rightarrow 0$<br>
 
 ---
 
@@ -129,36 +129,36 @@ Voorbeelden:
 Regel: verwijder neutraal element 0 uit XOR.
 
 Wiskundig:
-- \(X \oplus 0 = X\)
+- $X \oplus 0 = X$<br>
 
 Voorbeelden:
-- \(A \oplus 0 \rightarrow A\)
-- \(A \oplus B \oplus 0 \rightarrow A \oplus B\)
-- alleen nullen \(0 \oplus 0 \rightarrow 0\)
+- $A \oplus 0 \rightarrow A$<br>
+- $A \oplus B \oplus 0 \rightarrow A \oplus B$<br>
+- alleen nullen $0 \oplus 0 \rightarrow 0$<br>
 
 ---
 
 ### 5.6 And_Fold
 Regels voor AND met constanten:
-- absorberend: \(X \land 0 = 0\)
-- neutraal: \(X \land 1 = X\)
+- absorberend: $X \land 0 = 0$<br>
+- neutraal: $X \land 1 = X$<br>
 
 Voorbeelden:
-- \(A \land 0 \land B \rightarrow 0\)
-- \(A \land 1 \land B \rightarrow A \land B\)
-- alleen enen \(1 \land 1 \rightarrow 1\)
+- $A \land 0 \land B \rightarrow 0$<br>
+- $A \land 1 \land B \rightarrow A \land B$<br>
+- alleen enen $1 \land 1 \rightarrow 1$<br>
 
 ---
 
 ### 5.7 Or_Fold
 Regels voor OR met constanten:
-- absorberend: \(X \lor 1 = 1\)
-- neutraal: \(X \lor 0 = X\)
+- absorberend: $X \lor 1 = 1$<br>
+- neutraal: $X \lor 0 = X$<br>
 
 Voorbeelden:
-- \(A \lor 1 \lor B \rightarrow 1\)
-- \(A \lor 0 \lor B \rightarrow A \lor B\)
-- alleen nullen \(0 \lor 0 \rightarrow 0\)
+- $A \lor 1 \lor B \rightarrow 1$<br>
+- $A \lor 0 \lor B \rightarrow A \lor B$<br>
+- alleen nullen $0 \lor 0 \rightarrow 0$<br>
 
 ---
 
@@ -166,25 +166,21 @@ Voorbeelden:
 
 ### 5.8 Xor_And_CommonFactor
 Patroon met 2 AND-termen onder XOR die een gemeenschappelijke factor delen:
-
-\[
-(a \land b) \oplus (a \land c) \rightarrow a \land (b \oplus c)
-\]
+- $(a \land b) \oplus (a \land c) \rightarrow a \land (b \oplus c)$<br>
 
 Ook varianten door operand-volgorde:
-- \((b \land a) \oplus (c \land a) \rightarrow a \land (b \oplus c)\), etc.
+- $(b \land a) \oplus (c \land a) \rightarrow a \land (b \oplus c)$<br>
+- etc.
 
 ---
 
 ### 5.9 Xor_Pair_Cancel
 Patroon met 2 XOR-termen onder XOR met 1 gedeelde term:
-
-\[
-(a \oplus b) \oplus (a \oplus c) \rightarrow b \oplus c
-\]
+- $(a \oplus b) \oplus (a \oplus c) \rightarrow b \oplus c$<br>
 
 Afleiding:
-- \(a \oplus a = 0\), daarna \(0 \oplus b \oplus c = b \oplus c\).
+- $a \oplus a = 0$<br>
+- daarna $0 \oplus b \oplus c = b \oplus c$.
 
 ---
 
@@ -192,7 +188,7 @@ Afleiding:
 
 ### Add_Zero (bestaat, niet in huidige pipeline)
 Wiskundig:
-- \(X + 0 = X\)
+- $X + 0 = X$<br>
 
 Gedrag gelijk aan `Rewrite_Remove_Zero`:
 - verwijdert alle `0` inputs,
