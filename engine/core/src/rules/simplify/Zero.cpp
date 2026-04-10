@@ -33,11 +33,19 @@ static Expr* Rewrite_Remove_Zero(Expr& e) {
 }
 
 Rule Get_Add_Zero_Rule() {
-    return Rule{&Match_Zero<AST::OpType::Add>, &Rewrite_Remove_Zero, Stage_Simplify};
+    return Rule{RuleId::Simplify_AddZero,
+                &Match_Zero<AST::OpType::Add>,
+                &Rewrite_Remove_Zero,
+                Stage_Simplify,
+                {RuleId::Normalize_Flatten}};
 }
 
 Rule Get_Xor_Zero_Rule() {
-    return Rule{&Match_Zero<AST::OpType::Xor>, &Rewrite_Remove_Zero, Stage_Simplify};
+    return Rule{RuleId::Simplify_XorZero,
+                &Match_Zero<AST::OpType::Xor>,
+                &Rewrite_Remove_Zero,
+                Stage_Simplify,
+                {RuleId::Normalize_Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify

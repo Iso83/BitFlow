@@ -14,15 +14,21 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # =========================================================
 # Dependencies
 # =========================================================
-include(FetchContent)
+option(BF_ENABLE_FETCH "Enable FetchContent dependencies" ON)
 
-FetchContent_Declare(
-    nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.3
-)
+if(BF_ENABLE_FETCH)
+    include(FetchContent)
 
-#FetchContent_MakeAvailable(nlohmann_json)
+    FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.3
+    )
+
+    FetchContent_MakeAvailable(nlohmann_json)
+else()
+    set(FETCHCONTENT_FULLY_DISCONNECTED ON)
+endif()
 
 # ---------- Organize third party targets ----------
 

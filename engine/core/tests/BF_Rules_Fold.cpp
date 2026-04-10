@@ -6,6 +6,38 @@
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
+int TestAddFold() {
+    auto x = MakeVar(1, OpType::Add);
+    auto c1 = MakeConst(2, 10);
+    auto c2 = MakeConst(3, 20);
+
+    auto expr = MakeOp(4, OpType::Add, {x, c1, c2});
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Simplify::Get_Add_Fold_Rule());
+    engine.AddRule(Simplify::Get_Add_Zero_Rule());
+
+    Expr* result = engine.ApplyUntilStable(expr);
+
+    BF_TEST(result->op == OpType::Add);
+    BF_TEST(result->inputs.size() == 2);
+
+    Expr* a = result->inputs[0];
+    Expr* b = result->inputs[1];
+
+    if (a->isConst) {
+        BF_TEST(a->constValue == 30);
+        BF_TEST(b->id == x->id);
+    } else {
+        BF_TEST(a->id == x->id);
+        BF_TEST(b->isConst);
+        BF_TEST(b->constValue == 30);
+    }
+
+    return 0;
+}
+
 int TestAndFold() {
     auto x = MakeVar(1, OpType ::And);
     auto zero = ConstPool::Get(0);
@@ -65,6 +97,7 @@ int TestXorFold() {
 }
 
 int main() {
+    BF_RUN_TEST(TestAddFold);
     BF_RUN_TEST(TestAndFold);
     BF_RUN_TEST(TestOrFold);
     BF_RUN_TEST(TestXorFold);

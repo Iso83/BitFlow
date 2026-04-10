@@ -9,17 +9,27 @@ namespace BitFlow::Core::Rules {
 
 using Expr = AST::Expr;
 
-void RuleEngine::AddRule(const Rule& r) {
+void RuleEngine::AddRule(const Rule& rule) {
 #ifndef NDEBUG
-    if (!rules.empty()) {
-        const Rule& last = rules.back();
+    if (!m_rules.empty()) {
+        const Rule& last = m_rules.back();
 
-        if (r.stage < last.stage)
+        if (rule.stage < last.stage)
             throw RuleOrderException("Rule stage regression");
     }
 #endif
 
-    rules.push_back(r);
+    if (!ValidateRule(rule))
+        throw std::runtime_error("Rule validation failed");
+
+    for (RuleId dep : rule.deps) {
+        if (!HasRule(dep)) {
+            throw std::runtime_error("Missing rule dependency");
+        }
+    }
+
+    m_rules.push_back(rule);
+    m_present.insert(rule.id);
 }
 
 Expr* RuleEngine::ApplyOnce(Expr* expr) const {
@@ -28,7 +38,7 @@ Expr* RuleEngine::ApplyOnce(Expr* expr) const {
     while (changed) {
         changed = false;
 
-        for (const auto& r : rules) {
+        for (const auto& r : m_rules) {
             if (r.match(*expr)) {
                 Expr* next = r.rewrite(*expr);
 

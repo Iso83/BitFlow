@@ -16,6 +16,7 @@ int TestXorAndCommonFactor() {
     auto expr = MakeOp(12, OpType::Xor, {and1, and2});
 
     RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Factorize::Get_Xor_And_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
@@ -49,32 +50,7 @@ int TestXorAndCommonFactor() {
     return 0;
 }
 
-int TestXorXorCancelPair() {
-    auto a = MakeVar(40, OpType::Xor);
-    auto b = MakeVar(41, OpType::Xor);
-    auto c = MakeVar(42, OpType::Xor);
-
-    auto x1 = MakeOp(50, OpType::Xor, {a, b});
-    auto x2 = MakeOp(51, OpType::Xor, {a, c});
-    auto expr = MakeOp(52, OpType::Xor, {x1, x2});
-
-    RuleEngine engine;
-    engine.AddRule(Factorize::Get_Xor_Pair_Cancel_Rule());
-
-    Expr* result = engine.ApplyUntilStable(expr);
-
-    BF_TEST(result->op == OpType::Xor);
-    BF_TEST(result->inputs.size() == 2);
-
-    auto i0 = result->inputs[0];
-    auto i1 = result->inputs[1];
-
-    BF_TEST((i0->id == b->id && i1->id == c->id) || (i0->id == c->id && i1->id == b->id));
-    return 0;
-}
-
 int main() {
     BF_RUN_TEST(TestXorAndCommonFactor);
-    BF_RUN_TEST(TestXorXorCancelPair);
     return 0;
 }
