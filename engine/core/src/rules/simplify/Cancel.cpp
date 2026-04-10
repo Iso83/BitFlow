@@ -11,7 +11,7 @@ namespace BitFlow::Core::Rules::Simplify {
 
 using Expr = AST::Expr;
 
-static bool Match_Xor_Cancel(const Expr& e) {
+static bool Match_Simplify_Xor_Cancel_Nary(const Expr& e) {
     if (e.op != AST::OpType::Xor)
         return false;
 
@@ -31,7 +31,7 @@ static bool Match_Xor_Cancel(const Expr& e) {
     return false;
 }
 
-static Expr* Rewrite_Xor_Cancel(Expr& e) {
+static Expr* Rewrite_Simplify_Xor_Cancel_Nary(Expr& e) {
     std::unordered_map<uint32_t, int> counts;
     std::unordered_map<uint32_t, Expr*> lookup;
 
@@ -60,8 +60,12 @@ static Expr* Rewrite_Xor_Cancel(Expr& e) {
     return n;
 }
 
+static Rule Simplify_Xor_Cancel_Nary() {
+    return Rule{&Match_Simplify_Xor_Cancel_Nary, &Rewrite_Simplify_Xor_Cancel_Nary, Stage_Simplify};
+}
+
 Rule Get_Xor_Cancel_Rule() {
-    return Rule{&Match_Xor_Cancel, &Rewrite_Xor_Cancel, Stage_Simplify};
+    return Simplify_Xor_Cancel_Nary();
 }
 
 } // namespace BitFlow::Core::Rules::Simplify
