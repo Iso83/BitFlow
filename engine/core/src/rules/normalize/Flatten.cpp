@@ -1,4 +1,5 @@
 #include "expression/ExprClone.h"
+#include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/ast/Expression.h>
@@ -9,11 +10,14 @@ namespace BitFlow::Core::Rules::Normalize {
 using Expr = AST::Expr;
 
 static bool Match_Flatten(const Expr& e) {
+    if (!IsCommutative(e.op))
+        return false;
+
     if (e.inputs.empty())
         return false;
 
     for (const Expr* in : e.inputs) {
-        if (!in->isConst && !in->inputs.empty() && in->op == e.op)
+        if (IsNestedSameOp(e, *in))
             return true;
     }
 
@@ -21,10 +25,14 @@ static bool Match_Flatten(const Expr& e) {
 }
 
 static Expr* Rewrite_Flatten(Expr& e) {
+    if (!IsCommutative(e.op))
+        return &e;
+
     std::vector<Expr*> newInputs;
+    newInputs.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (!in->isConst && !in->inputs.empty() && in->op == e.op) {
+        if (IsNestedSameOp(e, *in)) {
             for (Expr* sub : in->inputs)
                 newInputs.push_back(sub);
         } else

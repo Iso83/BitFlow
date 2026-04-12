@@ -7,7 +7,7 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
 int TestNotDoubleNegation() {
-    auto x = MakeVar(1, OpType::Not);
+    auto x = MakeVar(1);
 
     auto n1 = MakeOp(2, OpType::Not, {x});
     auto n2 = MakeOp(3, OpType::Not, {n1});
@@ -37,15 +37,15 @@ int TestNotConst() {
 }
 
 int TestNotPushdown_And() {
-    auto a = MakeVar(1, OpType::And);
-    auto b = MakeVar(2, OpType::And);
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
 
     auto inner = MakeOp(3, OpType::And, {a, b});
     auto expr = MakeOp(4, OpType::Not, {inner});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Get_Not_Rule());
     engine.AddRule(Simplify::Get_NotPushdown_Rule());
+    engine.AddRule(Simplify::Get_Not_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -55,15 +55,15 @@ int TestNotPushdown_And() {
 }
 
 int TestNotPushdown_Or() {
-    auto a = MakeVar(1, OpType::Or);
-    auto b = MakeVar(2, OpType::Or);
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
 
     auto inner = MakeOp(3, OpType::Or, {a, b});
     auto expr = MakeOp(4, OpType::Not, {inner});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Get_Not_Rule());
     engine.AddRule(Simplify::Get_NotPushdown_Rule());
+    engine.AddRule(Simplify::Get_Not_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -73,8 +73,8 @@ int TestNotPushdown_Or() {
 }
 
 int TestNotXor() {
-    auto a = MakeVar(1, OpType::Xor);
-    auto b = MakeVar(2, OpType::Xor);
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
 
     auto inner = MakeOp(3, OpType::Xor, {a, b});
     auto expr = MakeOp(4, OpType::Not, {inner});

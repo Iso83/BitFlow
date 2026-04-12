@@ -7,8 +7,8 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
 int TestXorOrdering() {
-    auto x = MakeVar(1, OpType::Xor);
-    auto y = MakeVar(2, OpType::Xor);
+    auto x = MakeVar(1);
+    auto y = MakeVar(2);
 
     // bewust unsorted
     auto expr = MakeOp(3, OpType::Xor, {y, x, y, x});

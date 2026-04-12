@@ -1,35 +1,75 @@
 #include <BitFlow/core/rules/RuleEngine.h>
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
-int TestAndDistribute() {
-    auto a = MakeVar(1, OpType::And);
-    auto b = MakeVar(2, OpType::And);
-    auto c = MakeVar(3, OpType::And);
+int TestAndOverXor() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto c = MakeVar(3);
 
-    auto orNode = MakeOp(10, OpType::Or, {b, c});
-    auto expr = MakeOp(11, OpType::And, {a, orNode});
+    auto xorNode = MakeOp(10, OpType::Xor, {b, c});
+    auto expr = MakeOp(11, OpType::And, {a, xorNode});
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Factorize::Get_And_Distribute_Rule());
+    engine.AddRule(Factorize::Get_Distribute_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* result = engine.ApplyUntilStable(expr);
 
-    BF_TEST(r->op == OpType::Or);
-    BF_TEST(r->inputs.size() == 2);
+    BF_TEST(result->op == OpType::Xor);
+    BF_TEST(result->inputs.size() == 2);
 
-    BF_TEST(r->inputs[0]->op == OpType::And);
-    BF_TEST(r->inputs[1]->op == OpType::And);
+    return 0;
+}
+
+int TestAndOverXor_Multi() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto c = MakeVar(3);
+    auto d = MakeVar(4);
+
+    auto xorNode = MakeOp(20, OpType::Xor, {b, c, d});
+    auto expr = MakeOp(21, OpType::And, {a, xorNode});
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Factorize::Get_Distribute_Rule());
+
+    Expr* result = engine.ApplyUntilStable(expr);
+
+    BF_TEST(result->op == OpType::Xor);
+    BF_TEST(result->inputs.size() == 3);
+
+    return 0;
+}
+
+int TestAndMultipleOthers() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto c = MakeVar(3);
+    auto d = MakeVar(4);
+
+    auto xorNode = MakeOp(30, OpType::Xor, {c, d});
+    auto expr = MakeOp(31, OpType::And, {a, b, xorNode});
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Factorize::Get_Distribute_Rule());
+
+    Expr* result = engine.ApplyUntilStable(expr);
+
+    BF_TEST(result->op == OpType::Xor);
+    BF_TEST(result->inputs.size() == 2);
 
     return 0;
 }
 
 int main() {
-    BF_RUN_TEST(TestAndDistribute);
+    BF_RUN_TEST(TestAndOverXor);
+    BF_RUN_TEST(TestAndOverXor_Multi);
+    BF_RUN_TEST(TestAndMultipleOthers);
     return 0;
 }

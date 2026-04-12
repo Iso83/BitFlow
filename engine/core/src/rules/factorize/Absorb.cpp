@@ -8,6 +8,18 @@ namespace BitFlow::Core::Rules::Factorize {
 
 using Expr = AST::Expr;
 
+static bool ContainsExpr(const Expr* e, const Expr* target) {
+    if (e == target)
+        return true;
+
+    for (const Expr* in : e->inputs) {
+        if (in == target)
+            return true;
+    }
+
+    return false;
+}
+
 #pragma region Match
 static bool Match_And_Absorb(const Expr& e) {
     if (e.op != AST::OpType::And)
@@ -56,37 +68,37 @@ static bool Match_Or_Absorb(const Expr& e) {
 
 #pragma region Rewrite
 static Expr* Rewrite_And_Absorb(Expr& e) {
-    for (Expr* a : e.inputs) {
-        for (Expr* b : e.inputs) {
-            if (b->op != AST::OpType::Or)
+    if (e.op != AST::OpType::And)
+        return nullptr;
+
+    for (auto* a : e.inputs) {
+        for (auto* b : e.inputs) {
+            if (a == b)
                 continue;
 
-            for (Expr* inner : b->inputs) {
-                if (inner->id == a->id) {
-                    return a;
-                }
-            }
+            if (b->op == AST::OpType::Or && ContainsExpr(b, a))
+                return a;
         }
     }
 
-    return &e;
+    return nullptr;
 }
 
 static Expr* Rewrite_Or_Absorb(Expr& e) {
-    for (Expr* a : e.inputs) {
-        for (Expr* b : e.inputs) {
-            if (b->op != AST::OpType::And)
+    if (e.op != AST::OpType::Or)
+        return nullptr;
+
+    for (auto* a : e.inputs) {
+        for (auto* b : e.inputs) {
+            if (a == b)
                 continue;
 
-            for (Expr* inner : b->inputs) {
-                if (inner->id == a->id) {
-                    return a;
-                }
-            }
+            if (b->op == AST::OpType::And && ContainsExpr(b, a))
+                return a;
         }
     }
 
-    return &e;
+    return nullptr;
 }
 #pragma endregion
 

@@ -1,4 +1,5 @@
 #include "expression/ExprClone.h"
+#include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/ast/Expression.h>
@@ -11,6 +12,18 @@
 namespace BitFlow::Core::Rules::Simplify {
 
 using Expr = AST::Expr;
+using OpType = AST::OpType;
+using namespace BitFlow::Core::Expression;
+
+static Expr* BuildXorParityResult(const std::vector<Expr*>& terms) {
+    if (terms.empty())
+        return ConstPool::Get(0);
+
+    if (terms.size() == 1)
+        return terms[0];
+
+    return MakeOpInterned(OpType::Xor, terms);
+}
 
 #pragma region Match
 static bool Match_And_Cancel(const Expr& e) {
@@ -20,8 +33,14 @@ static bool Match_And_Cancel(const Expr& e) {
     if (e.inputs.size() < 2)
         return false;
 
-    for (size_t i = 1; i < e.inputs.size(); ++i) {
-        if (e.inputs[i - 1]->id == e.inputs[i]->id)
+    std::unordered_map<uint32_t, int> counts;
+    counts.reserve(e.inputs.size());
+
+    for (const Expr* in : e.inputs) {
+        const uint32_t key = in->id.value();
+        counts[key]++;
+
+        if (counts[key] >= 2)
             return true;
     }
 
@@ -35,45 +54,37 @@ static bool Match_Or_Cancel(const Expr& e) {
     if (e.inputs.size() < 2)
         return false;
 
-    for (size_t i = 1; i < e.inputs.size(); ++i) {
-        if (e.inputs[i - 1]->id == e.inputs[i]->id)
-            return true;
-    }
-
-    return false;
-}
-
-static bool Match_Xor_Cancel(const Expr& e) {
-    if (e.op != AST::OpType::Xor)
-        return false;
-
-    if (e.inputs.size() < 2)
-        return false;
-
-    for (size_t i = 0; i < e.inputs.size(); ++i) {
-        for (size_t j = i + 1; j < e.inputs.size(); ++j) {
-            if (e.inputs[i]->id == e.inputs[j]->id)
-                return true;
-        }
-    }
-
-    return false;
-}
-
-static bool Match_Xor_DuplicateCancel(const Expr& e) {
-    if (e.op != AST::OpType::Xor)
-        return false;
-
-    if (e.inputs.size() < 2)
-        return false;
-
     std::unordered_map<uint32_t, int> counts;
+    counts.reserve(e.inputs.size());
 
     for (const Expr* in : e.inputs) {
         const uint32_t key = in->id.value();
         counts[key]++;
 
         if (counts[key] >= 2)
+            return true;
+    }
+
+    return false;
+}
+
+static bool Match_XorCancel(const Expr& e) {
+    if (e.op != OpType::Xor || e.inputs.size() < 2)
+        return false;
+
+    uint32_t constParity = 0;
+
+    for (const Expr* in : e.inputs) {
+        if (in->isConst)
+            constParity ^= in->constValue;
+    }
+
+    if (constParity != 0)
+        return true;
+
+    for (size_t i = 1; i < e.inputs.size(); ++i) {
+        if (!e.inputs[i]->isConst && !e.inputs[i - 1]->isConst &&
+            e.inputs[i - 1]->id.value() == e.inputs[i]->id.value())
             return true;
     }
 
@@ -86,23 +97,26 @@ static Expr* Rewrite_And_Cancel(Expr& e) {
     std::vector<Expr*> newInputs;
     newInputs.reserve(e.inputs.size());
 
-    Expr* prev = nullptr;
+    std::unordered_map<uint32_t, bool> seen;
+    seen.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (prev != nullptr && prev->id == in->id)
+        const uint32_t key = in->id.value();
+
+        if (seen[key])
             continue;
 
+        seen[key] = true;
         newInputs.push_back(in);
-        prev = in;
     }
 
     if (newInputs.empty())
-        return Expression::ConstPool::Get(1);
+        return ConstPool::Get(1);
 
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = e.frozen ? CloneExpr(&e) : &e;
     target->inputs = std::move(newInputs);
     return target;
 }
@@ -111,87 +125,61 @@ static Expr* Rewrite_Or_Cancel(Expr& e) {
     std::vector<Expr*> newInputs;
     newInputs.reserve(e.inputs.size());
 
-    Expr* prev = nullptr;
+    std::unordered_map<uint32_t, bool> seen;
+    seen.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (prev != nullptr && prev->id == in->id)
+        const uint32_t key = in->id.value();
+
+        if (seen[key])
             continue;
 
+        seen[key] = true;
         newInputs.push_back(in);
-        prev = in;
     }
 
     if (newInputs.empty())
-        return Expression::ConstPool::Get(0);
+        return ConstPool::Get(0);
 
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = e.frozen ? CloneExpr(&e) : &e;
     target->inputs = std::move(newInputs);
     return target;
 }
 
-static Expr* Rewrite_Xor_Cancel(Expr& e) {
-    std::vector<Expr*> result;
+static Expr* Rewrite_XorCancel(Expr& e) {
+    std::vector<Expr*> oddTerms;
+    oddTerms.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
-        bool found = false;
+    uint32_t constParity = 0;
 
-        for (auto it = result.begin(); it != result.end(); ++it) {
-            if ((*it)->id == in->id) {
-                result.erase(it); // cancel pair
-                found = true;
-                break;
-            }
+    size_t i = 0;
+    while (i < e.inputs.size()) {
+        Expr* cur = e.inputs[i];
+
+        if (cur->isConst) {
+            constParity ^= cur->constValue;
+            ++i;
+            continue;
         }
 
-        if (!found)
-            result.push_back(in);
+        size_t j = i + 1;
+        while (j < e.inputs.size() && !e.inputs[j]->isConst && e.inputs[j]->id.value() == cur->id.value())
+            ++j;
+
+        const size_t count = j - i;
+        if (count & 1u)
+            oddTerms.push_back(cur);
+
+        i = j;
     }
 
-    if (result.empty())
-        return Expression::ConstPool::Get(0);
+    if (constParity != 0)
+        oddTerms.push_back(ConstPool::Get(constParity));
 
-    if (result.size() == 1)
-        return result[0];
-
-    e.inputs = std::move(result);
-    return &e;
-}
-
-static Expr* Rewrite_Xor_DuplicateCancel(Expr& e) {
-    std::unordered_map<uint32_t, int> counts;
-
-    for (Expr* in : e.inputs) {
-        const uint32_t key = in->id.value();
-        counts[key]++;
-    }
-
-    std::vector<Expr*> newInputs;
-    newInputs.reserve(e.inputs.size());
-
-    std::unordered_map<uint32_t, int> emitted;
-
-    for (Expr* in : e.inputs) {
-        const uint32_t key = in->id.value();
-
-        if ((counts[key] % 2) == 1 && emitted[key] == 0) {
-            newInputs.push_back(in);
-            emitted[key] = 1;
-        }
-    }
-
-    if (newInputs.empty())
-        return Expression::ConstPool::Get(0);
-
-    if (newInputs.size() == 1)
-        return newInputs[0];
-
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
-    target->inputs = std::move(newInputs);
-
-    return target;
+    return BuildXorParityResult(oddTerms);
 }
 #pragma endregion
 
@@ -210,18 +198,10 @@ Rule Get_Or_Cancel_Rule() {
 
 Rule Get_Xor_Cancel_Rule() {
     return Rule{RuleId::Simplify_XorCancel,
-                &Match_Xor_Cancel,
-                &Rewrite_Xor_Cancel,
+                &Match_XorCancel,
+                &Rewrite_XorCancel,
                 Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
-}
-
-Rule Get_Xor_DuplicateCancel_Rule() {
-    return Rule{RuleId::Simplify_XorDuplicateCancel,
-                &Match_Xor_DuplicateCancel,
-                &Rewrite_Xor_DuplicateCancel,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify

@@ -7,7 +7,7 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
 int TestAddFold() {
-    auto x = MakeVar(1, OpType::Add);
+    auto x = MakeVar(1);
     auto c1 = MakeConst(2, 10);
     auto c2 = MakeConst(3, 20);
 
@@ -39,7 +39,7 @@ int TestAddFold() {
 }
 
 int TestAndFold() {
-    auto x = MakeVar(1, OpType ::And);
+    auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
     auto one = ConstPool::Get(1);
 
@@ -59,7 +59,7 @@ int TestAndFold() {
 }
 
 int TestOrFold() {
-    auto x = MakeVar(1, OpType::Or);
+    auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
     auto one = ConstPool::Get(1);
 
@@ -79,7 +79,7 @@ int TestOrFold() {
 }
 
 int TestXorFold() {
-    auto x = MakeVar(1, OpType::Xor);
+    auto x = MakeVar(1);
     auto c1 = MakeConst(2, 1);
     auto c2 = MakeConst(3, 1);
 
@@ -96,10 +96,28 @@ int TestXorFold() {
     return 0;
 }
 
+int TestXorFoldAllConstZero() {
+    auto c1 = MakeConst(2, 1);
+    auto c2 = MakeConst(3, 1);
+
+    auto expr = MakeOp(4, OpType::Xor, {c1, c2});
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Simplify::Get_Xor_Fold_Rule());
+
+    Expr* result = engine.ApplyUntilStable(expr);
+
+    BF_TEST(result->isConst);
+    BF_TEST(result->constValue == 0);
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAddFold);
     BF_RUN_TEST(TestAndFold);
     BF_RUN_TEST(TestOrFold);
     BF_RUN_TEST(TestXorFold);
+    BF_RUN_TEST(TestXorFoldAllConstZero);
     return 0;
 }

@@ -9,24 +9,26 @@ namespace BitFlow::Core::Rules::Simplify {
 
 using Expr = AST::Expr;
 using OpType = AST::OpType;
+using ConstPool = Expression::ConstPool;
+
+static bool IsNotOf(Expr* a, Expr* b) {
+    return a->op == OpType::Not && a->inputs.size() == 1 && a->inputs[0] == b;
+}
 
 #pragma region Match
 static bool Match_Complement(const Expr& e) {
-    if (e.op != AST::OpType::And && e.op != AST::OpType::Or)
+    if ((e.op != OpType::And && e.op != OpType::Or) || e.inputs.size() < 2)
         return false;
 
-    if (e.inputs.size() != 2)
-        return false;
+    for (size_t i = 0; i < e.inputs.size(); ++i) {
+        for (size_t j = i + 1; j < e.inputs.size(); ++j) {
+            Expr* a = e.inputs[i];
+            Expr* b = e.inputs[j];
 
-    Expr* a = e.inputs[0];
-    Expr* b = e.inputs[1];
-
-    // a & ~a  /  a | ~a
-    if (b->op == AST::OpType::Not && b->inputs.size() == 1)
-        return (b->inputs[0]->id == a->id);
-
-    if (a->op == AST::OpType::Not && a->inputs.size() == 1)
-        return (a->inputs[0]->id == b->id);
+            if (IsNotOf(a, b) || IsNotOf(b, a))
+                return true;
+        }
+    }
 
     return false;
 }
@@ -34,11 +36,22 @@ static bool Match_Complement(const Expr& e) {
 
 #pragma region Rewrite
 static Expr* Rewrite_Complement(Expr& e) {
-    if (e.op == AST::OpType::And)
-        return Expression::ConstPool::Get(0);
+    for (size_t i = 0; i < e.inputs.size(); ++i) {
+        for (size_t j = i + 1; j < e.inputs.size(); ++j) {
+            Expr* a = e.inputs[i];
+            Expr* b = e.inputs[j];
 
-    // OR
-    return Expression::ConstPool::Get(~0u);
+            if (IsNotOf(a, b) || IsNotOf(b, a)) {
+                if (e.op == OpType::And)
+                    return ConstPool::Get(0);
+
+                if (e.op == OpType::Or)
+                    return ConstPool::Get(1);
+            }
+        }
+    }
+
+    return nullptr;
 }
 #pragma endregion
 

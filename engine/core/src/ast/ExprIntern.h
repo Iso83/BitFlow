@@ -10,41 +10,82 @@ namespace BitFlow::Core::AST {
 
 class ExprIntern {
   public:
-    static Expr* Intern(Expr* e) {
-        Expression::ExprKey key = BuildKey(e);
+    using Key = Expression::ExprKey;
+    using KeyHash = Expression::ExprKeyHash;
+    using KeyBuilderFn = Key (*)(const Expr*);
 
-        auto& map = storage();
-        auto it = map.find(key);
-        if (it != map.end())
+  public:
+    static Expr* Intern(Expr* e) {
+        if (e->id.value() == 0)
+            e->id = Ids::ExprId{NextId()};
+
+        Key key = GetKeyBuilder()(e);
+
+        auto it = Table().find(key);
+        if (it != Table().end())
             return it->second;
 
-        e->frozen = true;
-
-        map[key] = e;
+        Table()[key] = e;
         return e;
     }
 
+    static void Clear() {
+        Table().clear();
+    }
+
+    static void Reset() {
+        Clear();
+        ResetKeyBuilder();
+        ResetIds();
+    }
+
+    static void SetKeyBuilder(KeyBuilderFn fn) {
+        GetKeyBuilder() = fn ? fn : &BuildStructuralKey;
+    }
+
+    static void ResetKeyBuilder() {
+        GetKeyBuilder() = &BuildStructuralKey;
+    }
+
   private:
-    static Expression::ExprKey BuildKey(const Expr* e) {
-        Expression::ExprKey k;
+    static std::unordered_map<Key, Expr*, KeyHash>& Table() {
+        static std::unordered_map<Key, Expr*, KeyHash> table;
+        return table;
+    }
+
+    static KeyBuilderFn& GetKeyBuilder() {
+        static KeyBuilderFn fn = &BuildStructuralKey;
+        return fn;
+    }
+
+    static uint32_t& NextIdRef() {
+        static uint32_t nextId = 1000000;
+        return nextId;
+    }
+
+    static uint32_t NextId() {
+        return NextIdRef()++;
+    }
+
+    static void ResetIds() {
+        NextIdRef() = 1000000;
+    }
+
+    static Key BuildStructuralKey(const Expr* e) {
+        Key k{};
         k.op = e->op;
         k.isConst = e->isConst;
         k.constValue = e->constValue;
 
+        k.inputs.reserve(e->inputs.size());
+
         for (const Expr* in : e->inputs)
             k.inputs.push_back(in->id.value());
 
-        if (!e->isConst && e->inputs.empty()) {
-            k.hasSymbolId = true;
-            k.symbolId = e->id.value();
-        }
+        if (e->inputs.empty())
+            k.inputs.push_back(e->id.value());
 
         return k;
-    }
-
-    static std::unordered_map<Expression::ExprKey, Expr*, Expression::ExprKeyHash>& storage() {
-        static std::unordered_map<Expression::ExprKey, Expr*, Expression::ExprKeyHash> s;
-        return s;
     }
 };
 

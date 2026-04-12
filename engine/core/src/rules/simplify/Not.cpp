@@ -1,4 +1,5 @@
-#include "expression/ExprClone.h"
+#include "ast/ExprIntern.h"
+#include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/ast/Expression.h>
@@ -10,11 +11,6 @@
 namespace BitFlow::Core::Rules::Simplify {
 
 using Expr = AST::Expr;
-
-/*
- * Not Pushdown (De Morgan)
- *
- */
 
 #pragma region Match
 static bool Match_Not(const Expr& e) {
@@ -44,7 +40,18 @@ static bool Match_NotPushdown(const Expr& e) {
 
     const Expr* in = e.inputs[0];
 
-    return (in->op == AST::OpType::And || in->op == AST::OpType::Or);
+    if (!(in->op == AST::OpType::And || in->op == AST::OpType::Or))
+        return false;
+
+    bool allNot = true;
+    for (const Expr* child : in->inputs) {
+        if (child->op != AST::OpType::Not) {
+            allNot = false;
+            break;
+        }
+    }
+
+    return !allNot;
 }
 
 static bool Match_Not_Xor(const Expr& e) {
@@ -82,29 +89,16 @@ static Expr* Rewrite_NotPushdown(Expr& e) {
     newInputs.reserve(in->inputs.size());
 
     for (Expr* child : in->inputs) {
-        Expr* n = Expression::CloneExpr(child);
-        n->op = AST::OpType::Not;
-
-        n->inputs.clear();
-        n->inputs.push_back(child);
-
+        auto* n = Expression::MakeOpInterned(AST::OpType::Not, {child});
         newInputs.push_back(n);
     }
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
-
-    target->op = newOp;
-    target->inputs = std::move(newInputs);
-
+    auto* target = Expression::MakeOpInterned(newOp, std::move(newInputs));
     return target;
 }
 
 static Expr* Rewrite_Not_Xor(Expr& e) {
     Expr* in = e.inputs[0];
-
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
-
-    target->op = AST::OpType::Xor;
 
     std::vector<Expr*> newInputs;
     newInputs.reserve(in->inputs.size() + 1);
@@ -114,8 +108,7 @@ static Expr* Rewrite_Not_Xor(Expr& e) {
 
     newInputs.push_back(Expression::ConstPool::Get(1));
 
-    target->inputs = std::move(newInputs);
-
+    Expr* target = Expression::MakeOpInterned(AST::OpType::Xor, std::move(newInputs));
     return target;
 }
 #pragma endregion
@@ -125,8 +118,7 @@ Rule Get_Not_Rule() {
 }
 
 Rule Get_NotPushdown_Rule() {
-    return Rule{
-        RuleId::Simplify_NotPushdown, &Match_NotPushdown, &Rewrite_NotPushdown, Stage_Simplify, {RuleId::Simplify_Not}};
+    return Rule{RuleId::Simplify_NotPushdown, &Match_NotPushdown, &Rewrite_NotPushdown, Stage_Simplify_Pushdown};
 }
 
 Rule Get_Not_Xor_Rule() {

@@ -17,6 +17,14 @@ inline bool IsCommutative(AST::OpType op) {
     }
 }
 
+inline bool IsLeaf(const AST::Expr& e) {
+    return e.op == AST::OpType::Var || e.op == AST::OpType::Const;
+}
+
+inline bool IsNestedSameOp(const AST::Expr& parent, const AST::Expr& child) {
+    return !IsLeaf(child) && child.op == parent.op;
+}
+
 template <AST::OpType Op> inline bool Match_Zero(const AST::Expr& e) {
     if (e.op != Op)
         return false;

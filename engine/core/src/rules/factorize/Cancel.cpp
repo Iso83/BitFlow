@@ -1,69 +1,160 @@
+#include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/ConstPool.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <unordered_map>
+#include <vector>
 
 namespace BitFlow::Core::Rules::Factorize {
 
 using Expr = AST::Expr;
+using OpType = AST::OpType;
+
+static bool ContainsId(const Expr& e, uint32_t id) {
+    for (const Expr* in : e.inputs) {
+        if (in->id.value() == id)
+            return true;
+    }
+
+    return false;
+}
+
+static Expr* BuildXorResidual(const std::vector<Expr*>& terms) {
+    if (terms.empty())
+        return Expression::ConstPool::Get(0);
+
+    if (terms.size() == 1)
+        return terms[0];
+
+    Expr* n = new Expr{};
+    n->op = OpType::Xor;
+    n->inputs = terms;
+    return n;
+}
 
 #pragma region Match
 static bool Match_Xor_Xor_CancelPair(const Expr& e) {
-    if (e.op != AST::OpType::Xor)
+    if (e.op != OpType::Xor)
         return false;
 
-    if (e.inputs.size() != 2)
+    if (e.inputs.size() < 2)
         return false;
 
-    Expr* l = e.inputs[0];
-    Expr* r = e.inputs[1];
+    std::unordered_map<uint32_t, int> childCounts;
 
-    if (l->op != AST::OpType::Xor || r->op != AST::OpType::Xor)
-        return false;
+    for (const Expr* in : e.inputs) {
+        if (in->op != OpType::Xor || in->inputs.size() < 2)
+            continue;
 
-    if (l->inputs.size() != 2 || r->inputs.size() != 2)
-        return false;
+        std::unordered_map<uint32_t, bool> seenInChild;
+        seenInChild.reserve(in->inputs.size());
 
-    Expr* a0 = l->inputs[0];
-    Expr* a1 = l->inputs[1];
-    Expr* b0 = r->inputs[0];
-    Expr* b1 = r->inputs[1];
+        for (const Expr* term : in->inputs) {
+            const uint32_t key = term->id.value();
 
-    return (a0->id == b0->id) || (a0->id == b1->id) || (a1->id == b0->id) || (a1->id == b1->id);
+            if (seenInChild[key])
+                continue;
+
+            seenInChild[key] = true;
+            childCounts[key]++;
+
+            if (childCounts[key] >= 2)
+                return true;
+        }
+    }
+
+    return false;
 }
 #pragma endregion
 
 #pragma region Rewrite
 static Expr* Rewrite_Xor_Xor_CancelPair(Expr& e) {
-    Expr* l = e.inputs[0];
-    Expr* r = e.inputs[1];
+    std::unordered_map<uint32_t, int> childCounts;
+    std::unordered_map<uint32_t, Expr*> firstSeen;
 
-    Expr* a0 = l->inputs[0];
-    Expr* a1 = l->inputs[1];
-    Expr* b0 = r->inputs[0];
-    Expr* b1 = r->inputs[1];
+    for (Expr* in : e.inputs) {
+        if (in->op != OpType::Xor || in->inputs.size() < 2)
+            continue;
 
-    Expr* otherL = nullptr;
-    Expr* otherR = nullptr;
+        std::unordered_map<uint32_t, bool> seenInChild;
+        seenInChild.reserve(in->inputs.size());
 
-    if (a0->id == b0->id) {
-        otherL = a1;
-        otherR = b1;
-    } else if (a0->id == b1->id) {
-        otherL = a1;
-        otherR = b0;
-    } else if (a1->id == b0->id) {
-        otherL = a0;
-        otherR = b1;
-    } else {
-        otherL = a0;
-        otherR = b0;
+        for (Expr* term : in->inputs) {
+            const uint32_t key = term->id.value();
+
+            if (seenInChild[key])
+                continue;
+
+            seenInChild[key] = true;
+            childCounts[key]++;
+
+            if (!firstSeen.count(key))
+                firstSeen[key] = term;
+        }
     }
 
-    Expr* n = new Expr{};
-    n->op = AST::OpType::Xor;
-    n->inputs = {otherL, otherR};
+    uint32_t commonId = 0;
+    Expr* common = nullptr;
+
+    for (Expr* in : e.inputs) {
+        if (in->op != OpType::Xor || in->inputs.size() < 2)
+            continue;
+
+        for (Expr* term : in->inputs) {
+            const uint32_t key = term->id.value();
+
+            if (childCounts[key] >= 2) {
+                commonId = key;
+                common = firstSeen[key];
+                break;
+            }
+        }
+
+        if (common != nullptr)
+            break;
+    }
+
+    if (common == nullptr)
+        return &e;
+
+    std::vector<Expr*> newInputs;
+    newInputs.reserve(e.inputs.size());
+
+    int matchedChildren = 0;
+
+    for (Expr* in : e.inputs) {
+        if (in->op == OpType::Xor && in->inputs.size() >= 2 && ContainsId(*in, commonId)) {
+            matchedChildren++;
+
+            std::vector<Expr*> residual;
+            residual.reserve(in->inputs.size());
+
+            for (Expr* term : in->inputs) {
+                if (term->id.value() != commonId)
+                    residual.push_back(term);
+            }
+
+            Expr* reduced = BuildXorResidual(residual);
+
+            if (!(reduced->isConst && reduced->constValue == 0))
+                newInputs.push_back(reduced);
+        } else
+            newInputs.push_back(in);
+    }
+
+    if ((matchedChildren & 1) != 0)
+        newInputs.push_back(common);
+
+    if (newInputs.empty())
+        return Expression::ConstPool::Get(0);
+
+    if (newInputs.size() == 1)
+        return newInputs[0];
+
+    auto* n = Expression::MakeOpInterned(OpType::Xor, std::move(newInputs));
     return n;
 }
 #pragma endregion

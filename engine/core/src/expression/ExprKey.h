@@ -1,7 +1,6 @@
 #pragma once
 
 #include <BitFlow/core/ast/OpType.h>
-
 #include <vector>
 
 namespace BitFlow::Core::Expression {
@@ -12,12 +11,8 @@ struct ExprKey {
     bool isConst{false};
     uint32_t constValue{0};
 
-    bool hasSymbolId{false};
-    uint32_t symbolId{0};
-
     bool operator==(const ExprKey& other) const {
-        return op == other.op && inputs == other.inputs && isConst == other.isConst && constValue == other.constValue &&
-               hasSymbolId == other.hasSymbolId && symbolId == other.symbolId;
+        return op == other.op && inputs == other.inputs && isConst == other.isConst && constValue == other.constValue;
     }
 };
 

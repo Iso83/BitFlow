@@ -1,90 +1,207 @@
+#include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/ConstPool.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <algorithm>
+#include <unordered_map>
+#include <vector>
 
 namespace BitFlow::Core::Rules::Factorize {
 
 using Expr = AST::Expr;
 using OpType = AST::OpType;
+using namespace BitFlow::Core::Expression;
 
-#pragma region Match
-static bool Match_Xor_And_CommonFactor(const Expr& e) {
-    if (e.op != AST::OpType::Xor)
-        return false;
-
-    if (e.inputs.size() != 2)
-        return false;
-
-    Expr* left = e.inputs[0];
-    Expr* right = e.inputs[1];
-
-    if (left->op != AST::OpType::And || right->op != AST::OpType::And)
-        return false;
-
-    if (left->inputs.size() != 2 || right->inputs.size() != 2)
-        return false;
-
-    Expr* a0 = left->inputs[0];
-    Expr* a1 = left->inputs[1];
-    Expr* b0 = right->inputs[0];
-    Expr* b1 = right->inputs[1];
-
-    return (a0->id == b0->id) || (a0->id == b1->id) || (a1->id == b0->id) || (a1->id == b1->id);
+static void CollectFactors(Expr* e, std::vector<Expr*>& out) {
+    if (e->op == OpType::And) {
+        for (auto* in : e->inputs)
+            out.push_back(in);
+    } else
+        out.push_back(e);
 }
-#pragma endregion
 
-#pragma region Rewrite
-static Expr* Rewrite_Xor_And_CommonFactor(Expr& e) {
-    Expr* left = e.inputs[0];
-    Expr* right = e.inputs[1];
-
-    Expr* a0 = left->inputs[0];
-    Expr* a1 = left->inputs[1];
-    Expr* b0 = right->inputs[0];
-    Expr* b1 = right->inputs[1];
-
-    Expr* common = nullptr;
-    Expr* otherLeft = nullptr;
-    Expr* otherRight = nullptr;
-
-    if (a0->id == b0->id) {
-        common = a0;
-        otherLeft = a1;
-        otherRight = b1;
-    } else if (a0->id == b1->id) {
-        common = a0;
-        otherLeft = a1;
-        otherRight = b0;
-    } else if (a1->id == b0->id) {
-        common = a1;
-        otherLeft = a0;
-        otherRight = b1;
-    } else {
-        common = a1;
-        otherLeft = a0;
-        otherRight = b0;
+static bool ContainsId(const Expr& e, uint32_t id) {
+    for (const Expr* in : e.inputs) {
+        if (in->id.value() == id)
+            return true;
     }
 
-    Expr* innerXor = new Expr{};
-    innerXor->op = OpType::Xor;
-    innerXor->inputs = {otherLeft, otherRight};
-
-    Expr* result = new Expr{};
-    result->op = OpType::And;
-    result->inputs = {common, innerXor};
-
-    return result;
+    return false;
 }
-#pragma endregion
+
+static Expr* BuildAndNode(const std::vector<Expr*>& terms) {
+    if (terms.empty())
+        return ConstPool::Get(1);
+
+    if (terms.size() == 1)
+        return terms[0];
+
+    return MakeOpInterned(OpType::And, terms);
+}
+
+static Expr* BuildXorNode(const std::vector<Expr*>& terms) {
+    if (terms.empty())
+        return ConstPool::Get(0);
+
+    if (terms.size() == 1)
+        return terms[0];
+
+    return MakeOpInterned(OpType::Xor, terms);
+}
+
+static Expr* BuildResidualWithoutId(const Expr& andExpr, uint32_t factorId) {
+    std::vector<Expr*> residual;
+    residual.reserve(andExpr.inputs.size());
+
+    bool removed = false;
+    for (Expr* in : andExpr.inputs) {
+        if (!removed && in->id.value() == factorId) {
+            removed = true;
+            continue;
+        }
+
+        residual.push_back(in);
+    }
+
+    return BuildAndNode(residual);
+}
+
+static uint32_t FindBestCommonFactorId(const Expr& e) {
+    std::unordered_map<uint32_t, size_t> counts;
+
+    for (const Expr* term : e.inputs) {
+        if (term->op != OpType::And || term->inputs.size() < 2)
+            continue;
+
+        std::vector<uint32_t> seenInBranch;
+        seenInBranch.reserve(term->inputs.size());
+
+        for (const Expr* in : term->inputs) {
+            const uint32_t id = in->id.value();
+
+            if (std::find(seenInBranch.begin(), seenInBranch.end(), id) != seenInBranch.end())
+                continue;
+
+            seenInBranch.push_back(id);
+            counts[id]++;
+        }
+    }
+
+    uint32_t bestId = 0;
+    size_t bestCount = 0;
+
+    for (const auto& [id, count] : counts) {
+        if (count < 2)
+            continue;
+
+        if (bestId == 0 || count > bestCount || (count == bestCount && id < bestId)) {
+            bestId = id;
+            bestCount = count;
+        }
+    }
+
+    return bestId;
+}
+
+static bool Match_Xor_And(const Expr& e) {
+    if (e.op != OpType::Xor || e.inputs.size() < 2)
+        return false;
+
+    std::unordered_map<Expr*, int> factorCount;
+
+    for (Expr* term : e.inputs) {
+        std::vector<Expr*> factors;
+        CollectFactors(term, factors);
+
+        for (Expr* f : factors) {
+            factorCount[f]++;
+            if (factorCount[f] >= 2)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+static Expr* Rewrite_Xor_And(Expr& e) {
+    std::unordered_map<Expr*, std::vector<Expr*>> factorMap;
+
+    for (Expr* term : e.inputs) {
+        std::vector<Expr*> factors;
+        CollectFactors(term, factors);
+
+        for (Expr* f : factors)
+            factorMap[f].push_back(term);
+    }
+
+    for (auto& [common, terms] : factorMap) {
+        if (terms.size() < 2)
+            continue;
+
+        std::vector<Expr*> newXorInputs;
+
+        for (Expr* term : terms) {
+            std::vector<Expr*> factors;
+            CollectFactors(term, factors);
+
+            std::vector<Expr*> rest;
+            for (Expr* f : factors) {
+                if (f != common)
+                    rest.push_back(f);
+            }
+
+            if (rest.empty())
+                newXorInputs.push_back(ConstPool::Get(1));
+            else if (rest.size() == 1)
+                newXorInputs.push_back(rest[0]);
+            else
+                newXorInputs.push_back(MakeOpInterned(OpType::And, rest));
+        }
+
+        Expr* newXor;
+        if (newXorInputs.size() == 1)
+            newXor = newXorInputs[0];
+        else
+            newXor = Expression::MakeOpInterned(OpType::Xor, newXorInputs);
+
+        Expr* newAnd = Expression::MakeOpInterned(OpType::And, {common, newXor});
+
+        std::vector<Expr*> finalInputs;
+        finalInputs.reserve(e.inputs.size());
+
+        finalInputs.push_back(newAnd);
+
+        for (Expr* term : e.inputs) {
+            bool isFactored = false;
+            for (Expr* t : terms) {
+                if (t == term) {
+                    isFactored = true;
+                    break;
+                }
+            }
+
+            if (!isFactored)
+                finalInputs.push_back(term);
+        }
+
+        if (finalInputs.size() == 1)
+            return finalInputs[0];
+
+        return Expression::MakeOpInterned(OpType::Xor, finalInputs);
+    }
+
+    return nullptr;
+}
 
 Rule Get_Xor_And_Rule() {
     return Rule{RuleId::Factorize_XorAnd,
-                &Match_Xor_And_CommonFactor,
-                &Rewrite_Xor_And_CommonFactor,
+                &Match_Xor_And,
+                &Rewrite_Xor_And,
                 Stage_Factorize,
-                {RuleId::Normalize_Flatten}};
+                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize

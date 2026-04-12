@@ -3,15 +3,27 @@
 namespace BitFlow::Core::AST {
 
 enum class OpType {
-    Add,
-    Xor,
+    // --- Leaf ---
+    Var,
+    Const,
+
+    // --- Unary ---
+    Not,
+
+    // --- Bitwise ---
     And,
     Or,
-    Not,
-    // later:
+    Xor,
+
+    // --- Arithmetic ---
+    Add,
+
+    // --- Bit ops ---
+    RotR,
+
+    // --- SHA / higher-level ---
     Ch,
     Maj,
-    RotR,
 };
 
 } // namespace BitFlow::Core::AST

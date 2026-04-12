@@ -146,6 +146,7 @@ static Expr* Rewrite_Or_Fold(Expr& e) {
 static Expr* Rewrite_Xor_Fold(Expr& e) {
     uint32_t acc = 0;
     std::vector<Expr*> nonConst;
+    nonConst.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
         if (in->isConst)
@@ -154,18 +155,11 @@ static Expr* Rewrite_Xor_Fold(Expr& e) {
             nonConst.push_back(in);
     }
 
-    if (acc != 0) {
-        Expr* c = Expression::ConstPool::Get(acc);
-        nonConst.push_back(c);
-    }
+    if (acc != 0)
+        nonConst.push_back(Expression::ConstPool::Get(acc));
 
-    if (nonConst.empty()) {
-        Expr* c = new Expr{};
-        c->isConst = true;
-        c->constValue = acc;
-        c->id = Ids::ExprId{999998};
-        return c;
-    }
+    if (nonConst.empty())
+        return Expression::ConstPool::Get(0);
 
     if (nonConst.size() == 1)
         return nonConst[0];

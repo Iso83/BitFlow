@@ -13,10 +13,6 @@ std::size_t ExprKeyHash::operator()(const ExprKey& k) const {
     h ^= std::hash<bool>()(k.isConst);
     h ^= std::hash<uint32_t>()(k.constValue);
 
-    h ^= std::hash<bool>()(k.hasSymbolId);
-    if (k.hasSymbolId)
-        h ^= std::hash<uint32_t>()(k.symbolId + 0x9e3779b9u + (h << 6) + (h >> 2));
-
     return h;
 }
 

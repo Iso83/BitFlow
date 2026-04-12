@@ -31,6 +31,11 @@ inline void Add_Bitwise_Simplify_Pipeline(RuleEngine& engine) {
     // - Complement works best after cancel/idempotent
     // =========================================================
 
+    // --- NOT Transformations ---
+    engine.AddRule(Simplify::Get_NotPushdown_Rule());
+    engine.AddRule(Simplify::Get_Not_Rule());
+    engine.AddRule(Simplify::Get_Not_Xor_Rule());
+
     // --- Cancellation / Deduplication ---
     engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
     engine.AddRule(Simplify::Get_And_Cancel_Rule());
@@ -46,9 +51,20 @@ inline void Add_Bitwise_Simplify_Pipeline(RuleEngine& engine) {
 
     // --- Structural Simplifications ---
     engine.AddRule(Simplify::Get_Idempotent_Rule());
+    engine.AddRule(Simplify::Get_And_Idempotent_Rule());
 
     // --- Logical Completion ---
     engine.AddRule(Simplify::Get_Complement_Rule());
+
+    // --- Simplify - Dominance ---
+    engine.AddRule(Simplify::Get_And_ZeroDominance_Rule());
+    engine.AddRule(Simplify::Get_And_OneIdentity_Rule());
+    engine.AddRule(Simplify::Get_Or_OneDominance_Rule());
+    engine.AddRule(Simplify::Get_Or_ZeroIdentity_Rule());
+
+    // --- CH / MAJ Pattern Simplification ---
+    engine.AddRule(Simplify::Get_CH_Simplify_Rule());
+    engine.AddRule(Simplify::Get_MAJ_Simplify_Rule());
 
     // =========================================================
     // 3. Factorize (STRUCTURE REWRITE)
@@ -72,7 +88,7 @@ inline void Add_Bitwise_Simplify_Pipeline(RuleEngine& engine) {
     engine.AddRule(Factorize::Get_Or_Absorb_Rule());
 
     // --- Optional (disabled by default due to growth) ---
-    // engine.AddRule(Factorize::Get_And_Distribute_Rule());
+    // engine.AddRule(Factorize::Get_Distribute_Rule());
 }
 
 } // namespace BitFlow::Core::Rules

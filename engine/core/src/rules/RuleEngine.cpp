@@ -4,10 +4,15 @@
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <BitFlow/core/rules/RuleEngine.h>
+#include <algorithm>
 
 namespace BitFlow::Core::Rules {
 
 using Expr = AST::Expr;
+
+RuleEngine::RuleEngine() {
+    AST::ExprIntern::Reset();
+}
 
 void RuleEngine::AddRule(const Rule& rule) {
 #ifndef NDEBUG
@@ -18,6 +23,9 @@ void RuleEngine::AddRule(const Rule& rule) {
             throw RuleOrderException("Rule stage regression");
     }
 #endif
+
+    if (HasRule(rule.id))
+        throw std::runtime_error("Duplicate rule");
 
     if (!ValidateRule(rule))
         throw std::runtime_error("Rule validation failed");
@@ -42,6 +50,9 @@ Expr* RuleEngine::ApplyOnce(Expr* expr) const {
             if (r.match(*expr)) {
                 Expr* next = r.rewrite(*expr);
 
+                if (!next)
+                    continue;
+
                 if (next != expr) {
                     expr = next;
                     changed = true;
@@ -51,7 +62,7 @@ Expr* RuleEngine::ApplyOnce(Expr* expr) const {
         }
     }
 
-    return AST::ExprIntern::Intern(expr);
+    return expr;
 }
 
 Expr* RuleEngine::ApplyRecursive(Expr* expr) const {
@@ -76,15 +87,18 @@ Expr* RuleEngine::ApplyRecursive(Expr* expr) const {
         n->constValue = expr->constValue;
         n->inputs = std::move(newInputs);
 
-        current = n;
+        current = AST::ExprIntern::Intern(n);
     }
 
     return ApplyOnce(current);
 }
 
 Expr* RuleEngine::ApplyUntilStable(Expr* expr) const {
+    expr = AST::ExprIntern::Intern(expr);
+
     while (true) {
         Expr* next = ApplyRecursive(expr);
+        next = AST::ExprIntern::Intern(next);
 
         if (next == expr)
             return expr;

@@ -1,9 +1,11 @@
+#include "expression/ExprClone.h"
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <algorithm>
+#include <vector>
 
 namespace BitFlow::Core::Rules::Normalize {
 
@@ -25,9 +27,14 @@ static bool Match_Order(const Expr& e) {
 }
 
 static Expr* Rewrite_Order(Expr& e) {
-    std::sort(e.inputs.begin(), e.inputs.end(), [](Expr* a, Expr* b) { return a->id.value() < b->id.value(); });
+    std::vector<Expr*> sorted = e.inputs;
 
-    return &e;
+    std::sort(sorted.begin(), sorted.end(), [](Expr* a, Expr* b) { return a->id.value() < b->id.value(); });
+
+    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    target->inputs = std::move(sorted);
+
+    return target;
 }
 
 Rule Get_Order_Rule() {

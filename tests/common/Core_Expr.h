@@ -7,10 +7,10 @@
 
 namespace BitFlow::Core::Testing {
 
-static AST::Expr* MakeVar(uint32_t id, AST::OpType op) {
+static AST::Expr* MakeVar(uint32_t id) {
     AST::Expr* e = new AST::Expr{};
     e->id = Ids::ExprId{id};
-    e->op = op;
+    e->op = AST::OpType::Var;
     return e;
 }
 

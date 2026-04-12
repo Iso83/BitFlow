@@ -38,6 +38,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
 
 if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_Dedup)
+    bf_add_module_test(BitFlowCore core BF_ExprIntern_KeyBuilder)
 
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order) 
@@ -48,6 +49,9 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_Not)
     bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_Idempotent)
     bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_Complement)
+    bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_Dominance)
+    bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_CH)
+    bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_MAJ)
     bf_add_module_test(BitFlowCore core/rules/factorize BF_Rules_Absorb)
     bf_add_module_test(BitFlowCore core/rules/factorize BF_Rules_Cancel_Factorize)
     bf_add_module_test(BitFlowCore core/rules/factorize BF_Rules_CommonFactor)

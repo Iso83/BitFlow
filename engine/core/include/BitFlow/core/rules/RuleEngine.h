@@ -15,6 +15,7 @@ class RuleEngine {
     std::unordered_set<RuleId> m_present;
 
   public:
+    RuleEngine();
     virtual ~RuleEngine() = default;
 
     virtual void AddRule(const Rule& rule);

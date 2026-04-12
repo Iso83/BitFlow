@@ -4,8 +4,12 @@ namespace BitFlow::Core::Rules {
 
 enum RuleStage {
     Stage_Normalize = 0, // flatten/order
-    Stage_Simplify = 1,  // zero/fold/cancel
-    Stage_Factorize = 2  // patterns
+
+    // Simplify - zero/fold/cancel
+    Stage_Simplify_Pushdown = 1,
+    Stage_Simplify = 2,
+
+    Stage_Factorize = 3 // patterns
 };
 
 } // namespace BitFlow::Core::Rules

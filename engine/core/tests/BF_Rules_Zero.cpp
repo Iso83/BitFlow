@@ -7,7 +7,7 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
 int TestAndZero() {
-    auto x = MakeVar(1, OpType::Add);
+    auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
 
     auto add1 = MakeOp(3, OpType::Add, {x, zero});
@@ -24,7 +24,7 @@ int TestAndZero() {
 }
 
 int TestXorZero() {
-    auto x = MakeVar(10, OpType::Xor);
+    auto x = MakeVar(10);
     auto zero = ConstPool::Get(0);
 
     auto xor1 = MakeOp(12, OpType::Xor, {x, zero});

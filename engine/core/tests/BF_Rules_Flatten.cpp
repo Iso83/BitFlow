@@ -7,9 +7,9 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
 int TestXorFlatten() {
-    auto x = MakeVar(1, OpType ::Xor);
-    auto y = MakeVar(2, OpType ::Xor);
-    auto z = MakeVar(3, OpType ::Xor);
+    auto x = MakeVar(1);
+    auto y = MakeVar(2);
+    auto z = MakeVar(3);
 
     auto inner = MakeOp(4, OpType::Xor, {x, y});
     auto outer = MakeOp(5, OpType::Xor, {inner, z});
@@ -26,7 +26,28 @@ int TestXorFlatten() {
     return 0;
 }
 
+int TestNotNotDoesNotFlatten() {
+    auto x = MakeVar(1);
+
+    auto inner = MakeOp(10, OpType::Not, {x});
+    auto outer = MakeOp(11, OpType::Not, {inner});
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+
+    Expr* result = engine.ApplyUntilStable(outer);
+
+    BF_TEST(result->op == OpType::Not);
+    BF_TEST(result->inputs.size() == 1);
+    BF_TEST(result->inputs[0]->op == OpType::Not);
+    BF_TEST(result->inputs[0]->inputs.size() == 1);
+    BF_TEST(result->inputs[0]->inputs[0]->id == x->id);
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestXorFlatten);
+    BF_RUN_TEST(TestNotNotDoesNotFlatten);
     return 0;
 }

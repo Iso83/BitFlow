@@ -1,56 +1,119 @@
+#include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/ConstPool.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <vector>
 
 namespace BitFlow::Core::Rules::Factorize {
 
 using Expr = AST::Expr;
 using OpType = AST::OpType;
 
+#pragma region Helpers
+
+static Expr* BuildAnd(Expr* a, Expr* b) {
+    if (a->isConst && a->constValue == 0)
+        return a;
+
+    if (b->isConst && b->constValue == 0)
+        return b;
+
+    if (a->isConst && a->constValue == 1)
+        return b;
+
+    if (b->isConst && b->constValue == 1)
+        return a;
+
+    auto* n = Expression::MakeOpInterned(OpType::And, {a, b});
+    return n;
+}
+
+static Expr* BuildXor(const std::vector<Expr*>& inputs) {
+    if (inputs.empty())
+        return Expression::ConstPool::Get(0);
+
+    if (inputs.size() == 1)
+        return inputs[0];
+
+    Expr* n = Expression::MakeOpInterned(OpType::Xor, inputs);
+    return n;
+}
+
+#pragma endregion
+
 #pragma region Match
-static bool Match_And_Distribute(const Expr& e) {
+
+static bool Match_Distribute_And_Over_Xor(const Expr& e) {
     if (e.op != OpType::And)
         return false;
 
-    if (e.inputs.size() != 2)
+    if (e.inputs.size() < 2)
         return false;
 
-    Expr* a = e.inputs[0];
-    Expr* b = e.inputs[1];
+    for (const Expr* in : e.inputs) {
+        if (in->op == OpType::Xor && in->inputs.size() >= 2)
+            return true;
+    }
 
-    return (a->op == OpType::Or && a->inputs.size() == 2) || (b->op == OpType::Or && b->inputs.size() == 2);
+    return false;
 }
+
 #pragma endregion
 
 #pragma region Rewrite
-static Expr* Rewrite_And_Distribute(Expr& e) {
-    Expr* a = e.inputs[0];
-    Expr* b = e.inputs[1];
 
-    Expr* orNode = (a->op == OpType::Or) ? a : b;
-    Expr* other = (a->op == OpType::Or) ? b : a;
+static Expr* Rewrite_Distribute_And_Over_Xor(Expr& e) {
+    Expr* xorNode = nullptr;
 
-    Expr* result = new Expr{};
-    result->op = OpType::Or;
-
-    for (Expr* term : orNode->inputs) {
-        Expr* andNode = new Expr{};
-        andNode->op = OpType::And;
-        andNode->inputs = {other, term};
-
-        result->inputs.push_back(andNode);
+    for (Expr* in : e.inputs) {
+        if (in->op == OpType::Xor && in->inputs.size() >= 2) {
+            xorNode = in;
+            break;
+        }
     }
 
-    return result;
+    if (xorNode == nullptr)
+        return &e;
+
+    std::vector<Expr*> others;
+    others.reserve(e.inputs.size());
+
+    for (Expr* in : e.inputs) {
+        if (in != xorNode)
+            others.push_back(in);
+    }
+
+    std::vector<Expr*> distributed;
+    distributed.reserve(xorNode->inputs.size());
+
+    for (Expr* term : xorNode->inputs) {
+        Expr* acc = term;
+
+        for (Expr* other : others)
+            acc = BuildAnd(acc, other);
+
+        distributed.push_back(acc);
+    }
+
+    if (distributed.empty())
+        return Expression::ConstPool::Get(0);
+
+    if (distributed.size() == 1)
+        return distributed[0];
+
+    auto* n = Expression::MakeOpInterned(OpType::Xor, std::move(distributed));
+    return n;
 }
+
 #pragma endregion
 
-Rule Get_And_Distribute_Rule() {
-    return Rule{RuleId::Factorize_AndDistribute,
-                &Match_And_Distribute,
-                &Rewrite_And_Distribute,
+Rule Get_Distribute_Rule() {
+    return Rule{RuleId::Factorize_Distribute,
+                &Match_Distribute_And_Over_Xor,
+                &Rewrite_Distribute_And_Over_Xor,
                 Stage_Factorize,
                 {RuleId::Normalize_Flatten}};
 }
