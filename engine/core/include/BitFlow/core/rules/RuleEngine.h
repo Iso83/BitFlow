@@ -1,6 +1,7 @@
 #pragma once
 
 #include <BitFlow/core/rules/Rule.h>
+#include <functional>
 #include <unordered_set>
 #include <vector>
 
@@ -10,6 +11,12 @@ struct Expr;
 
 namespace BitFlow::Core::Rules {
 class RuleEngine {
+  public:
+    using DebugCallback = std::function<void(const AST::Expr* before, const AST::Expr* after, RuleId)>;
+
+  private:
+    DebugCallback m_debugCallback;
+
   protected:
     std::vector<Rule> m_rules;
     std::unordered_set<RuleId> m_present;
@@ -22,6 +29,8 @@ class RuleEngine {
     AST::Expr* ApplyOnce(AST::Expr* expr) const;
     AST::Expr* ApplyRecursive(AST::Expr* expr) const;
     AST::Expr* ApplyUntilStable(AST::Expr* expr) const;
+
+    void SetDebugCallback(DebugCallback cb);
 
   protected:
     bool HasRule(RuleId id) const {

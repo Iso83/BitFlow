@@ -37,3 +37,4 @@ if(TARGET nlohmann_json)
 endif()
 
 add_subdirectory(engine/core)
+add_subdirectory(engine/io)

@@ -48,12 +48,18 @@ Expr* RuleEngine::ApplyOnce(Expr* expr) const {
 
         for (const auto& r : m_rules) {
             if (r.match(*expr)) {
+                Expr* before = expr;
+
                 Expr* next = r.rewrite(*expr);
 
                 if (!next)
                     continue;
 
                 if (next != expr) {
+                    if (m_debugCallback) {
+                        m_debugCallback(before, next, r.id);
+                    }
+
                     expr = next;
                     changed = true;
                     break;
@@ -88,7 +94,8 @@ Expr* RuleEngine::ApplyRecursive(Expr* expr) const {
         n->inputs = std::move(newInputs);
 
         current = AST::ExprIntern::Intern(n);
-    }
+    } else
+        current = AST::ExprIntern::Intern(current);
 
     return ApplyOnce(current);
 }
@@ -105,6 +112,10 @@ Expr* RuleEngine::ApplyUntilStable(Expr* expr) const {
 
         expr = next;
     }
+}
+
+void RuleEngine::SetDebugCallback(DebugCallback cb) {
+    m_debugCallback = std::move(cb);
 }
 
 } // namespace BitFlow::Core::Rules
