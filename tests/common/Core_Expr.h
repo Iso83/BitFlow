@@ -25,7 +25,7 @@ static AST::Expr* MakeOp(uint32_t id, AST::OpType op, std::initializer_list<AST:
 static AST::Expr* MakeConst(uint32_t id, uint32_t v) {
     AST::Expr* e = new AST::Expr{};
     e->id = Ids::ExprId{id};
-    e->isConst = true;
+    e->op = AST::OpType::Const;
     e->constValue = v;
     return e;
 }

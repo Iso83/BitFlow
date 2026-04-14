@@ -1,5 +1,6 @@
 #include "RuleOrderException.h"
 #include "ast/ExprIntern.h"
+#include "expression/ExprClone.h"
 
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
@@ -49,11 +50,13 @@ Expr* RuleEngine::ApplyOnce(Expr* expr) const {
         for (const auto& r : m_rules) {
             if (r.match(*expr)) {
                 Expr* before = expr;
-
-                Expr* next = r.rewrite(*expr);
+                Expr* mutableInput = Expression::CloneExpr(expr);
+                Expr* next = r.rewrite(*mutableInput);
 
                 if (!next)
                     continue;
+
+                next = AST::ExprIntern::Intern(next);
 
                 if (next != expr) {
                     if (m_debugCallback) {
@@ -89,7 +92,6 @@ Expr* RuleEngine::ApplyRecursive(Expr* expr) const {
     if (changed) {
         Expr* n = new Expr{};
         n->op = expr->op;
-        n->isConst = expr->isConst;
         n->constValue = expr->constValue;
         n->inputs = std::move(newInputs);
 

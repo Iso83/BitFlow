@@ -25,7 +25,7 @@ static bool Match_Not(const Expr& e) {
     if (in->op == AST::OpType::Not && in->inputs.size() == 1)
         return true;
 
-    if (in->isConst)
+    if (in->isConst())
         return true;
 
     return false;
@@ -74,7 +74,7 @@ static Expr* Rewrite_Not(Expr& e) {
     if (in->op == AST::OpType::Not && in->inputs.size() == 1)
         return in->inputs[0];
 
-    if (in->isConst)
+    if (in->isConst())
         return Expression::ConstPool::Get(~in->constValue);
 
     return nullptr;

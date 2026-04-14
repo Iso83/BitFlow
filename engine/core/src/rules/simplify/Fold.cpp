@@ -22,7 +22,7 @@ static bool Match_Add_Fold(const Expr& e) {
     int constCount = 0;
 
     for (const Expr* in : e.inputs) {
-        if (in->isConst)
+        if (in->isConst())
             constCount++;
     }
 
@@ -59,7 +59,7 @@ static bool Match_Xor_Fold(const Expr& e) {
     int constCount = 0;
 
     for (const Expr* in : e.inputs) {
-        if (in->isConst)
+        if (in->isConst())
             constCount++;
     }
 
@@ -73,7 +73,7 @@ static Expr* Rewrite_Add_Fold(Expr& e) {
     std::vector<Expr*> nonConst;
 
     for (Expr* in : e.inputs) {
-        if (in->isConst)
+        if (in->isConst())
             acc += in->constValue;
         else
             nonConst.push_back(in);
@@ -90,7 +90,7 @@ static Expr* Rewrite_Add_Fold(Expr& e) {
     if (nonConst.size() == 1)
         return nonConst[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(nonConst);
     return target;
 }
@@ -99,10 +99,10 @@ static Expr* Rewrite_And_Fold(Expr& e) {
     std::vector<Expr*> newInputs;
 
     for (Expr* in : e.inputs) {
-        if (in->isConst && in->constValue == 0)
+        if (in->isConst() && in->constValue == 0)
             return Expression::ConstPool::Get(0);
 
-        if (in->isConst && in->constValue == 1)
+        if (in->isConst() && in->constValue == 1)
             continue;
 
         newInputs.push_back(in);
@@ -114,7 +114,7 @@ static Expr* Rewrite_And_Fold(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }
@@ -123,10 +123,10 @@ static Expr* Rewrite_Or_Fold(Expr& e) {
     std::vector<Expr*> newInputs;
 
     for (Expr* in : e.inputs) {
-        if (in->isConst && in->constValue == 1)
+        if (in->isConst() && in->constValue == 1)
             return Expression::ConstPool::Get(1);
 
-        if (in->isConst && in->constValue == 0)
+        if (in->isConst() && in->constValue == 0)
             continue;
 
         newInputs.push_back(in);
@@ -138,7 +138,7 @@ static Expr* Rewrite_Or_Fold(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }
@@ -149,7 +149,7 @@ static Expr* Rewrite_Xor_Fold(Expr& e) {
     nonConst.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (in->isConst)
+        if (in->isConst())
             acc ^= in->constValue;
         else
             nonConst.push_back(in);
@@ -164,7 +164,7 @@ static Expr* Rewrite_Xor_Fold(Expr& e) {
     if (nonConst.size() == 1)
         return nonConst[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(nonConst);
     return target;
 }

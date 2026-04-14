@@ -70,7 +70,7 @@ static Expr* Rewrite_Idempotent(Expr& e) {
     if (unique.size() == 1)
         return unique[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(unique);
     return target;
 }
@@ -89,8 +89,9 @@ static Expr* Rewrite_And_Idempotent(Expr& e) {
     if (unique.size() == 1)
         return unique[0];
 
-    e.inputs = std::move(unique);
-    return &e;
+    Expr* target = Expression::CloneExpr(&e);
+    target->inputs = std::move(unique);
+    return target;
 }
 #pragma endregion
 

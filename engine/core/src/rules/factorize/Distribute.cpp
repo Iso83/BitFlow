@@ -15,16 +15,16 @@ using OpType = AST::OpType;
 #pragma region Helpers
 
 static Expr* BuildAnd(Expr* a, Expr* b) {
-    if (a->isConst && a->constValue == 0)
+    if (a->isConst() && a->constValue == 0)
         return a;
 
-    if (b->isConst && b->constValue == 0)
+    if (b->isConst() && b->constValue == 0)
         return b;
 
-    if (a->isConst && a->constValue == 1)
+    if (a->isConst() && a->constValue == 1)
         return b;
 
-    if (b->isConst && b->constValue == 1)
+    if (b->isConst() && b->constValue == 1)
         return a;
 
     auto* n = Expression::MakeOpInterned(OpType::And, {a, b});
@@ -76,7 +76,7 @@ static Expr* Rewrite_Distribute_And_Over_Xor(Expr& e) {
     }
 
     if (xorNode == nullptr)
-        return &e;
+        return nullptr;
 
     std::vector<Expr*> others;
     others.reserve(e.inputs.size());

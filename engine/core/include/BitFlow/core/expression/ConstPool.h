@@ -1,7 +1,6 @@
 #pragma once
 
 #include <BitFlow/core/ast/Expression.h>
-
 #include <unordered_map>
 
 namespace BitFlow::Core::Expression {
@@ -14,7 +13,7 @@ class ConstPool {
             return it->second;
 
         AST::Expr* e = new AST::Expr{};
-        e->isConst = true;
+        e->op = AST::OpType::Const;
         e->constValue = value;
         e->id = Ids::ExprId{NextId()};
 

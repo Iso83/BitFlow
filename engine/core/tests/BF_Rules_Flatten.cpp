@@ -19,6 +19,7 @@ int TestXorFlatten() {
 
     Expr* result = engine.ApplyUntilStable(outer);
 
+    BF_TEST(result != outer);
     BF_TEST(result->inputs.size() == 3);
     BF_TEST(result->inputs[0]->id == x->id);
     BF_TEST(result->inputs[1]->id == y->id);

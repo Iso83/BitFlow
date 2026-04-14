@@ -76,7 +76,7 @@ static bool Match_XorCancel(const Expr& e) {
     uint32_t constParity = 0;
 
     for (const Expr* in : e.inputs) {
-        if (in->isConst)
+        if (in->isConst())
             constParity ^= in->constValue;
     }
 
@@ -84,7 +84,7 @@ static bool Match_XorCancel(const Expr& e) {
         return true;
 
     for (size_t i = 1; i < e.inputs.size(); ++i) {
-        if (!e.inputs[i]->isConst && !e.inputs[i - 1]->isConst &&
+        if (!e.inputs[i]->isConst() && !e.inputs[i - 1]->isConst() &&
             e.inputs[i - 1]->id.value() == e.inputs[i]->id.value())
             return true;
     }
@@ -117,7 +117,7 @@ static Expr* Rewrite_And_Cancel(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+    Expr* target = CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }
@@ -145,7 +145,7 @@ static Expr* Rewrite_Or_Cancel(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+    Expr* target = CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }
@@ -160,14 +160,14 @@ static Expr* Rewrite_XorCancel(Expr& e) {
     while (i < e.inputs.size()) {
         Expr* cur = e.inputs[i];
 
-        if (cur->isConst) {
+        if (cur->isConst()) {
             constParity ^= cur->constValue;
             ++i;
             continue;
         }
 
         size_t j = i + 1;
-        while (j < e.inputs.size() && !e.inputs[j]->isConst && e.inputs[j]->id.value() == cur->id.value())
+        while (j < e.inputs.size() && !e.inputs[j]->isConst() && e.inputs[j]->id.value() == cur->id.value())
             ++j;
 
         const size_t count = j - i;
