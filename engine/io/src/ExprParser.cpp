@@ -101,11 +101,11 @@ class PrattParser {
 
     static bool IsPrefixToken(TokenKind kind) {
         return kind == TokenKind::Identifier || kind == TokenKind::DecimalLiteral || kind == TokenKind::HexLiteral ||
-               kind == TokenKind::LeftParen || kind == TokenKind::Tilde;
+               kind == TokenKind::LeftParen || kind == TokenKind::Tilde || kind == TokenKind::Minus;
     }
 
     static std::uint8_t PrefixBindingPower(TokenKind kind) {
-        if (kind == TokenKind::Tilde)
+        if (kind == TokenKind::Tilde || kind == TokenKind::Minus)
             return 70;
 
         return 0;
@@ -113,6 +113,33 @@ class PrattParser {
 
     static bool TryGetInfixInfo(TokenKind kind, InfixInfo& info) {
         switch (kind) {
+        case TokenKind::Star:
+            info = InfixInfo{60, Assoc::Left, OpType::Mul};
+            return true;
+        case TokenKind::Slash:
+            info = InfixInfo{60, Assoc::Left, OpType::Div};
+            return true;
+        case TokenKind::Percent:
+            info = InfixInfo{60, Assoc::Left, OpType::Mod};
+            return true;
+        case TokenKind::Plus:
+            info = InfixInfo{50, Assoc::Left, OpType::Add};
+            return true;
+        case TokenKind::Minus:
+            info = InfixInfo{50, Assoc::Left, OpType::Sub};
+            return true;
+        case TokenKind::ShiftLeft:
+            info = InfixInfo{40, Assoc::Left, OpType::Shl};
+            return true;
+        case TokenKind::ShiftRight:
+            info = InfixInfo{40, Assoc::Left, OpType::Shr};
+            return true;
+        case TokenKind::ShiftRightUnsigned:
+            info = InfixInfo{40, Assoc::Left, OpType::UShr};
+            return true;
+        case TokenKind::ShiftLeftUnsigned:
+            info = InfixInfo{40, Assoc::Left, OpType::UShl};
+            return true;
         case TokenKind::Ampersand:
             info = InfixInfo{30, Assoc::Left, OpType::And};
             return true;
@@ -175,6 +202,11 @@ class PrattParser {
             const std::uint8_t unaryBindingPower = PrefixBindingPower(token.kind);
             Expr* inner = ParseExpression(unaryBindingPower);
             return MakeOp(OpType::Not, {inner});
+        }
+        case TokenKind::Minus: {
+            const std::uint8_t unaryBindingPower = PrefixBindingPower(token.kind);
+            Expr* inner = ParseExpression(unaryBindingPower);
+            return MakeOp(OpType::Neg, {inner});
         }
         default:
             throw ParseErrorAt("Expected expression", token);
