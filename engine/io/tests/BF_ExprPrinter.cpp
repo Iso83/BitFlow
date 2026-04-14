@@ -79,6 +79,12 @@ int TestExprPrinter_PrecedenceAwareParentheses() {
     return 0;
 }
 
+    auto parsedF = BitFlow::IO::Parse("~(a & b)");
+    BF_TEST(BitFlow::IO::ToString(parsedF.root, parsedF.idToName) == "~(a & b)");
+
+    auto parsedG = BitFlow::IO::Parse("-(-a)");
+    BF_TEST(BitFlow::IO::ToString(parsedG.root, parsedG.idToName) == "--a");
+
 int main() {
     BF_RUN_TEST(TestExprPrinter_WithCustomNames);
     BF_RUN_TEST(TestExprPrinter_FromParserNames);
