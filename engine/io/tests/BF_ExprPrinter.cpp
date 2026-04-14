@@ -1,32 +1,38 @@
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <BitFlow/io/ExprParser.h>
 #include <BitFlow/io/ExprPrinter.h>
-#include <iostream>
+#include <Core_Expr.h>
+#include <TestAssert.h>
 
-using namespace BitFlow::Core::Rules;
-using namespace BitFlow::Core::AST;
+#include <unordered_map>
+
+using namespace BitFlow::Core::Testing;
+
+int TestExprPrinter_WithCustomNames() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto c = MakeVar(3);
+
+    auto andExpr = MakeOp(10, OpType::And, {a, b});
+    auto notExpr = MakeOp(11, OpType::Not, {c});
+    auto expr = MakeOp(12, OpType::Xor, {andExpr, notExpr});
+
+    std::unordered_map<uint32_t, std::string> names{{1, "a"}, {2, "b"}, {3, "c"}};
+    auto text = BitFlow::IO::ToString(expr, names);
+
+    BF_TEST(text == "((a & b) ^ ~(c))");
+    return 0;
+}
+
+int TestExprPrinter_FromParserNames() {
+    auto parsed = BitFlow::IO::Parse("a ^ b & c");
+    auto text = BitFlow::IO::ToString(parsed.root, parsed.idToName);
+
+    BF_TEST(text == "(a ^ (b & c))");
+    return 0;
+}
 
 int main() {
-    std::string line;
-
-    while (true) {
-        std::cout << "> ";
-        if (!std::getline(std::cin, line))
-            break;
-
-        auto parsed = BitFlow::IO::Parse(line);
-
-        RuleEngine engine;
-        engine.SetDebugCallback([&](const Expr* before, const Expr* after, RuleId id) {
-            std::cout << "[" << (int)id << "] " << BitFlow::IO::ToString(before, parsed.idToName) << " -> "
-                      << BitFlow::IO::ToString(after, parsed.idToName) << "\n";
-        });
-
-        Add_Bitwise_Simplify_Pipeline(engine);
-
-        auto* result = engine.ApplyUntilStable(parsed.root);
-
-        std::cout << BitFlow::IO::ToString(result, parsed.idToName) << std::endl;
-    }
+    BF_RUN_TEST(TestExprPrinter_WithCustomNames);
+    BF_RUN_TEST(TestExprPrinter_FromParserNames);
+    return 0;
 }
