@@ -38,6 +38,17 @@ static void Print(const Expr* e, std::ostringstream& out, const std::unordered_m
         return;
     }
 
+    if (e->op == OpType::Ch || e->op == OpType::Maj) {
+        out << (e->op == OpType::Ch ? "ch(" : "maj(");
+        Print(e->inputs[0], out, names);
+        out << ", ";
+        Print(e->inputs[1], out, names);
+        out << ", ";
+        Print(e->inputs[2], out, names);
+        out << ")";
+        return;
+    }
+
     const char* op = "?";
     switch (e->op) {
     case OpType::And:

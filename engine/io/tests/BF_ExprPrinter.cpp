@@ -52,10 +52,25 @@ int TestExprPrinter_Roundtrip_ArithmeticShiftAndCalls() {
     return 0;
 }
 
+int TestExprPrinter_SupportsShaCalls() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto c = MakeVar(3);
+
+    auto chExpr = MakeOp(10, OpType::Ch, {a, b, c});
+    auto majExpr = MakeOp(11, OpType::Maj, {a, b, c});
+
+    std::unordered_map<uint32_t, std::string> names{{1, "a"}, {2, "b"}, {3, "c"}};
+    BF_TEST(BitFlow::IO::ToString(chExpr, names) == "ch(a, b, c)");
+    BF_TEST(BitFlow::IO::ToString(majExpr, names) == "maj(a, b, c)");
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestExprPrinter_WithCustomNames);
     BF_RUN_TEST(TestExprPrinter_FromParserNames);
     BF_RUN_TEST(TestExprPrinter_Roundtrip_Bitwise);
     BF_RUN_TEST(TestExprPrinter_Roundtrip_ArithmeticShiftAndCalls);
+    BF_RUN_TEST(TestExprPrinter_SupportsShaCalls);
     return 0;
 }
