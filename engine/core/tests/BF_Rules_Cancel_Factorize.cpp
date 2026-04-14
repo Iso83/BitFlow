@@ -19,7 +19,7 @@ int TestXorXorCancelPair() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     engine.AddRule(Factorize::Get_Xor_Pair_Cancel_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
@@ -48,7 +48,7 @@ int TestXorXorCancelPair_MultiInputOddCommon() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     engine.AddRule(Factorize::Get_Xor_Pair_Cancel_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);

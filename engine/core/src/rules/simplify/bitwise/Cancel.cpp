@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify {
+namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
 using Expr = AST::Expr;
 using OpType = AST::OpType;
@@ -207,4 +207,4 @@ Rule Get_Xor_Cancel_Rule() {
                 {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify
+} // namespace BitFlow::Core::Rules::Simplify::Bitwise

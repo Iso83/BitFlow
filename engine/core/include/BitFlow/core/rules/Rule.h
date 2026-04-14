@@ -88,15 +88,12 @@ namespace Simplify {
 /// a + 0 = a
 /// a ^ 0 = a
 Rule Get_Add_Zero_Rule(); // deps: Normalize_Flatten
-Rule Get_Xor_Zero_Rule(); // deps: Normalize_Flatten
 #pragma endregion
 
 #pragma region Constant Folding
 /// Constant Folding
 /// Evaluates expressions with constant inputs.
 Rule Get_Add_Fold_Rule(); // deps: Normalize_Flatten
-Rule Get_And_Fold_Rule(); // deps: Normalize_Flatten
-Rule Get_Or_Fold_Rule();  // deps: Normalize_Flatten
 Rule Get_Xor_Fold_Rule(); // deps: Normalize_Flatten
 #pragma endregion
 
@@ -106,24 +103,11 @@ Rule Get_Xor_Fold_Rule(); // deps: Normalize_Flatten
 /// a ^ a = 0
 /// a & a = a
 /// a | a = a
-Rule Get_And_Cancel_Rule(); // deps: Normalize_Flatten
-Rule Get_Or_Cancel_Rule();  // deps: Normalize_Flatten
-
-/// Cancellation
-/// Eliminates duplicate operands.
-/// XOR uses parity cancellation over GF(2):
-/// a ^ a = 0
-/// a ^ a ^ a = a
-/// a ^ b ^ a ^ c ^ b = c
-/// AND / OR remain duplicate collapse rules.
-Rule Get_Xor_Cancel_Rule(); // deps: Normalize_Flatten, Normalize_Order
 #pragma endregion
 
 #pragma region NOT Transformations
 /// NOT Transformations
 /// Pushdown and normalization of negations.
-Rule Get_Not_Rule();
-Rule Get_NotPushdown_Rule();
 Rule Get_Not_Xor_Rule(); // deps: Normalize_Flatten
 #pragma endregion
 
@@ -132,19 +116,6 @@ Rule Get_Not_Xor_Rule(); // deps: Normalize_Flatten
 /// Duplicate inputs collapse.
 /// a & a = a
 /// a | a = a
-Rule Get_Idempotent_Rule(); // deps: Normalize_Flatten
-
-/// And Idempotent
-/// Removes duplicate operands in AND expressions.
-///
-/// Example:
-/// (a & a) → a
-/// (a & b & a) → (a & b)
-///
-/// Notes:
-/// - Requires flattened input
-/// - Works together with XOR canonicalization
-Rule Get_And_Idempotent_Rule(); // deps: Normalize_Flatten
 #pragma endregion
 
 #pragma region Complement Laws
@@ -152,7 +123,6 @@ Rule Get_And_Idempotent_Rule(); // deps: Normalize_Flatten
 /// Opposites eliminate or saturate.
 /// a & ~a = 0
 /// a | ~a = 1
-Rule Get_Complement_Rule(); // deps: Normalize_Flatten, Simplify_Idempotent
 #pragma endregion
 
 #pragma region Dominance & Identity
@@ -162,10 +132,6 @@ Rule Get_Complement_Rule(); // deps: Normalize_Flatten, Simplify_Idempotent
 /// a & 1 = a
 /// a | 1 = 1
 /// a | 0 = a
-Rule Get_And_ZeroDominance_Rule(); // deps: Normalize_Flatten
-Rule Get_And_OneIdentity_Rule();   // deps: Normalize_Flatten
-Rule Get_Or_OneDominance_Rule();   // deps: Normalize_Flatten
-Rule Get_Or_ZeroIdentity_Rule();   // deps: Normalize_Flatten
 #pragma endregion
 
 #pragma region CH Pattern Simplification
@@ -204,6 +170,44 @@ Rule Get_CH_Simplify_Rule(); // deps: Normalize_Flatten, Normalize_Order
 Rule Get_MAJ_Simplify_Rule(); // deps: Normalize_Flatten, Normalize_Order
 #pragma endregion
 } // namespace Simplify
+
+namespace Simplify::Bitwise {
+#pragma region Identity & Neutral Elements
+Rule Get_Xor_Zero_Rule(); // deps: Normalize_Flatten
+#pragma endregion
+
+#pragma region Constant Folding
+Rule Get_And_Fold_Rule(); // deps: Normalize_Flatten
+Rule Get_Or_Fold_Rule();  // deps: Normalize_Flatten
+#pragma endregion
+
+#pragma region Cancellation
+Rule Get_And_Cancel_Rule(); // deps: Normalize_Flatten
+Rule Get_Or_Cancel_Rule();  // deps: Normalize_Flatten
+Rule Get_Xor_Cancel_Rule(); // deps: Normalize_Flatten, Normalize_Order
+#pragma endregion
+
+#pragma region NOT Transformations
+Rule Get_Not_Rule();
+Rule Get_NotPushdown_Rule();
+#pragma endregion
+
+#pragma region Idempotent Laws
+Rule Get_Idempotent_Rule();     // deps: Normalize_Flatten
+Rule Get_And_Idempotent_Rule(); // deps: Normalize_Flatten
+#pragma endregion
+
+#pragma region Complement Laws
+Rule Get_Complement_Rule(); // deps: Normalize_Flatten, Simplify_Idempotent
+#pragma endregion
+
+#pragma region Dominance & Identity
+Rule Get_And_ZeroDominance_Rule(); // deps: Normalize_Flatten
+Rule Get_And_OneIdentity_Rule();   // deps: Normalize_Flatten
+Rule Get_Or_OneDominance_Rule();   // deps: Normalize_Flatten
+Rule Get_Or_ZeroIdentity_Rule();   // deps: Normalize_Flatten
+#pragma endregion
+} // namespace Simplify::Bitwise
 
 namespace Factorize {
 

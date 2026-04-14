@@ -32,35 +32,35 @@ inline void Add_Bitwise_Simplify_Pipeline(RuleEngine& engine) {
     // =========================================================
 
     // --- NOT Transformations ---
-    engine.AddRule(Simplify::Get_NotPushdown_Rule());
-    engine.AddRule(Simplify::Get_Not_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
     engine.AddRule(Simplify::Get_Not_Xor_Rule());
 
     // --- Cancellation / Deduplication ---
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
-    engine.AddRule(Simplify::Get_And_Cancel_Rule());
-    engine.AddRule(Simplify::Get_Or_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
 
     // --- Constant Folding ---
     engine.AddRule(Simplify::Get_Xor_Fold_Rule());
-    engine.AddRule(Simplify::Get_And_Fold_Rule());
-    engine.AddRule(Simplify::Get_Or_Fold_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_Fold_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Or_Fold_Rule());
 
     // --- Neutral / Zero Rules ---
-    engine.AddRule(Simplify::Get_Xor_Zero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
 
     // --- Structural Simplifications ---
-    engine.AddRule(Simplify::Get_Idempotent_Rule());
-    engine.AddRule(Simplify::Get_And_Idempotent_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_Idempotent_Rule());
 
     // --- Logical Completion ---
-    engine.AddRule(Simplify::Get_Complement_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Complement_Rule());
 
     // --- Simplify - Dominance ---
-    engine.AddRule(Simplify::Get_And_ZeroDominance_Rule());
-    engine.AddRule(Simplify::Get_And_OneIdentity_Rule());
-    engine.AddRule(Simplify::Get_Or_OneDominance_Rule());
-    engine.AddRule(Simplify::Get_Or_ZeroIdentity_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_ZeroDominance_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_OneIdentity_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Or_OneDominance_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Or_ZeroIdentity_Rule());
 
     // --- CH / MAJ Pattern Simplification ---
     engine.AddRule(Simplify::Get_CH_Simplify_Rule());

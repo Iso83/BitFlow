@@ -32,7 +32,7 @@ int TestXorZero() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Xor_Zero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
 
     Expr* result = engine.ApplyUntilStable(xor2);
 
