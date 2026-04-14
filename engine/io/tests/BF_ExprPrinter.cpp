@@ -30,8 +30,32 @@ int TestExprPrinter_FromParserNames() {
     return 0;
 }
 
+int TestExprPrinter_Roundtrip_Bitwise() {
+    auto parsedA = BitFlow::IO::Parse("a ^ b & ~c");
+    const auto printedA = BitFlow::IO::ToString(parsedA.root, parsedA.idToName);
+
+    auto parsedB = BitFlow::IO::Parse(printedA);
+    const auto printedB = BitFlow::IO::ToString(parsedB.root, parsedB.idToName);
+
+    BF_TEST(printedA == printedB);
+    return 0;
+}
+
+int TestExprPrinter_Roundtrip_ArithmeticShiftAndCalls() {
+    auto parsedA = BitFlow::IO::Parse("rotl(a + b, 3) ^ rotr(c << 1, 7)");
+    const auto printedA = BitFlow::IO::ToString(parsedA.root, parsedA.idToName);
+
+    auto parsedB = BitFlow::IO::Parse(printedA);
+    const auto printedB = BitFlow::IO::ToString(parsedB.root, parsedB.idToName);
+
+    BF_TEST(printedA == printedB);
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestExprPrinter_WithCustomNames);
     BF_RUN_TEST(TestExprPrinter_FromParserNames);
+    BF_RUN_TEST(TestExprPrinter_Roundtrip_Bitwise);
+    BF_RUN_TEST(TestExprPrinter_Roundtrip_ArithmeticShiftAndCalls);
     return 0;
 }

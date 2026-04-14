@@ -141,6 +141,20 @@ int TestExprParser_ParsesMulAddShiftBitwiseChain() {
     return 0;
 }
 
+
+int TestExprParser_ParsesNestedExpression() {
+    auto parsed = BitFlow::IO::Parse("((a + (b * c)) ^ (rotl(d, 3) & ~(e)))");
+    Expr* root = parsed.root;
+
+    BF_TEST(root->op == OpType::Xor);
+    BF_TEST(root->inputs[0]->op == OpType::Add);
+    BF_TEST(root->inputs[0]->inputs[1]->op == OpType::Mul);
+    BF_TEST(root->inputs[1]->op == OpType::And);
+    BF_TEST(root->inputs[1]->inputs[0]->op == OpType::RotL);
+    BF_TEST(root->inputs[1]->inputs[1]->op == OpType::Not);
+    return 0;
+}
+
 int TestExprParser_ParsesUnsignedShifts() {
     auto parsed = BitFlow::IO::Parse("a >>> b <<< c");
     Expr* root = parsed.root;
@@ -164,6 +178,7 @@ int main() {
     BF_RUN_TEST(TestExprParser_ParsesShiftFamily);
     BF_RUN_TEST(TestExprParser_ParsesBitwiseFamily);
     BF_RUN_TEST(TestExprParser_ParsesMulAddShiftBitwiseChain);
+    BF_RUN_TEST(TestExprParser_ParsesNestedExpression);
     BF_RUN_TEST(TestExprParser_ParsesUnsignedShifts);
     return 0;
 }
