@@ -90,9 +90,21 @@ int TestLexer_InvalidInputProducesErrorToken() {
 
     BF_TEST(tokens.size() == 1);
     BF_TEST(tokens[0].kind == TokenKind::Error);
-    BF_TEST(tokens[0].text == "Expected hex digits after 0x prefix");
+    BF_TEST(tokens[0].text == "Expected hex digits after 0x prefix at position 0");
     BF_TEST(tokens[0].span.begin == 0);
     BF_TEST(tokens[0].span.end == 2);
+
+    return 0;
+}
+
+int TestLexer_UnexpectedCharacterHasPosition() {
+    const std::vector<Token> tokens = BitFlow::IO::Lexer::Tokenize("@");
+
+    BF_TEST(tokens.size() == 1);
+    BF_TEST(tokens[0].kind == TokenKind::Error);
+    BF_TEST(tokens[0].text == "Unexpected character at position 0");
+    BF_TEST(tokens[0].span.begin == 0);
+    BF_TEST(tokens[0].span.end == 1);
 
     return 0;
 }
@@ -105,5 +117,6 @@ int main() {
     BF_RUN_TEST(TestLexer_HexVariants);
     BF_RUN_TEST(TestLexer_ShiftOperatorsLongestMatch);
     BF_RUN_TEST(TestLexer_InvalidInputProducesErrorToken);
+    BF_RUN_TEST(TestLexer_UnexpectedCharacterHasPosition);
     return 0;
 }
