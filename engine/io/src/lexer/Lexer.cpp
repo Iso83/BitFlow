@@ -53,7 +53,7 @@ Token Lexer::NextToken() {
     SkipWhitespace();
 
     if (AtEnd())
-        return Token{TokenKind::EndOfInput, {}, SourceSpan{m_pos, m_pos}, std::nullopt};
+        return Token{TokenKind::EndOfInput, {}, SourceSpan{m_pos, m_pos}, std::nullopt, std::nullopt};
 
     if (IsIdentifierStart(Peek()))
         return ReadIdentifier();
@@ -93,7 +93,7 @@ Token Lexer::ReadIdentifier() {
         Advance(1);
 
     std::string text = m_input.substr(begin, m_pos - begin);
-    return Token{TokenKind::Identifier, std::move(text), SourceSpan{begin, m_pos}, std::nullopt};
+    return Token{TokenKind::Identifier, std::move(text), SourceSpan{begin, m_pos}, std::nullopt, std::nullopt};
 }
 
 Token Lexer::ReadDecimalLiteral() {
@@ -106,9 +106,14 @@ Token Lexer::ReadDecimalLiteral() {
     const std::optional<std::uint64_t> value = ParseUnsigned(text, 10);
 
     if (!value)
-        return MakeErrorToken(begin, m_pos, BuildErrorText("Invalid decimal literal", begin));
+        return MakeErrorToken(
+            begin,
+            m_pos,
+            LexerErrorCode::InvalidDecimalLiteral,
+            BuildErrorText("Invalid decimal literal", begin)
+        );
 
-    return Token{TokenKind::DecimalLiteral, std::move(text), SourceSpan{begin, m_pos}, value};
+    return Token{TokenKind::DecimalLiteral, std::move(text), SourceSpan{begin, m_pos}, value, std::nullopt};
 }
 
 Token Lexer::ReadHexLiteral() {
@@ -120,16 +125,26 @@ Token Lexer::ReadHexLiteral() {
         Advance(1);
 
     if (hexBegin == m_pos)
-        return MakeErrorToken(begin, m_pos, BuildErrorText("Expected hex digits after 0x prefix", begin));
+        return MakeErrorToken(
+            begin,
+            m_pos,
+            LexerErrorCode::MissingHexDigits,
+            BuildErrorText("Expected hex digits after 0x prefix", begin)
+        );
 
     std::string text = m_input.substr(begin, m_pos - begin);
     const std::string hexDigits = text.substr(2);
     const std::optional<std::uint64_t> value = ParseUnsigned(hexDigits, 16);
 
     if (!value)
-        return MakeErrorToken(begin, m_pos, BuildErrorText("Invalid hex literal", begin));
+        return MakeErrorToken(
+            begin,
+            m_pos,
+            LexerErrorCode::InvalidHexLiteral,
+            BuildErrorText("Invalid hex literal", begin)
+        );
 
-    return Token{TokenKind::HexLiteral, std::move(text), SourceSpan{begin, m_pos}, value};
+    return Token{TokenKind::HexLiteral, std::move(text), SourceSpan{begin, m_pos}, value, std::nullopt};
 }
 
 Token Lexer::ReadOperatorOrPunctuation() {
@@ -138,7 +153,7 @@ Token Lexer::ReadOperatorOrPunctuation() {
     const auto makeSimple = [&](TokenKind kind, std::size_t length) -> Token {
         std::string text = m_input.substr(begin, length);
         Advance(length);
-        return Token{kind, std::move(text), SourceSpan{begin, begin + length}, std::nullopt};
+        return Token{kind, std::move(text), SourceSpan{begin, begin + length}, std::nullopt, std::nullopt};
     };
 
     if (Peek() == '>' && Peek(1) == '>' && Peek(2) == '>')
@@ -180,12 +195,17 @@ Token Lexer::ReadOperatorOrPunctuation() {
             return makeSimple(TokenKind::Tilde, 1);
         default:
             Advance(1);
-            return MakeErrorToken(begin, m_pos, BuildErrorText("Unexpected character", begin));
+            return MakeErrorToken(
+                begin,
+                m_pos,
+                LexerErrorCode::UnexpectedCharacter,
+                BuildErrorText("Unexpected character", begin)
+            );
     }
 }
 
-Token Lexer::MakeErrorToken(std::size_t begin, std::size_t end, std::string text) const {
-    return Token{TokenKind::Error, std::move(text), SourceSpan{begin, end}, std::nullopt};
+Token Lexer::MakeErrorToken(std::size_t begin, std::size_t end, LexerErrorCode errorCode, std::string text) const {
+    return Token{TokenKind::Error, std::move(text), SourceSpan{begin, end}, std::nullopt, errorCode};
 }
 
 std::vector<Token> Tokenize(const std::string& input) {

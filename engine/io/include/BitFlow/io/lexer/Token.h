@@ -9,6 +9,13 @@
 
 namespace BitFlow::IO::Lexer {
 
+enum class LexerErrorCode {
+    UnexpectedCharacter,
+    InvalidDecimalLiteral,
+    MissingHexDigits,
+    InvalidHexLiteral,
+};
+
 struct SourceSpan {
     std::size_t begin;
     std::size_t end;
@@ -23,6 +30,7 @@ struct Token {
     std::string text;
     SourceSpan span;
     std::optional<std::uint64_t> numericValue;
+    std::optional<LexerErrorCode> errorCode;
 };
 
 } // namespace BitFlow::IO::Lexer

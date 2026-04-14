@@ -27,7 +27,12 @@ class Lexer {
     Token ReadDecimalLiteral();
     Token ReadHexLiteral();
     Token ReadOperatorOrPunctuation();
-    Token MakeErrorToken(std::size_t begin, std::size_t end, std::string text) const;
+    Token MakeErrorToken(
+        std::size_t begin,
+        std::size_t end,
+        LexerErrorCode errorCode,
+        std::string text
+    ) const;
 };
 
 std::vector<Token> Tokenize(const std::string& input);
