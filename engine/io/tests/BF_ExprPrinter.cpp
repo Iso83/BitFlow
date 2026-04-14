@@ -18,7 +18,7 @@ int TestExprPrinter_WithCustomNames() {
     std::unordered_map<uint32_t, std::string> names{{1, "a"}, {2, "b"}, {3, "c"}};
     auto text = BitFlow::IO::ToString(expr, names);
 
-    BF_TEST(text == "((a & b) ^ ~(c))");
+    BF_TEST(text == "a & b ^ ~c");
     return 0;
 }
 
@@ -26,7 +26,7 @@ int TestExprPrinter_FromParserNames() {
     auto parsed = BitFlow::IO::Parse("a ^ b & c");
     auto text = BitFlow::IO::ToString(parsed.root, parsed.idToName);
 
-    BF_TEST(text == "(a ^ (b & c))");
+    BF_TEST(text == "a ^ b & c");
     return 0;
 }
 
@@ -66,11 +66,25 @@ int TestExprPrinter_SupportsShaCalls() {
     return 0;
 }
 
+int TestExprPrinter_PrecedenceAwareParentheses() {
+    auto parsedA = BitFlow::IO::Parse("a + (b - c)");
+    BF_TEST(BitFlow::IO::ToString(parsedA.root, parsedA.idToName) == "a + (b - c)");
+
+    auto parsedB = BitFlow::IO::Parse("a - (b + c)");
+    BF_TEST(BitFlow::IO::ToString(parsedB.root, parsedB.idToName) == "a - (b + c)");
+
+    auto parsedC = BitFlow::IO::Parse("(a + b) - c");
+    BF_TEST(BitFlow::IO::ToString(parsedC.root, parsedC.idToName) == "a + b - c");
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestExprPrinter_WithCustomNames);
     BF_RUN_TEST(TestExprPrinter_FromParserNames);
     BF_RUN_TEST(TestExprPrinter_Roundtrip_Bitwise);
     BF_RUN_TEST(TestExprPrinter_Roundtrip_ArithmeticShiftAndCalls);
     BF_RUN_TEST(TestExprPrinter_SupportsShaCalls);
+    BF_RUN_TEST(TestExprPrinter_PrecedenceAwareParentheses);
     return 0;
 }
