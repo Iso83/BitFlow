@@ -1,5 +1,6 @@
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/io/ExprPrinter.h>
+#include <cstddef>
 #include <sstream>
 
 namespace BitFlow::IO {
@@ -135,7 +136,7 @@ static void Print(const Expr* e, std::ostringstream& out, const std::unordered_m
     return out.str();
 }
 
-std::string ToString(const Expr* e, const std::unordered_map<uint32_t, std::string>& names, const PrintOptions& options) {
+    for (std::size_t i = 0; i < e->inputs.size(); ++i) {
     std::ostringstream out;
     Print(e, out, names, options, 0, false, OpType::Var);
         return;
