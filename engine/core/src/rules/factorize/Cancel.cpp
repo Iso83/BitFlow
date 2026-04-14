@@ -118,7 +118,7 @@ static Expr* Rewrite_Xor_Xor_CancelPair(Expr& e) {
     }
 
     if (common == nullptr)
-        return &e;
+        return nullptr;
 
     std::vector<Expr*> newInputs;
     newInputs.reserve(e.inputs.size());

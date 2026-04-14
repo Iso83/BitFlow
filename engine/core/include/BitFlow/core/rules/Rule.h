@@ -53,6 +53,10 @@ enum class RuleId {
 struct Rule {
     RuleId id;
     bool (*match)(const AST::Expr&);
+    // Rewrite contract:
+    // - return nullptr when no rewrite is applied
+    // - return a replacement Expr* when rewritten (preferred: fresh node)
+    // - returning the same input pointer is treated as a no-op by the engine
     AST::Expr* (*rewrite)(AST::Expr&);
     int stage;
 

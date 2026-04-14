@@ -55,6 +55,8 @@ Expr* RuleEngine::ApplyOnce(Expr* expr) const {
                 if (!next)
                     continue;
 
+                next = AST::ExprIntern::Intern(next);
+
                 if (next != expr) {
                     if (m_debugCallback) {
                         m_debugCallback(before, next, r.id);
