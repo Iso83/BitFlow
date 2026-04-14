@@ -81,7 +81,7 @@ static bool NeedsParensForRightChild(OpType parentOp, OpType childOp) {
 }
 
 static void Print(const Expr* e, std::ostringstream& out, const std::unordered_map<uint32_t, std::string>& names,
-                  int parentPrecedence, bool isRightChild, OpType parentOp) {
+                  const PrintOptions& options, int parentPrecedence, bool isRightChild, OpType parentOp) {
     if (e->isConst()) {
         out << e->constValue;
         return;
@@ -100,20 +100,44 @@ static void Print(const Expr* e, std::ostringstream& out, const std::unordered_m
         out << (e->op == OpType::Not ? "~" : "-");
         const Expr* inner = e->inputs[0];
         const bool needsParens = PrecedenceOf(inner) < PrecedenceOf(e);
-        if (needsParens)
-            out << "(";
-        Print(inner, out, names, PrecedenceOf(e), true, e->op);
-        if (needsParens)
+            Print(inner, out, names, options, 0, false, OpType::Var);
+            Print(inner, out, names, options, PrecedenceOf(e), true, e->op);
+        if (options.rotAsFunction) {
+            out << (e->op == OpType::RotL ? "rotl(" : "rotr(");
+            Print(e->inputs[0], out, names, options, 0, false, OpType::Var);
+            out << ", ";
+            Print(e->inputs[1], out, names, options, 0, true, OpType::Var);
             out << ")";
-        return;
-    }
+            return;
+        }
 
-    if (e->op == OpType::RotL || e->op == OpType::RotR) {
-        out << (e->op == OpType::RotL ? "rotl(" : "rotr(");
-        Print(e->inputs[0], out, names, 0, false, OpType::Var);
-        out << ", ";
-        Print(e->inputs[1], out, names, 0, true, OpType::Var);
-        out << ")";
+        const int currentPrecedence = 40;
+        bool wrapSelf = false;
+        if (currentPrecedence < parentPrecedence)
+            wrapSelf = true;
+        else if (isRightChild && currentPrecedence == parentPrecedence)
+            wrapSelf = NeedsParensForRightChild(parentOp, e->op);
+
+        if (wrapSelf)
+            out << "(";
+        Print(e->inputs[0], out, names, options, currentPrecedence, false, e->op);
+        out << (e->op == OpType::RotL ? " <<< " : " >>> ");
+        Print(e->inputs[1], out, names, options, currentPrecedence, true, e->op);
+        if (wrapSelf)
+            out << ")";
+
+        Print(e->inputs[0], out, names, options, 0, false, OpType::Var);
+        Print(e->inputs[1], out, names, options, 0, false, OpType::Var);
+        Print(e->inputs[2], out, names, options, 0, true, OpType::Var);
+        Print(e->inputs[i], out, names, options, currentPrecedence, i > 0, e->op);
+    Print(e, out, {}, PrintOptions{}, 0, false, OpType::Var);
+    Print(e, out, names, PrintOptions{}, 0, false, OpType::Var);
+    return out.str();
+}
+
+std::string ToString(const Expr* e, const std::unordered_map<uint32_t, std::string>& names, const PrintOptions& options) {
+    std::ostringstream out;
+    Print(e, out, names, options, 0, false, OpType::Var);
         return;
     }
 

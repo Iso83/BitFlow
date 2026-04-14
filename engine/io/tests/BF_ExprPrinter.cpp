@@ -52,6 +52,19 @@ int TestExprPrinter_Roundtrip_ArithmeticShiftAndCalls() {
     return 0;
 }
 
+int TestExprPrinter_RotateOutputStyleOption() {
+    auto parsed = BitFlow::IO::Parse("rotl(a + b, 3) ^ rotr(c, 7)");
+
+    BitFlow::IO::PrintOptions functionStyle{};
+    functionStyle.rotAsFunction = true;
+    BF_TEST(BitFlow::IO::ToString(parsed.root, parsed.idToName, functionStyle) == "rotl(a + b, 3) ^ rotr(c, 7)");
+
+    BitFlow::IO::PrintOptions symbolicStyle{};
+    symbolicStyle.rotAsFunction = false;
+    BF_TEST(BitFlow::IO::ToString(parsed.root, parsed.idToName, symbolicStyle) == "a + b <<< 3 ^ c >>> 7");
+    return 0;
+}
+
 int TestExprPrinter_SupportsShaCalls() {
     auto a = MakeVar(1);
     auto b = MakeVar(2);
@@ -90,6 +103,7 @@ int main() {
     BF_RUN_TEST(TestExprPrinter_FromParserNames);
     BF_RUN_TEST(TestExprPrinter_Roundtrip_Bitwise);
     BF_RUN_TEST(TestExprPrinter_Roundtrip_ArithmeticShiftAndCalls);
+    BF_RUN_TEST(TestExprPrinter_RotateOutputStyleOption);
     BF_RUN_TEST(TestExprPrinter_SupportsShaCalls);
     BF_RUN_TEST(TestExprPrinter_PrecedenceAwareParentheses);
     return 0;
