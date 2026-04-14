@@ -6,6 +6,7 @@
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <algorithm>
 #include <unordered_map>
 #include <vector>
 
@@ -178,6 +179,8 @@ static Expr* Rewrite_XorCancel(Expr& e) {
 
     if (constParity != 0)
         oddTerms.push_back(ConstPool::Get(constParity));
+
+    std::sort(oddTerms.begin(), oddTerms.end(), [](Expr* a, Expr* b) { return a->id.value() < b->id.value(); });
 
     return BuildXorParityResult(oddTerms);
 }
