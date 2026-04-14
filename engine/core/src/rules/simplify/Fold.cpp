@@ -90,7 +90,7 @@ static Expr* Rewrite_Add_Fold(Expr& e) {
     if (nonConst.size() == 1)
         return nonConst[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(nonConst);
     return target;
 }
@@ -114,7 +114,7 @@ static Expr* Rewrite_And_Fold(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }
@@ -138,7 +138,7 @@ static Expr* Rewrite_Or_Fold(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }
@@ -164,7 +164,7 @@ static Expr* Rewrite_Xor_Fold(Expr& e) {
     if (nonConst.size() == 1)
         return nonConst[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(nonConst);
     return target;
 }

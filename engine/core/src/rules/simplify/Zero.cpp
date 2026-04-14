@@ -26,7 +26,7 @@ static Expr* Rewrite_Remove_Zero(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
 
     target->inputs = std::move(newInputs);
     return target;

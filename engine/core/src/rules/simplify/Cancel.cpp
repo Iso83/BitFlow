@@ -117,7 +117,7 @@ static Expr* Rewrite_And_Cancel(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+    Expr* target = CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }
@@ -145,7 +145,7 @@ static Expr* Rewrite_Or_Cancel(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = e.frozen ? CloneExpr(&e) : &e;
+    Expr* target = CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }

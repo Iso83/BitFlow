@@ -31,7 +31,7 @@ static Expr* Rewrite_Order(Expr& e) {
 
     std::sort(sorted.begin(), sorted.end(), [](Expr* a, Expr* b) { return a->id.value() < b->id.value(); });
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(sorted);
 
     return target;

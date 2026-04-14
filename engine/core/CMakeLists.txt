@@ -39,6 +39,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
 if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_Dedup)
     bf_add_module_test(BitFlowCore core BF_ExprIntern_KeyBuilder)
+    bf_add_module_test(BitFlowCore core BF_RuleEngine_InPlaceRewrite)
 
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order) 

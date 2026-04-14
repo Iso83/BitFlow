@@ -313,7 +313,11 @@ int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
     engine.AddRule(Factorize::Get_Xor_And_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
-    BF_TEST(r == expr);
+    BF_TEST(r->op == OpType::Xor);
+    BF_TEST(r->inputs.size() == 3);
+    BF_TEST(r->inputs[0] == f);
+    BF_TEST(r->inputs[1] == abc);
+    BF_TEST(r->inputs[2] == ade);
     return 0;
 }
 

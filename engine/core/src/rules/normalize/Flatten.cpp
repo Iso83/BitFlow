@@ -26,7 +26,7 @@ static bool Match_Flatten(const Expr& e) {
 
 static Expr* Rewrite_Flatten(Expr& e) {
     if (!IsCommutative(e.op))
-        return &e;
+        return nullptr;
 
     std::vector<Expr*> newInputs;
     newInputs.reserve(e.inputs.size());
@@ -39,7 +39,7 @@ static Expr* Rewrite_Flatten(Expr& e) {
             newInputs.push_back(in);
     }
 
-    Expr* target = e.frozen ? Expression::CloneExpr(&e) : &e;
+    Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }

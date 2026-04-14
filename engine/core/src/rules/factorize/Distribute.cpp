@@ -76,7 +76,7 @@ static Expr* Rewrite_Distribute_And_Over_Xor(Expr& e) {
     }
 
     if (xorNode == nullptr)
-        return &e;
+        return nullptr;
 
     std::vector<Expr*> others;
     others.reserve(e.inputs.size());
