@@ -98,6 +98,30 @@ int TestExprPrinter_PrecedenceAwareParentheses() {
     auto parsedG = BitFlow::IO::Parse("-(-a)");
     BF_TEST(BitFlow::IO::ToString(parsedG.root, parsedG.idToName) == "--a");
 
+int TestExprPrinter_Roundtrip_ParsePrintParse() {
+    auto parsedA = BitFlow::IO::Parse("rotl(a + b, 3) ^ rotr(c << 1, 7) ^ (x & y) ^ (~z)");
+    const auto printedA = BitFlow::IO::ToString(parsedA.root, parsedA.idToName);
+
+    auto parsedB = BitFlow::IO::Parse(printedA);
+    const auto printedB = BitFlow::IO::ToString(parsedB.root, parsedB.idToName);
+
+    BF_TEST(printedA == printedB);
+    return 0;
+}
+
+int TestExprPrinter_PrecedenceSensitivePrint() {
+    auto parsedA = BitFlow::IO::Parse("a ^ b & c");
+    BF_TEST(BitFlow::IO::ToString(parsedA.root, parsedA.idToName) == "a ^ b & c");
+
+    auto parsedB = BitFlow::IO::Parse("a - (b + c)");
+    BF_TEST(BitFlow::IO::ToString(parsedB.root, parsedB.idToName) == "a - (b + c)");
+
+    auto parsedC = BitFlow::IO::Parse("(a + b) - c");
+    BF_TEST(BitFlow::IO::ToString(parsedC.root, parsedC.idToName) == "a + b - c");
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestExprPrinter_WithCustomNames);
     BF_RUN_TEST(TestExprPrinter_FromParserNames);
@@ -106,5 +130,7 @@ int main() {
     BF_RUN_TEST(TestExprPrinter_RotateOutputStyleOption);
     BF_RUN_TEST(TestExprPrinter_SupportsShaCalls);
     BF_RUN_TEST(TestExprPrinter_PrecedenceAwareParentheses);
+    BF_RUN_TEST(TestExprPrinter_Roundtrip_ParsePrintParse);
+    BF_RUN_TEST(TestExprPrinter_PrecedenceSensitivePrint);
     return 0;
 }
