@@ -53,6 +53,18 @@ static bool Match_NotPushdown(const Expr& e) {
 
     return !allNot;
 }
+
+static bool Match_Not_Xor(const Expr& e) {
+    if (e.op != AST::OpType::Not)
+        return false;
+
+    if (e.inputs.size() != 1)
+        return false;
+
+    const Expr* in = e.inputs[0];
+
+    return (in->op == AST::OpType::Xor && in->inputs.size() >= 1);
+}
 #pragma endregion
 
 #pragma region Rewrite
@@ -84,6 +96,21 @@ static Expr* Rewrite_NotPushdown(Expr& e) {
     auto* target = Expression::MakeOpInterned(newOp, std::move(newInputs));
     return target;
 }
+
+static Expr* Rewrite_Not_Xor(Expr& e) {
+    Expr* in = e.inputs[0];
+
+    std::vector<Expr*> newInputs;
+    newInputs.reserve(in->inputs.size() + 1);
+
+    for (Expr* child : in->inputs)
+        newInputs.push_back(child);
+
+    newInputs.push_back(Expression::ConstPool::Get(1));
+
+    Expr* target = Expression::MakeOpInterned(AST::OpType::Xor, std::move(newInputs));
+    return target;
+}
 #pragma endregion
 
 Rule Get_Not_Rule() {
@@ -92,6 +119,10 @@ Rule Get_Not_Rule() {
 
 Rule Get_NotPushdown_Rule() {
     return Rule{RuleId::Simplify_NotPushdown, &Match_NotPushdown, &Rewrite_NotPushdown, Stage_Simplify_Pushdown};
+}
+
+Rule Get_Not_Xor_Rule() {
+    return Rule{RuleId::Simplify_NotXor, &Match_Not_Xor, &Rewrite_Not_Xor, Stage_Simplify, {RuleId::Normalize_Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

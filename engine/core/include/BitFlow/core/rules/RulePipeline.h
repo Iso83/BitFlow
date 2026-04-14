@@ -34,7 +34,7 @@ inline void Add_Bitwise_Simplify_Pipeline(RuleEngine& engine) {
     // --- NOT Transformations ---
     engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
-    engine.AddRule(Simplify::Get_Not_Xor_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Xor_Rule());
 
     // --- Cancellation / Deduplication ---
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());

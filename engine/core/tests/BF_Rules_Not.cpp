@@ -81,7 +81,7 @@ int TestNotXor() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Not_Xor_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Xor_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 

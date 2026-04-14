@@ -108,7 +108,6 @@ Rule Get_Xor_Fold_Rule(); // deps: Normalize_Flatten
 #pragma region NOT Transformations
 /// NOT Transformations
 /// Pushdown and normalization of negations.
-Rule Get_Not_Xor_Rule(); // deps: Normalize_Flatten
 #pragma endregion
 
 #pragma region Idempotent Laws
@@ -190,6 +189,7 @@ Rule Get_Xor_Cancel_Rule(); // deps: Normalize_Flatten, Normalize_Order
 #pragma region NOT Transformations
 Rule Get_Not_Rule();
 Rule Get_NotPushdown_Rule();
+Rule Get_Not_Xor_Rule(); // deps: Normalize_Flatten
 #pragma endregion
 
 #pragma region Idempotent Laws
