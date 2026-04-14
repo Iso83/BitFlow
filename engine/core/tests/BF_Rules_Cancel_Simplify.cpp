@@ -233,6 +233,30 @@ int TestXorParity_WithConstMixed() {
     return 0;
 }
 
+int TestXorParity_RewriteKeepsCanonicalOrder() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto c = MakeVar(3);
+    auto one = ConstPool::Get(1);
+
+    auto expr = MakeOp(20, OpType::Xor, {c, a, b, one});
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+
+    Expr* r = engine.ApplyUntilStable(expr);
+
+    BF_TEST(r->op == OpType::Xor);
+    BF_TEST(r->inputs.size() == 4);
+
+    for (size_t i = 1; i < r->inputs.size(); ++i)
+        BF_TEST(r->inputs[i - 1]->id.value() <= r->inputs[i]->id.value());
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAndCancelPair);
     BF_RUN_TEST(TestAndCancelMixed);
@@ -247,5 +271,6 @@ int main() {
     BF_RUN_TEST(TestXorParityCancel_Frozen);
     BF_RUN_TEST(TestXorParity_WithConstCancel);
     BF_RUN_TEST(TestXorParity_WithConstMixed);
+    BF_RUN_TEST(TestXorParity_RewriteKeepsCanonicalOrder);
     return 0;
 }
