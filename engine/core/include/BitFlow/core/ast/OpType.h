@@ -31,6 +31,7 @@ enum class OpType {
     // --- Bit ops ---
     RotL,
     RotR,
+    // TODO(next): ModInverse
 
     // --- SHA / higher-level ---
     Ch,
