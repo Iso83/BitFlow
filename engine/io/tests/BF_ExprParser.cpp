@@ -29,6 +29,39 @@ int TestExprParser_ParsesUnaryAndBinaryMinus() {
     return 0;
 }
 
+
+int TestExprParser_Associativity_SubIsLeft() {
+    auto parsed = BitFlow::IO::Parse("a - b - c");
+    Expr* root = parsed.root;
+
+    BF_TEST(root->op == OpType::Sub);
+    BF_TEST(root->inputs[0]->op == OpType::Sub);
+    BF_TEST(root->inputs[0]->inputs[0]->op == OpType::Var);
+    BF_TEST(root->inputs[0]->inputs[1]->op == OpType::Var);
+    BF_TEST(root->inputs[1]->op == OpType::Var);
+    return 0;
+}
+
+int TestExprParser_Associativity_ShiftIsLeft() {
+    auto parsed = BitFlow::IO::Parse("a << b << c");
+    Expr* root = parsed.root;
+
+    BF_TEST(root->op == OpType::Shl);
+    BF_TEST(root->inputs[0]->op == OpType::Shl);
+    BF_TEST(root->inputs[1]->op == OpType::Var);
+    return 0;
+}
+
+int TestExprParser_Associativity_BitwiseIsLeft() {
+    auto parsed = BitFlow::IO::Parse("a ^ b ^ c");
+    Expr* root = parsed.root;
+
+    BF_TEST(root->op == OpType::Xor);
+    BF_TEST(root->inputs[0]->op == OpType::Xor);
+    BF_TEST(root->inputs[1]->op == OpType::Var);
+    return 0;
+}
+
 int TestExprParser_ParsesMulDivMod() {
     auto parsed = BitFlow::IO::Parse("a * b / c % d");
     Expr* root = parsed.root;
@@ -97,6 +130,9 @@ int TestExprParser_ParsesUnsignedShifts() {
 int main() {
     BF_RUN_TEST(TestExprParser_PrecedenceAndShape);
     BF_RUN_TEST(TestExprParser_ParsesUnaryAndBinaryMinus);
+    BF_RUN_TEST(TestExprParser_Associativity_SubIsLeft);
+    BF_RUN_TEST(TestExprParser_Associativity_ShiftIsLeft);
+    BF_RUN_TEST(TestExprParser_Associativity_BitwiseIsLeft);
     BF_RUN_TEST(TestExprParser_ParsesMulDivMod);
     BF_RUN_TEST(TestExprParser_ParsesAddSub);
     BF_RUN_TEST(TestExprParser_ParsesShiftFamily);
