@@ -23,15 +23,6 @@ static void CollectFactors(Expr* e, std::vector<Expr*>& out) {
         out.push_back(e);
 }
 
-static bool ContainsId(const Expr& e, uint32_t id) {
-    for (const Expr* in : e.inputs) {
-        if (in->id.value() == id)
-            return true;
-    }
-
-    return false;
-}
-
 static Expr* BuildAndNode(const std::vector<Expr*>& terms) {
     if (terms.empty())
         return ConstPool::Get(1);
@@ -52,21 +43,12 @@ static Expr* BuildXorNode(const std::vector<Expr*>& terms) {
     return MakeOpInterned(OpType::Xor, terms);
 }
 
-static Expr* BuildResidualWithoutId(const Expr& andExpr, uint32_t factorId) {
-    std::vector<Expr*> residual;
-    residual.reserve(andExpr.inputs.size());
+static size_t CountExprTreeNodes(const Expr* e) {
+    size_t nodes = 1;
+    for (const Expr* in : e->inputs)
+        nodes += CountExprTreeNodes(in);
 
-    bool removed = false;
-    for (Expr* in : andExpr.inputs) {
-        if (!removed && in->id.value() == factorId) {
-            removed = true;
-            continue;
-        }
-
-        residual.push_back(in);
-    }
-
-    return BuildAndNode(residual);
+    return nodes;
 }
 
 static uint32_t FindBestCommonFactorId(const Expr& e) {
@@ -127,73 +109,82 @@ static bool Match_Xor_And(const Expr& e) {
 }
 
 static Expr* Rewrite_Xor_And(Expr& e) {
-    std::unordered_map<Expr*, std::vector<Expr*>> factorMap;
+    const uint32_t bestFactorId = FindBestCommonFactorId(e);
+    if (bestFactorId == 0)
+        return nullptr;
+
+    Expr* common = nullptr;
+    std::vector<Expr*> termsToFactor;
+    termsToFactor.reserve(e.inputs.size());
 
     for (Expr* term : e.inputs) {
-        std::vector<Expr*> factors;
-        CollectFactors(term, factors);
-
-        for (Expr* f : factors)
-            factorMap[f].push_back(term);
-    }
-
-    for (auto& [common, terms] : factorMap) {
-        if (terms.size() < 2)
+        if (term->op != OpType::And || term->inputs.size() < 2)
             continue;
 
-        std::vector<Expr*> newXorInputs;
-
-        for (Expr* term : terms) {
-            std::vector<Expr*> factors;
-            CollectFactors(term, factors);
-
-            std::vector<Expr*> rest;
-            for (Expr* f : factors) {
-                if (f != common)
-                    rest.push_back(f);
+        bool hasBestFactor = false;
+        for (Expr* in : term->inputs) {
+            if (in->id.value() == bestFactorId) {
+                hasBestFactor = true;
+                common = in;
+                break;
             }
-
-            if (rest.empty())
-                newXorInputs.push_back(ConstPool::Get(1));
-            else if (rest.size() == 1)
-                newXorInputs.push_back(rest[0]);
-            else
-                newXorInputs.push_back(MakeOpInterned(OpType::And, rest));
         }
 
-        Expr* newXor;
-        if (newXorInputs.size() == 1)
-            newXor = newXorInputs[0];
-        else
-            newXor = Expression::MakeOpInterned(OpType::Xor, newXorInputs);
-
-        Expr* newAnd = Expression::MakeOpInterned(OpType::And, {common, newXor});
-
-        std::vector<Expr*> finalInputs;
-        finalInputs.reserve(e.inputs.size());
-
-        finalInputs.push_back(newAnd);
-
-        for (Expr* term : e.inputs) {
-            bool isFactored = false;
-            for (Expr* t : terms) {
-                if (t == term) {
-                    isFactored = true;
-                    break;
-                }
-            }
-
-            if (!isFactored)
-                finalInputs.push_back(term);
-        }
-
-        if (finalInputs.size() == 1)
-            return finalInputs[0];
-
-        return Expression::MakeOpInterned(OpType::Xor, finalInputs);
+        if (hasBestFactor)
+            termsToFactor.push_back(term);
     }
 
-    return nullptr;
+    if (common == nullptr || termsToFactor.size() < 2)
+        return nullptr;
+
+    std::vector<Expr*> newXorInputs;
+    newXorInputs.reserve(termsToFactor.size());
+
+    for (Expr* term : termsToFactor) {
+        std::vector<Expr*> rest;
+        rest.reserve(term->inputs.size());
+
+        bool removed = false;
+        for (Expr* in : term->inputs) {
+            if (!removed && in->id.value() == bestFactorId) {
+                removed = true;
+                continue;
+            }
+
+            rest.push_back(in);
+        }
+
+        if (rest.empty())
+            newXorInputs.push_back(ConstPool::Get(1));
+        else
+            newXorInputs.push_back(BuildAndNode(rest));
+    }
+
+    Expr* newXor = BuildXorNode(newXorInputs);
+    Expr* newAnd = Expression::MakeOpInterned(OpType::And, {common, newXor});
+
+    std::vector<Expr*> finalInputs;
+    finalInputs.reserve(e.inputs.size());
+    finalInputs.push_back(newAnd);
+
+    for (Expr* term : e.inputs) {
+        bool isFactored = false;
+        for (Expr* candidate : termsToFactor) {
+            if (candidate == term) {
+                isFactored = true;
+                break;
+            }
+        }
+
+        if (!isFactored)
+            finalInputs.push_back(term);
+    }
+
+    Expr* candidate = BuildXorNode(finalInputs);
+    if (CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
+        return nullptr;
+
+    return candidate;
 }
 
 Rule Get_Xor_And_Rule() {

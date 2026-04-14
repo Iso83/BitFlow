@@ -1,6 +1,7 @@
 #pragma once
 
 #include <BitFlow/core/ast/OpType.h>
+#include <cstdint>
 #include <vector>
 
 namespace BitFlow::Core::Expression {
