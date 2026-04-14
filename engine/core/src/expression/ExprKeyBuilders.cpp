@@ -12,7 +12,6 @@ using namespace BitFlow::Core::Rules;
 Key BuildCommutativeKey(const Expr* e) {
     Key k{};
     k.op = e->op;
-    k.isConst = e->isConst;
     k.constValue = e->constValue;
 
     k.inputs.reserve(e->inputs.size());

@@ -16,7 +16,7 @@ static Expr* Rewrite_Remove_Zero(Expr& e) {
     std::vector<Expr*> newInputs;
 
     for (Expr* in : e.inputs) {
-        if (!(in->isConst && in->constValue == 0))
+        if (!(in->isConst() && in->constValue == 0))
             newInputs.push_back(in);
     }
 

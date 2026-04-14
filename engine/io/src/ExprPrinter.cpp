@@ -8,7 +8,7 @@ using Expr = Core::AST::Expr;
 using OpType = Core::AST::OpType;
 
 static void Print(const Expr* e, std::ostringstream& out, const std::unordered_map<uint32_t, std::string>& names) {
-    if (e->isConst) {
+    if (e->isConst()) {
         out << e->constValue;
         return;
     }

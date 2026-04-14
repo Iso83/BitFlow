@@ -87,7 +87,7 @@ int TestXorParityCancel_Pair() {
 
     Expr* r = engine.ApplyUntilStable(expr);
 
-    BF_TEST(r->isConst);
+    BF_TEST(r->isConst());
     BF_TEST(r->constValue == 0);
     return 0;
 }
@@ -160,7 +160,7 @@ int TestXorParityCancel_AllEven() {
 
     Expr* r = engine.ApplyUntilStable(expr);
 
-    BF_TEST(r->isConst);
+    BF_TEST(r->isConst());
     BF_TEST(r->constValue == 0);
     return 0;
 }
@@ -211,7 +211,7 @@ int TestXorParity_WithConstCancel() {
 
     Expr* r = engine.ApplyUntilStable(expr);
 
-    BF_TEST(r->isConst);
+    BF_TEST(r->isConst());
     BF_TEST(r->constValue == 1);
     return 0;
 }

@@ -31,7 +31,7 @@ int TestNotConst() {
 
     Expr* r = engine.ApplyUntilStable(expr);
 
-    BF_TEST(r->isConst);
+    BF_TEST(r->isConst());
     BF_TEST(r->constValue == ~0b1010);
     return 0;
 }

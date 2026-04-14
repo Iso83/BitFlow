@@ -89,7 +89,6 @@ Expr* RuleEngine::ApplyRecursive(Expr* expr) const {
     if (changed) {
         Expr* n = new Expr{};
         n->op = expr->op;
-        n->isConst = expr->isConst;
         n->constValue = expr->constValue;
         n->inputs = std::move(newInputs);
 

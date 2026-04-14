@@ -26,12 +26,12 @@ int TestAddFold() {
     Expr* a = result->inputs[0];
     Expr* b = result->inputs[1];
 
-    if (a->isConst) {
+    if (a->isConst()) {
         BF_TEST(a->constValue == 30);
         BF_TEST(b->id == x->id);
     } else {
         BF_TEST(a->id == x->id);
-        BF_TEST(b->isConst);
+        BF_TEST(b->isConst());
         BF_TEST(b->constValue == 30);
     }
 
@@ -108,7 +108,7 @@ int TestXorFoldAllConstZero() {
 
     Expr* result = engine.ApplyUntilStable(expr);
 
-    BF_TEST(result->isConst);
+    BF_TEST(result->isConst());
     BF_TEST(result->constValue == 0);
     return 0;
 }

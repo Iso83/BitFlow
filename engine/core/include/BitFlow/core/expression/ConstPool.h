@@ -15,7 +15,6 @@ class ConstPool {
 
         AST::Expr* e = new AST::Expr{};
         e->op = AST::OpType::Const;
-        e->isConst = true;
         e->constValue = value;
         e->id = Ids::ExprId{NextId()};
 

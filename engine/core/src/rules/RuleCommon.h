@@ -33,7 +33,7 @@ template <AST::OpType Op> inline bool Match_Zero(const AST::Expr& e) {
         return false;
 
     for (const AST::Expr* in : e.inputs) {
-        if (in->isConst && in->constValue == 0)
+        if (in->isConst() && in->constValue == 0)
             return true;
     }
 
