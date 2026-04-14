@@ -78,14 +78,13 @@ int TestLexer_HexVariants() {
 }
 
 int TestLexer_ShiftOperatorsLongestMatch() {
-    const std::vector<Token> tokens = BitFlow::IO::Lexer::Tokenize("<<< >>> << >>");
+    const std::vector<Token> tokens = BitFlow::IO::Lexer::Tokenize(">>> << >>");
 
-    BF_TEST(tokens.size() == 5);
-    BF_TEST(tokens[0].kind == TokenKind::ShiftLeftUnsigned);
-    BF_TEST(tokens[1].kind == TokenKind::ShiftRightUnsigned);
-    BF_TEST(tokens[2].kind == TokenKind::ShiftLeft);
-    BF_TEST(tokens[3].kind == TokenKind::ShiftRight);
-    BF_TEST(tokens[4].kind == TokenKind::EndOfInput);
+    BF_TEST(tokens.size() == 4);
+    BF_TEST(tokens[0].kind == TokenKind::ShiftRightUnsigned);
+    BF_TEST(tokens[1].kind == TokenKind::ShiftLeft);
+    BF_TEST(tokens[2].kind == TokenKind::ShiftRight);
+    BF_TEST(tokens[3].kind == TokenKind::EndOfInput);
 
     return 0;
 }

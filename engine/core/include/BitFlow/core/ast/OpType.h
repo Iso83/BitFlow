@@ -27,7 +27,6 @@ enum class OpType {
     Shl,
     Shr,
     UShr,
-    UShl,
 
     // --- Bit ops ---
     RotL,

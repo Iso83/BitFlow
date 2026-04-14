@@ -146,9 +146,6 @@ Token Lexer::ReadOperatorOrPunctuation() {
     if (Peek() == '>' && Peek(1) == '>' && Peek(2) == '>')
         return makeSimple(TokenKind::ShiftRightUnsigned, 3);
 
-    if (Peek() == '<' && Peek(1) == '<' && Peek(2) == '<')
-        return makeSimple(TokenKind::ShiftLeftUnsigned, 3);
-
     if (Peek() == '>' && Peek(1) == '>')
         return makeSimple(TokenKind::ShiftRight, 2);
 

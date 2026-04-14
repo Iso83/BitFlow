@@ -40,14 +40,8 @@ static std::runtime_error ParseErrorAt(const std::string& message, const Token& 
     return std::runtime_error(message + " at position " + std::to_string(token.span.begin));
 }
 
-enum class Assoc {
-    Left,
-    Right,
-};
-
 struct InfixInfo {
     std::uint8_t precedence;
-    Assoc assoc;
     OpType op;
 };
 
@@ -122,40 +116,37 @@ class PrattParser {
     static bool TryGetInfixInfo(TokenKind kind, InfixInfo& info) {
         switch (kind) {
         case TokenKind::Star:
-            info = InfixInfo{60, Assoc::Left, OpType::Mul};
+            info = InfixInfo{60, OpType::Mul};
             return true;
         case TokenKind::Slash:
-            info = InfixInfo{60, Assoc::Left, OpType::Div};
+            info = InfixInfo{60, OpType::Div};
             return true;
         case TokenKind::Percent:
-            info = InfixInfo{60, Assoc::Left, OpType::Mod};
+            info = InfixInfo{60, OpType::Mod};
             return true;
         case TokenKind::Plus:
-            info = InfixInfo{50, Assoc::Left, OpType::Add};
+            info = InfixInfo{50, OpType::Add};
             return true;
         case TokenKind::Minus:
-            info = InfixInfo{50, Assoc::Left, OpType::Sub};
+            info = InfixInfo{50, OpType::Sub};
             return true;
         case TokenKind::ShiftLeft:
-            info = InfixInfo{40, Assoc::Left, OpType::Shl};
+            info = InfixInfo{40, OpType::Shl};
             return true;
         case TokenKind::ShiftRight:
-            info = InfixInfo{40, Assoc::Left, OpType::Shr};
+            info = InfixInfo{40, OpType::Shr};
             return true;
         case TokenKind::ShiftRightUnsigned:
-            info = InfixInfo{40, Assoc::Left, OpType::UShr};
-            return true;
-        case TokenKind::ShiftLeftUnsigned:
-            info = InfixInfo{40, Assoc::Left, OpType::UShl};
+            info = InfixInfo{40, OpType::UShr};
             return true;
         case TokenKind::Ampersand:
-            info = InfixInfo{30, Assoc::Left, OpType::And};
+            info = InfixInfo{30, OpType::And};
             return true;
         case TokenKind::Caret:
-            info = InfixInfo{20, Assoc::Left, OpType::Xor};
+            info = InfixInfo{20, OpType::Xor};
             return true;
         case TokenKind::Pipe:
-            info = InfixInfo{10, Assoc::Left, OpType::Or};
+            info = InfixInfo{10, OpType::Or};
             return true;
         default:
             return false;
@@ -174,7 +165,7 @@ class PrattParser {
         Expr* left = ParsePrefix(token);
 
         while (true) {
-            Token lookahead = Current();
+            const Token lookahead = Current();
             if (lookahead.kind == TokenKind::Error)
                 throw ParseErrorAt(lookahead.text, lookahead);
 
@@ -182,15 +173,11 @@ class PrattParser {
             if (!TryGetInfixInfo(lookahead.kind, infix))
                 break;
 
-            if (infix.precedence < minBindingPower)
+            if (infix.precedence <= minBindingPower)
                 break;
 
             Advance();
-
-            const std::uint8_t rhsMinBindingPower =
-                infix.assoc == Assoc::Left ? static_cast<std::uint8_t>(infix.precedence + 1) : infix.precedence;
-
-            Expr* right = ParseExpression(rhsMinBindingPower);
+            Expr* right = ParseExpression(infix.precedence);
             left = MakeOp(infix.op, {left, right});
         }
 
@@ -240,21 +227,27 @@ class PrattParser {
         if (!Consume(TokenKind::LeftParen))
             throw ParseErrorAt("Expected '(' after function name", Current());
 
-        Expr* firstArg = ParseExpression(0);
-
-        if (!Consume(TokenKind::Comma))
-            throw ParseErrorAt("Expected ',' in function call", Current());
-
-        Expr* secondArg = ParseExpression(0);
+        std::vector<Expr*> args;
+        if (Current().kind != TokenKind::RightParen) {
+            do {
+                args.push_back(ParseExpression(0));
+            } while (Consume(TokenKind::Comma));
+        }
 
         if (!Consume(TokenKind::RightParen))
             throw ParseErrorAt("Expected ')' after function call arguments", Current());
 
-        if (identifier.text == "rotl")
-            return MakeOp(OpType::RotL, {firstArg, secondArg});
+        if (identifier.text == "rotl") {
+            if (args.size() != 2)
+                throw ParseErrorAt("Function rotl expects exactly 2 arguments", identifier);
+            return MakeOp(OpType::RotL, {args[0], args[1]});
+        }
 
-        if (identifier.text == "rotr")
-            return MakeOp(OpType::RotR, {firstArg, secondArg});
+        if (identifier.text == "rotr") {
+            if (args.size() != 2)
+                throw ParseErrorAt("Function rotr expects exactly 2 arguments", identifier);
+            return MakeOp(OpType::RotR, {args[0], args[1]});
+        }
 
         throw ParseErrorAt("Unknown function: " + identifier.text, identifier);
     }

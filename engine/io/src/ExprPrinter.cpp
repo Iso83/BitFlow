@@ -74,9 +74,6 @@ static void Print(const Expr* e, std::ostringstream& out, const std::unordered_m
     case OpType::UShr:
         op = ">>>";
         break;
-    case OpType::UShl:
-        op = "<<<";
-        break;
     default:
         break;
     }
