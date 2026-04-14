@@ -9,6 +9,7 @@ enum class OpType {
 
     // --- Unary ---
     Not,
+    Neg,
 
     // --- Bitwise ---
     And,
@@ -17,8 +18,19 @@ enum class OpType {
 
     // --- Arithmetic ---
     Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+
+    // --- Shifts ---
+    Shl,
+    Shr,
+    UShr,
+    UShl,
 
     // --- Bit ops ---
+    RotL,
     RotR,
 
     // --- SHA / higher-level ---

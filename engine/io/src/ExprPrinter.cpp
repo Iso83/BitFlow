@@ -22,9 +22,19 @@ static void Print(const Expr* e, std::ostringstream& out, const std::unordered_m
         return;
     }
 
-    if (e->op == OpType::Not) {
-        out << "~(";
+    if (e->op == OpType::Not || e->op == OpType::Neg) {
+        out << (e->op == OpType::Not ? "~(" : "-(");
         Print(e->inputs[0], out, names);
+        out << ")";
+        return;
+    }
+
+
+    if (e->op == OpType::RotL || e->op == OpType::RotR) {
+        out << (e->op == OpType::RotL ? "rotl(" : "rotr(");
+        Print(e->inputs[0], out, names);
+        out << ", ";
+        Print(e->inputs[1], out, names);
         out << ")";
         return;
     }
@@ -39,6 +49,33 @@ static void Print(const Expr* e, std::ostringstream& out, const std::unordered_m
         break;
     case OpType::Xor:
         op = "^";
+        break;
+    case OpType::Add:
+        op = "+";
+        break;
+    case OpType::Sub:
+        op = "-";
+        break;
+    case OpType::Mul:
+        op = "*";
+        break;
+    case OpType::Div:
+        op = "/";
+        break;
+    case OpType::Mod:
+        op = "%";
+        break;
+    case OpType::Shl:
+        op = "<<";
+        break;
+    case OpType::Shr:
+        op = ">>";
+        break;
+    case OpType::UShr:
+        op = ">>>";
+        break;
+    case OpType::UShl:
+        op = "<<<";
         break;
     default:
         break;
