@@ -209,7 +209,7 @@ Rule Get_Or_ZeroIdentity_Rule();   // deps: Normalize_Flatten
 #pragma endregion
 } // namespace Simplify::Bitwise
 
-namespace Factorize {
+namespace Factorize::Bitwise {
 
 #pragma region Common Factor Extraction
 /// Common Factor Extraction
@@ -252,6 +252,6 @@ Rule Get_Or_Absorb_Rule();  // deps: Normalize_Flatten
 Rule Get_Distribute_Rule(); // deps: Normalize_Flatten
 #pragma endregion
 
-} // namespace Factorize
+} // namespace Factorize::Bitwise
 
 } // namespace BitFlow::Core::Rules

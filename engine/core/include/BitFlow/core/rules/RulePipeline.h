@@ -78,17 +78,17 @@ inline void Add_Bitwise_Simplify_Pipeline(RuleEngine& engine) {
     // =========================================================
 
     // --- Common Factor Extraction ---
-    engine.AddRule(Factorize::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
     // --- Pattern-Based Cancellation ---
-    engine.AddRule(Factorize::Get_Xor_Pair_Cancel_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
 
     // --- Absorption Laws ---
-    engine.AddRule(Factorize::Get_And_Absorb_Rule());
-    engine.AddRule(Factorize::Get_Or_Absorb_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Or_Absorb_Rule());
 
     // --- Optional (disabled by default due to growth) ---
-    // engine.AddRule(Factorize::Get_Distribute_Rule());
+    // engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 }
 
 } // namespace BitFlow::Core::Rules

@@ -17,7 +17,7 @@ int TestXorAndCommonFactor() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -64,7 +64,7 @@ int TestXorAndCommonFactor_MultiInput() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -118,7 +118,7 @@ int TestXorAndFactor_Basic() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -145,7 +145,7 @@ int TestXorAndFactor_WithUntouchedTerm() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -190,7 +190,7 @@ int TestXorAndFactor_NoMatch() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -214,7 +214,7 @@ int TestXorAndFactor_MultiFactorChoice_PicksMostFrequent() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -260,7 +260,7 @@ int TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -310,7 +310,7 @@ int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
     BF_TEST(r->op == OpType::Xor);

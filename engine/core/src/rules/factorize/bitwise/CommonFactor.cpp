@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Factorize {
+namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
 using Expr = AST::Expr;
 using OpType = AST::OpType;
@@ -195,4 +195,4 @@ Rule Get_Xor_And_Rule() {
                 {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize
+} // namespace BitFlow::Core::Rules::Factorize::Bitwise
