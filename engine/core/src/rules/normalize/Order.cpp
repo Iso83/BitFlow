@@ -12,7 +12,7 @@ namespace BitFlow::Core::Rules::Normalize {
 using Expr = AST::Expr;
 
 static bool Match_Order(const Expr& e) {
-    if (!IsCommutative(e.op))
+    if (!AST::IsCommutative(e.op))
         return false;
 
     if (e.inputs.size() < 2)

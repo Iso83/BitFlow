@@ -10,7 +10,7 @@ namespace BitFlow::Core::Rules::Normalize {
 using Expr = AST::Expr;
 
 static bool Match_Flatten(const Expr& e) {
-    if (!IsCommutative(e.op))
+    if (!AST::IsCommutative(e.op))
         return false;
 
     if (e.inputs.empty())
@@ -25,7 +25,7 @@ static bool Match_Flatten(const Expr& e) {
 }
 
 static Expr* Rewrite_Flatten(Expr& e) {
-    if (!IsCommutative(e.op))
+    if (!AST::IsCommutative(e.op))
         return nullptr;
 
     std::vector<Expr*> newInputs;

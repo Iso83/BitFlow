@@ -5,20 +5,8 @@
 
 namespace BitFlow::Core::Rules {
 
-inline bool IsCommutative(AST::OpType op) {
-    switch (op) {
-    case AST::OpType::Add:
-    case AST::OpType::Xor:
-    case AST::OpType::And:
-    case AST::OpType::Or:
-        return true;
-    default:
-        return false;
-    }
-}
-
 inline bool IsLeaf(const AST::Expr& e) {
-    return e.op == AST::OpType::Var || e.op == AST::OpType::Const;
+    return AST::IsLeaf(e.op);
 }
 
 inline bool IsNestedSameOp(const AST::Expr& parent, const AST::Expr& child) {

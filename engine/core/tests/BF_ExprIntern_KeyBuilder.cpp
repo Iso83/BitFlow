@@ -40,6 +40,57 @@ int TestCommutativeKeySameOrder() {
     return 0;
 }
 
+int TestCommutativeKeySameOrder_AddMul() {
+    ExprIntern::SetKeyBuilder(&BuildCommutativeKey);
+
+    auto a = MakeVar(40);
+    auto b = MakeVar(41);
+
+    auto add1 = MakeOp(42, OpType::Add, {a, b});
+    auto add2 = MakeOp(43, OpType::Add, {b, a});
+    auto mul1 = MakeOp(44, OpType::Mul, {a, b});
+    auto mul2 = MakeOp(45, OpType::Mul, {b, a});
+
+    auto addR1 = ExprIntern::Intern(add1);
+    auto addR2 = ExprIntern::Intern(add2);
+    auto mulR1 = ExprIntern::Intern(mul1);
+    auto mulR2 = ExprIntern::Intern(mul2);
+
+    BF_TEST(addR1 == addR2);
+    BF_TEST(mulR1 == mulR2);
+
+    ExprIntern::ResetKeyBuilder();
+    return 0;
+}
+
+int TestNonCommutativeKeyDifferentOrder_NewFamilies() {
+    ExprIntern::SetKeyBuilder(&BuildCommutativeKey);
+
+    auto a = MakeVar(50);
+    auto b = MakeVar(51);
+
+    auto sub1 = MakeOp(52, OpType::Sub, {a, b});
+    auto sub2 = MakeOp(53, OpType::Sub, {b, a});
+    auto shl1 = MakeOp(54, OpType::Shl, {a, b});
+    auto shl2 = MakeOp(55, OpType::Shl, {b, a});
+    auto rotl1 = MakeOp(56, OpType::RotL, {a, b});
+    auto rotl2 = MakeOp(57, OpType::RotL, {b, a});
+
+    auto subR1 = ExprIntern::Intern(sub1);
+    auto subR2 = ExprIntern::Intern(sub2);
+    auto shlR1 = ExprIntern::Intern(shl1);
+    auto shlR2 = ExprIntern::Intern(shl2);
+    auto rotlR1 = ExprIntern::Intern(rotl1);
+    auto rotlR2 = ExprIntern::Intern(rotl2);
+
+    BF_TEST(subR1 != subR2);
+    BF_TEST(shlR1 != shlR2);
+    BF_TEST(rotlR1 != rotlR2);
+
+    ExprIntern::ResetKeyBuilder();
+    return 0;
+}
+
 int TestConstLeafsWithSameValueDedup() {
     auto c1 = MakeConst(30, 42);
     auto c2 = MakeConst(31, 42);
@@ -57,6 +108,8 @@ int TestConstLeafsWithSameValueDedup() {
 int main() {
     BF_RUN_TEST(TestStructuralKeyDifferentOrder);
     BF_RUN_TEST(TestCommutativeKeySameOrder);
+    BF_RUN_TEST(TestCommutativeKeySameOrder_AddMul);
+    BF_RUN_TEST(TestNonCommutativeKeyDifferentOrder_NewFamilies);
     BF_RUN_TEST(TestConstLeafsWithSameValueDedup);
     return 0;
 }
