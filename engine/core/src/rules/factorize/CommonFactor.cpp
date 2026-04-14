@@ -43,6 +43,14 @@ static Expr* BuildXorNode(const std::vector<Expr*>& terms) {
     return MakeOpInterned(OpType::Xor, terms);
 }
 
+static size_t CountExprTreeNodes(const Expr* e) {
+    size_t nodes = 1;
+    for (const Expr* in : e->inputs)
+        nodes += CountExprTreeNodes(in);
+
+    return nodes;
+}
+
 static uint32_t FindBestCommonFactorId(const Expr& e) {
     std::unordered_map<uint32_t, size_t> counts;
 
@@ -172,7 +180,11 @@ static Expr* Rewrite_Xor_And(Expr& e) {
             finalInputs.push_back(term);
     }
 
-    return BuildXorNode(finalInputs);
+    Expr* candidate = BuildXorNode(finalInputs);
+    if (CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
+        return nullptr;
+
+    return candidate;
 }
 
 Rule Get_Xor_And_Rule() {

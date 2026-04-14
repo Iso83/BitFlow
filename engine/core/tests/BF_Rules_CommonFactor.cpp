@@ -295,6 +295,28 @@ int TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId() {
     return 0;
 }
 
+int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto c = MakeVar(3);
+    auto d = MakeVar(4);
+    auto e = MakeVar(5);
+    auto f = MakeVar(6);
+
+    auto abc = MakeOp(10, OpType::And, {a, b, c});
+    auto ade = MakeOp(11, OpType::And, {a, d, e});
+    auto expr = MakeOp(12, OpType::Xor, {abc, ade, f});
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Factorize::Get_Xor_And_Rule());
+
+    Expr* r = engine.ApplyUntilStable(expr);
+    BF_TEST(r == expr);
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestXorAndCommonFactor);
     BF_RUN_TEST(TestXorAndCommonFactor_MultiInput);
@@ -303,5 +325,6 @@ int main() {
     BF_RUN_TEST(TestXorAndFactor_NoMatch);
     BF_RUN_TEST(TestXorAndFactor_MultiFactorChoice_PicksMostFrequent);
     BF_RUN_TEST(TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId);
+    BF_RUN_TEST(TestXorAndFactor_ExplosionGuard_NoGrowthRewrite);
     return 0;
 }
