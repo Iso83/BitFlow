@@ -37,6 +37,43 @@ enum class OpType {
     Maj,
 };
 
+/*
+Invariant reference per op
+==========================
+
+Leaf
+- Var:   arity=0, fixed=true,  commutative=false, associative=false
+- Const: arity=0, fixed=true,  commutative=false, associative=false
+
+Unary
+- Not: arity=1, fixed=true, commutative=false, associative=false
+- Neg: arity=1, fixed=true, commutative=false, associative=false
+
+Bitwise / n-ary
+- And: arity=var, fixed=false, commutative=true,  associative=true
+- Or:  arity=var, fixed=false, commutative=true,  associative=true
+- Xor: arity=var, fixed=false, commutative=true,  associative=true
+
+Arithmetic
+- Add: arity=var, fixed=false, commutative=true,  associative=true
+- Sub: arity=2,   fixed=true,  commutative=false, associative=false
+- Mul: arity=var, fixed=false, commutative=true,  associative=true
+- Div: arity=2,   fixed=true,  commutative=false, associative=false
+- Mod: arity=2,   fixed=true,  commutative=false, associative=false
+
+Shifts
+- Shl:  arity=2, fixed=true, commutative=false, associative=false
+- Shr:  arity=2, fixed=true, commutative=false, associative=false
+- UShr: arity=2, fixed=true, commutative=false, associative=false
+
+Rotations
+- RotL: arity=2, fixed=true, commutative=false, associative=false
+- RotR: arity=2, fixed=true, commutative=false, associative=false
+
+SHA higher-level
+- Ch:  arity=3, fixed=true, commutative=false, associative=false
+- Maj: arity=3, fixed=true, commutative=false, associative=false
+*/
 inline constexpr bool IsLeaf(OpType op) {
     return op == OpType::Var || op == OpType::Const;
 }
