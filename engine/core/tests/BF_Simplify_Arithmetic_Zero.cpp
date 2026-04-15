@@ -51,6 +51,14 @@ static RuleEngine MakeEngine_RotateModuloBitwidth() {
     return engine;
 }
 
+static RuleEngine MakeEngine_RotateModuloBitwidth_WithOrder() {
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Modulo_Bitwidth_Rule());
+    return engine;
+}
+
 int TestAddZero_Nested() {
     auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
@@ -320,6 +328,49 @@ int TestRotateModuloBitwidth_GuardNonConstAmount() {
     return 0;
 }
 
+int TestRotateModuloBitwidth_Property_ConstantAmounts() {
+    auto x = MakeVar(830);
+
+    for (uint32_t amount = 0; amount < 128; ++amount) {
+        auto c = ConstPool::Get(amount);
+        auto rot = MakeOp(900 + amount, OpType::RotR, {x, c});
+
+        RuleEngine engine = MakeEngine_RotateModuloBitwidth();
+        Expr* result = engine.ApplyUntilStable(rot);
+
+        const uint32_t reduced = amount % 32;
+        if (reduced == 0) {
+            BF_TEST(result->id == x->id);
+        } else {
+            BF_TEST(result->op == OpType::RotR);
+            BF_TEST(result->inputs.size() == 2);
+            BF_TEST(result->inputs[0]->id == x->id);
+            BF_TEST(result->inputs[1]->isConst());
+            BF_TEST(result->inputs[1]->constValue == reduced);
+        }
+    }
+
+    return 0;
+}
+
+int TestRotateModuloBitwidth_CanonicalOrderRegression() {
+    auto x = MakeVar(840);
+    auto y = MakeVar(841);
+    auto amount = ConstPool::Get(32);
+
+    auto rot = MakeOp(842, OpType::RotL, {x, amount});
+    auto add = MakeOp(843, OpType::Add, {y, rot});
+
+    RuleEngine engine = MakeEngine_RotateModuloBitwidth_WithOrder();
+    Expr* result = engine.ApplyUntilStable(add);
+
+    BF_TEST(result->op == OpType::Add);
+    BF_TEST(result->inputs.size() == 2);
+    BF_TEST(result->inputs[0]->id == x->id);
+    BF_TEST(result->inputs[1]->id == y->id);
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAddZero_Nested);
     BF_RUN_TEST(TestAddZero_AllZerosBecomeConstZero);
@@ -338,5 +389,7 @@ int main() {
     BF_RUN_TEST(TestRotateModuloBitwidth_ReducesConstantAmount);
     BF_RUN_TEST(TestRotateModuloBitwidth_FullWidthBecomesIdentity);
     BF_RUN_TEST(TestRotateModuloBitwidth_GuardNonConstAmount);
+    BF_RUN_TEST(TestRotateModuloBitwidth_Property_ConstantAmounts);
+    BF_RUN_TEST(TestRotateModuloBitwidth_CanonicalOrderRegression);
     return 0;
 }
