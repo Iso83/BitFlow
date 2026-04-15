@@ -1,6 +1,7 @@
 #include <BitFlow/io/ExprEvaluator.h>
 
 #include <BitFlow/io/ExprParser.h>
+#include <exception>
 
 namespace BitFlow::IO {
 namespace {
@@ -29,16 +30,23 @@ const char* StatusMessage(Core::Eval::EvalStatus status) {
 } // namespace
 
 EvaluatePrintResult ParseEvaluatePrint(const std::string& input, uint32_t bitWidth) {
-    const ParseResult parsed = Parse(input);
-    const Core::Eval::EvalResult eval = Core::Eval::EvaluateConstant(parsed.root, bitWidth);
-
     EvaluatePrintResult out{};
-    out.eval = eval;
+    try {
+        const ParseResult parsed = Parse(input);
+        out.eval = Core::Eval::EvaluateConstant(parsed.root, bitWidth);
+    } catch (const std::exception& ex) {
+        out.parseOk = false;
+        out.parseError = ex.what();
+        out.text = "result: error: parse failed: " + out.parseError;
+        return out;
+    }
 
-    if (eval.status == Core::Eval::EvalStatus::Success)
-        out.text = "result: success, value=" + std::to_string(eval.value);
+    if (out.eval.status == Core::Eval::EvalStatus::Success) {
+        out.text = "result: success, value=" + std::to_string(out.eval.value) +
+                   ", bitwidth=" + std::to_string(bitWidth);
+    }
     else
-        out.text = std::string{"result: "} + StatusMessage(eval.status);
+        out.text = std::string{"result: "} + StatusMessage(out.eval.status);
 
     return out;
 }
