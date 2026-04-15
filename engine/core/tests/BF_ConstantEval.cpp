@@ -120,6 +120,30 @@ int TestEvaluate_ShiftAndRotateUseModulo() {
     return 0;
 }
 
+
+int TestEvaluate_BitWidth64LargeShiftIsSafe() {
+    auto v = MakeConst(1, 0x3);
+    auto n = MakeConst(2, 130);
+
+    auto shl = MakeOp(3, OpType::Shl, {v, n});
+    auto shr = MakeOp(4, OpType::Shr, {v, n});
+    auto rotl = MakeOp(5, OpType::RotL, {v, n});
+
+    EvalResult rShl = EvaluateConstant(shl, 64);
+    EvalResult rShr = EvaluateConstant(shr, 64);
+    EvalResult rRotL = EvaluateConstant(rotl, 64);
+
+    BF_TEST(rShl.status == EvalStatus::Success);
+    BF_TEST(rShl.value == 12ULL);
+
+    BF_TEST(rShr.status == EvalStatus::Success);
+    BF_TEST(rShr.value == 0ULL);
+
+    BF_TEST(rRotL.status == EvalStatus::Success);
+    BF_TEST(rRotL.value == 12ULL);
+    return 0;
+}
+
 int TestEvaluate_NotConstantAndInvalidBitWidth() {
     auto x = MakeVar(1);
     auto c = MakeConst(2, 1);
@@ -140,6 +164,7 @@ int main() {
     BF_RUN_TEST(TestEvaluate_DivModAndGuards);
     BF_RUN_TEST(TestEvaluate_NegAndBitwise);
     BF_RUN_TEST(TestEvaluate_ShiftAndRotateUseModulo);
+    BF_RUN_TEST(TestEvaluate_BitWidth64LargeShiftIsSafe);
     BF_RUN_TEST(TestEvaluate_NotConstantAndInvalidBitWidth);
     return 0;
 }

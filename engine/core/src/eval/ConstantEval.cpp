@@ -8,10 +8,14 @@ namespace BitFlow::Core::Eval {
 namespace {
 
 uint64_t MaskFor(uint32_t bitWidth) {
-    if (bitWidth >= 64)
+    if (bitWidth == 64U)
         return ~uint64_t{0};
 
-    return (uint64_t{1} << bitWidth) - 1;
+    return (uint64_t{1} << bitWidth) - 1ULL;
+}
+
+uint32_t NormalizeShift(uint64_t amount, uint32_t bitWidth) {
+    return static_cast<uint32_t>(amount % static_cast<uint64_t>(bitWidth));
 }
 
 EvalResult Make(EvalStatus status) {
@@ -138,18 +142,18 @@ EvalResult EvalExpr(const AST::Expr* node, uint32_t bitWidth, uint64_t mask) {
             return MakeSuccess(a.value % b.value, mask);
 
         case AST::OpType::Shl: {
-            uint32_t shift = static_cast<uint32_t>(b.value % bitWidth);
+            uint32_t shift = NormalizeShift(b.value, bitWidth);
             return MakeSuccess((a.value << shift) & mask, mask);
         }
 
         case AST::OpType::Shr:
         case AST::OpType::UShr: {
-            uint32_t shift = static_cast<uint32_t>(b.value % bitWidth);
+            uint32_t shift = NormalizeShift(b.value, bitWidth);
             return MakeSuccess((a.value >> shift) & mask, mask);
         }
 
         case AST::OpType::RotL: {
-            uint32_t shift = static_cast<uint32_t>(b.value % bitWidth);
+            uint32_t shift = NormalizeShift(b.value, bitWidth);
             if (shift == 0)
                 return MakeSuccess(a.value, mask);
 
@@ -159,7 +163,7 @@ EvalResult EvalExpr(const AST::Expr* node, uint32_t bitWidth, uint64_t mask) {
         }
 
         case AST::OpType::RotR: {
-            uint32_t shift = static_cast<uint32_t>(b.value % bitWidth);
+            uint32_t shift = NormalizeShift(b.value, bitWidth);
             if (shift == 0)
                 return MakeSuccess(a.value, mask);
 
