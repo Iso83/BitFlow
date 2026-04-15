@@ -19,6 +19,10 @@ struct EvalResult {
     uint64_t value = 0;
 };
 
+// Precondition:
+// - root should be fully constant (see IsFullyConstant in ConstantDetect.h)
+// - if this is not true, EvalStatus::NotConstant is returned when traversal
+//   encounters a non-constant node.
 EvalResult EvaluateConstant(const AST::Expr* root, uint32_t bitWidth);
 
 } // namespace BitFlow::Core::Eval

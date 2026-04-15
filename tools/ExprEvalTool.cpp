@@ -1,4 +1,5 @@
 #include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/ConstantDetect.h>
 #include <BitFlow/io/ExprParser.h>
 
 #include <cstdint>
@@ -64,6 +65,11 @@ int main() {
         }
 
         auto parsed = BitFlow::IO::Parse(expression);
+        if (!BitFlow::Core::Eval::IsFullyConstant(parsed.root)) {
+            std::cout << "error: NotConstant\n";
+            continue;
+        }
+
         BitFlow::Core::Eval::EvalResult result = BitFlow::Core::Eval::EvaluateConstant(parsed.root, bitWidth);
 
         if (result.status == BitFlow::Core::Eval::EvalStatus::Success) {
