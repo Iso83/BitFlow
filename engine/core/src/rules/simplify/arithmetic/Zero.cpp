@@ -12,7 +12,7 @@ namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
 using Expr = AST::Expr;
 
-static Expr* Rewrite_Remove_Zero(Expr& e) {
+static Expr* Rewrite_Add_Zero(Expr& e) {
     std::vector<Expr*> newInputs;
 
     for (Expr* in : e.inputs) {
@@ -35,9 +35,9 @@ static Expr* Rewrite_Remove_Zero(Expr& e) {
 Rule Get_Add_Zero_Rule() {
     return Rule{RuleId::Simplify_AddZero,
                 &Match_Zero<AST::OpType::Add>,
-                &Rewrite_Remove_Zero,
+                &Rewrite_Add_Zero,
                 Stage_Simplify,
                 {RuleId::Normalize_Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify
+} // namespace BitFlow::Core::Rules::Simplify::Arithmetic

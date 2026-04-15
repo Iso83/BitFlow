@@ -2,28 +2,87 @@
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
+#include <vector>
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
-int TestAddZero() {
+static RuleEngine MakeEngine() {
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
+    return engine;
+}
+
+int TestAddZero_Nested() {
     auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
 
     auto add1 = MakeOp(3, OpType::Add, {x, zero});
     auto add2 = MakeOp(4, OpType::Add, {add1, zero});
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
-
+    RuleEngine engine = MakeEngine();
     Expr* result = engine.ApplyUntilStable(add2);
 
     BF_TEST(result->id == x->id);
     return 0;
 }
 
+int TestAddZero_AllZerosBecomeConstZero() {
+    auto zero = ConstPool::Get(0);
+    auto add = MakeOp(11, OpType::Add, {zero, zero, zero});
+
+    RuleEngine engine = MakeEngine();
+    Expr* result = engine.ApplyUntilStable(add);
+
+    BF_TEST(result->id == zero->id);
+    return 0;
+}
+
+int TestAddZero_CanonicalOrderRegression() {
+    auto x = MakeVar(20);
+    auto y = MakeVar(21);
+    auto zero = ConstPool::Get(0);
+    auto add = MakeOp(22, OpType::Add, {y, zero, x});
+
+    RuleEngine engine = MakeEngine();
+    Expr* result = engine.ApplyUntilStable(add);
+
+    BF_TEST(result->op == OpType::Add);
+    BF_TEST(result->inputs.size() == 2);
+    BF_TEST(result->inputs[0]->id == x->id);
+    BF_TEST(result->inputs[1]->id == y->id);
+    return 0;
+}
+
+int TestAddZero_Property_ZeroAtAnyPosition() {
+    auto x = MakeVar(30);
+    auto y = MakeVar(31);
+    auto z = MakeVar(32);
+    auto zero = ConstPool::Get(0);
+
+    for (int zeroPos = 0; zeroPos < 4; ++zeroPos) {
+        std::vector<Expr*> inputs = {x, y, z, x};
+        inputs[zeroPos] = zero;
+        auto add = MakeOp(100 + static_cast<uint32_t>(zeroPos), OpType::Add, {inputs[0], inputs[1], inputs[2], inputs[3]});
+
+        RuleEngine engine = MakeEngine();
+        Expr* result = engine.ApplyUntilStable(add);
+
+        BF_TEST(result->op == OpType::Add);
+        BF_TEST(result->inputs.size() == 3);
+        for (Expr* in : result->inputs)
+            BF_TEST(!(in->isConst() && in->constValue == 0));
+    }
+
+    return 0;
+}
+
 int main() {
-    BF_RUN_TEST(TestAddZero);
+    BF_RUN_TEST(TestAddZero_Nested);
+    BF_RUN_TEST(TestAddZero_AllZerosBecomeConstZero);
+    BF_RUN_TEST(TestAddZero_CanonicalOrderRegression);
+    BF_RUN_TEST(TestAddZero_Property_ZeroAtAnyPosition);
     return 0;
 }
