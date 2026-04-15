@@ -89,6 +89,40 @@ static Expr* Rewrite_Shift_Zero(Expr& e) {
     return e.inputs[0];
 }
 
+static bool Match_Rotate_Modulo_Bitwidth(const Expr& e) {
+    switch (e.op) {
+    case AST::OpType::RotL:
+    case AST::OpType::RotR:
+        break;
+    default:
+        return false;
+    }
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    const Expr* rhs = e.inputs[1];
+    if (!rhs->isConst())
+        return false;
+
+    constexpr uint32_t kBitWidth = 32;
+    const uint32_t amount = rhs->constValue;
+
+    return amount == 0 || amount >= kBitWidth;
+}
+
+static Expr* Rewrite_Rotate_Modulo_Bitwidth(Expr& e) {
+    constexpr uint32_t kBitWidth = 32;
+    const uint32_t amount = e.inputs[1]->constValue % kBitWidth;
+
+    if (amount == 0)
+        return e.inputs[0];
+
+    Expr* target = Expression::CloneExpr(&e);
+    target->inputs[1] = Expression::ConstPool::Get(amount);
+    return target;
+}
+
 Rule Get_Add_Zero_Rule() {
     return Rule{RuleId::Simplify_AddZero,
                 &Match_Zero<AST::OpType::Add>,
@@ -122,6 +156,14 @@ Rule Get_Shift_Zero_Rule() {
     return Rule{RuleId::Simplify_ShiftZero,
                 &Match_Shift_Zero,
                 &Rewrite_Shift_Zero,
+                Stage_Simplify,
+                {RuleId::Normalize_Flatten}};
+}
+
+Rule Get_Rotate_Modulo_Bitwidth_Rule() {
+    return Rule{RuleId::Simplify_RotateModuloBitwidth,
+                &Match_Rotate_Modulo_Bitwidth,
+                &Rewrite_Rotate_Modulo_Bitwidth,
                 Stage_Simplify,
                 {RuleId::Normalize_Flatten}};
 }
