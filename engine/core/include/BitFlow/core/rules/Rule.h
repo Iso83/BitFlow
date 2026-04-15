@@ -16,6 +16,7 @@ enum class RuleId {
     Simplify_SubZero,
     Simplify_MulZero,
     Simplify_ModZeroGuard,
+    Simplify_ShiftZero,
 
     Simplify_MulOne,
     Simplify_DivOne,
@@ -88,6 +89,7 @@ Rule Get_Mul_Zero_Rule(); // deps: Normalize_Flatten
 Rule Get_Sub_Zero_Rule(); // deps: Normalize_Flatten
 Rule Get_Div_One_Rule();  // deps: Normalize_Flatten
 Rule Get_Mod_Zero_Guard_Rule(); // deps: Normalize_Flatten
+Rule Get_Shift_Zero_Rule(); // deps: Normalize_Flatten
 
 // Constant folding (arithmetic)
 Rule Get_Add_Fold_Rule(); // deps: Normalize_Flatten

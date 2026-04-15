@@ -68,6 +68,27 @@ static Expr* Rewrite_Mod_Zero_Guard(Expr&) {
     return nullptr;
 }
 
+static bool Match_Shift_Zero(const Expr& e) {
+    switch (e.op) {
+    case AST::OpType::Shl:
+    case AST::OpType::Shr:
+    case AST::OpType::UShr:
+        break;
+    default:
+        return false;
+    }
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    const Expr* rhs = e.inputs[1];
+    return rhs->isConst() && rhs->constValue == 0;
+}
+
+static Expr* Rewrite_Shift_Zero(Expr& e) {
+    return e.inputs[0];
+}
+
 Rule Get_Add_Zero_Rule() {
     return Rule{RuleId::Simplify_AddZero,
                 &Match_Zero<AST::OpType::Add>,
@@ -93,6 +114,14 @@ Rule Get_Mod_Zero_Guard_Rule() {
     return Rule{RuleId::Simplify_ModZeroGuard,
                 &Match_Mod_Zero,
                 &Rewrite_Mod_Zero_Guard,
+                Stage_Simplify,
+                {RuleId::Normalize_Flatten}};
+}
+
+Rule Get_Shift_Zero_Rule() {
+    return Rule{RuleId::Simplify_ShiftZero,
+                &Match_Shift_Zero,
+                &Rewrite_Shift_Zero,
                 Stage_Simplify,
                 {RuleId::Normalize_Flatten}};
 }
