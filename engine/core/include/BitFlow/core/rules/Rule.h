@@ -94,7 +94,6 @@ Rule Get_Add_Zero_Rule(); // deps: Normalize_Flatten
 /// Constant Folding
 /// Evaluates expressions with constant inputs.
 Rule Get_Add_Fold_Rule(); // deps: Normalize_Flatten
-Rule Get_Xor_Fold_Rule(); // deps: Normalize_Flatten
 #pragma endregion
 
 #pragma region Cancellation
@@ -178,6 +177,7 @@ Rule Get_Xor_Zero_Rule(); // deps: Normalize_Flatten
 #pragma region Constant Folding
 Rule Get_And_Fold_Rule(); // deps: Normalize_Flatten
 Rule Get_Or_Fold_Rule();  // deps: Normalize_Flatten
+Rule Get_Xor_Fold_Rule(); // deps: Normalize_Flatten
 #pragma endregion
 
 #pragma region Cancellation

@@ -31,6 +31,23 @@ static bool Match_Or_Fold(const Expr& e) {
 
     return true;
 }
+
+static bool Match_Xor_Fold(const Expr& e) {
+    if (e.op != AST::OpType::Xor)
+        return false;
+
+    if (e.inputs.size() < 2)
+        return false;
+
+    int constCount = 0;
+
+    for (const Expr* in : e.inputs) {
+        if (in->isConst())
+            constCount++;
+    }
+
+    return constCount >= 2;
+}
 #pragma endregion
 
 #pragma region Rewrite
@@ -81,6 +98,32 @@ static Expr* Rewrite_Or_Fold(Expr& e) {
     target->inputs = std::move(newInputs);
     return target;
 }
+
+static Expr* Rewrite_Xor_Fold(Expr& e) {
+    uint32_t acc = 0;
+    std::vector<Expr*> nonConst;
+    nonConst.reserve(e.inputs.size());
+
+    for (Expr* in : e.inputs) {
+        if (in->isConst())
+            acc ^= in->constValue;
+        else
+            nonConst.push_back(in);
+    }
+
+    if (acc != 0)
+        nonConst.push_back(Expression::ConstPool::Get(acc));
+
+    if (nonConst.empty())
+        return Expression::ConstPool::Get(0);
+
+    if (nonConst.size() == 1)
+        return nonConst[0];
+
+    Expr* target = Expression::CloneExpr(&e);
+    target->inputs = std::move(nonConst);
+    return target;
+}
 #pragma endregion
 
 Rule Get_And_Fold_Rule() {
@@ -90,6 +133,11 @@ Rule Get_And_Fold_Rule() {
 
 Rule Get_Or_Fold_Rule() {
     return Rule{RuleId::Simplify_OrFold, &Match_Or_Fold, &Rewrite_Or_Fold, Stage_Simplify, {RuleId::Normalize_Flatten}};
+}
+
+Rule Get_Xor_Fold_Rule() {
+    return Rule{
+        RuleId::Simplify_XorFold, &Match_Xor_Fold, &Rewrite_Xor_Fold, Stage_Simplify, {RuleId::Normalize_Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

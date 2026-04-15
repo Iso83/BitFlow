@@ -42,7 +42,7 @@ inline void Add_Bitwise_Simplify_Pipeline(RuleEngine& engine) {
     engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
 
     // --- Constant Folding ---
-    engine.AddRule(Simplify::Get_Xor_Fold_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Fold_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Fold_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Or_Fold_Rule());
 
