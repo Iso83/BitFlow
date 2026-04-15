@@ -13,6 +13,12 @@ enum class RuleId {
     Normalize_Order,
 
     Simplify_AddZero,
+    Simplify_SubZero,
+    Simplify_MulZero,
+
+    Simplify_MulOne,
+    Simplify_DivOne,
+
     Simplify_XorZero,
 
     Simplify_AddFold,
@@ -21,7 +27,6 @@ enum class RuleId {
     Simplify_XorFold,
 
     Simplify_XorCancel,
-    Simplify_XorDuplicateCancel,
     Simplify_AndCancel,
     Simplify_OrCancel,
 
@@ -77,6 +82,10 @@ namespace Simplify::Arithmetic {
 
 // Identity / neutral (arithmetic)
 Rule Get_Add_Zero_Rule(); // deps: Normalize_Flatten
+Rule Get_Mul_One_Rule();  // deps: Normalize_Flatten
+Rule Get_Mul_Zero_Rule(); // deps: Normalize_Flatten
+Rule Get_Sub_Zero_Rule(); // deps: Normalize_Flatten
+Rule Get_Div_One_Rule();  // deps: Normalize_Flatten
 
 // Constant folding (arithmetic)
 Rule Get_Add_Fold_Rule(); // deps: Normalize_Flatten
