@@ -36,9 +36,9 @@ EvaluatePrintResult ParseEvaluatePrint(const std::string& input, uint32_t bitWid
     out.eval = eval;
 
     if (eval.status == Core::Eval::EvalStatus::Success)
-        out.text = std::to_string(eval.value);
+        out.text = "result: success, value=" + std::to_string(eval.value);
     else
-        out.text = StatusMessage(eval.status);
+        out.text = std::string{"result: "} + StatusMessage(eval.status);
 
     return out;
 }
