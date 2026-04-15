@@ -38,3 +38,10 @@ endif()
 
 add_subdirectory(engine/core)
 add_subdirectory(engine/io)
+
+option(BF_BUILD_TOOLS "Build standalone BitFlow tools" OFF)
+if(BF_BUILD_TOOLS)
+    add_executable(BitFlow_ExprEvalTool tools/ExprEvalTool.cpp)
+    target_link_libraries(BitFlow_ExprEvalTool PRIVATE BitFlowCore BitFlowIO)
+    set_property(TARGET BitFlow_ExprEvalTool PROPERTY FOLDER "tools")
+endif()
