@@ -1,0 +1,50 @@
+#include "expression/ExprClone.h"
+#include "rules/RuleStage.h"
+
+#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/rules/Rule.h>
+#include <vector>
+
+namespace BitFlow::Core::Rules::Simplify::Arithmetic {
+
+using Expr = AST::Expr;
+
+static bool Match_Mul_One(const Expr& e) {
+    if (e.op != AST::OpType::Mul)
+        return false;
+
+    for (const Expr* in : e.inputs) {
+        if (in->isConst() && in->constValue == 1)
+            return true;
+    }
+
+    return false;
+}
+
+static Expr* Rewrite_Mul_One(Expr& e) {
+    std::vector<Expr*> newInputs;
+    newInputs.reserve(e.inputs.size());
+
+    for (Expr* in : e.inputs) {
+        if (!(in->isConst() && in->constValue == 1))
+            newInputs.push_back(in);
+    }
+
+    if (newInputs.empty())
+        return Expression::ConstPool::Get(1);
+
+    if (newInputs.size() == 1)
+        return newInputs[0];
+
+    Expr* target = Expression::CloneExpr(&e);
+    target->inputs = std::move(newInputs);
+    return target;
+}
+
+Rule Get_Mul_One_Rule() {
+    return Rule{RuleId::Simplify_MulOne, &Match_Mul_One, &Rewrite_Mul_One, Stage_Simplify, {RuleId::Normalize_Flatten}};
+}
+
+} // namespace BitFlow::Core::Rules::Simplify::Arithmetic

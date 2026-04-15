@@ -60,6 +60,7 @@ if(BF_BUILD_TESTS)
 
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_Fold)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_Zero)
+    bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_MulOne)
 
     bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_CH)
     bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_MAJ)
