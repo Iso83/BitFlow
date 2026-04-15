@@ -36,6 +36,21 @@ static Expr* Rewrite_Mul_Zero(Expr&) {
     return Expression::ConstPool::Get(0);
 }
 
+static bool Match_Sub_Zero(const Expr& e) {
+    if (e.op != AST::OpType::Sub)
+        return false;
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    const Expr* rhs = e.inputs[1];
+    return rhs->isConst() && rhs->constValue == 0;
+}
+
+static Expr* Rewrite_Sub_Zero(Expr& e) {
+    return e.inputs[0];
+}
+
 Rule Get_Add_Zero_Rule() {
     return Rule{RuleId::Simplify_AddZero,
                 &Match_Zero<AST::OpType::Add>,
@@ -48,6 +63,14 @@ Rule Get_Mul_Zero_Rule() {
     return Rule{RuleId::Simplify_MulZero,
                 &Match_Zero<AST::OpType::Mul>,
                 &Rewrite_Mul_Zero,
+                Stage_Simplify,
+                {RuleId::Normalize_Flatten}};
+}
+
+Rule Get_Sub_Zero_Rule() {
+    return Rule{RuleId::Simplify_SubZero,
+                &Match_Sub_Zero,
+                &Rewrite_Sub_Zero,
                 Stage_Simplify,
                 {RuleId::Normalize_Flatten}};
 }

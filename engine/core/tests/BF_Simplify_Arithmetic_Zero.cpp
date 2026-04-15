@@ -23,6 +23,13 @@ static RuleEngine MakeEngine_Mult() {
     return engine;
 }
 
+static RuleEngine MakeEngine_Sub() {
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Sub_Zero_Rule());
+    return engine;
+}
+
 int TestAddZero_Nested() {
     auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
@@ -134,6 +141,49 @@ int TestMulZero_Property_ZeroAtAnyPosition() {
     return 0;
 }
 
+int TestSubZero_Basic() {
+    auto x = MakeVar(400);
+    auto zero = ConstPool::Get(0);
+    auto sub = MakeOp(401, OpType::Sub, {x, zero});
+
+    RuleEngine engine = MakeEngine_Sub();
+    Expr* result = engine.ApplyUntilStable(sub);
+
+    BF_TEST(result->id == x->id);
+    return 0;
+}
+
+int TestSubZero_GuardLeftZeroStaysSub() {
+    auto x = MakeVar(410);
+    auto zero = ConstPool::Get(0);
+    auto sub = MakeOp(411, OpType::Sub, {zero, x});
+
+    RuleEngine engine = MakeEngine_Sub();
+    Expr* result = engine.ApplyUntilStable(sub);
+
+    BF_TEST(result->op == OpType::Sub);
+    BF_TEST(result->inputs.size() == 2);
+    BF_TEST(result->inputs[0]->id == zero->id);
+    BF_TEST(result->inputs[1]->id == x->id);
+    return 0;
+}
+
+int TestSubZero_Property_RightOperandZero() {
+    auto zero = ConstPool::Get(0);
+    std::vector<Expr*> vars = {MakeVar(420), MakeVar(421), MakeVar(422), MakeVar(423)};
+
+    for (size_t i = 0; i < vars.size(); ++i) {
+        auto sub = MakeOp(500 + static_cast<uint32_t>(i), OpType::Sub, {vars[i], zero});
+
+        RuleEngine engine = MakeEngine_Sub();
+        Expr* result = engine.ApplyUntilStable(sub);
+
+        BF_TEST(result->id == vars[i]->id);
+    }
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAddZero_Nested);
     BF_RUN_TEST(TestAddZero_AllZerosBecomeConstZero);
@@ -142,5 +192,8 @@ int main() {
     BF_RUN_TEST(TestMulZero_Nested);
     BF_RUN_TEST(TestMulZero_DominanceWithMixedInputs);
     BF_RUN_TEST(TestMulZero_Property_ZeroAtAnyPosition);
+    BF_RUN_TEST(TestSubZero_Basic);
+    BF_RUN_TEST(TestSubZero_GuardLeftZeroStaysSub);
+    BF_RUN_TEST(TestSubZero_Property_RightOperandZero);
     return 0;
 }
