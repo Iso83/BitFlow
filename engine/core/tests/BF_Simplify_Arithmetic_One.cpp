@@ -7,7 +7,7 @@
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
-static RuleEngine MakeEngine() {
+static RuleEngine MakeEngine_Mult() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
@@ -22,7 +22,7 @@ int TestMulOne_Nested() {
     auto mul1 = MakeOp(3, OpType::Mul, {x, one});
     auto mul2 = MakeOp(4, OpType::Mul, {mul1, one});
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine = MakeEngine_Mult();
     Expr* result = engine.ApplyUntilStable(mul2);
 
     BF_TEST(result->id == x->id);
@@ -33,7 +33,7 @@ int TestMulOne_AllOnesBecomeConstOne() {
     auto one = ConstPool::Get(1);
     auto mul = MakeOp(10, OpType::Mul, {one, one, one});
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine = MakeEngine_Mult();
     Expr* result = engine.ApplyUntilStable(mul);
 
     BF_TEST(result->id == one->id);
@@ -46,7 +46,7 @@ int TestMulOne_CanonicalOrderRegression() {
     auto one = ConstPool::Get(1);
     auto mul = MakeOp(22, OpType::Mul, {y, one, x});
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine = MakeEngine_Mult();
     Expr* result = engine.ApplyUntilStable(mul);
 
     BF_TEST(result->op == OpType::Mul);
@@ -67,7 +67,7 @@ int TestMulOne_Property_OneAtAnyPosition() {
         inputs[onePos] = one;
         auto mul = MakeOp(100 + static_cast<uint32_t>(onePos), OpType::Mul, {inputs[0], inputs[1], inputs[2], inputs[3]});
 
-        RuleEngine engine = MakeEngine();
+        RuleEngine engine = MakeEngine_Mult();
         Expr* result = engine.ApplyUntilStable(mul);
 
         BF_TEST(result->op == OpType::Mul);
