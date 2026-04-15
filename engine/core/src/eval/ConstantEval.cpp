@@ -138,18 +138,14 @@ EvalResult EvalExpr(const AST::Expr* node, uint32_t bitWidth, uint64_t mask) {
             return MakeSuccess(a.value % b.value, mask);
 
         case AST::OpType::Shl: {
-            if (b.value >= bitWidth)
-                return MakeSuccess(0, mask);
-
-            return MakeSuccess(a.value << static_cast<uint32_t>(b.value), mask);
+            uint32_t shift = static_cast<uint32_t>(b.value % bitWidth);
+            return MakeSuccess((a.value << shift) & mask, mask);
         }
 
         case AST::OpType::Shr:
         case AST::OpType::UShr: {
-            if (b.value >= bitWidth)
-                return MakeSuccess(0, mask);
-
-            return MakeSuccess(a.value >> static_cast<uint32_t>(b.value), mask);
+            uint32_t shift = static_cast<uint32_t>(b.value % bitWidth);
+            return MakeSuccess((a.value >> shift) & mask, mask);
         }
 
         case AST::OpType::RotL: {
