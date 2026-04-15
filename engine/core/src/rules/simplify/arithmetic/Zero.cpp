@@ -32,10 +32,22 @@ static Expr* Rewrite_Add_Zero(Expr& e) {
     return target;
 }
 
+static Expr* Rewrite_Mul_Zero(Expr&) {
+    return Expression::ConstPool::Get(0);
+}
+
 Rule Get_Add_Zero_Rule() {
     return Rule{RuleId::Simplify_AddZero,
                 &Match_Zero<AST::OpType::Add>,
                 &Rewrite_Add_Zero,
+                Stage_Simplify,
+                {RuleId::Normalize_Flatten}};
+}
+
+Rule Get_Mul_Zero_Rule() {
+    return Rule{RuleId::Simplify_MulZero,
+                &Match_Zero<AST::OpType::Mul>,
+                &Rewrite_Mul_Zero,
                 Stage_Simplify,
                 {RuleId::Normalize_Flatten}};
 }
