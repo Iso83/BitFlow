@@ -1,46 +1,96 @@
 #include <BitFlow/io/ExprEvaluator.h>
 #include <TestAssert.h>
+#include <string>
 
-int TestExprEvaluator_ParseEvaluatePrintSuccess() {
-    auto result = BitFlow::IO::ParseEvaluatePrint("1 + 2 * 3", 8);
+using Status = BitFlow::Core::Eval::EvalStatus;
 
-    BF_TEST(result.eval.status == BitFlow::Core::Eval::EvalStatus::Success);
-    BF_TEST(result.eval.value == 7);
-    BF_TEST(result.text == "result: success, value=7");
+static int ExpectValue(const char* expr, uint32_t bitWidth, uint64_t expectedValue) {
+    const auto result = BitFlow::IO::ParseEvaluatePrint(expr, bitWidth);
+    BF_TEST(result.eval.status == Status::Success);
+    BF_TEST(result.eval.value == expectedValue);
+    BF_TEST(result.text == ("result: success, value=" + std::to_string(expectedValue)));
     return 0;
 }
 
-int TestExprEvaluator_ParseEvaluatePrintNotConstant() {
+int TestExprEvaluator_ConstantExpression() {
+    BF_RUN_TEST(ExpectValue, "1 + 2 * 3", 8, 7);
+    return 0;
+}
+
+int TestExprEvaluator_NotConstantExpression() {
     auto result = BitFlow::IO::ParseEvaluatePrint("a + 1", 8);
 
-    BF_TEST(result.eval.status == BitFlow::Core::Eval::EvalStatus::NotConstant);
+    BF_TEST(result.eval.status == Status::NotConstant);
     BF_TEST(result.text == "result: error: expression is not fully constant");
     return 0;
 }
 
-int TestExprEvaluator_ParseEvaluatePrintDivisionByZero() {
-    auto result = BitFlow::IO::ParseEvaluatePrint("7 / 0", 8);
+int TestExprEvaluator_DivisionAndModuloByZero() {
+    auto divResult = BitFlow::IO::ParseEvaluatePrint("7 / 0", 8);
+    auto modResult = BitFlow::IO::ParseEvaluatePrint("7 % 0", 8);
 
-    BF_TEST(result.eval.status == BitFlow::Core::Eval::EvalStatus::DivisionByZero);
-    BF_TEST(result.text == "result: error: division by zero");
+    BF_TEST(divResult.eval.status == Status::DivisionByZero);
+    BF_TEST(divResult.text == "result: error: division by zero");
+
+    BF_TEST(modResult.eval.status == Status::ModuloByZero);
+    BF_TEST(modResult.text == "result: error: modulo by zero");
     return 0;
 }
 
-int TestExprEvaluator_ParseEvaluatePrintInvalidBitWidth() {
-    auto result = BitFlow::IO::ParseEvaluatePrint("7", 65);
-    auto resultZero = BitFlow::IO::ParseEvaluatePrint("7", 0);
+int TestExprEvaluator_RotateModuloBehavior() {
+    // 8-bit: rotl(0b10010001, 9) == rotl(..., 1) == 0b00100011 (35)
+    BF_RUN_TEST(ExpectValue, "rotl(145, 9)", 8, 35);
+    // 16-bit: rotl(1, 20) => rotl(1, 4) => 16
+    BF_RUN_TEST(ExpectValue, "rotl(1, 20)", 16, 16);
+    return 0;
+}
 
-    BF_TEST(result.eval.status == BitFlow::Core::Eval::EvalStatus::InvalidBitWidth);
-    BF_TEST(result.text == "result: error: invalid bitwidth (must be in range 1..64)");
-    BF_TEST(resultZero.eval.status == BitFlow::Core::Eval::EvalStatus::InvalidBitWidth);
-    BF_TEST(resultZero.text == "result: error: invalid bitwidth (must be in range 1..64)");
+int TestExprEvaluator_ShiftEdgeCases() {
+    // shift 0
+    BF_RUN_TEST(ExpectValue, "179 << 0", 8, 179);
+    // shift == bitwidth => 0
+    BF_RUN_TEST(ExpectValue, "179 << 8", 8, 0);
+    BF_RUN_TEST(ExpectValue, "179 >> 8", 8, 0);
+    // shift > bitwidth => 0
+    BF_RUN_TEST(ExpectValue, "179 << 9", 8, 0);
+    BF_RUN_TEST(ExpectValue, "179 >>> 9", 8, 0);
+    return 0;
+}
+
+int TestExprEvaluator_MultipleBitWidthsAndMasking() {
+    // (255 + 1) masked by width
+    BF_RUN_TEST(ExpectValue, "255 + 1", 8, 0);
+    BF_RUN_TEST(ExpectValue, "255 + 1", 16, 256);
+    BF_RUN_TEST(ExpectValue, "255 + 1", 32, 256);
+    BF_RUN_TEST(ExpectValue, "255 + 1", 64, 256);
+
+    // verify intermediate masking: ((255 + 1) * 3)
+    // 8-bit: (255 + 1)=0, then 0*3=0
+    BF_RUN_TEST(ExpectValue, "(255 + 1) * 3", 8, 0);
+    // 16-bit: (255 + 1)=256, then 256*3=768
+    BF_RUN_TEST(ExpectValue, "(255 + 1) * 3", 16, 768);
+    return 0;
+}
+
+int TestExprEvaluator_InvalidBitWidth() {
+    auto above = BitFlow::IO::ParseEvaluatePrint("7", 65);
+    auto zero = BitFlow::IO::ParseEvaluatePrint("7", 0);
+
+    BF_TEST(above.eval.status == Status::InvalidBitWidth);
+    BF_TEST(above.text == "result: error: invalid bitwidth (must be in range 1..64)");
+
+    BF_TEST(zero.eval.status == Status::InvalidBitWidth);
+    BF_TEST(zero.text == "result: error: invalid bitwidth (must be in range 1..64)");
     return 0;
 }
 
 int main() {
-    BF_RUN_TEST(TestExprEvaluator_ParseEvaluatePrintSuccess);
-    BF_RUN_TEST(TestExprEvaluator_ParseEvaluatePrintNotConstant);
-    BF_RUN_TEST(TestExprEvaluator_ParseEvaluatePrintDivisionByZero);
-    BF_RUN_TEST(TestExprEvaluator_ParseEvaluatePrintInvalidBitWidth);
+    BF_RUN_TEST(TestExprEvaluator_ConstantExpression);
+    BF_RUN_TEST(TestExprEvaluator_NotConstantExpression);
+    BF_RUN_TEST(TestExprEvaluator_DivisionAndModuloByZero);
+    BF_RUN_TEST(TestExprEvaluator_RotateModuloBehavior);
+    BF_RUN_TEST(TestExprEvaluator_ShiftEdgeCases);
+    BF_RUN_TEST(TestExprEvaluator_MultipleBitWidthsAndMasking);
+    BF_RUN_TEST(TestExprEvaluator_InvalidBitWidth);
     return 0;
 }
