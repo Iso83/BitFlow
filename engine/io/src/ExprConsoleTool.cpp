@@ -22,7 +22,8 @@ int main() {
         auto parsed = BitFlow::IO::Parse(line);
 
         RuleEngine engine;
-        Add_Bitwise_Simplify_Pipeline(engine);
+        Add_Normalize_Rules(engine);
+        Add_Simplify_Bitwise_Rules(engine);
 
         engine.SetDebugCallback([&](const Expr* before, const Expr* after, RuleId id) {
             std::cout << "[" << (int)id << "] " << BitFlow::IO::ToString(before, parsed.idToName) << " -> "

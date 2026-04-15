@@ -15,7 +15,7 @@ int TestAndOverXor() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Factorize::Get_Distribute_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -36,7 +36,7 @@ int TestAndOverXor_Multi() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Factorize::Get_Distribute_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -57,7 +57,7 @@ int TestAndMultipleOthers() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Factorize::Get_Distribute_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 

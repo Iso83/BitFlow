@@ -8,7 +8,7 @@
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify {
+namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
 using Expr = AST::Expr;
 
@@ -125,4 +125,4 @@ Rule Get_Not_Xor_Rule() {
     return Rule{RuleId::Simplify_NotXor, &Match_Not_Xor, &Rewrite_Not_Xor, Stage_Simplify, {RuleId::Normalize_Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify
+} // namespace BitFlow::Core::Rules::Simplify::Bitwise

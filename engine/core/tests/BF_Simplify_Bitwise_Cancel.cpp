@@ -13,7 +13,7 @@ int TestAndCancelPair() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_And_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -29,7 +29,7 @@ int TestAndCancelMixed() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_And_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -48,7 +48,7 @@ int TestOrCancelPair() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Or_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -65,7 +65,7 @@ int TestOrCancelMixed() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Or_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -83,7 +83,7 @@ int TestXorParityCancel_Pair() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -101,7 +101,7 @@ int TestXorParityCancel_ToSingle() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -118,7 +118,7 @@ int TestXorParityCancel_MixedToSingle() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -136,7 +136,7 @@ int TestXorParityCancel_MixedToXor() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -156,7 +156,7 @@ int TestXorParityCancel_AllEven() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -173,7 +173,7 @@ int TestXorParityCancel_Triple() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -191,7 +191,7 @@ int TestXorParityCancel_Frozen() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -207,7 +207,8 @@ int TestXorParity_WithConstCancel() {
     auto expr = MakeOp(10, OpType::Xor, {a, one, a});
 
     RuleEngine engine;
-    Add_Bitwise_Simplify_Pipeline(engine);
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -224,7 +225,8 @@ int TestXorParity_WithConstMixed() {
     auto expr = MakeOp(10, OpType::Xor, {a, one, b, a});
 
     RuleEngine engine;
-    Add_Bitwise_Simplify_Pipeline(engine);
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -244,7 +246,7 @@ int TestXorParity_RewriteKeepsCanonicalOrder() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 

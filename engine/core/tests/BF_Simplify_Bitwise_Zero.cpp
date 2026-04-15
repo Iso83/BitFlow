@@ -10,16 +10,16 @@ int TestAndZero() {
     auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
 
-    auto add1 = MakeOp(3, OpType::Add, {x, zero});
-    auto add2 = MakeOp(4, OpType::Add, {add1, zero});
+    auto and1 = MakeOp(3, OpType::And, {x, zero});
+    auto and2 = MakeOp(4, OpType::And, {and1, zero});
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Add_Zero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_ZeroDominance_Rule());
 
-    Expr* result = engine.ApplyUntilStable(add2);
+    Expr* result = engine.ApplyUntilStable(and2);
 
-    BF_TEST(result->id == x->id);
+    BF_TEST(result->id == zero->id);
     return 0;
 }
 
@@ -32,7 +32,7 @@ int TestXorZero() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Xor_Zero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
 
     Expr* result = engine.ApplyUntilStable(xor2);
 

@@ -7,7 +7,7 @@
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify {
+namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
 using Expr = AST::Expr;
 
@@ -149,4 +149,4 @@ Rule Get_Or_ZeroIdentity_Rule() {
                 {RuleId::Normalize_Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify
+} // namespace BitFlow::Core::Rules::Simplify::Bitwise

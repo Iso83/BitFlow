@@ -14,7 +14,8 @@ int TestXorDedup() {
     auto e2 = MakeOp(4, OpType::Xor, {y, x});
 
     RuleEngine engine;
-    Add_Bitwise_Simplify_Pipeline(engine);
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
 
     Expr* r1 = engine.ApplyUntilStable(e1);
     Expr* r2 = engine.ApplyUntilStable(e2);

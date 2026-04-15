@@ -13,7 +13,7 @@ int TestNotDoubleNegation() {
     auto n2 = MakeOp(3, OpType::Not, {n1});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Get_Not_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
     Expr* r = engine.ApplyUntilStable(n2);
 
@@ -27,7 +27,7 @@ int TestNotConst() {
     auto expr = MakeOp(2, OpType::Not, {c});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Get_Not_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -44,8 +44,8 @@ int TestNotPushdown_And() {
     auto expr = MakeOp(4, OpType::Not, {inner});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Get_NotPushdown_Rule());
-    engine.AddRule(Simplify::Get_Not_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -62,8 +62,8 @@ int TestNotPushdown_Or() {
     auto expr = MakeOp(4, OpType::Not, {inner});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Get_NotPushdown_Rule());
-    engine.AddRule(Simplify::Get_Not_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -81,7 +81,7 @@ int TestNotXor() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Not_Xor_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Xor_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 

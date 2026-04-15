@@ -13,8 +13,8 @@ int TestAndComplement() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Idempotent_Rule());
-    engine.AddRule(Simplify::Get_Complement_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Complement_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -31,8 +31,8 @@ int TestOrComplement() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Idempotent_Rule());
-    engine.AddRule(Simplify::Get_Complement_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Complement_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 

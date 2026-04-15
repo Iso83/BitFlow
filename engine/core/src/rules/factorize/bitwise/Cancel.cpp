@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Factorize {
+namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
 using Expr = AST::Expr;
 using OpType = AST::OpType;
@@ -167,4 +167,4 @@ Rule Get_Xor_Pair_Cancel_Rule() {
                 {RuleId::Normalize_Flatten, RuleId::Simplify_XorCancel}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize
+} // namespace BitFlow::Core::Rules::Factorize::Bitwise

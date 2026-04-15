@@ -14,7 +14,7 @@ int TestAndAbsorb() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Factorize::Get_And_Absorb_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -31,7 +31,7 @@ int TestOrAbsorb() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Factorize::Get_Or_Absorb_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Or_Absorb_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
