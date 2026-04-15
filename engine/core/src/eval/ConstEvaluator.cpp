@@ -172,7 +172,7 @@ EvalResult EvaluateInternal(const AST::Expr* expr, uint32_t bitWidth) {
 
 } // namespace
 
-EvalResult EvaluateConstExpr(const AST::Expr* expr, uint32_t bitWidth) {
+EvalResult EvaluateConstant(const AST::Expr* expr, uint32_t bitWidth) {
     if (bitWidth < 1 || bitWidth > 64)
         return EvalResult{EvalStatus::InvalidBitWidth, 0, AST::OpType::Var};
 

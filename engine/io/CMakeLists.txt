@@ -45,6 +45,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
 if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowIO io BF_ExprParser)
     bf_add_module_test(BitFlowIO io BF_ExprPrinter)
+    bf_add_module_test(BitFlowIO io BF_ExprEvaluator)
     bf_add_module_test(BitFlowIO io BF_Lexer)
 endif()
 

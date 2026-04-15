@@ -28,6 +28,10 @@ struct EvalResult {
 // Evaluates only fully constant expressions using fixed-width unsigned semantics.
 // Supported bit-width is 1..64 and every intermediate/final value is masked.
 // Shift semantics: logical shifts (Shl/Shr/UShr) return 0 when shiftcount >= bitWidth.
-EvalResult EvaluateConstExpr(const AST::Expr* expr, uint32_t bitWidth);
+EvalResult EvaluateConstant(const AST::Expr* expr, uint32_t bitWidth);
+
+inline EvalResult EvaluateConstExpr(const AST::Expr* expr, uint32_t bitWidth) {
+    return EvaluateConstant(expr, bitWidth);
+}
 
 } // namespace BitFlow::Core::Eval

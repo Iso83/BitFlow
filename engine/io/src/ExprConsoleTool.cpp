@@ -1,14 +1,9 @@
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/rules/RulePipeline.h>
-#include <BitFlow/io/ExprParser.h>
-#include <BitFlow/io/ExprPrinter.h>
+#include <BitFlow/io/ExprEvaluator.h>
 #include <iostream>
 #include <string>
 
-using namespace BitFlow::Core::Rules;
-using namespace BitFlow::Core::AST;
-
 int main() {
+    const uint32_t bitWidth = 32;
     std::string line;
 
     while (true) {
@@ -19,19 +14,8 @@ int main() {
         if (line.empty())
             continue;
 
-        auto parsed = BitFlow::IO::Parse(line);
-
-        RuleEngine engine;
-        Add_Normalize_Rules(engine);
-        Add_Simplify_Bitwise_Rules(engine);
-
-        engine.SetDebugCallback([&](const Expr* before, const Expr* after, RuleId id) {
-            std::cout << "[" << (int)id << "] " << BitFlow::IO::ToString(before, parsed.idToName) << " -> "
-                      << BitFlow::IO::ToString(after, parsed.idToName) << "\n";
-        });
-
-        Expr* result = engine.ApplyUntilStable(parsed.root);
-        std::cout << BitFlow::IO::ToString(result, parsed.idToName) << "\n";
+        const auto evaluated = BitFlow::IO::ParseEvaluatePrint(line, bitWidth);
+        std::cout << evaluated.text << "\n";
     }
 
     return 0;

@@ -7,7 +7,7 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Eval;
 
 static int ExpectSuccess(Expr* expr, uint32_t bitWidth, uint64_t expected) {
-    EvalResult result = EvaluateConstExpr(expr, bitWidth);
+    EvalResult result = EvaluateConstant(expr, bitWidth);
     BF_TEST(result.status == EvalStatus::Success);
     if (result.value != expected) {
         std::cerr << "Expected " << expected << ", got " << result.value << " at bitWidth " << bitWidth << std::endl;
@@ -19,8 +19,8 @@ static int ExpectSuccess(Expr* expr, uint32_t bitWidth, uint64_t expected) {
 int TestInvalidBitWidth() {
     auto c = MakeConst(1, 7);
 
-    BF_TEST(EvaluateConstExpr(c, 0).status == EvalStatus::InvalidBitWidth);
-    BF_TEST(EvaluateConstExpr(c, 65).status == EvalStatus::InvalidBitWidth);
+    BF_TEST(EvaluateConstant(c, 0).status == EvalStatus::InvalidBitWidth);
+    BF_TEST(EvaluateConstant(c, 65).status == EvalStatus::InvalidBitWidth);
     return 0;
 }
 
@@ -111,8 +111,8 @@ int TestDivAndMod() {
     BF_RUN_TEST(ExpectSuccess, MakeOp(10, OpType::Div, {seven, two}), 4, 3);
     BF_RUN_TEST(ExpectSuccess, MakeOp(11, OpType::Mod, {seven, two}), 4, 1);
 
-    BF_TEST(EvaluateConstExpr(MakeOp(12, OpType::Div, {seven, zero}), 8).status == EvalStatus::DivisionByZero);
-    BF_TEST(EvaluateConstExpr(MakeOp(13, OpType::Mod, {seven, zero}), 8).status == EvalStatus::ModuloByZero);
+    BF_TEST(EvaluateConstant(MakeOp(12, OpType::Div, {seven, zero}), 8).status == EvalStatus::DivisionByZero);
+    BF_TEST(EvaluateConstant(MakeOp(13, OpType::Mod, {seven, zero}), 8).status == EvalStatus::ModuloByZero);
     return 0;
 }
 
@@ -120,13 +120,13 @@ int TestNotConstantAndUnsupported() {
     auto x = MakeVar(1);
     auto c3 = MakeConst(2, 3);
 
-    BF_TEST(EvaluateConstExpr(MakeOp(10, OpType::Add, {x, c3}), 8).status == EvalStatus::NotConstant);
+    BF_TEST(EvaluateConstant(MakeOp(10, OpType::Add, {x, c3}), 8).status == EvalStatus::NotConstant);
 
-    EvalResult negResult = EvaluateConstExpr(MakeOp(11, OpType::Neg, {c3}), 8);
+    EvalResult negResult = EvaluateConstant(MakeOp(11, OpType::Neg, {c3}), 8);
     BF_TEST(negResult.status == EvalStatus::UnsupportedOp);
     BF_TEST(negResult.unsupportedOp == OpType::Neg);
 
-    EvalResult chResult = EvaluateConstExpr(MakeOp(12, OpType::Ch, {c3, c3, c3}), 8);
+    EvalResult chResult = EvaluateConstant(MakeOp(12, OpType::Ch, {c3, c3, c3}), 8);
     BF_TEST(chResult.status == EvalStatus::UnsupportedOp);
     BF_TEST(chResult.unsupportedOp == OpType::Ch);
     return 0;
