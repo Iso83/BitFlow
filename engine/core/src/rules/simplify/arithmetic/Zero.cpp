@@ -51,6 +51,23 @@ static Expr* Rewrite_Sub_Zero(Expr& e) {
     return e.inputs[0];
 }
 
+static bool Match_Mod_Zero(const Expr& e) {
+    if (e.op != AST::OpType::Mod)
+        return false;
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    const Expr* rhs = e.inputs[1];
+    return rhs->isConst() && rhs->constValue == 0;
+}
+
+static Expr* Rewrite_Mod_Zero_Guard(Expr&) {
+    // Keep `% 0` explicit in the AST for now.
+    // We intentionally do not fold or rewrite invalid modulo forms.
+    return nullptr;
+}
+
 Rule Get_Add_Zero_Rule() {
     return Rule{RuleId::Simplify_AddZero,
                 &Match_Zero<AST::OpType::Add>,
@@ -70,6 +87,14 @@ Rule Get_Mul_Zero_Rule() {
 Rule Get_Sub_Zero_Rule() {
     return Rule{
         RuleId::Simplify_SubZero, &Match_Sub_Zero, &Rewrite_Sub_Zero, Stage_Simplify, {RuleId::Normalize_Flatten}};
+}
+
+Rule Get_Mod_Zero_Guard_Rule() {
+    return Rule{RuleId::Simplify_ModZeroGuard,
+                &Match_Mod_Zero,
+                &Rewrite_Mod_Zero_Guard,
+                Stage_Simplify,
+                {RuleId::Normalize_Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

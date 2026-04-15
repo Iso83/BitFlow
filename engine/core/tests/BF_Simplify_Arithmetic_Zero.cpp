@@ -30,6 +30,13 @@ static RuleEngine MakeEngine_Sub() {
     return engine;
 }
 
+static RuleEngine MakeEngine_ModGuard() {
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Mod_Zero_Guard_Rule());
+    return engine;
+}
+
 int TestAddZero_Nested() {
     auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
@@ -186,6 +193,36 @@ int TestSubZero_Property_RightOperandZero() {
     return 0;
 }
 
+int TestModZero_GuardKeepsNode() {
+    auto x = MakeVar(600);
+    auto zero = ConstPool::Get(0);
+    auto mod = MakeOp(601, OpType::Mod, {x, zero});
+
+    RuleEngine engine = MakeEngine_ModGuard();
+    Expr* result = engine.ApplyUntilStable(mod);
+
+    BF_TEST(result->op == OpType::Mod);
+    BF_TEST(result->inputs.size() == 2);
+    BF_TEST(result->inputs[0]->id == x->id);
+    BF_TEST(result->inputs[1]->id == zero->id);
+    return 0;
+}
+
+int TestModZero_GuardLeftZeroStaysMod() {
+    auto x = MakeVar(610);
+    auto zero = ConstPool::Get(0);
+    auto mod = MakeOp(611, OpType::Mod, {zero, x});
+
+    RuleEngine engine = MakeEngine_ModGuard();
+    Expr* result = engine.ApplyUntilStable(mod);
+
+    BF_TEST(result->op == OpType::Mod);
+    BF_TEST(result->inputs.size() == 2);
+    BF_TEST(result->inputs[0]->id == zero->id);
+    BF_TEST(result->inputs[1]->id == x->id);
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAddZero_Nested);
     BF_RUN_TEST(TestAddZero_AllZerosBecomeConstZero);
@@ -197,5 +234,7 @@ int main() {
     BF_RUN_TEST(TestSubZero_Basic);
     BF_RUN_TEST(TestSubZero_GuardLeftZeroStaysSub);
     BF_RUN_TEST(TestSubZero_Property_RightOperandZero);
+    BF_RUN_TEST(TestModZero_GuardKeepsNode);
+    BF_RUN_TEST(TestModZero_GuardLeftZeroStaysMod);
     return 0;
 }
