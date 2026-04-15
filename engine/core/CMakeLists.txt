@@ -42,6 +42,7 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_ExprIntern_KeyBuilder)
     bf_add_module_test(BitFlowCore core BF_RuleEngine_InPlaceRewrite)
     bf_add_module_test(BitFlowCore core BF_ConstantEval)
+    bf_add_module_test(BitFlowCore core BF_ConstantDetect)
 
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order) 

@@ -1,5 +1,7 @@
 #include <BitFlow/core/eval/ConstantEval.h>
 
+#include <BitFlow/core/eval/ConstantDetect.h>
+
 #include <BitFlow/core/ast/OpType.h>
 
 namespace BitFlow::Core::Eval {
@@ -23,9 +25,6 @@ EvalResult MakeSuccess(uint64_t value, uint64_t mask) {
 EvalResult EvalExpr(const AST::Expr* node, uint32_t bitWidth, uint64_t mask) {
     if (node == nullptr)
         return Make(EvalStatus::UnsupportedOp);
-
-    if (node->op == AST::OpType::Var)
-        return Make(EvalStatus::NotConstant);
 
     if (node->op == AST::OpType::Const)
         return MakeSuccess(node->constValue, mask);
@@ -216,6 +215,9 @@ EvalResult EvalExpr(const AST::Expr* node, uint32_t bitWidth, uint64_t mask) {
 EvalResult EvaluateConstant(const AST::Expr* root, uint32_t bitWidth) {
     if (bitWidth == 0 || bitWidth > 64)
         return Make(EvalStatus::InvalidBitWidth);
+
+    if (!IsFullyConstant(root))
+        return Make(EvalStatus::NotConstant);
 
     uint64_t mask = MaskFor(bitWidth);
     return EvalExpr(root, bitWidth, mask);
