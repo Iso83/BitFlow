@@ -17,7 +17,9 @@ int TestCH_Y_Y() {
     auto expr = MakeOp(13, OpType::Xor, {a, b});
 
     RuleEngine engine;
-    Add_Bitwise_Simplify_Pipeline(engine);
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
+    Add_Simplify_SHA_Rules(engine);
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -36,7 +38,9 @@ int TestCH_X_X() {
     auto expr = MakeOp(13, OpType::Xor, {a, b});
 
     RuleEngine engine;
-    Add_Bitwise_Simplify_Pipeline(engine);
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
+    Add_Simplify_SHA_Rules(engine);
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -60,7 +64,9 @@ int TestCH_Complement() {
     auto expr = MakeOp(13, OpType::Xor, {a, b});
 
     RuleEngine engine;
-    Add_Bitwise_Simplify_Pipeline(engine);
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
+    Add_Simplify_SHA_Rules(engine);
 
     Expr* r = engine.ApplyUntilStable(expr);
 

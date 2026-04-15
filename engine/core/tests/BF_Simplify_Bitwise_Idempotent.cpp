@@ -13,7 +13,7 @@ int TestAndIdempotent() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Idempotent_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -29,7 +29,7 @@ int TestAndIdempotentMixed() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Idempotent_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -47,7 +47,7 @@ int TestOrIdempotent() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Idempotent_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -63,7 +63,7 @@ int TestOrIdempotentMixed() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Idempotent_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 
@@ -83,7 +83,7 @@ int TestAndIdempotentFrozen() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Idempotent_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
     Expr* r = engine.ApplyUntilStable(expr);
 

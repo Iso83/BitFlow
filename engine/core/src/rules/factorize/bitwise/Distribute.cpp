@@ -7,7 +7,7 @@
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Factorize {
+namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
 using Expr = AST::Expr;
 using OpType = AST::OpType;
@@ -118,4 +118,4 @@ Rule Get_Distribute_Rule() {
                 {RuleId::Normalize_Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize
+} // namespace BitFlow::Core::Rules::Factorize::Bitwise

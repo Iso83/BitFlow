@@ -8,7 +8,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify {
+namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
 using Expr = AST::Expr;
 using OpType = AST::OpType;
@@ -111,4 +111,4 @@ Rule Get_And_Idempotent_Rule() {
                 {RuleId::Normalize_Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify
+} // namespace BitFlow::Core::Rules::Simplify::Bitwise

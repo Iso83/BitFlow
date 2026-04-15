@@ -65,189 +65,82 @@ struct Rule {
 
 namespace Normalize {
 
-#pragma region Flattening
-/// Flattening (Associativity)
-/// Removes nested same-operator nodes.
-/// (a ^ (b ^ c)) → (a ^ b ^ c)
+// Flatten (associativity)
 Rule Get_Flatten_Rule();
-#pragma endregion
 
-#pragma region Ordering
-/// Ordering (Canonical Form)
-/// Ensures deterministic ordering of commutative inputs.
-/// a ^ b == b ^ a → sorted form
+// Order (canonical commutative ordering)
 Rule Get_Order_Rule();
-#pragma endregion
 
 } // namespace Normalize
 
-namespace Simplify {
-#pragma region Identity & Neutral Elements
-/// Identity / Neutral Elements
-/// Removes neutral operands.
-/// a + 0 = a
-/// a ^ 0 = a
-Rule Get_Add_Zero_Rule(); // deps: Normalize_Flatten
-Rule Get_Xor_Zero_Rule(); // deps: Normalize_Flatten
-#pragma endregion
+namespace Simplify::Arithmetic {
 
-#pragma region Constant Folding
-/// Constant Folding
-/// Evaluates expressions with constant inputs.
+// Identity / neutral (arithmetic)
+Rule Get_Add_Zero_Rule(); // deps: Normalize_Flatten
+
+// Constant folding (arithmetic)
 Rule Get_Add_Fold_Rule(); // deps: Normalize_Flatten
+
+} // namespace Simplify::Arithmetic
+
+namespace Simplify {
+
+// SHA patterns
+Rule Get_CH_Simplify_Rule();  // deps: Normalize_Flatten, Normalize_Order
+Rule Get_MAJ_Simplify_Rule(); // deps: Normalize_Flatten, Normalize_Order
+
+} // namespace Simplify
+
+namespace Simplify::Bitwise {
+
+// Identity / neutral
+Rule Get_Xor_Zero_Rule(); // deps: Normalize_Flatten
+
+// Constant folding
 Rule Get_And_Fold_Rule(); // deps: Normalize_Flatten
 Rule Get_Or_Fold_Rule();  // deps: Normalize_Flatten
 Rule Get_Xor_Fold_Rule(); // deps: Normalize_Flatten
-#pragma endregion
 
-#pragma region Cancellation
-/// Cancellation
-/// Eliminates duplicate operands.
-/// a ^ a = 0
-/// a & a = a
-/// a | a = a
+// Cancellation
 Rule Get_And_Cancel_Rule(); // deps: Normalize_Flatten
 Rule Get_Or_Cancel_Rule();  // deps: Normalize_Flatten
-
-/// Cancellation
-/// Eliminates duplicate operands.
-/// XOR uses parity cancellation over GF(2):
-/// a ^ a = 0
-/// a ^ a ^ a = a
-/// a ^ b ^ a ^ c ^ b = c
-/// AND / OR remain duplicate collapse rules.
 Rule Get_Xor_Cancel_Rule(); // deps: Normalize_Flatten, Normalize_Order
-#pragma endregion
 
-#pragma region NOT Transformations
-/// NOT Transformations
-/// Pushdown and normalization of negations.
+// NOT transforms
 Rule Get_Not_Rule();
 Rule Get_NotPushdown_Rule();
 Rule Get_Not_Xor_Rule(); // deps: Normalize_Flatten
-#pragma endregion
 
-#pragma region Idempotent Laws
-/// Idempotent Laws
-/// Duplicate inputs collapse.
-/// a & a = a
-/// a | a = a
-Rule Get_Idempotent_Rule(); // deps: Normalize_Flatten
-
-/// And Idempotent
-/// Removes duplicate operands in AND expressions.
-///
-/// Example:
-/// (a & a) → a
-/// (a & b & a) → (a & b)
-///
-/// Notes:
-/// - Requires flattened input
-/// - Works together with XOR canonicalization
+// Idempotent
+Rule Get_Idempotent_Rule();     // deps: Normalize_Flatten
 Rule Get_And_Idempotent_Rule(); // deps: Normalize_Flatten
-#pragma endregion
 
-#pragma region Complement Laws
-/// Complement Laws
-/// Opposites eliminate or saturate.
-/// a & ~a = 0
-/// a | ~a = 1
+// Complement
 Rule Get_Complement_Rule(); // deps: Normalize_Flatten, Simplify_Idempotent
-#pragma endregion
 
-#pragma region Dominance & Identity
-/// Dominance & Identity
-/// Eliminates expressions using constant dominance laws.
-/// a & 0 = 0
-/// a & 1 = a
-/// a | 1 = 1
-/// a | 0 = a
+// Dominance / identity
 Rule Get_And_ZeroDominance_Rule(); // deps: Normalize_Flatten
 Rule Get_And_OneIdentity_Rule();   // deps: Normalize_Flatten
 Rule Get_Or_OneDominance_Rule();   // deps: Normalize_Flatten
 Rule Get_Or_ZeroIdentity_Rule();   // deps: Normalize_Flatten
-#pragma endregion
 
-#pragma region CH Pattern Simplification
-/// CH Pattern Simplification
-/// Recognizes CH-like bitselect patterns and applies direct reductions.
-///
-/// Canonical CH form:
-/// (x & y) ^ (~x & z)
-///
-/// Simplifications:
-/// - CH(x, y, y) = y
-/// - CH(x, x, z) = x | z
-/// - CH(x, y, x) = x & y
-/// - CH(x, y, ~y) = ~(x ^ y)
-///
-/// Notes:
-/// - Requires flattened and ordered input for stable matching
-/// - Matches XOR of two AND branches
-/// - One branch must contain x, the other must contain ~x
-Rule Get_CH_Simplify_Rule(); // deps: Normalize_Flatten, Normalize_Order
-#pragma endregion
+} // namespace Simplify::Bitwise
 
-#pragma region MAJ Pattern Simplification
-/// MAJ Pattern Simplification
-/// Recognizes majority patterns:
-/// (x & y) ^ (x & z) ^ (y & z)
-///
-/// Simplifications:
-/// - MAJ(x, x, y) = x
-/// - MAJ(x, y, y) = y
-///
-/// Notes:
-/// - Requires flattened and ordered XOR input
-/// - Accepts collapsed forms such as:
-///   x ^ (x & y) ^ (x & y)
-Rule Get_MAJ_Simplify_Rule(); // deps: Normalize_Flatten, Normalize_Order
-#pragma endregion
-} // namespace Simplify
+namespace Factorize::Bitwise {
 
-namespace Factorize {
-
-#pragma region Common Factor Extraction
-/// Common Factor Extraction
-/// Pulls a shared operand out of XOR branches that are AND terms.
-///
-/// Example:
-/// (a & b) ^ (a & c) → a & (b ^ c)
-///
-/// Also preserves untouched XOR terms:
-/// (a & b) ^ (a & c) ^ d → (a & (b ^ c)) ^ d
-///
-/// Notes:
-/// - Requires flattened and ordered input for stable matching
-/// - Only factors operands that occur in at least 2 AND branches
-/// - Does not yet handle cases like: a ^ (a & b)
+// Common factor
 Rule Get_Xor_And_Rule(); // deps: Normalize_Flatten, Normalize_Order
-#pragma endregion
 
-#pragma region Cancellation (Factorized Forms)
-/// Cancellation (Factorized XOR patterns)
-/// Eliminates shared terms across XOR branches.
-/// (a ^ b) ^ (a ^ c) → b ^ c
+// XOR pair cancel
 Rule Get_Xor_Pair_Cancel_Rule(); // deps: Normalize_Flatten, Simplify_XorCancel
-#pragma endregion
 
-#pragma region Absorption Laws
-/// Absorption Laws
-/// Removes redundant terms using dominance relations.
-/// a & (a | b) → a
-/// a | (a & b) → a
+// Absorption
 Rule Get_And_Absorb_Rule(); // deps: Normalize_Flatten
 Rule Get_Or_Absorb_Rule();  // deps: Normalize_Flatten
-#pragma endregion
 
-#pragma region Distributive Laws
-/// Distributive Laws
-/// Expands expressions by distributing operators.
-/// a & (b | c) → (a & b) | (a & c)
-/// NOTE: increases expression size → use with care
+// Distribute
 Rule Get_Distribute_Rule(); // deps: Normalize_Flatten
-#pragma endregion
 
-} // namespace Factorize
+} // namespace Factorize::Bitwise
 
 } // namespace BitFlow::Core::Rules

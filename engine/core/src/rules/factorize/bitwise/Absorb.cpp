@@ -4,7 +4,7 @@
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Factorize {
+namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
 using Expr = AST::Expr;
 
@@ -115,4 +115,4 @@ Rule Get_Or_Absorb_Rule() {
         RuleId::Factorize_OrAbsorb, &Match_Or_Absorb, &Rewrite_Or_Absorb, Stage_Factorize, {RuleId::Normalize_Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize
+} // namespace BitFlow::Core::Rules::Factorize::Bitwise

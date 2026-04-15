@@ -5,7 +5,7 @@
 #include <BitFlow/core/expression/ConstPool.h>
 #include <BitFlow/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Simplify {
+namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
 using Expr = AST::Expr;
 using OpType = AST::OpType;
@@ -63,4 +63,4 @@ Rule Get_Complement_Rule() {
                 {RuleId::Normalize_Flatten, RuleId::Simplify_Idempotent}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify
+} // namespace BitFlow::Core::Rules::Simplify::Bitwise

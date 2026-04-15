@@ -6,38 +6,6 @@
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
-int TestAddFold() {
-    auto x = MakeVar(1);
-    auto c1 = MakeConst(2, 10);
-    auto c2 = MakeConst(3, 20);
-
-    auto expr = MakeOp(4, OpType::Add, {x, c1, c2});
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Add_Fold_Rule());
-    engine.AddRule(Simplify::Get_Add_Zero_Rule());
-
-    Expr* result = engine.ApplyUntilStable(expr);
-
-    BF_TEST(result->op == OpType::Add);
-    BF_TEST(result->inputs.size() == 2);
-
-    Expr* a = result->inputs[0];
-    Expr* b = result->inputs[1];
-
-    if (a->isConst()) {
-        BF_TEST(a->constValue == 30);
-        BF_TEST(b->id == x->id);
-    } else {
-        BF_TEST(a->id == x->id);
-        BF_TEST(b->isConst());
-        BF_TEST(b->constValue == 30);
-    }
-
-    return 0;
-}
-
 int TestAndFold() {
     auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
@@ -47,7 +15,8 @@ int TestAndFold() {
     auto expr2 = MakeOp(3, OpType::And, {x, zero, one});
 
     RuleEngine engine;
-    Add_Bitwise_Simplify_Pipeline(engine);
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
 
     Expr* r1 = engine.ApplyUntilStable(expr);
     BF_TEST(r1->id == x->id);
@@ -67,7 +36,8 @@ int TestOrFold() {
     auto expr2 = MakeOp(3, OpType::Or, {x, one, zero});
 
     RuleEngine engine;
-    Add_Bitwise_Simplify_Pipeline(engine);
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
 
     Expr* r1 = engine.ApplyUntilStable(expr);
     BF_TEST(r1->id == x->id);
@@ -86,7 +56,8 @@ int TestXorFold() {
     auto expr = MakeOp(4, OpType::Xor, {x, c1, c2});
 
     RuleEngine engine;
-    Add_Bitwise_Simplify_Pipeline(engine);
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -104,7 +75,7 @@ int TestXorFoldAllConstZero() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Xor_Fold_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Fold_Rule());
 
     Expr* result = engine.ApplyUntilStable(expr);
 
@@ -114,7 +85,6 @@ int TestXorFoldAllConstZero() {
 }
 
 int main() {
-    BF_RUN_TEST(TestAddFold);
     BF_RUN_TEST(TestAndFold);
     BF_RUN_TEST(TestOrFold);
     BF_RUN_TEST(TestXorFold);

@@ -6,7 +6,7 @@
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
-int TestAndZero() {
+int TestAddZero() {
     auto x = MakeVar(1);
     auto zero = ConstPool::Get(0);
 
@@ -15,7 +15,7 @@ int TestAndZero() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Add_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
 
     Expr* result = engine.ApplyUntilStable(add2);
 
@@ -23,25 +23,7 @@ int TestAndZero() {
     return 0;
 }
 
-int TestXorZero() {
-    auto x = MakeVar(10);
-    auto zero = ConstPool::Get(0);
-
-    auto xor1 = MakeOp(12, OpType::Xor, {x, zero});
-    auto xor2 = MakeOp(13, OpType::Xor, {zero, xor1});
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Get_Xor_Zero_Rule());
-
-    Expr* result = engine.ApplyUntilStable(xor2);
-
-    BF_TEST(result->id == x->id);
-    return 0;
-}
-
 int main() {
-    BF_RUN_TEST(TestAndZero);
-    BF_RUN_TEST(TestXorZero);
+    BF_RUN_TEST(TestAddZero);
     return 0;
 }
