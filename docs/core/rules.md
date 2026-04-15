@@ -200,3 +200,87 @@ Gedrag gelijk aan `Rewrite_Remove_Zero`:
 ## 7) Praktische implicatie van de volgorde
 
 Omdat Normalize eerst draait, worden vormen eerst vlak en geordend, waardoor Simplify-rules (zoals XOR-cancel) consistenter matchen. Factorize komt pas daarna, zodat patronen op al vereenvoudigde input werken.
+
+---
+
+## 8) Constant-evaluator semantiek (voorbereiding codegen)
+
+De core bevat naast rules ook een **constante evaluator**:
+
+```cpp
+EvalResult EvaluateConstant(const Expr* root, uint32_t bitWidth);
+```
+
+Het evaluatiemodel is expliciet **bitvector-semantiek** (wiskundige term), met:
+- vaste bitbreedte `w = bitWidth`,
+- waarden in het domein $\{0, \dots, 2^w - 1\}$,
+- en operaties onder **modulaire rekenkunde** (wiskundige term) modulo $2^w$.
+
+Kort: elke tussenstap en elk eindresultaat wordt geïnterpreteerd als een unsigned bitvector van breedte `w`.
+
+### 8.1 Bitwidth is verplicht
+
+- `bitWidth` moet in `[1, 64]` liggen.
+- Bij `bitWidth == 0` of `bitWidth > 64`: status `InvalidBitWidth`.
+- Masker:
+  - $\text{mask} = 2^w - 1$ voor $w < 64$
+  - $\text{mask} = 2^{64}-1$ voor $w = 64$
+- Normalisatie:
+  - $x \leftarrow x \land \text{mask}$
+
+### 8.2 Unsigned-only
+
+Alle evaluatie gebeurt in `uint64_t` (geen signed pad), dus:
+- geen arithmetic right shift,
+- `Shr` en `UShr` zijn logisch-rechts voor unsigned waarden,
+- `Neg` gebruikt two’s-complement binnen bitbreedte:
+  - $-x \equiv (\sim x + 1) \bmod 2^w$.
+
+### 8.3 Shift/rotate semantiek
+
+Voor shift/rotate-count `n` geldt:
+- $k = n \bmod w$
+
+Daarmee:
+- $\text{Shl}(x,n) = (x \ll k) \land \text{mask}$
+- $\text{Shr}(x,n) = (x \gg k) \land \text{mask}$
+- $\text{UShr}(x,n) = (x \gg k) \land \text{mask}$
+- $\text{RotL}(x,n) = ((x \ll k) \lor (x \gg (w-k))) \land \text{mask}$
+- $\text{RotR}(x,n) = ((x \gg k) \lor (x \ll (w-k))) \land \text{mask}$
+
+Dit maakt gedrag deterministisch en compiler-onafhankelijk binnen het gekozen bitvector-model.
+
+---
+
+## 9) Evaluator contract
+
+### 9.1 Input contract
+- `root` mag elke AST-subboom zijn.
+- Evaluatie gebeurt **alleen** als de boom volledig constant is; anders `NotConstant`.
+- Er is geen impliciete parser/IO-koppeling in core.
+
+### 9.2 Output contract
+
+`EvalResult`:
+- `status`:
+  - `Success`
+  - `NotConstant`
+  - `DivisionByZero`
+  - `ModuloByZero`
+  - `InvalidBitWidth`
+  - `UnsupportedOp`
+- `value` is alleen betekenisvol bij `Success`.
+
+### 9.3 Failure contract
+
+- Geen exceptions als control-flow.
+- Geen fallback-waarden.
+- Geen logging/IO in evaluator-pad.
+
+---
+
+## 10) Relatie met tools en IO
+
+- Evaluator wordt **expliciet** aangeroepen (opt-in).
+- Parser (`Parse`) en printer (`ToString`) blijven semantisch los van evaluatie.
+- Tools mogen `Parse -> EvaluateConstant -> print` doen, maar evaluatie wordt niet automatisch in IO gepusht.
