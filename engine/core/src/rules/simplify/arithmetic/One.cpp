@@ -43,8 +43,27 @@ static Expr* Rewrite_Mul_One(Expr& e) {
     return target;
 }
 
+static bool Match_Div_One(const Expr& e) {
+    if (e.op != AST::OpType::Div)
+        return false;
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    const Expr* rhs = e.inputs[1];
+    return rhs->isConst() && rhs->constValue == 1;
+}
+
+static Expr* Rewrite_Div_One(Expr& e) {
+    return e.inputs[0];
+}
+
 Rule Get_Mul_One_Rule() {
     return Rule{RuleId::Simplify_MulOne, &Match_Mul_One, &Rewrite_Mul_One, Stage_Simplify, {RuleId::Normalize_Flatten}};
+}
+
+Rule Get_Div_One_Rule() {
+    return Rule{RuleId::Simplify_DivOne, &Match_Div_One, &Rewrite_Div_One, Stage_Simplify, {RuleId::Normalize_Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

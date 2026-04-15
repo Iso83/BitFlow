@@ -15,6 +15,13 @@ static RuleEngine MakeEngine_Mult() {
     return engine;
 }
 
+static RuleEngine MakeEngine_Div() {
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Div_One_Rule());
+    return engine;
+}
+
 int TestMulOne_Nested() {
     auto x = MakeVar(1);
     auto one = ConstPool::Get(1);
@@ -79,10 +86,56 @@ int TestMulOne_Property_OneAtAnyPosition() {
     return 0;
 }
 
+int TestDivOne_Basic() {
+    auto x = MakeVar(200);
+    auto one = ConstPool::Get(1);
+    auto div = MakeOp(201, OpType::Div, {x, one});
+
+    RuleEngine engine = MakeEngine_Div();
+    Expr* result = engine.ApplyUntilStable(div);
+
+    BF_TEST(result->id == x->id);
+    return 0;
+}
+
+int TestDivOne_GuardLeftOneStaysDiv() {
+    auto x = MakeVar(210);
+    auto one = ConstPool::Get(1);
+    auto div = MakeOp(211, OpType::Div, {one, x});
+
+    RuleEngine engine = MakeEngine_Div();
+    Expr* result = engine.ApplyUntilStable(div);
+
+    BF_TEST(result->op == OpType::Div);
+    BF_TEST(result->inputs.size() == 2);
+    BF_TEST(result->inputs[0]->id == one->id);
+    BF_TEST(result->inputs[1]->id == x->id);
+    return 0;
+}
+
+int TestDivOne_Property_RightOperandOne() {
+    auto one = ConstPool::Get(1);
+    std::vector<Expr*> vars = {MakeVar(220), MakeVar(221), MakeVar(222), MakeVar(223)};
+
+    for (size_t i = 0; i < vars.size(); ++i) {
+        auto div = MakeOp(300 + static_cast<uint32_t>(i), OpType::Div, {vars[i], one});
+
+        RuleEngine engine = MakeEngine_Div();
+        Expr* result = engine.ApplyUntilStable(div);
+
+        BF_TEST(result->id == vars[i]->id);
+    }
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestMulOne_Nested);
     BF_RUN_TEST(TestMulOne_AllOnesBecomeConstOne);
     BF_RUN_TEST(TestMulOne_CanonicalOrderRegression);
     BF_RUN_TEST(TestMulOne_Property_OneAtAnyPosition);
+    BF_RUN_TEST(TestDivOne_Basic);
+    BF_RUN_TEST(TestDivOne_GuardLeftOneStaysDiv);
+    BF_RUN_TEST(TestDivOne_Property_RightOperandOne);
     return 0;
 }
