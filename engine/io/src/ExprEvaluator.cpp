@@ -5,22 +5,22 @@
 namespace BitFlow::IO {
 namespace {
 
-const char* StatusName(Core::Eval::EvalStatus status) {
+const char* StatusMessage(Core::Eval::EvalStatus status) {
     using Status = Core::Eval::EvalStatus;
 
     switch (status) {
     case Status::Success:
         return "success";
     case Status::NotConstant:
-        return "not-constant";
+        return "error: expression is not fully constant";
     case Status::InvalidBitWidth:
-        return "invalid-bitwidth";
+        return "error: invalid bitwidth (must be in range 1..64)";
     case Status::DivisionByZero:
-        return "division-by-zero";
+        return "error: division by zero";
     case Status::ModuloByZero:
-        return "modulo-by-zero";
+        return "error: modulo by zero";
     case Status::UnsupportedOp:
-        return "unsupported-op";
+        return "error: unsupported operation for constant evaluation";
     }
 
     return "unknown";
@@ -38,7 +38,7 @@ EvaluatePrintResult ParseEvaluatePrint(const std::string& input, uint32_t bitWid
     if (eval.status == Core::Eval::EvalStatus::Success)
         out.text = std::to_string(eval.value);
     else
-        out.text = StatusName(eval.status);
+        out.text = StatusMessage(eval.status);
 
     return out;
 }
