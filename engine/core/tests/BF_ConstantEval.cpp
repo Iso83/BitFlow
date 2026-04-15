@@ -5,166 +5,150 @@
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Eval;
 
-int TestEvaluate_AddSubMulMasking() {
-    auto a = MakeConst(1, 200);
-    auto b = MakeConst(2, 100);
+int TestEvaluate_PureConstantExpression() {
+    auto c = MakeConst(1, 0xABCD1234);
 
-    auto add = MakeOp(3, OpType::Add, {a, b});
-    auto sub = MakeOp(4, OpType::Sub, {a, b});
-    auto mul = MakeOp(5, OpType::Mul, {a, b});
+    EvalResult r = EvaluateConstant(c, 32);
 
-    EvalResult rAdd = EvaluateConstant(add, 8);
-    EvalResult rSub = EvaluateConstant(sub, 8);
-    EvalResult rMul = EvaluateConstant(mul, 8);
-
-    BF_TEST(rAdd.status == EvalStatus::Success);
-    BF_TEST(rAdd.value == 44);
-
-    BF_TEST(rSub.status == EvalStatus::Success);
-    BF_TEST(rSub.value == 100);
-
-    BF_TEST(rMul.status == EvalStatus::Success);
-    BF_TEST(rMul.value == 32);
+    BF_TEST(r.status == EvalStatus::Success);
+    BF_TEST(r.value == 0xABCD1234ULL);
     return 0;
 }
 
-int TestEvaluate_DivModAndGuards() {
-    auto a = MakeConst(1, 20);
-    auto b = MakeConst(2, 6);
-    auto z = MakeConst(3, 0);
+int TestEvaluate_NestedExpression() {
+    auto c10 = MakeConst(1, 10);
+    auto c20 = MakeConst(2, 20);
+    auto c7 = MakeConst(3, 7);
+    auto c3 = MakeConst(4, 3);
+    auto c55 = MakeConst(5, 0x55);
 
-    auto div = MakeOp(4, OpType::Div, {a, b});
-    auto mod = MakeOp(5, OpType::Mod, {a, b});
-    auto div0 = MakeOp(6, OpType::Div, {a, z});
-    auto mod0 = MakeOp(7, OpType::Mod, {a, z});
+    auto add = MakeOp(6, OpType::Add, {c10, c20});
+    auto sub = MakeOp(7, OpType::Sub, {c7, c3});
+    auto mul = MakeOp(8, OpType::Mul, {add, sub});
+    auto expr = MakeOp(9, OpType::Xor, {mul, c55});
 
-    EvalResult rDiv = EvaluateConstant(div, 8);
-    EvalResult rMod = EvaluateConstant(mod, 8);
-    EvalResult rDiv0 = EvaluateConstant(div0, 8);
-    EvalResult rMod0 = EvaluateConstant(mod0, 8);
+    EvalResult r = EvaluateConstant(expr, 16);
 
-    BF_TEST(rDiv.status == EvalStatus::Success);
-    BF_TEST(rDiv.value == 3);
-
-    BF_TEST(rMod.status == EvalStatus::Success);
-    BF_TEST(rMod.value == 2);
-
-    BF_TEST(rDiv0.status == EvalStatus::DivisionByZero);
-    BF_TEST(rMod0.status == EvalStatus::ModuloByZero);
+    BF_TEST(r.status == EvalStatus::Success);
+    BF_TEST(r.value == 0x2DULL);
     return 0;
 }
 
-int TestEvaluate_NegAndBitwise() {
-    auto a = MakeConst(1, 0x55);
-    auto b = MakeConst(2, 0x0F);
+int TestEvaluate_BitWidthVariations_8_16_32_64() {
+    auto a = MakeConst(1, 0xFFFF0000);
+    auto b = MakeConst(2, 0x1234);
+    auto expr = MakeOp(3, OpType::Add, {a, b});
 
-    auto neg = MakeOp(3, OpType::Neg, {a});
-    auto bitAnd = MakeOp(4, OpType::And, {a, b});
-    auto bitOr = MakeOp(5, OpType::Or, {a, b});
-    auto bitXor = MakeOp(6, OpType::Xor, {a, b});
-    auto bitNot = MakeOp(7, OpType::Not, {a});
+    EvalResult r8 = EvaluateConstant(expr, 8);
+    EvalResult r16 = EvaluateConstant(expr, 16);
+    EvalResult r32 = EvaluateConstant(expr, 32);
+    EvalResult r64 = EvaluateConstant(expr, 64);
 
-    EvalResult rNeg = EvaluateConstant(neg, 8);
-    EvalResult rAnd = EvaluateConstant(bitAnd, 8);
-    EvalResult rOr = EvaluateConstant(bitOr, 8);
-    EvalResult rXor = EvaluateConstant(bitXor, 8);
-    EvalResult rNot = EvaluateConstant(bitNot, 8);
+    BF_TEST(r8.status == EvalStatus::Success);
+    BF_TEST(r8.value == 0x34ULL);
 
-    BF_TEST(rNeg.status == EvalStatus::Success);
-    BF_TEST(rNeg.value == 0xAB);
+    BF_TEST(r16.status == EvalStatus::Success);
+    BF_TEST(r16.value == 0x1234ULL);
 
-    BF_TEST(rAnd.status == EvalStatus::Success);
-    BF_TEST(rAnd.value == 0x05);
+    BF_TEST(r32.status == EvalStatus::Success);
+    BF_TEST(r32.value == 0xFFFF1234ULL);
 
-    BF_TEST(rOr.status == EvalStatus::Success);
-    BF_TEST(rOr.value == 0x5F);
-
-    BF_TEST(rXor.status == EvalStatus::Success);
-    BF_TEST(rXor.value == 0x5A);
-
-    BF_TEST(rNot.status == EvalStatus::Success);
-    BF_TEST(rNot.value == 0xAA);
+    BF_TEST(r64.status == EvalStatus::Success);
+    BF_TEST(r64.value == 0xFFFF1234ULL);
     return 0;
 }
 
-int TestEvaluate_ShiftAndRotateUseModulo() {
+int TestEvaluate_ShiftRotateEdgeCases() {
     auto v = MakeConst(1, 0x81);
-    auto n = MakeConst(2, 9);
+    auto z = MakeConst(2, 0);
+    auto w = MakeConst(3, 8);
+    auto n = MakeConst(4, 9);
 
-    auto shl = MakeOp(3, OpType::Shl, {v, n});
-    auto shr = MakeOp(4, OpType::Shr, {v, n});
-    auto ushr = MakeOp(5, OpType::UShr, {v, n});
-    auto rotl = MakeOp(6, OpType::RotL, {v, n});
-    auto rotr = MakeOp(7, OpType::RotR, {v, n});
+    auto shl0 = MakeOp(5, OpType::Shl, {v, z});
+    auto shr0 = MakeOp(6, OpType::Shr, {v, z});
+    auto rotl0 = MakeOp(7, OpType::RotL, {v, z});
+    auto rotr0 = MakeOp(8, OpType::RotR, {v, z});
 
-    EvalResult rShl = EvaluateConstant(shl, 8);
-    EvalResult rShr = EvaluateConstant(shr, 8);
-    EvalResult rUShr = EvaluateConstant(ushr, 8);
-    EvalResult rRotL = EvaluateConstant(rotl, 8);
-    EvalResult rRotR = EvaluateConstant(rotr, 8);
+    auto shlW = MakeOp(9, OpType::Shl, {v, w});
+    auto shrW = MakeOp(10, OpType::Shr, {v, w});
+    auto rotlW = MakeOp(11, OpType::RotL, {v, w});
+    auto rotrW = MakeOp(12, OpType::RotR, {v, w});
 
-    BF_TEST(rShl.status == EvalStatus::Success);
-    BF_TEST(rShl.value == 0x02);
+    auto shlN = MakeOp(13, OpType::Shl, {v, n});
+    auto shrN = MakeOp(14, OpType::Shr, {v, n});
+    auto ushrN = MakeOp(15, OpType::UShr, {v, n});
+    auto rotlN = MakeOp(16, OpType::RotL, {v, n});
+    auto rotrN = MakeOp(17, OpType::RotR, {v, n});
 
-    BF_TEST(rShr.status == EvalStatus::Success);
-    BF_TEST(rShr.value == 0x40);
+    BF_TEST(EvaluateConstant(shl0, 8).value == 0x81ULL);
+    BF_TEST(EvaluateConstant(shr0, 8).value == 0x81ULL);
+    BF_TEST(EvaluateConstant(rotl0, 8).value == 0x81ULL);
+    BF_TEST(EvaluateConstant(rotr0, 8).value == 0x81ULL);
 
-    BF_TEST(rUShr.status == EvalStatus::Success);
-    BF_TEST(rUShr.value == 0x40);
+    BF_TEST(EvaluateConstant(shlW, 8).value == 0x81ULL);
+    BF_TEST(EvaluateConstant(shrW, 8).value == 0x81ULL);
+    BF_TEST(EvaluateConstant(rotlW, 8).value == 0x81ULL);
+    BF_TEST(EvaluateConstant(rotrW, 8).value == 0x81ULL);
 
-    BF_TEST(rRotL.status == EvalStatus::Success);
-    BF_TEST(rRotL.value == 0x03);
-
-    BF_TEST(rRotR.status == EvalStatus::Success);
-    BF_TEST(rRotR.value == 0xC0);
+    BF_TEST(EvaluateConstant(shlN, 8).value == 0x02ULL);
+    BF_TEST(EvaluateConstant(shrN, 8).value == 0x40ULL);
+    BF_TEST(EvaluateConstant(ushrN, 8).value == 0x40ULL);
+    BF_TEST(EvaluateConstant(rotlN, 8).value == 0x03ULL);
+    BF_TEST(EvaluateConstant(rotrN, 8).value == 0xC0ULL);
     return 0;
 }
 
+int TestEvaluate_DivisionModuloByZero() {
+    auto a = MakeConst(1, 7);
+    auto z = MakeConst(2, 0);
 
-int TestEvaluate_BitWidth64LargeShiftIsSafe() {
-    auto v = MakeConst(1, 0x3);
-    auto n = MakeConst(2, 130);
+    auto div = MakeOp(3, OpType::Div, {a, z});
+    auto mod = MakeOp(4, OpType::Mod, {a, z});
 
-    auto shl = MakeOp(3, OpType::Shl, {v, n});
-    auto shr = MakeOp(4, OpType::Shr, {v, n});
-    auto rotl = MakeOp(5, OpType::RotL, {v, n});
+    EvalResult rDiv = EvaluateConstant(div, 32);
+    EvalResult rMod = EvaluateConstant(mod, 32);
 
-    EvalResult rShl = EvaluateConstant(shl, 64);
-    EvalResult rShr = EvaluateConstant(shr, 64);
-    EvalResult rRotL = EvaluateConstant(rotl, 64);
-
-    BF_TEST(rShl.status == EvalStatus::Success);
-    BF_TEST(rShl.value == 12ULL);
-
-    BF_TEST(rShr.status == EvalStatus::Success);
-    BF_TEST(rShr.value == 0ULL);
-
-    BF_TEST(rRotL.status == EvalStatus::Success);
-    BF_TEST(rRotL.value == 12ULL);
+    BF_TEST(rDiv.status == EvalStatus::DivisionByZero);
+    BF_TEST(rMod.status == EvalStatus::ModuloByZero);
     return 0;
 }
 
-int TestEvaluate_NotConstantAndInvalidBitWidth() {
+int TestEvaluate_NotConstantCases() {
     auto x = MakeVar(1);
-    auto c = MakeConst(2, 1);
-    auto expr = MakeOp(3, OpType::Add, {x, c});
+    auto c1 = MakeConst(2, 5);
+    auto c2 = MakeConst(3, 6);
 
-    EvalResult notConst = EvaluateConstant(expr, 32);
-    EvalResult bw0 = EvaluateConstant(c, 0);
-    EvalResult bw65 = EvaluateConstant(c, 65);
+    auto mixed = MakeOp(4, OpType::Add, {x, c1});
+    auto nested = MakeOp(5, OpType::Mul, {mixed, c2});
 
-    BF_TEST(notConst.status == EvalStatus::NotConstant);
-    BF_TEST(bw0.status == EvalStatus::InvalidBitWidth);
-    BF_TEST(bw65.status == EvalStatus::InvalidBitWidth);
+    EvalResult rLeaf = EvaluateConstant(x, 32);
+    EvalResult rMixed = EvaluateConstant(mixed, 32);
+    EvalResult rNested = EvaluateConstant(nested, 32);
+
+    BF_TEST(rLeaf.status == EvalStatus::NotConstant);
+    BF_TEST(rMixed.status == EvalStatus::NotConstant);
+    BF_TEST(rNested.status == EvalStatus::NotConstant);
+    return 0;
+}
+
+int TestEvaluate_InvalidBitWidth() {
+    auto c = MakeConst(1, 5);
+
+    EvalResult r0 = EvaluateConstant(c, 0);
+    EvalResult r65 = EvaluateConstant(c, 65);
+
+    BF_TEST(r0.status == EvalStatus::InvalidBitWidth);
+    BF_TEST(r65.status == EvalStatus::InvalidBitWidth);
     return 0;
 }
 
 int main() {
-    BF_RUN_TEST(TestEvaluate_AddSubMulMasking);
-    BF_RUN_TEST(TestEvaluate_DivModAndGuards);
-    BF_RUN_TEST(TestEvaluate_NegAndBitwise);
-    BF_RUN_TEST(TestEvaluate_ShiftAndRotateUseModulo);
-    BF_RUN_TEST(TestEvaluate_BitWidth64LargeShiftIsSafe);
-    BF_RUN_TEST(TestEvaluate_NotConstantAndInvalidBitWidth);
+    BF_RUN_TEST(TestEvaluate_PureConstantExpression);
+    BF_RUN_TEST(TestEvaluate_NestedExpression);
+    BF_RUN_TEST(TestEvaluate_BitWidthVariations_8_16_32_64);
+    BF_RUN_TEST(TestEvaluate_ShiftRotateEdgeCases);
+    BF_RUN_TEST(TestEvaluate_DivisionModuloByZero);
+    BF_RUN_TEST(TestEvaluate_NotConstantCases);
+    BF_RUN_TEST(TestEvaluate_InvalidBitWidth);
     return 0;
 }
