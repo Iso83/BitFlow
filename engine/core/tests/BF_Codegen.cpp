@@ -75,6 +75,13 @@ int main() {
     BF_TEST(resolved.at(1u) == "lhs");
     BF_TEST(resolved.at(2u) == "rhs");
 
+    // Case 6b — alle Var nodes verzamelen, zonder duplicaten
+    auto duplicateVarExpr = MakeOp(25, OpType::Add, {a, MakeOp(26, OpType::Xor, {a, b})});
+    const auto resolvedDup = Codegen::BuildVarNameMap(duplicateVarExpr);
+    BF_TEST(resolvedDup.size() == 2);
+    BF_TEST(resolvedDup.count(1u) == 1u);
+    BF_TEST(resolvedDup.count(2u) == 1u);
+
     // Case 7 — parameterlijst genereren
     const auto params = Codegen::EmitCParamList(addExpr, 32, names);
     BF_TEST(params == "uint64_t lhs, uint64_t rhs");

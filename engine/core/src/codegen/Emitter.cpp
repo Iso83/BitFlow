@@ -247,7 +247,7 @@ static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, boo
     return "";
 }
 
-static void CollectVarIds(const Expr* e, std::set<uint32_t>& out) {
+static void CollectVars(const Expr* e, std::set<uint32_t>& out) {
     if (!e)
         return;
 
@@ -255,7 +255,7 @@ static void CollectVarIds(const Expr* e, std::set<uint32_t>& out) {
         out.insert(e->id.value());
 
     for (const Expr* input : e->inputs)
-        CollectVarIds(input, out);
+        CollectVars(input, out);
 }
 
 static bool IsIdentifierStart(char c) {
@@ -314,7 +314,7 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
 
 std::map<uint32_t, std::string> BuildVarNameMap(const Expr* root, const std::map<uint32_t, std::string>& overrides) {
     std::set<uint32_t> ids;
-    CollectVarIds(root, ids);
+    CollectVars(root, ids);
 
     std::map<uint32_t, std::string> result;
     for (const uint32_t id : ids) {
