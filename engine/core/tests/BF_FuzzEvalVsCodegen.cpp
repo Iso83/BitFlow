@@ -135,7 +135,7 @@ static Expr* GenExpr(int depth) {
 
 int TestFuzzEvalVsCodegen_32bit() {
     int executed = 0;
-    constexpr int kCases = 400;
+    constexpr int kCases = 1000;
 
     for (int i = 0; i < kCases; ++i) {
         Expr* root = GenExpr(2);
