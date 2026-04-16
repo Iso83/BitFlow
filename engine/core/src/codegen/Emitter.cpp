@@ -105,33 +105,67 @@ static std::string MaybeWrapChild(const std::string& emittedChild, OpType parent
     return emittedChild;
 }
 
-static std::string EmitNode(const Expr* e, uint32_t bw) {
+static bool ShouldWrapForParent(OpType selfOp, int parentPrec, bool isRightChild) {
+    if (parentPrec < 0)
+        return false;
+
+    const int selfPrec = GetPrecedence(selfOp);
+    if (selfPrec < parentPrec)
+        return true;
+
+    if (isRightChild && selfPrec == parentPrec)
+        return true;
+
+    return false;
+}
+
+static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, bool isRightChild = false) {
     using enum OpType;
 
-    if (e->op == OpType::Const)
-        return ApplyMask(std::to_string(e->constValue) + "ull", bw);
+    if (e->op == OpType::Const) {
+        std::string emitted = ApplyMask(std::to_string(e->constValue) + "ull", bw);
+        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+            return "(" + emitted + ")";
+        return emitted;
+    }
 
-    if (e->op == OpType::Var)
-        return ApplyMask("v" + std::to_string(e->id.value()), bw);
+    if (e->op == OpType::Var) {
+        std::string emitted = ApplyMask("v" + std::to_string(e->id.value()), bw);
+        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+            return "(" + emitted + ")";
+        return emitted;
+    }
 
     if (e->inputs.size() == 1) {
-        std::string a = EmitNode(e->inputs[0], bw);
+        const int currentPrec = GetPrecedence(e->op);
+        std::string a = EmitNode(e->inputs[0], bw, currentPrec, true);
+        a = MaybeWrapChild(a, e->op, e->inputs[0], true);
+        std::string emitted;
 
         switch (e->op) {
         case Neg:
-            return ApplyMask("(~" + a + " + 1ull)", bw);
+            emitted = ApplyMask("(~" + a + " + 1ull)", bw);
+            break;
         case Not:
-            return ApplyMask("(~" + a + ")", bw);
+            emitted = ApplyMask("(~" + a + ")", bw);
+            break;
         default:
             break;
+        }
+
+        if (!emitted.empty()) {
+            if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+                return "(" + emitted + ")";
+            return emitted;
         }
     }
 
     if (e->inputs.size() >= 2) {
-        std::string lhs = EmitNode(e->inputs[0], bw);
+        const int currentPrec = GetPrecedence(e->op);
+        std::string lhs = EmitNode(e->inputs[0], bw, currentPrec, false);
 
         for (size_t i = 1; i < e->inputs.size(); ++i) {
-            std::string rhs = EmitNode(e->inputs[i], bw);
+            std::string rhs = EmitNode(e->inputs[i], bw, currentPrec, true);
             std::string sh = NormalizeShift(rhs, bw);
             const Expr* leftExpr = (i == 1) ? e->inputs[0] : nullptr;
             const std::string lhsWrapped = MaybeWrapChild(lhs, e->op, leftExpr, false);
@@ -185,6 +219,8 @@ static std::string EmitNode(const Expr* e, uint32_t bw) {
             }
         }
 
+        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+            return "(" + lhs + ")";
         return lhs;
     }
 
@@ -194,7 +230,7 @@ static std::string EmitNode(const Expr* e, uint32_t bw) {
 } // namespace
 
 std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
-    std::string expr = EmitNode(root, bitWidth);
+    std::string expr = EmitNode(root, bitWidth, -1, false);
     return ApplyMask(expr, bitWidth);
 }
 
