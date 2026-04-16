@@ -155,14 +155,18 @@ int TestFuzzEvalVsCodegen_32bit() {
         if (code.find("unsupported") != std::string::npos || code.find("invalid") != std::string::npos)
             continue;
 
-        auto run = CompileAndRun(code);
-        if (eval.value != run) {
+        auto r1 = CompileAndRun(code);
+        auto r2 = CompileAndRun(code);
+
+        BF_TEST(r1 == r2);
+
+        if (eval.value != r1) {
             std::cout << "EXPR FAIL\n";
             std::cout << "eval: " << eval.value << "\n";
-            std::cout << "run : " << run << "\n";
+            std::cout << "run : " << r1 << "\n";
             std::cout << "code: " << code << "\n";
         }
-        BF_TEST(eval.value == run);
+        BF_TEST(eval.value == r1);
         ++executed;
     }
 
