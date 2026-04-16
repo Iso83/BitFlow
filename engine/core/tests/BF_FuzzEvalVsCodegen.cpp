@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <string>
 
 using namespace BitFlow::Core;
@@ -155,6 +156,12 @@ int TestFuzzEvalVsCodegen_32bit() {
             continue;
 
         auto run = CompileAndRun(code);
+        if (eval.value != run) {
+            std::cout << "EXPR FAIL\n";
+            std::cout << "eval: " << eval.value << "\n";
+            std::cout << "run : " << run << "\n";
+            std::cout << "code: " << code << "\n";
+        }
         BF_TEST(eval.value == run);
         ++executed;
     }
