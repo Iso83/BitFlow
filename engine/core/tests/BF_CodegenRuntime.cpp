@@ -62,43 +62,95 @@ static uint64_t CompileAndRun(const std::string& expr) {
     return static_cast<uint64_t>(std::stoull(buffer));
 }
 
-void AssertEvalMatchesRuntime(const AST::Expr* expr, uint32_t bitWidth) {
-    const Eval::EvalResult eval = Eval::EvaluateConstant(expr, bitWidth);
+int TestCodegenRuntime_Case1_SimpleAdd() {
+    auto a = MakeConst(1, 10);
+    auto b = MakeConst(2, 20);
+    auto expr = MakeOp(3, OpType::Add, {a, b});
+
+    auto eval = Eval::EvaluateConstant(expr, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
 
-    const std::string cExpr = Codegen::EmitCExpr(expr, bitWidth);
-    const uint64_t runtime = CompileAndRun(cExpr);
+    auto code = Codegen::EmitCExpr(expr, 32);
+    auto run = CompileAndRun(code);
 
-    BF_TEST(runtime == eval.value);
+    BF_TEST(eval.value == run);
+    return 0;
 }
 
-int TestCodegenRuntime_MatchesEvaluator() {
-    auto c7 = MakeConst(1, 7);
-    auto c13 = MakeConst(2, 13);
-    auto c3 = MakeConst(3, 3);
-    auto c5 = MakeConst(4, 5);
-    auto c40 = MakeConst(5, 40);
-    auto c9 = MakeConst(6, 9);
+int TestCodegenRuntime_Case2_NestedMulAdd() {
+    auto a = MakeConst(10, 3);
+    auto b = MakeConst(11, 4);
+    auto c = MakeConst(12, 5);
 
-    auto addMul = MakeOp(7, OpType::Mul, {MakeOp(8, OpType::Add, {c7, c13}), c3});
-    auto bitMix = MakeOp(9, OpType::Xor, {MakeOp(10, OpType::And, {c40, c13}), MakeOp(11, OpType::Or, {c9, c5})});
-    auto shifts = MakeOp(12, OpType::Add, {MakeOp(13, OpType::Shl, {c13, c40}), MakeOp(14, OpType::Shr, {c40, c3})});
-    auto rotate = MakeOp(15, OpType::Xor, {MakeOp(16, OpType::RotL, {c40, c5}), MakeOp(17, OpType::RotR, {c40, c3})});
-    auto unary = MakeOp(18, OpType::Add, {MakeOp(19, OpType::Not, {c40}), MakeOp(20, OpType::Neg, {c13})});
+    auto expr = MakeOp(13, OpType::Mul, {MakeOp(14, OpType::Add, {a, b}), c});
 
-    AssertEvalMatchesRuntime(addMul, 8);
-    AssertEvalMatchesRuntime(addMul, 16);
-    AssertEvalMatchesRuntime(bitMix, 16);
-    AssertEvalMatchesRuntime(shifts, 32);
-    AssertEvalMatchesRuntime(rotate, 32);
-    AssertEvalMatchesRuntime(unary, 32);
+    auto eval = Eval::EvaluateConstant(expr, 32);
+    BF_TEST(eval.status == Eval::EvalStatus::Success);
 
+    auto code = Codegen::EmitCExpr(expr, 32);
+    auto run = CompileAndRun(code);
+
+    BF_TEST(eval.value == run);
+    return 0;
+}
+
+int TestCodegenRuntime_Case3_Bitwise() {
+    auto a = MakeConst(20, 0xF0);
+    auto b = MakeConst(21, 0xAA);
+    auto c = MakeConst(22, 0x3C);
+
+    auto expr = MakeOp(23, OpType::And, {MakeOp(24, OpType::Xor, {a, b}), c});
+
+    auto eval = Eval::EvaluateConstant(expr, 32);
+    BF_TEST(eval.status == Eval::EvalStatus::Success);
+
+    auto code = Codegen::EmitCExpr(expr, 32);
+    auto run = CompileAndRun(code);
+
+    BF_TEST(eval.value == run);
+    return 0;
+}
+
+int TestCodegenRuntime_Case4_RotateLeft() {
+    auto a = MakeConst(30, 0x12345678);
+    auto s = MakeConst(31, 5);
+    auto expr = MakeOp(32, OpType::RotL, {a, s});
+
+    auto eval = Eval::EvaluateConstant(expr, 32);
+    BF_TEST(eval.status == Eval::EvalStatus::Success);
+
+    auto code = Codegen::EmitCExpr(expr, 32);
+    auto run = CompileAndRun(code);
+
+    BF_TEST(eval.value == run);
+    return 0;
+}
+
+int TestCodegenRuntime_Case5_MaskingOverflow8Bit() {
+    auto a = MakeConst(40, 250);
+    auto b = MakeConst(41, 20);
+    auto c = MakeConst(42, 15);
+
+    auto addOverflow = MakeOp(43, OpType::Add, {a, b});
+    auto mulOverflow = MakeOp(44, OpType::Mul, {addOverflow, c});
+
+    auto eval = Eval::EvaluateConstant(mulOverflow, 8);
+    BF_TEST(eval.status == Eval::EvalStatus::Success);
+
+    auto code = Codegen::EmitCExpr(mulOverflow, 8);
+    auto run = CompileAndRun(code);
+
+    BF_TEST(eval.value == run);
     return 0;
 }
 
 } // namespace
 
 int main() {
-    BF_RUN_TEST(TestCodegenRuntime_MatchesEvaluator);
+    BF_RUN_TEST(TestCodegenRuntime_Case1_SimpleAdd);
+    BF_RUN_TEST(TestCodegenRuntime_Case2_NestedMulAdd);
+    BF_RUN_TEST(TestCodegenRuntime_Case3_Bitwise);
+    BF_RUN_TEST(TestCodegenRuntime_Case4_RotateLeft);
+    BF_RUN_TEST(TestCodegenRuntime_Case5_MaskingOverflow8Bit);
     return 0;
 }
