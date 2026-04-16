@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.20)
 project(BitFlow LANGUAGES C CXX)
 
 option(BF_BUILD_TESTS "Build tests" ON)
+
 if(BF_BUILD_TESTS)
+    option(BF_ENABLE_CODEGEN_RUNTIME_TESTS "Enable slow runtime compile tests" OFF)
+
     enable_testing()
     include(cmake/BitFlowTests.cmake)
 endif()

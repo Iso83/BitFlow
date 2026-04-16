@@ -45,6 +45,10 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_ConstantDetect)
     bf_add_module_test(BitFlowCore core BF_Codegen)
 
+    if(BF_ENABLE_CODEGEN_RUNTIME_TESTS)
+        bf_add_module_test(BitFlowCore core BF_CodegenRuntime)
+    endif()
+
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order) 
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Flatten)
