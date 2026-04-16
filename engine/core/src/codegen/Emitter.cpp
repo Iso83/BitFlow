@@ -73,7 +73,7 @@ static bool NeedsParens(OpType parentOp, const Expr* child, bool isRightChild) {
 
 static std::string MakeMask(uint32_t bw) {
     if (bw == 64)
-        return "~0ull";
+        return "0xffffffffffffffffull";
 
     return "((1ull << " + std::to_string(bw) + ") - 1ull)";
 }
