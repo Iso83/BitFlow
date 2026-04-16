@@ -86,5 +86,10 @@ int main() {
     BF_TEST(fn.find("lhs") != std::string::npos);
     BF_TEST(fn.find("rhs") != std::string::npos);
 
+    // Case 9 — nieuwe API overload met default functienaam
+    const auto defaultFn = Codegen::EmitCFunction(addExpr, 32);
+    BF_TEST(defaultFn.find("uint64_t bf_eval(uint64_t v1, uint64_t v2)") != std::string::npos);
+    BF_TEST(defaultFn.find("return ") != std::string::npos);
+
     return 0;
 }

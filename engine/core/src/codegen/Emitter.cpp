@@ -308,6 +308,10 @@ std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
     return ApplyMask(expr, bitWidth);
 }
 
+std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
+    return EmitCFunction(root, bitWidth, "bf_eval", {});
+}
+
 std::map<uint32_t, std::string> BuildVarNameMap(const Expr* root, const std::map<uint32_t, std::string>& overrides) {
     std::set<uint32_t> ids;
     CollectVarIds(root, ids);
