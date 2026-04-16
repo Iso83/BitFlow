@@ -47,6 +47,7 @@ if(BF_BUILD_TESTS)
 
     if(BF_ENABLE_CODEGEN_RUNTIME_TESTS)
         bf_add_module_test(BitFlowCore core BF_CodegenRuntime)
+        bf_add_module_test(BitFlowCore core BF_FuzzEvalVsCodegen)
     endif()
 
     # Rules
