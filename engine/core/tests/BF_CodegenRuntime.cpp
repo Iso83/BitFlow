@@ -3,6 +3,7 @@
 #include <Core_Expr.h>
 #include <TestAssert.h>
 
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -22,8 +23,12 @@ namespace {
 #endif
 
 static uint64_t CompileAndRun(const std::string& expr) {
-    const char* file = "bf_codegen_test.cpp";
-    const char* exe = "bf_codegen_test.exe";
+    static std::atomic<uint64_t> counter {0};
+    const uint64_t id = counter.fetch_add(1);
+
+    const std::string base = "bf_codegen_test_" + std::to_string(id);
+    const std::string file = base + ".cpp";
+    const std::string exe = base + ".exe";
 
     std::ofstream out(file);
     out << "#include <cstdint>\n";
@@ -35,29 +40,41 @@ static uint64_t CompileAndRun(const std::string& expr) {
     out << "}\n";
     out.close();
 
-    int res = std::system("g++ -std=c++20 bf_codegen_test.cpp -o bf_codegen_test.exe");
-    if (res != 0)
-        return 0;
+    const std::string gppCmd = "g++ -std=c++20 " + file + " -o " + exe;
+    int res = std::system(gppCmd.c_str());
+    if (res != 0) {
+        const std::string cxxCmd = "c++ -std=c++20 " + file + " -o " + exe;
+        res = std::system(cxxCmd.c_str());
+        if (res != 0) {
+            std::remove(file.c_str());
+            return 0;
+        }
+    }
 
 #if defined(_WIN32)
-    const char* runCmd = exe;
+    const std::string runCmd = exe;
 #else
-    const char* runCmd = "./bf_codegen_test.exe";
+    const std::string runCmd = "./" + exe;
 #endif
 
-    FILE* pipe = BF_POPEN(runCmd, "r");
-    if (!pipe)
+    FILE* pipe = BF_POPEN(runCmd.c_str(), "r");
+    if (!pipe) {
+        std::remove(file.c_str());
+        std::remove(exe.c_str());
         return 0;
+    }
 
     char buffer[128] = {0};
     if (!fgets(buffer, sizeof(buffer), pipe)) {
         BF_PCLOSE(pipe);
+        std::remove(file.c_str());
+        std::remove(exe.c_str());
         return 0;
     }
 
     BF_PCLOSE(pipe);
-    std::remove(file);
-    std::remove(exe);
+    std::remove(file.c_str());
+    std::remove(exe.c_str());
 
     return static_cast<uint64_t>(std::stoull(buffer));
 }
