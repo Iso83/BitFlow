@@ -43,6 +43,7 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_RuleEngine_InPlaceRewrite)
     bf_add_module_test(BitFlowCore core BF_ConstantEval)
     bf_add_module_test(BitFlowCore core BF_ConstantDetect)
+    bf_add_module_test(BitFlowCore core BF_Codegen)
 
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order) 
