@@ -147,12 +147,12 @@ int TestFuzzEvalVsCodegen_32bit() {
         if (eval.status != Eval::EvalStatus::Success)
             continue;
 
-        std::string code = Codegen::EmitCExpr(root, 32);
+        auto code = Codegen::EmitCExpr(root, 32);
         if (code.find("unsupported") != std::string::npos || code.find("invalid") != std::string::npos)
             continue;
 
-        uint64_t runtime = CompileAndRun(code);
-        BF_TEST(eval.value == runtime);
+        auto run = CompileAndRun(code);
+        BF_TEST(eval.value == run);
         ++executed;
     }
 
