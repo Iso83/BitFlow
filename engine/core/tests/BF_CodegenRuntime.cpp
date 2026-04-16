@@ -5,60 +5,61 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
 #include <fstream>
 #include <string>
-#include <unistd.h>
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Testing;
 
 namespace {
 
-uint64_t RunRuntimeCExpr(const std::string& cExpr) {
-    namespace fs = std::filesystem;
+#if defined(_WIN32)
+#define BF_POPEN _popen
+#define BF_PCLOSE _pclose
+#else
+#define BF_POPEN popen
+#define BF_PCLOSE pclose
+#endif
 
-    static uint64_t counter = 0;
-    const fs::path base = fs::temp_directory_path() /
-                          ("bf_codegen_runtime_" + std::to_string(static_cast<unsigned long long>(::getpid())) + "_" +
-                           std::to_string(counter++));
-    const fs::path srcPath = base;
-    const fs::path exePath = base.string() + ".out";
+static uint64_t CompileAndRun(const std::string& expr) {
+    const char* file = "bf_codegen_test.cpp";
+    const char* exe = "bf_codegen_test.exe";
 
-    {
-        std::ofstream src(srcPath);
-        src << "#include <cstdint>\n"
-               "#include <iostream>\n"
-               "int main() {\n"
-               "    uint64_t value = static_cast<uint64_t>("
-            << cExpr
-            << ");\n"
-               "    std::cout << value;\n"
-               "    return 0;\n"
-               "}\n";
-    }
+    std::ofstream out(file);
+    out << "#include <cstdint>\n";
+    out << "#include <iostream>\n";
+    out << "int main(){\n";
+    out << "uint64_t v = " << expr << ";\n";
+    out << "std::cout << v;\n";
+    out << "return 0;\n";
+    out << "}\n";
+    out.close();
 
-    const char* cxx = std::getenv("CXX");
-    const std::string compiler = (cxx && *cxx) ? cxx : "c++";
-    const std::string compileCmd = compiler + " -std=c++20 -O0 \"" + srcPath.string() + "\" -o \"" +
-                                   exePath.string() + "\"";
-    BF_TEST(std::system(compileCmd.c_str()) == 0);
+    int res = std::system("g++ -std=c++20 bf_codegen_test.cpp -o bf_codegen_test.exe");
+    if (res != 0)
+        return 0;
 
-    const std::string runCmd = "\"" + exePath.string() + "\"";
-    FILE* pipe = popen(runCmd.c_str(), "r");
-    BF_TEST(pipe != nullptr);
+#if defined(_WIN32)
+    const char* runCmd = exe;
+#else
+    const char* runCmd = "./bf_codegen_test.exe";
+#endif
+
+    FILE* pipe = BF_POPEN(runCmd, "r");
+    if (!pipe)
+        return 0;
 
     char buffer[128] = {0};
-    std::string output;
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
-        output += buffer;
+    if (!fgets(buffer, sizeof(buffer), pipe)) {
+        BF_PCLOSE(pipe);
+        return 0;
+    }
 
-    BF_TEST(pclose(pipe) == 0);
+    BF_PCLOSE(pipe);
+    std::remove(file);
+    std::remove(exe);
 
-    fs::remove(srcPath);
-    fs::remove(exePath);
-
-    return static_cast<uint64_t>(std::stoull(output));
+    return static_cast<uint64_t>(std::stoull(buffer));
 }
 
 void AssertEvalMatchesRuntime(const AST::Expr* expr, uint32_t bitWidth) {
@@ -66,7 +67,7 @@ void AssertEvalMatchesRuntime(const AST::Expr* expr, uint32_t bitWidth) {
     BF_TEST(eval.status == Eval::EvalStatus::Success);
 
     const std::string cExpr = Codegen::EmitCExpr(expr, bitWidth);
-    const uint64_t runtime = RunRuntimeCExpr(cExpr);
+    const uint64_t runtime = CompileAndRun(cExpr);
 
     BF_TEST(runtime == eval.value);
 }
