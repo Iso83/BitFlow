@@ -86,6 +86,11 @@ int main() {
     const auto params = Codegen::EmitCParamList(addExpr, 32, names);
     BF_TEST(params == "uint64_t lhs, uint64_t rhs");
 
+    // Case 7b — deterministische oplopende volgorde
+    auto unorderedVars = MakeOp(27, OpType::Add, {MakeVar(9), MakeOp(28, OpType::Xor, {MakeVar(2), MakeVar(5)})});
+    const auto orderedParams = Codegen::EmitCParamList(unorderedVars, 32);
+    BF_TEST(orderedParams == "uint64_t v2, uint64_t v5, uint64_t v9");
+
     // Case 8 — function wrapper genereren
     const auto fn = Codegen::EmitCFunction(addExpr, 32, "bf_eval_add", names);
     BF_TEST(fn.find("uint64_t bf_eval_add(uint64_t lhs, uint64_t rhs)") != std::string::npos);

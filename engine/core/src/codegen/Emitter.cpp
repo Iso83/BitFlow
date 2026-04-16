@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 namespace BitFlow::Core::Codegen {
 
@@ -313,11 +314,12 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
 }
 
 std::map<uint32_t, std::string> BuildVarNameMap(const Expr* root, const std::map<uint32_t, std::string>& overrides) {
-    std::set<uint32_t> ids;
-    CollectVars(root, ids);
+    std::set<uint32_t> sorted;
+    CollectVars(root, sorted);
+    std::vector<uint32_t> vars(sorted.begin(), sorted.end());
 
     std::map<uint32_t, std::string> result;
-    for (const uint32_t id : ids) {
+    for (const uint32_t id : vars) {
         auto it = overrides.find(id);
         if (it != overrides.end() && IsValidIdentifier(it->second)) {
             result[id] = it->second;
