@@ -7,6 +7,10 @@ namespace BitFlow::Core::Codegen {
 
 using namespace AST;
 
+namespace {
+
+static std::string BitWidthLiteral(uint32_t bw) { return std::to_string(bw) + "ull"; }
+
 static std::string MakeMask(uint32_t bw) {
     if (bw == 64)
         return "~0ull";
@@ -19,7 +23,20 @@ static std::string ApplyMask(const std::string& expr, uint32_t bw) {
 }
 
 static std::string NormalizeShift(const std::string& rhs, uint32_t bw) {
-    return "((" + rhs + ") % " + std::to_string(bw) + "ull)";
+    return "((" + rhs + ") % " + BitWidthLiteral(bw) + ")";
+}
+
+static std::string ComplementaryShift(const std::string& normalizedShift, uint32_t bw) {
+    return "((" + BitWidthLiteral(bw) + " - " + normalizedShift + ") % " + BitWidthLiteral(bw) + ")";
+}
+
+static std::string MakeRotateExpr(const std::string& value, const std::string& shift, uint32_t bw, bool left) {
+    const std::string invShift = ComplementaryShift(shift, bw);
+
+    if (left)
+        return "((" + value + " << " + shift + ") | (" + value + " >> " + invShift + "))";
+
+    return "((" + value + " >> " + shift + ") | (" + value + " << " + invShift + "))";
 }
 
 static std::string EmitNode(const Expr* e, uint32_t bw) {
@@ -36,9 +53,9 @@ static std::string EmitNode(const Expr* e, uint32_t bw) {
 
         switch (e->op) {
         case Neg:
-            return ApplyMask("(~(" + a + ") + 1ull)", bw);
+            return ApplyMask("(~" + a + " + 1ull)", bw);
         case Not:
-            return ApplyMask("(~(" + a + "))", bw);
+            return ApplyMask("(~" + a + ")", bw);
         default:
             break;
         }
@@ -87,15 +104,11 @@ static std::string EmitNode(const Expr* e, uint32_t bw) {
                 break;
 
             case RotL: {
-                lhs = ApplyMask("((" + lhs + " << " + sh + ") | (" + lhs + " >> (" + std::to_string(bw) + "ull - " +
-                                    sh + ")))",
-                                bw);
+                lhs = ApplyMask(MakeRotateExpr(lhs, sh, bw, true), bw);
                 break;
             }
             case RotR: {
-                lhs = ApplyMask("((" + lhs + " >> " + sh + ") | (" + lhs + " << (" + std::to_string(bw) + "ull - " +
-                                    sh + ")))",
-                                bw);
+                lhs = ApplyMask(MakeRotateExpr(lhs, sh, bw, false), bw);
                 break;
             }
             default:
@@ -108,6 +121,8 @@ static std::string EmitNode(const Expr* e, uint32_t bw) {
 
     return "/*invalid*/";
 }
+
+} // namespace
 
 std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
     std::string expr = EmitNode(root, bitWidth);
