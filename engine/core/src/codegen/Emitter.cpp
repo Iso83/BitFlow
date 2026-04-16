@@ -9,6 +9,8 @@ using namespace AST;
 
 namespace {
 
+static constexpr const char* kUnsupportedExpr = "0ull /* unsupported */";
+
 static std::string BitWidthLiteral(uint32_t bw) { return std::to_string(bw) + "ull"; }
 
 static int GetPrecedence(OpType op) {
@@ -224,7 +226,7 @@ static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, boo
                 break;
             }
             default:
-                return "/*unsupported*/";
+                return "";
             }
         }
 
@@ -233,13 +235,19 @@ static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, boo
         return lhs;
     }
 
-    return "/*invalid*/";
+    return "";
 }
 
 } // namespace
 
 std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
+    if (!root)
+        return kUnsupportedExpr;
+
     std::string expr = EmitNode(root, bitWidth, -1, false);
+    if (expr.empty())
+        return kUnsupportedExpr;
+
     return ApplyMask(expr, bitWidth);
 }
 
