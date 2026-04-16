@@ -71,9 +71,8 @@ int TestCodegenRuntime_Case1_SimpleAdd() {
     BF_TEST(eval.status == Eval::EvalStatus::Success);
 
     auto code = Codegen::EmitCExpr(expr, 32);
-    auto run = CompileAndRun(code);
-
-    BF_TEST(eval.value == run);
+    for (int i = 0; i < 10; ++i)
+        BF_TEST(eval.value == CompileAndRun(code));
     return 0;
 }
 
@@ -88,9 +87,8 @@ int TestCodegenRuntime_Case2_NestedMulAdd() {
     BF_TEST(eval.status == Eval::EvalStatus::Success);
 
     auto code = Codegen::EmitCExpr(expr, 32);
-    auto run = CompileAndRun(code);
-
-    BF_TEST(eval.value == run);
+    for (int i = 0; i < 10; ++i)
+        BF_TEST(eval.value == CompileAndRun(code));
     return 0;
 }
 
@@ -105,9 +103,8 @@ int TestCodegenRuntime_Case3_Bitwise() {
     BF_TEST(eval.status == Eval::EvalStatus::Success);
 
     auto code = Codegen::EmitCExpr(expr, 32);
-    auto run = CompileAndRun(code);
-
-    BF_TEST(eval.value == run);
+    for (int i = 0; i < 10; ++i)
+        BF_TEST(eval.value == CompileAndRun(code));
     return 0;
 }
 
@@ -120,9 +117,8 @@ int TestCodegenRuntime_Case4_RotateLeft() {
     BF_TEST(eval.status == Eval::EvalStatus::Success);
 
     auto code = Codegen::EmitCExpr(expr, 32);
-    auto run = CompileAndRun(code);
-
-    BF_TEST(eval.value == run);
+    for (int i = 0; i < 10; ++i)
+        BF_TEST(eval.value == CompileAndRun(code));
     return 0;
 }
 
@@ -138,9 +134,8 @@ int TestCodegenRuntime_Case5_MaskingOverflow8Bit() {
     BF_TEST(eval.status == Eval::EvalStatus::Success);
 
     auto code = Codegen::EmitCExpr(mulOverflow, 8);
-    auto run = CompileAndRun(code);
-
-    BF_TEST(eval.value == run);
+    for (int i = 0; i < 10; ++i)
+        BF_TEST(eval.value == CompileAndRun(code));
     return 0;
 }
 
