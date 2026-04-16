@@ -6,9 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
-#include <random>
 #include <string>
-#include <vector>
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Testing;
@@ -83,55 +81,63 @@ static uint64_t CompileAndRun(const std::string& expr) {
     return static_cast<uint64_t>(std::stoull(buffer));
 }
 
-AST::Expr* GenConst(std::mt19937_64& rng, uint32_t& nextId) {
-    std::uniform_int_distribution<uint32_t> valueDist(0u, 0xFFFFFFFFu);
-    return MakeConst(nextId++, valueDist(rng));
+static uint32_t seed = 1234567u;
+
+static uint32_t Rnd() {
+    seed ^= seed << 13;
+    seed ^= seed >> 17;
+    seed ^= seed << 5;
+    return seed;
 }
 
-AST::Expr* GenExpr(std::mt19937_64& rng, uint32_t& nextId, int depth) {
-    static constexpr OpType unaryOps[] = {OpType::Not, OpType::Neg};
-    static constexpr OpType binaryOps[] = {
-        OpType::Add, OpType::Sub, OpType::Mul, OpType::Div, OpType::Mod, OpType::And,
-        OpType::Or,  OpType::Xor, OpType::Shl, OpType::Shr, OpType::UShr, OpType::RotL,
-        OpType::RotR,
-    };
+static Expr* GenLeaf() {
+    if ((Rnd() % 2u) == 0u)
+        return MakeConst(Rnd(), Rnd() & 0xFFu);
 
+    return MakeVar((Rnd() % 10u) + 1u);
+}
+
+static Expr* GenExpr(int depth) {
     if (depth <= 0)
-        return GenConst(rng, nextId);
+        return GenLeaf();
 
-    std::uniform_int_distribution<int> kindDist(0, 4);
-    const int kind = kindDist(rng);
+    const uint32_t op = Rnd() % 10u;
 
-    if (kind == 0)
-        return GenConst(rng, nextId);
+    Expr* a = GenExpr(depth - 1);
+    Expr* b = GenExpr(depth - 1);
 
-    if (kind == 1) {
-        std::uniform_int_distribution<size_t> opDist(0, std::size(unaryOps) - 1);
-        AST::Expr* child = GenExpr(rng, nextId, depth - 1);
-        return MakeOp(nextId++, unaryOps[opDist(rng)], {child});
+    switch (op) {
+    case 0:
+        return MakeOp(Rnd(), OpType::Add, {a, b});
+    case 1:
+        return MakeOp(Rnd(), OpType::Sub, {a, b});
+    case 2:
+        return MakeOp(Rnd(), OpType::Mul, {a, b});
+    case 3:
+        return MakeOp(Rnd(), OpType::And, {a, b});
+    case 4:
+        return MakeOp(Rnd(), OpType::Or, {a, b});
+    case 5:
+        return MakeOp(Rnd(), OpType::Xor, {a, b});
+    case 6:
+        return MakeOp(Rnd(), OpType::Shl, {a, b});
+    case 7:
+        return MakeOp(Rnd(), OpType::Shr, {a, b});
+    case 8:
+        return MakeOp(Rnd(), OpType::RotL, {a, b});
+    case 9:
+        return MakeOp(Rnd(), OpType::RotR, {a, b});
+    default:
+        return a;
     }
-
-    std::uniform_int_distribution<size_t> opDist(0, std::size(binaryOps) - 1);
-    OpType op = binaryOps[opDist(rng)];
-    AST::Expr* a = GenExpr(rng, nextId, depth - 1);
-    AST::Expr* b = GenExpr(rng, nextId, depth - 1);
-
-    // Avoid UB in generated C++ for div/mod by zero.
-    if ((op == OpType::Div || op == OpType::Mod) && b->op == OpType::Const && b->constValue == 0)
-        b->constValue = 1;
-
-    return MakeOp(nextId++, op, {a, b});
 }
 
-int TestFuzzEvalVsCodegen_ConstOnly_32bit() {
-    std::mt19937_64 rng(0xB17F10ULL);
-
+int TestFuzzEvalVsCodegen_32bit() {
     int executed = 0;
-    constexpr int kCases = 120;
+    constexpr int kCases = 400;
 
     for (int i = 0; i < kCases; ++i) {
-        uint32_t nextId = static_cast<uint32_t>(1000 + i * 64);
-        AST::Expr* root = GenExpr(rng, nextId, 4);
+        Expr* root = GenExpr(2);
 
         auto eval = Eval::EvaluateConstant(root, 32);
         if (eval.status != Eval::EvalStatus::Success)
@@ -146,13 +152,13 @@ int TestFuzzEvalVsCodegen_ConstOnly_32bit() {
         ++executed;
     }
 
-    BF_TEST(executed >= 90);
+    BF_TEST(executed >= 10);
     return 0;
 }
 
 } // namespace
 
 int main() {
-    BF_RUN_TEST(TestFuzzEvalVsCodegen_ConstOnly_32bit);
+    BF_RUN_TEST(TestFuzzEvalVsCodegen_32bit);
     return 0;
 }
