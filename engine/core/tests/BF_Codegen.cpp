@@ -2,6 +2,7 @@
 #include <BitFlow/core/eval/ConstantEval.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
+#include <map>
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Testing;
@@ -67,6 +68,23 @@ int main() {
     // Case 5 — canonical mask vorm (32/64 bit)
     BF_TEST(Codegen::EmitCExpr(a, 32).find("((1ull << 32) - 1ull)") != std::string::npos);
     BF_TEST(Codegen::EmitCExpr(a, 64) == "((((v1) & 0xffffffffffffffffull)) & 0xffffffffffffffffull)");
+
+    // Case 6 — variabele mapping (id -> naam)
+    const std::map<uint32_t, std::string> names = {{1u, "lhs"}, {2u, "rhs"}};
+    const auto resolved = Codegen::BuildVarNameMap(addExpr, names);
+    BF_TEST(resolved.at(1u) == "lhs");
+    BF_TEST(resolved.at(2u) == "rhs");
+
+    // Case 7 — parameterlijst genereren
+    const auto params = Codegen::EmitCParamList(addExpr, 32, names);
+    BF_TEST(params == "uint64_t lhs, uint64_t rhs");
+
+    // Case 8 — function wrapper genereren
+    const auto fn = Codegen::EmitCFunction(addExpr, 32, "bf_eval_add", names);
+    BF_TEST(fn.find("uint64_t bf_eval_add(uint64_t lhs, uint64_t rhs)") != std::string::npos);
+    BF_TEST(fn.find("return ") != std::string::npos);
+    BF_TEST(fn.find("lhs") != std::string::npos);
+    BF_TEST(fn.find("rhs") != std::string::npos);
 
     return 0;
 }
