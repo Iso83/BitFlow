@@ -314,7 +314,7 @@ std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
 }
 
 std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
-    return EmitCFunction(root, bitWidth, "bf_eval", {});
+    return EmitCFunction(root, bitWidth, "f", {});
 }
 
 std::map<uint32_t, std::string> BuildVarNameMap(const Expr* root, const std::map<uint32_t, std::string>& overrides) {

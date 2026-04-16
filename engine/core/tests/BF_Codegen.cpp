@@ -101,8 +101,12 @@ int main() {
 
     // Case 9 — nieuwe API overload met default functienaam
     const auto defaultFn = Codegen::EmitCFunction(addExpr, 32);
-    BF_TEST(defaultFn.find("uint64_t bf_eval(uint64_t v1, uint64_t v2)") != std::string::npos);
+    BF_TEST(defaultFn.find("uint64_t f(uint64_t v1, uint64_t v2)") != std::string::npos);
     BF_TEST(defaultFn.find("return ") != std::string::npos);
+
+    // Case 9b — signature gebruikt sorted ids zonder duplicaten
+    const auto dedupFn = Codegen::EmitCFunction(duplicateVarExpr, 32);
+    BF_TEST(dedupFn.find("uint64_t f(uint64_t v1, uint64_t v2)") != std::string::npos);
 
     return 0;
 }
