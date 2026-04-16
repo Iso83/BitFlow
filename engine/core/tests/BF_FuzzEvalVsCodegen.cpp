@@ -1,5 +1,6 @@
 #include <BitFlow/core/codegen/Emitter.h>
 #include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/ConstantDetect.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 #include <atomic>
@@ -138,6 +139,9 @@ int TestFuzzEvalVsCodegen_32bit() {
 
     for (int i = 0; i < kCases; ++i) {
         Expr* root = GenExpr(2);
+
+        if (!Eval::IsFullyConstant(root))
+            continue;
 
         auto eval = Eval::EvaluateConstant(root, 32);
         if (eval.status != Eval::EvalStatus::Success)
