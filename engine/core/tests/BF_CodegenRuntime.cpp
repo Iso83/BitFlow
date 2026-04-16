@@ -105,6 +105,88 @@ static uint64_t CompileAndRun(const std::string& expr) {
     return static_cast<uint64_t>(std::stoull(buffer));
 }
 
+static uint64_t CompileAndRunWrapper(const std::string& wrapper, const std::string& invocation) {
+    static std::atomic<uint64_t> counter{100000};
+    const uint64_t id = counter.fetch_add(1);
+
+    const std::string base = "bf_codegen_wrapper_test_" + std::to_string(id);
+    const std::string file = base + ".cpp";
+
+#if defined(_WIN32)
+    const std::string exe = base + ".exe";
+#else
+    const std::string exe = base;
+#endif
+
+    std::ofstream out(file);
+    out << "#include <cstdint>\n";
+    out << "#include <iostream>\n";
+    out << wrapper << "\n";
+    out << "int main(){\n";
+    out << "std::cout << " << invocation << ";\n";
+    out << "return 0;\n";
+    out << "}\n";
+    out.close();
+
+    int res = 0;
+
+    const std::string gppCmd = "g++ -std=c++20 " + file + " -o " + exe;
+    res = std::system(gppCmd.c_str());
+
+    if (res != 0) {
+        const std::string cxxCmd = "c++ -std=c++20 " + file + " -o " + exe;
+        res = std::system(cxxCmd.c_str());
+    }
+
+#if defined(_WIN32)
+    if (res != 0) {
+        const std::string clCmd = "cl /nologo /std:c++20 /O2 /EHsc " + file + " /Fe:" + exe;
+        res = std::system(clCmd.c_str());
+    }
+#endif
+
+    if (res != 0) {
+        std::remove(file.c_str());
+        return 0;
+    }
+
+#if defined(_WIN32)
+    const std::string runCmd = exe;
+#else
+    const std::string runCmd = "./" + exe;
+#endif
+
+    FILE* pipe = BF_POPEN(runCmd.c_str(), "r");
+    if (!pipe) {
+        std::remove(file.c_str());
+        std::remove(exe.c_str());
+#if defined(_WIN32)
+        std::remove((base + ".obj").c_str());
+#endif
+        return 0;
+    }
+
+    char buffer[128] = {0};
+    if (!fgets(buffer, sizeof(buffer), pipe)) {
+        BF_PCLOSE(pipe);
+        std::remove(file.c_str());
+        std::remove(exe.c_str());
+#if defined(_WIN32)
+        std::remove((base + ".obj").c_str());
+#endif
+        return 0;
+    }
+
+    BF_PCLOSE(pipe);
+    std::remove(file.c_str());
+    std::remove(exe.c_str());
+#if defined(_WIN32)
+    std::remove((base + ".obj").c_str());
+#endif
+
+    return static_cast<uint64_t>(std::stoull(buffer));
+}
+
 int TestCodegenRuntime_Case1_SimpleAdd() {
     auto a = MakeConst(1, 10);
     auto b = MakeConst(2, 20);
@@ -187,6 +269,18 @@ int TestCodegenRuntime_Case5_MaskingOverflow8Bit() {
     return 0;
 }
 
+int TestCodegenRuntime_Case6_FunctionWrapperInvocation() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto expr = MakeOp(50, OpType::Add, {a, b});
+
+    auto wrapper = Codegen::EmitCFunction(expr, 32);
+    const uint64_t result = CompileAndRunWrapper(wrapper, "f(5, 7)");
+
+    BF_TEST(result == 12ull);
+    return 0;
+}
+
 } // namespace
 
 int main() {
@@ -195,5 +289,6 @@ int main() {
     BF_RUN_TEST(TestCodegenRuntime_Case3_Bitwise);
     BF_RUN_TEST(TestCodegenRuntime_Case4_RotateLeft);
     BF_RUN_TEST(TestCodegenRuntime_Case5_MaskingOverflow8Bit);
+    BF_RUN_TEST(TestCodegenRuntime_Case6_FunctionWrapperInvocation);
     return 0;
 }

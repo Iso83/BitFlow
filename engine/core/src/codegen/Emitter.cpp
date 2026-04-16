@@ -1,7 +1,12 @@
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen/Emitter.h>
+#include <algorithm>
+#include <map>
+#include <set>
+#include <sstream>
 #include <string>
+#include <vector>
 
 namespace BitFlow::Core::Codegen {
 
@@ -10,6 +15,11 @@ using namespace AST;
 namespace {
 
 static constexpr const char* kUnsupportedExpr = "0ull /* unsupported */";
+static constexpr const char* kDefaultType = "uint64_t";
+
+static std::string MakeVarName(uint32_t id) {
+    return "v" + std::to_string(id);
+}
 
 static std::string BitWidthLiteral(uint32_t bw) {
     return std::to_string(bw) + "ull";
@@ -146,7 +156,7 @@ static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, boo
     }
 
     if (e->op == OpType::Var) {
-        std::string emitted = ApplyMask("v" + std::to_string(e->id.value()), bw);
+        std::string emitted = ApplyMask(MakeVarName(e->id.value()), bw);
         if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
             return "(" + emitted + ")";
         return emitted;
@@ -243,6 +253,54 @@ static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, boo
     return "";
 }
 
+static void CollectVars(const Expr* e, std::set<uint32_t>& out) {
+    if (!e)
+        return;
+
+    if (e->op == OpType::Var)
+        out.insert(e->id.value());
+
+    for (const Expr* input : e->inputs)
+        CollectVars(input, out);
+}
+
+static bool IsIdentifierStart(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+}
+
+static bool IsIdentifierChar(char c) {
+    return IsIdentifierStart(c) || (c >= '0' && c <= '9');
+}
+
+static bool IsValidIdentifier(const std::string& name) {
+    if (name.empty())
+        return false;
+
+    if (!IsIdentifierStart(name.front()))
+        return false;
+
+    return std::all_of(name.begin() + 1, name.end(), IsIdentifierChar);
+}
+
+static bool IsWordChar(char c) {
+    return IsIdentifierChar(c);
+}
+
+static void ReplaceIdentifierToken(std::string& text, const std::string& from, const std::string& to) {
+    size_t pos = 0;
+    while ((pos = text.find(from, pos)) != std::string::npos) {
+        const bool leftBoundary = (pos == 0) || !IsWordChar(text[pos - 1]);
+        const size_t rightPos = pos + from.size();
+        const bool rightBoundary = (rightPos >= text.size()) || !IsWordChar(text[rightPos]);
+        if (leftBoundary && rightBoundary) {
+            text.replace(pos, from.size(), to);
+            pos += to.size();
+        } else {
+            pos += from.size();
+        }
+    }
+}
+
 } // namespace
 
 std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
@@ -254,6 +312,80 @@ std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
         return kUnsupportedExpr;
 
     return ApplyMask(expr, bitWidth);
+}
+
+std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
+    std::set<uint32_t> vars;
+    CollectVars(root, vars);
+
+    std::vector<uint32_t> ordered(vars.begin(), vars.end());
+
+    std::ostringstream out;
+
+    out << "uint64_t f(";
+
+    for (size_t i = 0; i < ordered.size(); ++i) {
+        if (i > 0)
+            out << ", ";
+        out << "uint64_t v" << ordered[i];
+    }
+
+    out << ") {\n";
+    out << "    return " << EmitCExpr(root, bitWidth) << ";\n";
+    out << "}";
+
+    return out.str();
+}
+
+std::map<uint32_t, std::string> BuildVarNameMap(const Expr* root, const std::map<uint32_t, std::string>& overrides) {
+    std::set<uint32_t> sorted;
+    CollectVars(root, sorted);
+    std::vector<uint32_t> vars(sorted.begin(), sorted.end());
+
+    std::map<uint32_t, std::string> result;
+    for (const uint32_t id : vars) {
+        auto it = overrides.find(id);
+        if (it != overrides.end() && IsValidIdentifier(it->second)) {
+            result[id] = it->second;
+            continue;
+        }
+        result[id] = MakeVarName(id);
+    }
+    return result;
+}
+
+std::string EmitCParamList(const Expr* root, uint32_t bitWidth, const std::map<uint32_t, std::string>& varNames) {
+    (void)bitWidth;
+    std::map<uint32_t, std::string> resolvedNames = BuildVarNameMap(root, varNames);
+    std::string params;
+    bool first = true;
+    for (const auto& [id, name] : resolvedNames) {
+        (void)id;
+        if (!first)
+            params += ", ";
+        params += std::string(kDefaultType) + " " + name;
+        first = false;
+    }
+    return params;
+}
+
+std::string EmitCFunction(const Expr* root, uint32_t bitWidth, const std::string& functionName,
+                          const std::map<uint32_t, std::string>& varNames) {
+    std::map<uint32_t, std::string> resolvedNames = BuildVarNameMap(root, varNames);
+
+    std::string expr = EmitCExpr(root, bitWidth);
+    for (const auto& [id, name] : resolvedNames) {
+        const std::string fallback = MakeVarName(id);
+        ReplaceIdentifierToken(expr, fallback, name);
+    }
+
+    std::string out;
+    out += std::string(kDefaultType) + " " + functionName + "(";
+    out += EmitCParamList(root, bitWidth, varNames);
+    out += ") {\n";
+    out += "    return " + expr + ";\n";
+    out += "}";
+    return out;
 }
 
 } // namespace BitFlow::Core::Codegen
