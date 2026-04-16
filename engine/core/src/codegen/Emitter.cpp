@@ -7,9 +7,77 @@ namespace BitFlow::Core::Codegen {
 
 using namespace AST;
 
+namespace {
+
+static constexpr const char* kUnsupportedExpr = "0ull /* unsupported */";
+
+static std::string BitWidthLiteral(uint32_t bw) {
+    return std::to_string(bw) + "ull";
+}
+
+static int GetPrecedence(OpType op) {
+    switch (op) {
+    case OpType::Const:
+    case OpType::Var:
+        return 80; // primary / leaf
+    case OpType::Not:
+    case OpType::Neg:
+        return 70; // unary
+    case OpType::Mul:
+    case OpType::Div:
+    case OpType::Mod:
+        return 60;
+    case OpType::Add:
+    case OpType::Sub:
+        return 50;
+    case OpType::Shl:
+    case OpType::Shr:
+    case OpType::UShr:
+    case OpType::RotL:
+    case OpType::RotR:
+        return 40;
+    case OpType::And:
+        return 30;
+    case OpType::Xor:
+        return 20;
+    case OpType::Or:
+        return 10;
+    default:
+        return 0;
+    }
+}
+
+static bool NeedsParens(OpType parentOp, const Expr* child, bool isRightChild) {
+    if (!child)
+        return true;
+
+    const int parentPrec = GetPrecedence(parentOp);
+    const int childPrec = GetPrecedence(child->op);
+
+    if (childPrec < parentPrec)
+        return true;
+
+    if (childPrec > parentPrec)
+        return false;
+
+    if (!isRightChild)
+        return false;
+
+    switch (parentOp) {
+    case OpType::Add:
+    case OpType::Mul:
+    case OpType::And:
+    case OpType::Or:
+    case OpType::Xor:
+        return false;
+    default:
+        return true;
+    }
+}
+
 static std::string MakeMask(uint32_t bw) {
     if (bw == 64)
-        return "~0ull";
+        return "0xffffffffffffffffull";
 
     return "((1ull << " + std::to_string(bw) + ") - 1ull)";
 }
@@ -19,98 +87,172 @@ static std::string ApplyMask(const std::string& expr, uint32_t bw) {
 }
 
 static std::string NormalizeShift(const std::string& rhs, uint32_t bw) {
-    return "((" + rhs + ") % " + std::to_string(bw) + "ull)";
+    return "((" + rhs + ") % " + BitWidthLiteral(bw) + ")";
 }
 
-static std::string EmitNode(const Expr* e, uint32_t bw) {
+static std::string MakeRotateExpr(const std::string& value, const std::string& shift, uint32_t bw, bool left) {
+    const std::string bwLiteral = BitWidthLiteral(bw);
+    const std::string mask = MakeMask(bw);
+
+    if (left)
+        return "(((" + value + " << " + shift + ") | (" + value + " >> (" + bwLiteral + " - " + shift + "))) & " +
+               mask + ")";
+
+    return "(((" + value + " >> " + shift + ") | (" + value + " << (" + bwLiteral + " - " + shift + "))) & " + mask +
+           ")";
+}
+
+static bool IsWrapped(const std::string& text) {
+    return text.size() >= 2 && text.front() == '(' && text.back() == ')';
+}
+
+static std::string EmitBinary(const std::string& lhs, const char* op, const std::string& rhs) {
+    return lhs + " " + op + " " + rhs;
+}
+
+static std::string EmitUnary(const char* op, const std::string& value) {
+    return std::string(op) + value;
+}
+
+static std::string MaybeWrapChild(const std::string& emittedChild, OpType parentOp, const Expr* child,
+                                  bool isRightChild) {
+    if (NeedsParens(parentOp, child, isRightChild) && !IsWrapped(emittedChild))
+        return "(" + emittedChild + ")";
+    return emittedChild;
+}
+
+static bool ShouldWrapForParent(OpType selfOp, int parentPrec, bool isRightChild) {
+    if (parentPrec < 0)
+        return false;
+
+    const int selfPrec = GetPrecedence(selfOp);
+    if (selfPrec < parentPrec)
+        return true;
+
+    if (isRightChild && selfPrec == parentPrec)
+        return true;
+
+    return false;
+}
+
+static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, bool isRightChild = false) {
     using enum OpType;
 
-    if (e->op == OpType::Const)
-        return ApplyMask(std::to_string(e->constValue) + "ull", bw);
+    if (e->op == OpType::Const) {
+        std::string emitted = ApplyMask(std::to_string(e->constValue) + "ull", bw);
+        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+            return "(" + emitted + ")";
+        return emitted;
+    }
 
-    if (e->op == OpType::Var)
-        return ApplyMask("v" + std::to_string(e->id.value()), bw);
+    if (e->op == OpType::Var) {
+        std::string emitted = ApplyMask("v" + std::to_string(e->id.value()), bw);
+        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+            return "(" + emitted + ")";
+        return emitted;
+    }
 
     if (e->inputs.size() == 1) {
-        std::string a = EmitNode(e->inputs[0], bw);
+        const int currentPrec = GetPrecedence(e->op);
+        std::string a = EmitNode(e->inputs[0], bw, currentPrec, true);
+        a = MaybeWrapChild(a, e->op, e->inputs[0], true);
+        std::string emitted;
 
         switch (e->op) {
         case Neg:
-            return ApplyMask("(~(" + a + ") + 1ull)", bw);
+            emitted = ApplyMask(EmitUnary("-", a), bw);
+            break;
         case Not:
-            return ApplyMask("(~(" + a + "))", bw);
+            emitted = ApplyMask(EmitUnary("~", a), bw);
+            break;
         default:
             break;
+        }
+
+        if (!emitted.empty()) {
+            if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+                return "(" + emitted + ")";
+            return emitted;
         }
     }
 
     if (e->inputs.size() >= 2) {
-        std::string lhs = EmitNode(e->inputs[0], bw);
+        const int currentPrec = GetPrecedence(e->op);
+        std::string lhs = EmitNode(e->inputs[0], bw, currentPrec, false);
 
         for (size_t i = 1; i < e->inputs.size(); ++i) {
-            std::string rhs = EmitNode(e->inputs[i], bw);
+            std::string rhs = EmitNode(e->inputs[i], bw, currentPrec, true);
             std::string sh = NormalizeShift(rhs, bw);
+            const Expr* leftExpr = (i == 1) ? e->inputs[0] : nullptr;
+            const std::string lhsWrapped = MaybeWrapChild(lhs, e->op, leftExpr, false);
+            const std::string rhsWrapped = MaybeWrapChild(rhs, e->op, e->inputs[i], true);
 
             switch (e->op) {
             case Add:
-                lhs = ApplyMask("(" + lhs + " + " + rhs + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bw);
                 break;
             case Sub:
-                lhs = ApplyMask("(" + lhs + " - " + rhs + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bw);
                 break;
             case Mul:
-                lhs = ApplyMask("(" + lhs + " * " + rhs + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bw);
                 break;
             case Div:
-                lhs = ApplyMask("(" + lhs + " / " + rhs + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bw);
                 break;
             case Mod:
-                lhs = ApplyMask("(" + lhs + " % " + rhs + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bw);
                 break;
 
             case And:
-                lhs = ApplyMask("(" + lhs + " & " + rhs + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bw);
                 break;
             case Or:
-                lhs = ApplyMask("(" + lhs + " | " + rhs + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bw);
                 break;
             case Xor:
-                lhs = ApplyMask("(" + lhs + " ^ " + rhs + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
                 break;
 
             case Shl:
-                lhs = ApplyMask("(" + lhs + " << " + sh + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
                 break;
             case Shr:
             case UShr:
-                lhs = ApplyMask("(" + lhs + " >> " + sh + ")", bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
                 break;
 
             case RotL: {
-                lhs = ApplyMask("((" + lhs + " << " + sh + ") | (" + lhs + " >> (" + std::to_string(bw) + "ull - " +
-                                    sh + ")))",
-                                bw);
+                lhs = MakeRotateExpr(lhs, sh, bw, true);
                 break;
             }
             case RotR: {
-                lhs = ApplyMask("((" + lhs + " >> " + sh + ") | (" + lhs + " << (" + std::to_string(bw) + "ull - " +
-                                    sh + ")))",
-                                bw);
+                lhs = MakeRotateExpr(lhs, sh, bw, false);
                 break;
             }
             default:
-                return "/*unsupported*/";
+                return "";
             }
         }
 
+        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+            return "(" + lhs + ")";
         return lhs;
     }
 
-    return "/*invalid*/";
+    return "";
 }
 
+} // namespace
+
 std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
-    std::string expr = EmitNode(root, bitWidth);
+    if (!root)
+        return kUnsupportedExpr;
+
+    std::string expr = EmitNode(root, bitWidth, -1, false);
+    if (expr.empty())
+        return kUnsupportedExpr;
+
     return ApplyMask(expr, bitWidth);
 }
 
