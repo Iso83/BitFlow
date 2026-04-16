@@ -81,6 +81,7 @@ int main() {
     BF_TEST(resolvedDup.size() == 2);
     BF_TEST(resolvedDup.count(1u) == 1u);
     BF_TEST(resolvedDup.count(2u) == 1u);
+    BF_TEST(Codegen::BuildVarNameMap(c).at(3u) == "v3");
 
     // Case 7 — parameterlijst genereren
     const auto params = Codegen::EmitCParamList(addExpr, 32, names);

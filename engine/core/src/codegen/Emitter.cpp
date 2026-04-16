@@ -16,6 +16,10 @@ namespace {
 static constexpr const char* kUnsupportedExpr = "0ull /* unsupported */";
 static constexpr const char* kDefaultType = "uint64_t";
 
+static std::string MakeVarName(uint32_t id) {
+    return "v" + std::to_string(id);
+}
+
 static std::string BitWidthLiteral(uint32_t bw) {
     return std::to_string(bw) + "ull";
 }
@@ -151,7 +155,7 @@ static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, boo
     }
 
     if (e->op == OpType::Var) {
-        std::string emitted = ApplyMask("v" + std::to_string(e->id.value()), bw);
+        std::string emitted = ApplyMask(MakeVarName(e->id.value()), bw);
         if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
             return "(" + emitted + ")";
         return emitted;
@@ -325,7 +329,7 @@ std::map<uint32_t, std::string> BuildVarNameMap(const Expr* root, const std::map
             result[id] = it->second;
             continue;
         }
-        result[id] = "v" + std::to_string(id);
+        result[id] = MakeVarName(id);
     }
     return result;
 }
@@ -351,7 +355,7 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth, const std::string
 
     std::string expr = EmitCExpr(root, bitWidth);
     for (const auto& [id, name] : resolvedNames) {
-        const std::string fallback = "v" + std::to_string(id);
+        const std::string fallback = MakeVarName(id);
         ReplaceIdentifierToken(expr, fallback, name);
     }
 
