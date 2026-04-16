@@ -112,5 +112,14 @@ int main() {
     const auto exprBody = Codegen::EmitCExpr(addExpr, 32);
     BF_TEST(defaultFn.find("return " + exprBody + ";") != std::string::npos);
 
+    // Case 11 — gevraagde basis test voor EmitCFunction
+    auto a2 = MakeVar(1);
+    auto b2 = MakeVar(2);
+    auto expr = MakeOp(29, OpType::Add, {a2, b2});
+    auto code = Codegen::EmitCFunction(expr, 32);
+    BF_TEST(code.find("uint64_t f(") != std::string::npos);
+    BF_TEST(code.find("v1") != std::string::npos);
+    BF_TEST(code.find("v2") != std::string::npos);
+
     return 0;
 }
