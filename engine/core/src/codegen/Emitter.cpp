@@ -86,17 +86,16 @@ static std::string NormalizeShift(const std::string& rhs, uint32_t bw) {
     return "((" + rhs + ") % " + BitWidthLiteral(bw) + ")";
 }
 
-static std::string ComplementaryShift(const std::string& normalizedShift, uint32_t bw) {
-    return "((" + BitWidthLiteral(bw) + " - " + normalizedShift + ") % " + BitWidthLiteral(bw) + ")";
-}
-
 static std::string MakeRotateExpr(const std::string& value, const std::string& shift, uint32_t bw, bool left) {
-    const std::string invShift = ComplementaryShift(shift, bw);
+    const std::string bwLiteral = BitWidthLiteral(bw);
+    const std::string mask = MakeMask(bw);
 
     if (left)
-        return "((" + value + " << " + shift + ") | (" + value + " >> " + invShift + "))";
+        return "(((" + value + " << " + shift + ") | (" + value + " >> (" + bwLiteral + " - " + shift + "))) & " +
+               mask + ")";
 
-    return "((" + value + " >> " + shift + ") | (" + value + " << " + invShift + "))";
+    return "(((" + value + " >> " + shift + ") | (" + value + " << (" + bwLiteral + " - " + shift + "))) & " + mask +
+           ")";
 }
 
 static bool IsWrapped(const std::string& text) {
@@ -217,11 +216,11 @@ static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, boo
                 break;
 
             case RotL: {
-                lhs = ApplyMask(MakeRotateExpr(lhs, sh, bw, true), bw);
+                lhs = MakeRotateExpr(lhs, sh, bw, true);
                 break;
             }
             case RotR: {
-                lhs = ApplyMask(MakeRotateExpr(lhs, sh, bw, false), bw);
+                lhs = MakeRotateExpr(lhs, sh, bw, false);
                 break;
             }
             default:
