@@ -99,8 +99,18 @@ static std::string MakeRotateExpr(const std::string& value, const std::string& s
     return "((" + value + " >> " + shift + ") | (" + value + " << " + invShift + "))";
 }
 
+static bool IsWrapped(const std::string& text) {
+    return text.size() >= 2 && text.front() == '(' && text.back() == ')';
+}
+
+static std::string EmitBinary(const std::string& lhs, const char* op, const std::string& rhs) {
+    return lhs + " " + op + " " + rhs;
+}
+
+static std::string EmitUnary(const char* op, const std::string& value) { return std::string(op) + value; }
+
 static std::string MaybeWrapChild(const std::string& emittedChild, OpType parentOp, const Expr* child, bool isRightChild) {
-    if (NeedsParens(parentOp, child, isRightChild))
+    if (NeedsParens(parentOp, child, isRightChild) && !IsWrapped(emittedChild))
         return "(" + emittedChild + ")";
     return emittedChild;
 }
@@ -144,10 +154,10 @@ static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, boo
 
         switch (e->op) {
         case Neg:
-            emitted = ApplyMask("(~" + a + " + 1ull)", bw);
+            emitted = ApplyMask(EmitUnary("-", a), bw);
             break;
         case Not:
-            emitted = ApplyMask("(~" + a + ")", bw);
+            emitted = ApplyMask(EmitUnary("~", a), bw);
             break;
         default:
             break;
@@ -173,37 +183,37 @@ static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, boo
 
             switch (e->op) {
             case Add:
-                lhs = ApplyMask(lhsWrapped + " + " + rhsWrapped, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bw);
                 break;
             case Sub:
-                lhs = ApplyMask(lhsWrapped + " - " + rhsWrapped, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bw);
                 break;
             case Mul:
-                lhs = ApplyMask(lhsWrapped + " * " + rhsWrapped, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bw);
                 break;
             case Div:
-                lhs = ApplyMask(lhsWrapped + " / " + rhsWrapped, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bw);
                 break;
             case Mod:
-                lhs = ApplyMask(lhsWrapped + " % " + rhsWrapped, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bw);
                 break;
 
             case And:
-                lhs = ApplyMask(lhsWrapped + " & " + rhsWrapped, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bw);
                 break;
             case Or:
-                lhs = ApplyMask(lhsWrapped + " | " + rhsWrapped, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bw);
                 break;
             case Xor:
-                lhs = ApplyMask(lhsWrapped + " ^ " + rhsWrapped, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
                 break;
 
             case Shl:
-                lhs = ApplyMask(lhsWrapped + " << " + sh, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
                 break;
             case Shr:
             case UShr:
-                lhs = ApplyMask(lhsWrapped + " >> " + sh, bw);
+                lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
                 break;
 
             case RotL: {
