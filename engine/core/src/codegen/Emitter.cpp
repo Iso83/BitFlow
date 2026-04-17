@@ -302,7 +302,7 @@ static const char* OpTypeLabel(OpType op) {
     }
 }
 
-static std::string BuildStructuralKey(const Expr* e, std::unordered_map<const Expr*, std::string>& memo) {
+static std::string BuildStructuralKeyImpl(const Expr* e, std::unordered_map<const Expr*, std::string>& memo) {
     if (!e)
         return "N";
 
@@ -324,7 +324,7 @@ static std::string BuildStructuralKey(const Expr* e, std::unordered_map<const Ex
         for (size_t i = 0; i < e->inputs.size(); ++i) {
             if (i > 0)
                 key += ",";
-            key += BuildStructuralKey(e->inputs[i], memo);
+            key += BuildStructuralKeyImpl(e->inputs[i], memo);
         }
         key += ")";
     }
@@ -333,11 +333,16 @@ static std::string BuildStructuralKey(const Expr* e, std::unordered_map<const Ex
     return key;
 }
 
+[[maybe_unused]] static std::string BuildStructuralKey(const Expr* e) {
+    std::unordered_map<const Expr*, std::string> memo;
+    return BuildStructuralKeyImpl(e, memo);
+}
+
 static void CountExprUsesStructural(const Expr* e, std::unordered_map<const Expr*, std::string>& keyMemo,
                                     std::unordered_map<std::string, uint32_t>& counts) {
     if (!e)
         return;
-    counts[BuildStructuralKey(e, keyMemo)] += 1;
+    counts[BuildStructuralKeyImpl(e, keyMemo)] += 1;
     for (const Expr* input : e->inputs)
         CountExprUsesStructural(input, keyMemo, counts);
 }
