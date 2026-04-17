@@ -1,40 +1,25 @@
 #pragma once
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <cstdint>
+#include <string>
 #include <vector>
 
-namespace BitFlow::Core::Codegen::SSA {
+namespace BitFlow::Core::AST {
+struct Expr;
+}
 
-enum class SsaValueKind {
-    Invalid,
-    Temporary,
-    Variable,
-    Constant,
-};
+namespace BitFlow::Core::Codegen {
 
-struct SsaValue {
-    SsaValueKind kind = SsaValueKind::Invalid;
-    uint32_t id = 0;
-    uint64_t constant = 0;
-};
-
-struct SsaInstruction {
-    uint32_t resultId = 0;
-    AST::OpType op = AST::OpType::Const;
-    std::vector<SsaValue> inputs{};
+struct SsaStatement {
+    std::string name;
+    std::string expr;
 };
 
 struct SsaProgram {
-    std::vector<SsaInstruction> instructions{};
-    std::vector<SsaValue> outputs{};
+    std::vector<SsaStatement> statements;
+    std::string result;
 };
 
-class SsaBuilder {
-public:
-    SsaProgram Build(const AST::Expr* root);
-    SsaProgram Build(const std::vector<const AST::Expr*>& roots);
-};
+SsaProgram BuildSSA(const AST::Expr* root, uint32_t bitWidth);
 
-} // namespace BitFlow::Core::Codegen::SSA
+} // namespace BitFlow::Core::Codegen

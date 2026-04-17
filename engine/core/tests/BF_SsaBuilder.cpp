@@ -1,53 +1,42 @@
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
-#include <vector>
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Testing;
-using namespace BitFlow::Core::Codegen::SSA;
 
 int main() {
-    SsaBuilder builder;
+    using Codegen::BuildSSA;
 
-    // Null root should produce an invalid output value and no instructions.
+    // Null root should return an empty SSA program.
     {
-        SsaProgram p = builder.Build(static_cast<const AST::Expr*>(nullptr));
-        BF_TEST(p.instructions.empty());
-        BF_TEST(p.outputs.size() == 1u);
-        BF_TEST(p.outputs[0].kind == SsaValueKind::Invalid);
+        auto p = BuildSSA(nullptr, 32);
+        BF_TEST(p.statements.empty());
+        BF_TEST(p.result.empty());
     }
 
-    // Leaf-only tree should not create temporaries.
+    // Leaf-only tree should not create temporaries and should return leaf expression.
     {
         auto v1 = MakeVar(1);
-        SsaProgram p = builder.Build(v1);
-        BF_TEST(p.instructions.empty());
-        BF_TEST(p.outputs.size() == 1u);
-        BF_TEST(p.outputs[0].kind == SsaValueKind::Variable);
-        BF_TEST(p.outputs[0].id == 1u);
+        auto p = BuildSSA(v1, 32);
+        BF_TEST(p.statements.empty());
+        BF_TEST(!p.result.empty());
     }
 
-    // Shared sub-tree should be emitted once.
+    // Shared sub-tree should be emitted only once.
     {
         auto a = MakeVar(10);
         auto b = MakeVar(11);
         auto c = MakeVar(12);
 
         auto x = MakeOp(100, OpType::Xor, {a, b});
-        auto out1 = MakeOp(101, OpType::Add, {x, c});
-        auto out2 = MakeOp(102, OpType::And, {x, c});
+        auto out = MakeOp(101, OpType::Add, {x, x, c});
 
-        SsaProgram p = builder.Build(std::vector<const AST::Expr*>{out1, out2});
-
-        BF_TEST(p.instructions.size() == 3u); // xor, add, and
-        BF_TEST(p.outputs.size() == 2u);
-        BF_TEST(p.outputs[0].kind == SsaValueKind::Temporary);
-        BF_TEST(p.outputs[1].kind == SsaValueKind::Temporary);
-
-        BF_TEST(p.instructions[0].op == OpType::Xor);
-        BF_TEST(p.instructions[1].op == OpType::Add);
-        BF_TEST(p.instructions[2].op == OpType::And);
+        auto p = BuildSSA(out, 32);
+        BF_TEST(p.statements.size() == 2u); // t0=xor, t1=add
+        BF_TEST(p.statements[0].name == "t0");
+        BF_TEST(p.statements[1].name == "t1");
+        BF_TEST(p.result == "t1");
     }
 
     return 0;
