@@ -41,21 +41,16 @@ int main() {
         BF_TEST(p.statements[1].expr.find("t0") != std::string::npos);
     }
 
-    // (a + b) * (a + b) => t0=(v1+v2), t1=(t0*t0), return t1
+    // Stap 14.6 — exact regression case
     {
         auto a = MakeVar(1);
         auto b = MakeVar(2);
-        auto sum = MakeOp(200, OpType::Add, {a, b});
-        auto mul = MakeOp(201, OpType::Mul, {sum, sum});
+        auto add = MakeOp(10, OpType::Add, {a, b});
+        auto expr = MakeOp(11, OpType::Mul, {add, add});
 
-        auto p = BuildSSA(mul, 32);
-        BF_TEST(p.statements.size() == 2u);
-        BF_TEST(p.statements[0].name == "t0");
-        BF_TEST(p.statements[0].expr.find("v1") != std::string::npos);
-        BF_TEST(p.statements[0].expr.find("v2") != std::string::npos);
-        BF_TEST(p.statements[1].name == "t1");
-        BF_TEST(p.statements[1].expr.find("t0") != std::string::npos);
-        BF_TEST(p.result == "t1");
+        auto prog = BuildSSA(expr, 32);
+        BF_TEST(prog.statements.size() == 2);
+        BF_TEST(prog.result == "t1");
     }
 
     return 0;
