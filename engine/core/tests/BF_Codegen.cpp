@@ -3,6 +3,7 @@
 #include <Core_Expr.h>
 #include <TestAssert.h>
 #include <map>
+#include <vector>
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Testing;
@@ -120,6 +121,19 @@ int main() {
     BF_TEST(code.find("uint64_t f(") != std::string::npos);
     BF_TEST(code.find("v1") != std::string::npos);
     BF_TEST(code.find("v2") != std::string::npos);
+
+    // Case 12.2 — meerdere outputs + gedeelde subexpressies + tijdelijke variabelen + statements
+    auto shared = MakeOp(30, OpType::Add, {a, b});
+    auto out0Expr = MakeOp(31, OpType::Mul, {shared, c});
+    auto out1Expr = MakeOp(32, OpType::Xor, {shared, a});
+    const std::vector<const AST::Expr*> outputs = {out0Expr, out1Expr};
+    const auto multiFn = Codegen::EmitCFunction(outputs, 32, "bf_eval_multi");
+    BF_TEST(multiFn.find("void bf_eval_multi(") != std::string::npos);
+    BF_TEST(multiFn.find("uint64_t& out0") != std::string::npos);
+    BF_TEST(multiFn.find("uint64_t& out1") != std::string::npos);
+    BF_TEST(multiFn.find("uint64_t t1 = ") != std::string::npos);
+    BF_TEST(multiFn.find("out0 = ") != std::string::npos);
+    BF_TEST(multiFn.find("out1 = ") != std::string::npos);
 
     return 0;
 }
