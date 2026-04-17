@@ -148,5 +148,20 @@ int main() {
     const auto nonSharedFn = Codegen::EmitCFunctionMulti(nonSharedOutputs, 32);
     BF_TEST(nonSharedFn.find("uint64_t t1 = ") == std::string::npos);
 
+    // Case 12.6 — post-order/temp statement order (children voor parent)
+    auto sharedChild = MakeOp(35, OpType::Add, {a, b});
+    auto sharedParent = MakeOp(36, OpType::Mul, {sharedChild, c});
+    auto out2Expr = MakeOp(37, OpType::Add, {sharedParent, sharedChild});
+    const std::vector<const AST::Expr*> orderedOutputs = {sharedParent, out2Expr};
+    const auto orderedFn = Codegen::EmitCFunctionMulti(orderedOutputs, 32);
+    const auto t1Pos = orderedFn.find("uint64_t t1 = ");
+    const auto t2Pos = orderedFn.find("uint64_t t2 = ");
+    const auto out0Pos = orderedFn.find("out0 = ");
+    BF_TEST(t1Pos != std::string::npos);
+    BF_TEST(t2Pos != std::string::npos);
+    BF_TEST(out0Pos != std::string::npos);
+    BF_TEST(t1Pos < t2Pos);
+    BF_TEST(t2Pos < out0Pos);
+
     return 0;
 }

@@ -293,15 +293,6 @@ static bool IsTempEligible(const Expr* e, uint32_t useCount) {
     return useCount > 1 && e->op != OpType::Const && e->op != OpType::Var;
 }
 
-static bool ShouldMaterializeNode(const Expr* e, const std::unordered_map<const Expr*, uint32_t>& useCount) {
-    if (!e)
-        return false;
-    auto it = useCount.find(e);
-    if (it == useCount.end())
-        return false;
-    return IsTempEligible(e, it->second);
-}
-
 static bool IsIdentifierStart(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
@@ -337,6 +328,131 @@ static void ReplaceIdentifierToken(std::string& text, const std::string& from, c
             pos += from.size();
         }
     }
+}
+
+static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
+                                     const std::unordered_map<const Expr*, uint32_t>& counts,
+                                     std::unordered_map<const Expr*, std::string>& assignedNames,
+                                     std::vector<std::string>& statements) {
+    std::function<std::string(const Expr*, int, bool)> emitRec;
+    emitRec = [&](const Expr* node, int parentPrec, bool isRightChild) -> std::string {
+        if (!node)
+            return kUnsupportedExpr;
+
+        if (node->op == OpType::Const) {
+            std::string emitted = ApplyMask(std::to_string(node->constValue) + "ull", bw);
+            if (ShouldWrapForParent(node->op, parentPrec, isRightChild))
+                return "(" + emitted + ")";
+            return emitted;
+        }
+
+        if (node->op == OpType::Var) {
+            std::string emitted = ApplyMask(MakeVarName(node->id.value()), bw);
+            if (ShouldWrapForParent(node->op, parentPrec, isRightChild))
+                return "(" + emitted + ")";
+            return emitted;
+        }
+
+        auto itAssigned = assignedNames.find(node);
+        if (itAssigned != assignedNames.end()) {
+            std::string emitted = itAssigned->second;
+            if (ShouldWrapForParent(OpType::Var, parentPrec, isRightChild))
+                emitted = "(" + emitted + ")";
+            return emitted;
+        }
+
+        std::string emitted;
+        if (node->inputs.size() == 1) {
+            const int currentPrec = GetPrecedence(node->op);
+            std::string a = emitRec(node->inputs[0], currentPrec, true);
+            a = MaybeWrapChild(a, node->op, node->inputs[0], true);
+
+            switch (node->op) {
+            case OpType::Neg:
+                emitted = ApplyMask(EmitUnary("-", a), bw);
+                break;
+            case OpType::Not:
+                emitted = ApplyMask(EmitUnary("~", a), bw);
+                break;
+            default:
+                break;
+            }
+        } else if (node->inputs.size() >= 2) {
+            const int currentPrec = GetPrecedence(node->op);
+            std::string lhs = emitRec(node->inputs[0], currentPrec, false);
+            for (size_t i = 1; i < node->inputs.size(); ++i) {
+                std::string rhs = emitRec(node->inputs[i], currentPrec, true);
+                std::string sh = NormalizeShift(rhs, bw);
+                const Expr* leftExpr = (i == 1) ? node->inputs[0] : nullptr;
+                const std::string lhsWrapped = MaybeWrapChild(lhs, node->op, leftExpr, false);
+                const std::string rhsWrapped = MaybeWrapChild(rhs, node->op, node->inputs[i], true);
+
+                switch (node->op) {
+                case OpType::Add:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bw);
+                    break;
+                case OpType::Sub:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bw);
+                    break;
+                case OpType::Mul:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bw);
+                    break;
+                case OpType::Div:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bw);
+                    break;
+                case OpType::Mod:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bw);
+                    break;
+                case OpType::And:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bw);
+                    break;
+                case OpType::Or:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bw);
+                    break;
+                case OpType::Xor:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
+                    break;
+                case OpType::Shl:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
+                    break;
+                case OpType::Shr:
+                case OpType::UShr:
+                    lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
+                    break;
+                case OpType::RotL:
+                    lhs = MakeRotateExpr(lhs, sh, bw, true);
+                    break;
+                case OpType::RotR:
+                    lhs = MakeRotateExpr(lhs, sh, bw, false);
+                    break;
+                default:
+                    return "";
+                }
+            }
+            emitted = lhs;
+        }
+
+        if (emitted.empty())
+            emitted = kUnsupportedExpr;
+
+        auto itCount = counts.find(node);
+        const uint32_t useCount = (itCount != counts.end()) ? itCount->second : 0u;
+        if (IsTempEligible(node, useCount)) {
+            const std::string tempName = "t" + std::to_string(assignedNames.size() + 1);
+            assignedNames[node] = tempName;
+            statements.push_back("    " + std::string(kDefaultType) + " " + tempName + " = " + emitted + ";");
+            std::string result = tempName;
+            if (ShouldWrapForParent(OpType::Var, parentPrec, isRightChild))
+                result = "(" + result + ")";
+            return result;
+        }
+
+        if (ShouldWrapForParent(node->op, parentPrec, isRightChild))
+            return "(" + emitted + ")";
+        return emitted;
+    };
+
+    return emitRec(e, -1, false);
 }
 
 } // namespace
@@ -456,135 +572,7 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     }
 
     std::vector<std::string> tempDecls;
-    std::unordered_map<const Expr*, std::string> tempByExpr;
-    size_t tempIndex = 1;
-
-    std::function<std::string(const Expr*, int, bool)> emitWithTemps;
-    emitWithTemps = [&](const Expr* e, int parentPrec, bool isRightChild) -> std::string {
-        if (!e)
-            return kUnsupportedExpr;
-
-        if (ShouldMaterializeNode(e, useCount)) {
-            auto itTemp = tempByExpr.find(e);
-            if (itTemp == tempByExpr.end()) {
-                const std::string tempName = "t" + std::to_string(tempIndex++);
-                tempByExpr[e] = tempName;
-                const std::string rhs = EmitNode(e, bitWidth, -1, false);
-                std::string rhsNamed = rhs;
-                for (const auto& [id, name] : resolvedNames)
-                    ReplaceIdentifierToken(rhsNamed, MakeVarName(id), name);
-                for (const auto& [exprNode, generatedTemp] : tempByExpr) {
-                    (void)exprNode;
-                    ReplaceIdentifierToken(rhsNamed, ApplyMask(generatedTemp, bitWidth), generatedTemp);
-                }
-                tempDecls.push_back("    " + std::string(kDefaultType) + " " + tempName + " = " + rhsNamed + ";");
-                itTemp = tempByExpr.find(e);
-            }
-            std::string emitted = itTemp->second;
-            if (ShouldWrapForParent(OpType::Var, parentPrec, isRightChild))
-                emitted = "(" + emitted + ")";
-            return emitted;
-        }
-
-        if (e->op == OpType::Const) {
-            std::string emitted = ApplyMask(std::to_string(e->constValue) + "ull", bitWidth);
-            if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-                return "(" + emitted + ")";
-            return emitted;
-        }
-
-        if (e->op == OpType::Var) {
-            std::string emitted = ApplyMask(MakeVarName(e->id.value()), bitWidth);
-            if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-                return "(" + emitted + ")";
-            return emitted;
-        }
-
-        if (e->inputs.size() == 1) {
-            const int currentPrec = GetPrecedence(e->op);
-            std::string a = emitWithTemps(e->inputs[0], currentPrec, true);
-            a = MaybeWrapChild(a, e->op, e->inputs[0], true);
-            std::string emitted;
-
-            switch (e->op) {
-            case OpType::Neg:
-                emitted = ApplyMask(EmitUnary("-", a), bitWidth);
-                break;
-            case OpType::Not:
-                emitted = ApplyMask(EmitUnary("~", a), bitWidth);
-                break;
-            default:
-                break;
-            }
-
-            if (!emitted.empty()) {
-                if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-                    return "(" + emitted + ")";
-                return emitted;
-            }
-        }
-
-        if (e->inputs.size() >= 2) {
-            const int currentPrec = GetPrecedence(e->op);
-            std::string lhs = emitWithTemps(e->inputs[0], currentPrec, false);
-
-            for (size_t i = 1; i < e->inputs.size(); ++i) {
-                std::string rhs = emitWithTemps(e->inputs[i], currentPrec, true);
-                std::string sh = NormalizeShift(rhs, bitWidth);
-                const Expr* leftExpr = (i == 1) ? e->inputs[0] : nullptr;
-                const std::string lhsWrapped = MaybeWrapChild(lhs, e->op, leftExpr, false);
-                const std::string rhsWrapped = MaybeWrapChild(rhs, e->op, e->inputs[i], true);
-
-                switch (e->op) {
-                case OpType::Add:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bitWidth);
-                    break;
-                case OpType::Sub:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bitWidth);
-                    break;
-                case OpType::Mul:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bitWidth);
-                    break;
-                case OpType::Div:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bitWidth);
-                    break;
-                case OpType::Mod:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bitWidth);
-                    break;
-                case OpType::And:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bitWidth);
-                    break;
-                case OpType::Or:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bitWidth);
-                    break;
-                case OpType::Xor:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bitWidth);
-                    break;
-                case OpType::Shl:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bitWidth);
-                    break;
-                case OpType::Shr:
-                case OpType::UShr:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bitWidth);
-                    break;
-                case OpType::RotL:
-                    lhs = MakeRotateExpr(lhs, sh, bitWidth, true);
-                    break;
-                case OpType::RotR:
-                    lhs = MakeRotateExpr(lhs, sh, bitWidth, false);
-                    break;
-                default:
-                    return "";
-                }
-            }
-
-            if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-                return "(" + lhs + ")";
-            return lhs;
-        }
-
-        return "";
-    };
+    std::unordered_map<const Expr*, std::string> assignedNames;
 
     std::string out;
     out += "void " + functionName + "(";
@@ -608,10 +596,18 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     std::vector<std::string> outputExprs;
     outputExprs.reserve(roots.size());
     for (const Expr* root : roots) {
-        std::string expr = emitWithTemps(root, -1, false);
+        std::string expr = EmitNodeWithTemps(root, bitWidth, useCount, assignedNames, tempDecls);
         if (expr.empty())
             expr = kUnsupportedExpr;
         outputExprs.push_back(ApplyMask(expr, bitWidth));
+    }
+
+    for (const auto& [id, name] : resolvedNames) {
+        const std::string fallback = MakeVarName(id);
+        for (std::string& decl : tempDecls)
+            ReplaceIdentifierToken(decl, fallback, name);
+        for (std::string& expr : outputExprs)
+            ReplaceIdentifierToken(expr, fallback, name);
     }
 
     for (const std::string& decl : tempDecls)
