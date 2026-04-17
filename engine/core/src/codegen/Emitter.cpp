@@ -346,19 +346,6 @@ static void CountStructuralUses(const Expr* e, std::unordered_map<std::string, u
         CountStructuralUses(input, counts);
 }
 
-[[maybe_unused]] static void CollectStructuralRepresentatives(const Expr* e,
-                                                              std::unordered_map<std::string, const Expr*>& reps) {
-    if (!e)
-        return;
-
-    const std::string key = BuildStructuralKey(e);
-    if (reps.find(key) == reps.end())
-        reps.emplace(key, e); // first node wins
-
-    for (const Expr* input : e->inputs)
-        CollectStructuralRepresentatives(input, reps);
-}
-
 static std::unordered_map<std::string, uint32_t> BuildUseCountMap(const std::vector<const Expr*>& roots,
                                                                   std::unordered_map<const Expr*, std::string>& keyMemo) {
     std::unordered_map<std::string, uint32_t> useCount;
@@ -369,18 +356,10 @@ static std::unordered_map<std::string, uint32_t> BuildUseCountMap(const std::vec
     return useCount;
 }
 
-[[maybe_unused]] static std::unordered_map<std::string, const Expr*>
-BuildRepresentativeMap(const std::vector<const Expr*>& roots) {
-    std::unordered_map<std::string, const Expr*> reps;
-    for (const Expr* root : roots)
-        CollectStructuralRepresentatives(root, reps);
-    return reps;
-}
-
-static bool IsTempEligible(const Expr* e, uint32_t useCount) {
+static bool IsTempEligible(const Expr* e, uint32_t structuralUseCount) {
     if (!e)
         return false;
-    return useCount > 1 && e->op != OpType::Const && e->op != OpType::Var;
+    return structuralUseCount > 1 && e->op != OpType::Const && e->op != OpType::Var;
 }
 
 static bool IsIdentifierStart(char c) {
@@ -470,8 +449,8 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw, const std::unor
             emitted = kUnsupportedExpr;
 
         auto itCount = counts.find(nodeKey);
-        const uint32_t useCount = (itCount != counts.end()) ? itCount->second : 0u;
-        if (IsTempEligible(node, useCount)) {
+        const uint32_t structuralUseCount = (itCount != counts.end()) ? itCount->second : 0u;
+        if (IsTempEligible(node, structuralUseCount)) {
             const std::string tempName = "t" + std::to_string(tempState.nextTempId++);
             assignedNamesByKey[nodeKey] = tempName;
             statements.push_back("    " + std::string(kDefaultType) + " " + tempName + " = " + ApplyMask(emitted, bw) +
