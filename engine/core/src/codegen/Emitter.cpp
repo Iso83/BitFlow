@@ -330,10 +330,14 @@ static void ReplaceIdentifierToken(std::string& text, const std::string& from, c
     }
 }
 
+struct TempEmitState {
+    uint32_t nextTempId = 1;
+};
+
 static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
                                      const std::unordered_map<const Expr*, uint32_t>& counts,
                                      std::unordered_map<const Expr*, std::string>& assignedNames,
-                                     std::vector<std::string>& statements) {
+                                     std::vector<std::string>& statements, TempEmitState& tempState) {
     std::function<std::string(const Expr*, int, bool)> emitRec;
     emitRec = [&](const Expr* node, int parentPrec, bool isRightChild) -> std::string {
         if (!node)
@@ -438,7 +442,7 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
         auto itCount = counts.find(node);
         const uint32_t useCount = (itCount != counts.end()) ? itCount->second : 0u;
         if (IsTempEligible(node, useCount)) {
-            const std::string tempName = "t" + std::to_string(assignedNames.size() + 1);
+            const std::string tempName = "t" + std::to_string(tempState.nextTempId++);
             assignedNames[node] = tempName;
             statements.push_back("    " + std::string(kDefaultType) + " " + tempName + " = " + emitted + ";");
             std::string result = tempName;
@@ -573,6 +577,7 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
 
     std::vector<std::string> tempDecls;
     std::unordered_map<const Expr*, std::string> assignedNames;
+    TempEmitState tempState{};
 
     std::string out;
     out += "void " + functionName + "(";
@@ -596,7 +601,7 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     std::vector<std::string> outputExprs;
     outputExprs.reserve(roots.size());
     for (const Expr* root : roots) {
-        std::string expr = EmitNodeWithTemps(root, bitWidth, useCount, assignedNames, tempDecls);
+        std::string expr = EmitNodeWithTemps(root, bitWidth, useCount, assignedNames, tempDecls, tempState);
         if (expr.empty())
             expr = kUnsupportedExpr;
         outputExprs.push_back(ApplyMask(expr, bitWidth));
