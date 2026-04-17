@@ -443,6 +443,9 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw, const std::unor
         const int currentPrec = GetPrecedence(node->op);
         for (size_t i = 0; i < node->inputs.size(); ++i)
             childExprs.push_back(emitRec(node->inputs[i], currentPrec, i > 0));
+
+        // Semantische emissie blijft volledig in CombineNode.
+        // Structurele CSE bepaalt hierna alleen of dit resultaat in een temp gaat.
         std::string emitted = CombineNode(node, bw, childExprs);
 
         if (emitted.empty())
