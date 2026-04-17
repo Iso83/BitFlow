@@ -261,7 +261,48 @@ static void CollectVarsMulti(const std::vector<const Expr*>& roots, std::set<uin
         CollectVars(root, out);
 }
 
-static std::string BuildStructuralFingerprint(const Expr* e, std::unordered_map<const Expr*, std::string>& memo) {
+static const char* OpTypeLabel(OpType op) {
+    switch (op) {
+    case OpType::Const:
+        return "Const";
+    case OpType::Var:
+        return "Var";
+    case OpType::Not:
+        return "Not";
+    case OpType::Neg:
+        return "Neg";
+    case OpType::Mul:
+        return "Mul";
+    case OpType::Div:
+        return "Div";
+    case OpType::Mod:
+        return "Mod";
+    case OpType::Add:
+        return "Add";
+    case OpType::Sub:
+        return "Sub";
+    case OpType::Shl:
+        return "Shl";
+    case OpType::Shr:
+        return "Shr";
+    case OpType::UShr:
+        return "UShr";
+    case OpType::RotL:
+        return "RotL";
+    case OpType::RotR:
+        return "RotR";
+    case OpType::And:
+        return "And";
+    case OpType::Xor:
+        return "Xor";
+    case OpType::Or:
+        return "Or";
+    default:
+        return "Unknown";
+    }
+}
+
+static std::string BuildStructuralKey(const Expr* e, std::unordered_map<const Expr*, std::string>& memo) {
     if (!e)
         return "N";
 
@@ -279,13 +320,13 @@ static std::string BuildStructuralFingerprint(const Expr* e, std::unordered_map<
         // Dus géén commutativiteit/associativiteit in deze sleutel:
         //  - (a ^ b) != (b ^ a)
         //  - a + (b + c) != (a + b) + c
-        key = "O(" + std::to_string(static_cast<int>(e->op)) + "[";
+        key = std::string(OpTypeLabel(e->op)) + "(";
         for (size_t i = 0; i < e->inputs.size(); ++i) {
             if (i > 0)
                 key += ",";
-            key += BuildStructuralFingerprint(e->inputs[i], memo);
+            key += BuildStructuralKey(e->inputs[i], memo);
         }
-        key += "])";
+        key += ")";
     }
 
     memo.emplace(e, key);
@@ -296,7 +337,7 @@ static void CountExprUsesStructural(const Expr* e, std::unordered_map<const Expr
                                     std::unordered_map<std::string, uint32_t>& counts) {
     if (!e)
         return;
-    counts[BuildStructuralFingerprint(e, keyMemo)] += 1;
+    counts[BuildStructuralKey(e, keyMemo)] += 1;
     for (const Expr* input : e->inputs)
         CountExprUsesStructural(input, keyMemo, counts);
 }
