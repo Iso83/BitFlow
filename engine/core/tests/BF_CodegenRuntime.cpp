@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <string>
+#include <utility>
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Testing;
@@ -187,6 +188,96 @@ static uint64_t CompileAndRunWrapper(const std::string& wrapper, const std::stri
     return static_cast<uint64_t>(std::stoull(buffer));
 }
 
+static std::pair<uint64_t, uint64_t> CompileAndRunMultiWrapper(const std::string& wrapper,
+                                                               const std::string& invocation) {
+    static std::atomic<uint64_t> counter{200000};
+    const uint64_t id = counter.fetch_add(1);
+
+    const std::string base = "bf_codegen_multi_wrapper_test_" + std::to_string(id);
+    const std::string file = base + ".cpp";
+
+#if defined(_WIN32)
+    const std::string exe = base + ".exe";
+#else
+    const std::string exe = base;
+#endif
+
+    std::ofstream out(file);
+    out << "#include <cstdint>\n";
+    out << "#include <iostream>\n";
+    out << wrapper << "\n";
+    out << "int main(){\n";
+    out << "auto r = " << invocation << ";\n";
+    out << "std::cout << r.out1 << \",\" << r.out2;\n";
+    out << "return 0;\n";
+    out << "}\n";
+    out.close();
+
+    int res = 0;
+    const std::string gppCmd = "g++ -std=c++20 " + file + " -o " + exe;
+    res = std::system(gppCmd.c_str());
+
+    if (res != 0) {
+        const std::string cxxCmd = "c++ -std=c++20 " + file + " -o " + exe;
+        res = std::system(cxxCmd.c_str());
+    }
+
+#if defined(_WIN32)
+    if (res != 0) {
+        const std::string clCmd = "cl /nologo /std:c++20 /O2 /EHsc " + file + " /Fe:" + exe;
+        res = std::system(clCmd.c_str());
+    }
+#endif
+
+    if (res != 0) {
+        std::remove(file.c_str());
+        return {0ull, 0ull};
+    }
+
+#if defined(_WIN32)
+    const std::string runCmd = exe;
+#else
+    const std::string runCmd = "./" + exe;
+#endif
+
+    FILE* pipe = BF_POPEN(runCmd.c_str(), "r");
+    if (!pipe) {
+        std::remove(file.c_str());
+        std::remove(exe.c_str());
+#if defined(_WIN32)
+        std::remove((base + ".obj").c_str());
+#endif
+        return {0ull, 0ull};
+    }
+
+    char buffer[256] = {0};
+    if (!fgets(buffer, sizeof(buffer), pipe)) {
+        BF_PCLOSE(pipe);
+        std::remove(file.c_str());
+        std::remove(exe.c_str());
+#if defined(_WIN32)
+        std::remove((base + ".obj").c_str());
+#endif
+        return {0ull, 0ull};
+    }
+
+    BF_PCLOSE(pipe);
+    std::remove(file.c_str());
+    std::remove(exe.c_str());
+#if defined(_WIN32)
+    std::remove((base + ".obj").c_str());
+#endif
+
+    const std::string raw = buffer;
+    const size_t comma = raw.find(',');
+    if (comma == std::string::npos)
+        return {0ull, 0ull};
+
+    const uint64_t first = static_cast<uint64_t>(std::stoull(raw.substr(0, comma)));
+    const uint64_t second = static_cast<uint64_t>(std::stoull(raw.substr(comma + 1)));
+    return {first, second};
+}
+
 int TestCodegenRuntime_Case1_SimpleAdd() {
     auto a = MakeConst(1, 10);
     auto b = MakeConst(2, 20);
@@ -281,6 +372,28 @@ int TestCodegenRuntime_Case6_FunctionWrapperInvocation() {
     return 0;
 }
 
+int TestCodegenRuntime_Case7_MultiOutputConstantOnly() {
+    auto a = MakeConst(60, 10);
+    auto b = MakeConst(61, 20);
+    auto c = MakeConst(62, 7);
+
+    auto expr1 = MakeOp(63, OpType::Add, {a, b});
+    auto expr2 = MakeOp(64, OpType::Xor, {MakeOp(65, OpType::Add, {a, b}), c});
+
+    auto eval1 = Eval::EvaluateConstant(expr1, 32);
+    auto eval2 = Eval::EvaluateConstant(expr2, 32);
+    if (eval1.status != Eval::EvalStatus::Success || eval2.status != Eval::EvalStatus::Success)
+        return 0;
+
+    const std::vector<const AST::Expr*> outputs = {expr1, expr2};
+    const auto wrapper = Codegen::EmitCFunctionMulti(outputs, 32);
+    const auto [out1, out2] = CompileAndRunMultiWrapper(wrapper, "f()");
+
+    BF_TEST(out1 == eval1.value);
+    BF_TEST(out2 == eval2.value);
+    return 0;
+}
+
 } // namespace
 
 int main() {
@@ -290,5 +403,6 @@ int main() {
     BF_RUN_TEST(TestCodegenRuntime_Case4_RotateLeft);
     BF_RUN_TEST(TestCodegenRuntime_Case5_MaskingOverflow8Bit);
     BF_RUN_TEST(TestCodegenRuntime_Case6_FunctionWrapperInvocation);
+    BF_RUN_TEST(TestCodegenRuntime_Case7_MultiOutputConstantOnly);
     return 0;
 }

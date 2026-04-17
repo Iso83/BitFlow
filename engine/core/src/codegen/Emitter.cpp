@@ -2,10 +2,13 @@
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen/Emitter.h>
 #include <algorithm>
+#include <cstddef>
+#include <functional>
 #include <map>
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace BitFlow::Core::Codegen {
@@ -125,6 +128,88 @@ static std::string EmitUnary(const char* op, const std::string& value) {
 }
 
 static std::string MaybeWrapChild(const std::string& emittedChild, OpType parentOp, const Expr* child,
+                                  bool isRightChild);
+
+static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std::string>& childExprs) {
+    if (!e)
+        return "";
+
+    if (e->op == OpType::Const)
+        return ApplyMask(std::to_string(e->constValue) + "ull", bw);
+
+    if (e->op == OpType::Var)
+        return ApplyMask(MakeVarName(e->id.value()), bw);
+
+    if (e->inputs.size() == 1 && childExprs.size() == 1) {
+        std::string a = MaybeWrapChild(childExprs[0], e->op, e->inputs[0], true);
+        switch (e->op) {
+        case OpType::Neg:
+            return ApplyMask(EmitUnary("-", a), bw);
+        case OpType::Not:
+            return ApplyMask(EmitUnary("~", a), bw);
+        default:
+            return "";
+        }
+    }
+
+    if (e->inputs.size() >= 2 && childExprs.size() == e->inputs.size()) {
+        std::string lhs = childExprs[0];
+        for (size_t i = 1; i < childExprs.size(); ++i) {
+            std::string rhs = childExprs[i];
+            std::string sh = NormalizeShift(rhs, bw);
+            const Expr* leftExpr = (i == 1) ? e->inputs[0] : nullptr;
+            const std::string lhsWrapped = MaybeWrapChild(lhs, e->op, leftExpr, false);
+            const std::string rhsWrapped = MaybeWrapChild(rhs, e->op, e->inputs[i], true);
+
+            switch (e->op) {
+            case OpType::Add:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bw);
+                break;
+            case OpType::Sub:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bw);
+                break;
+            case OpType::Mul:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bw);
+                break;
+            case OpType::Div:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bw);
+                break;
+            case OpType::Mod:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bw);
+                break;
+            case OpType::And:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bw);
+                break;
+            case OpType::Or:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bw);
+                break;
+            case OpType::Xor:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
+                break;
+            case OpType::Shl:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
+                break;
+            case OpType::Shr:
+            case OpType::UShr:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
+                break;
+            case OpType::RotL:
+                lhs = MakeRotateExpr(lhs, sh, bw, true);
+                break;
+            case OpType::RotR:
+                lhs = MakeRotateExpr(lhs, sh, bw, false);
+                break;
+            default:
+                return "";
+            }
+        }
+        return lhs;
+    }
+
+    return "";
+}
+
+static std::string MaybeWrapChild(const std::string& emittedChild, OpType parentOp, const Expr* child,
                                   bool isRightChild) {
     if (NeedsParens(parentOp, child, isRightChild) && !IsWrapped(emittedChild))
         return "(" + emittedChild + ")";
@@ -146,111 +231,18 @@ static bool ShouldWrapForParent(OpType selfOp, int parentPrec, bool isRightChild
 }
 
 static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, bool isRightChild = false) {
-    using enum OpType;
+    std::vector<std::string> childExprs;
+    childExprs.reserve(e->inputs.size());
+    const int currentPrec = GetPrecedence(e->op);
+    for (size_t i = 0; i < e->inputs.size(); ++i)
+        childExprs.push_back(EmitNode(e->inputs[i], bw, currentPrec, i > 0));
 
-    if (e->op == OpType::Const) {
-        std::string emitted = ApplyMask(std::to_string(e->constValue) + "ull", bw);
-        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-            return "(" + emitted + ")";
-        return emitted;
-    }
-
-    if (e->op == OpType::Var) {
-        std::string emitted = ApplyMask(MakeVarName(e->id.value()), bw);
-        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-            return "(" + emitted + ")";
-        return emitted;
-    }
-
-    if (e->inputs.size() == 1) {
-        const int currentPrec = GetPrecedence(e->op);
-        std::string a = EmitNode(e->inputs[0], bw, currentPrec, true);
-        a = MaybeWrapChild(a, e->op, e->inputs[0], true);
-        std::string emitted;
-
-        switch (e->op) {
-        case Neg:
-            emitted = ApplyMask(EmitUnary("-", a), bw);
-            break;
-        case Not:
-            emitted = ApplyMask(EmitUnary("~", a), bw);
-            break;
-        default:
-            break;
-        }
-
-        if (!emitted.empty()) {
-            if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-                return "(" + emitted + ")";
-            return emitted;
-        }
-    }
-
-    if (e->inputs.size() >= 2) {
-        const int currentPrec = GetPrecedence(e->op);
-        std::string lhs = EmitNode(e->inputs[0], bw, currentPrec, false);
-
-        for (size_t i = 1; i < e->inputs.size(); ++i) {
-            std::string rhs = EmitNode(e->inputs[i], bw, currentPrec, true);
-            std::string sh = NormalizeShift(rhs, bw);
-            const Expr* leftExpr = (i == 1) ? e->inputs[0] : nullptr;
-            const std::string lhsWrapped = MaybeWrapChild(lhs, e->op, leftExpr, false);
-            const std::string rhsWrapped = MaybeWrapChild(rhs, e->op, e->inputs[i], true);
-
-            switch (e->op) {
-            case Add:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bw);
-                break;
-            case Sub:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bw);
-                break;
-            case Mul:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bw);
-                break;
-            case Div:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bw);
-                break;
-            case Mod:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bw);
-                break;
-
-            case And:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bw);
-                break;
-            case Or:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bw);
-                break;
-            case Xor:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
-                break;
-
-            case Shl:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
-                break;
-            case Shr:
-            case UShr:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
-                break;
-
-            case RotL: {
-                lhs = MakeRotateExpr(lhs, sh, bw, true);
-                break;
-            }
-            case RotR: {
-                lhs = MakeRotateExpr(lhs, sh, bw, false);
-                break;
-            }
-            default:
-                return "";
-            }
-        }
-
-        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-            return "(" + lhs + ")";
-        return lhs;
-    }
-
-    return "";
+    std::string emitted = CombineNode(e, bw, childExprs);
+    if (emitted.empty())
+        return "";
+    if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+        return "(" + emitted + ")";
+    return emitted;
 }
 
 static void CollectVars(const Expr* e, std::set<uint32_t>& out) {
@@ -262,6 +254,32 @@ static void CollectVars(const Expr* e, std::set<uint32_t>& out) {
 
     for (const Expr* input : e->inputs)
         CollectVars(input, out);
+}
+
+static void CollectVarsMulti(const std::vector<const Expr*>& roots, std::set<uint32_t>& out) {
+    for (const Expr* root : roots)
+        CollectVars(root, out);
+}
+
+static void CountExprUses(const Expr* e, std::unordered_map<const Expr*, uint32_t>& counts) {
+    if (!e)
+        return;
+    counts[e] += 1;
+    for (const Expr* input : e->inputs)
+        CountExprUses(input, counts);
+}
+
+static std::unordered_map<const Expr*, uint32_t> BuildUseCountMap(const std::vector<const Expr*>& roots) {
+    std::unordered_map<const Expr*, uint32_t> useCount;
+    for (const Expr* root : roots)
+        CountExprUses(root, useCount);
+    return useCount;
+}
+
+static bool IsTempEligible(const Expr* e, uint32_t useCount) {
+    if (!e)
+        return false;
+    return useCount > 1 && e->op != OpType::Const && e->op != OpType::Var;
 }
 
 static bool IsIdentifierStart(char c) {
@@ -299,6 +317,72 @@ static void ReplaceIdentifierToken(std::string& text, const std::string& from, c
             pos += from.size();
         }
     }
+}
+
+struct TempEmitState {
+    uint32_t nextTempId = 1;
+};
+
+static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
+                                     const std::unordered_map<const Expr*, uint32_t>& counts,
+                                     std::unordered_map<const Expr*, std::string>& assignedNames,
+                                     std::vector<std::string>& statements, TempEmitState& tempState) {
+    std::function<std::string(const Expr*, int, bool)> emitRec;
+    emitRec = [&](const Expr* node, int parentPrec, bool isRightChild) -> std::string {
+        if (!node)
+            return kUnsupportedExpr;
+
+        if (node->op == OpType::Const) {
+            std::string emitted = ApplyMask(std::to_string(node->constValue) + "ull", bw);
+            if (ShouldWrapForParent(node->op, parentPrec, isRightChild))
+                return "(" + emitted + ")";
+            return emitted;
+        }
+
+        if (node->op == OpType::Var) {
+            std::string emitted = ApplyMask(MakeVarName(node->id.value()), bw);
+            if (ShouldWrapForParent(node->op, parentPrec, isRightChild))
+                return "(" + emitted + ")";
+            return emitted;
+        }
+
+        auto itAssigned = assignedNames.find(node);
+        if (itAssigned != assignedNames.end()) {
+            std::string emitted = itAssigned->second;
+            if (ShouldWrapForParent(OpType::Var, parentPrec, isRightChild))
+                emitted = "(" + emitted + ")";
+            return emitted;
+        }
+
+        std::vector<std::string> childExprs;
+        childExprs.reserve(node->inputs.size());
+        const int currentPrec = GetPrecedence(node->op);
+        for (size_t i = 0; i < node->inputs.size(); ++i)
+            childExprs.push_back(emitRec(node->inputs[i], currentPrec, i > 0));
+        std::string emitted = CombineNode(node, bw, childExprs);
+
+        if (emitted.empty())
+            emitted = kUnsupportedExpr;
+
+        auto itCount = counts.find(node);
+        const uint32_t useCount = (itCount != counts.end()) ? itCount->second : 0u;
+        if (IsTempEligible(node, useCount)) {
+            const std::string tempName = "t" + std::to_string(tempState.nextTempId++);
+            assignedNames[node] = tempName;
+            statements.push_back("    " + std::string(kDefaultType) + " " + tempName + " = " + ApplyMask(emitted, bw) +
+                                 ";");
+            std::string result = tempName;
+            if (ShouldWrapForParent(OpType::Var, parentPrec, isRightChild))
+                result = "(" + result + ")";
+            return result;
+        }
+
+        if (ShouldWrapForParent(node->op, parentPrec, isRightChild))
+            return "(" + emitted + ")";
+        return emitted;
+    };
+
+    return emitRec(e, -1, false);
 }
 
 } // namespace
@@ -384,6 +468,160 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth, const std::string
     out += EmitCParamList(root, bitWidth, varNames);
     out += ") {\n";
     out += "    return " + expr + ";\n";
+    out += "}";
+    return out;
+}
+
+std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t bitWidth) {
+    const std::string functionName = "f";
+    const std::map<uint32_t, std::string> varNames = {};
+
+    if (outputs.empty()) {
+        std::string out;
+        out += "struct Outputs {\n";
+        out += "};\n\n";
+        out += "Outputs " + functionName + "() {\n";
+        out += "    Outputs r{};\n";
+        out += "    return r;\n";
+        out += "}";
+        return out;
+    }
+
+    // 1) variabelen verzamelen uit alle outputs
+    std::set<uint32_t> sortedVars;
+    CollectVarsMulti(outputs, sortedVars);
+    std::vector<uint32_t> vars(sortedVars.begin(), sortedVars.end());
+
+    // 2) use-counts opbouwen over alle outputs
+    const std::unordered_map<const Expr*, uint32_t> useCount = BuildUseCountMap(outputs);
+
+    // naam-resolutie voor parameters
+    std::map<uint32_t, std::string> resolvedNames;
+    for (const uint32_t id : vars) {
+        auto it = varNames.find(id);
+        if (it != varNames.end() && IsValidIdentifier(it->second)) {
+            resolvedNames[id] = it->second;
+            continue;
+        }
+        resolvedNames[id] = MakeVarName(id);
+    }
+
+    // 3) shared temps genereren
+    std::vector<std::string> tempDecls;
+    std::unordered_map<const Expr*, std::string> assignedNames;
+    TempEmitState tempState{};
+
+    // 4) per output outN toekennen
+    std::vector<std::string> outputExprs;
+    outputExprs.reserve(outputs.size());
+    for (const Expr* root : outputs) {
+        std::string expr = EmitNodeWithTemps(root, bitWidth, useCount, assignedNames, tempDecls, tempState);
+        if (expr.empty())
+            expr = kUnsupportedExpr;
+        outputExprs.push_back(ApplyMask(expr, bitWidth));
+    }
+
+    for (const auto& [id, name] : resolvedNames) {
+        const std::string fallback = MakeVarName(id);
+        for (std::string& decl : tempDecls)
+            ReplaceIdentifierToken(decl, fallback, name);
+        for (std::string& expr : outputExprs)
+            ReplaceIdentifierToken(expr, fallback, name);
+    }
+
+    // 5) code als functie teruggeven
+    std::string out;
+    out += "struct Outputs {\n";
+    for (size_t i = 0; i < outputs.size(); ++i)
+        out += "    uint64_t out" + std::to_string(i + 1) + ";\n";
+    out += "};\n\n";
+    out += "Outputs " + functionName + "(";
+    bool first = true;
+    for (const auto& [id, name] : resolvedNames) {
+        (void)id;
+        if (!first)
+            out += ", ";
+        out += std::string(kDefaultType) + " " + name;
+        first = false;
+    }
+    out += ") {\n";
+    out += "    Outputs r{};\n";
+    for (const std::string& decl : tempDecls)
+        out += decl + "\n";
+    for (size_t i = 0; i < outputExprs.size(); ++i)
+        out += "    r.out" + std::to_string(i + 1) + " = " + outputExprs[i] + ";\n";
+    out += "    return r;\n";
+    out += "}";
+    return out;
+}
+
+std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWidth) {
+    return EmitCFunctionMulti(roots, bitWidth);
+}
+
+std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWidth, const std::string& functionName,
+                          const std::map<uint32_t, std::string>& varNames) {
+    if (roots.empty()) {
+        std::string out;
+        out += "struct Outputs {\n";
+        out += "};\n\n";
+        out += "Outputs " + functionName + "() {\n";
+        out += "    Outputs r{};\n";
+        out += "    return r;\n";
+        out += "}";
+        return out;
+    }
+
+    std::set<uint32_t> sortedVars;
+    CollectVarsMulti(roots, sortedVars);
+    std::vector<uint32_t> vars(sortedVars.begin(), sortedVars.end());
+    const std::unordered_map<const Expr*, uint32_t> useCount = BuildUseCountMap(roots);
+
+    std::map<uint32_t, std::string> resolvedNames;
+    for (const uint32_t id : vars) {
+        auto it = varNames.find(id);
+        if (it != varNames.end() && IsValidIdentifier(it->second))
+            resolvedNames[id] = it->second;
+        else
+            resolvedNames[id] = MakeVarName(id);
+    }
+    std::string out;
+    out += "struct Outputs {\n";
+    for (size_t i = 0; i < roots.size(); ++i)
+        out += "    uint64_t out" + std::to_string(i + 1) + ";\n";
+    out += "};\n\n";
+    out += "Outputs " + functionName + "(";
+    bool first = true;
+    for (const auto& [id, name] : resolvedNames) {
+        (void)id;
+        if (!first)
+            out += ", ";
+        out += std::string(kDefaultType) + " " + name;
+        first = false;
+    }
+    out += ") {\n";
+    out += "    Outputs r{};\n";
+
+    std::vector<std::string> tempDecls;
+    std::unordered_map<const Expr*, std::string> assignedNames;
+    TempEmitState tempState{};
+    std::vector<std::string> outputExprs;
+    for (const Expr* root : roots) {
+        std::string expr = EmitNodeWithTemps(root, bitWidth, useCount, assignedNames, tempDecls, tempState);
+        outputExprs.push_back(ApplyMask(expr.empty() ? std::string(kUnsupportedExpr) : expr, bitWidth));
+    }
+    for (const auto& [id, name] : resolvedNames) {
+        const std::string fallback = MakeVarName(id);
+        for (std::string& decl : tempDecls)
+            ReplaceIdentifierToken(decl, fallback, name);
+        for (std::string& expr : outputExprs)
+            ReplaceIdentifierToken(expr, fallback, name);
+    }
+    for (const std::string& decl : tempDecls)
+        out += decl + "\n";
+    for (size_t i = 0; i < outputExprs.size(); ++i)
+        out += "    r.out" + std::to_string(i + 1) + " = " + outputExprs[i] + ";\n";
+    out += "    return r;\n";
     out += "}";
     return out;
 }
