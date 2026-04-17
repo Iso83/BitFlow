@@ -128,6 +128,88 @@ static std::string EmitUnary(const char* op, const std::string& value) {
 }
 
 static std::string MaybeWrapChild(const std::string& emittedChild, OpType parentOp, const Expr* child,
+                                  bool isRightChild);
+
+static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std::string>& childExprs) {
+    if (!e)
+        return "";
+
+    if (e->op == OpType::Const)
+        return ApplyMask(std::to_string(e->constValue) + "ull", bw);
+
+    if (e->op == OpType::Var)
+        return ApplyMask(MakeVarName(e->id.value()), bw);
+
+    if (e->inputs.size() == 1 && childExprs.size() == 1) {
+        std::string a = MaybeWrapChild(childExprs[0], e->op, e->inputs[0], true);
+        switch (e->op) {
+        case OpType::Neg:
+            return ApplyMask(EmitUnary("-", a), bw);
+        case OpType::Not:
+            return ApplyMask(EmitUnary("~", a), bw);
+        default:
+            return "";
+        }
+    }
+
+    if (e->inputs.size() >= 2 && childExprs.size() == e->inputs.size()) {
+        std::string lhs = childExprs[0];
+        for (size_t i = 1; i < childExprs.size(); ++i) {
+            std::string rhs = childExprs[i];
+            std::string sh = NormalizeShift(rhs, bw);
+            const Expr* leftExpr = (i == 1) ? e->inputs[0] : nullptr;
+            const std::string lhsWrapped = MaybeWrapChild(lhs, e->op, leftExpr, false);
+            const std::string rhsWrapped = MaybeWrapChild(rhs, e->op, e->inputs[i], true);
+
+            switch (e->op) {
+            case OpType::Add:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bw);
+                break;
+            case OpType::Sub:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bw);
+                break;
+            case OpType::Mul:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bw);
+                break;
+            case OpType::Div:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bw);
+                break;
+            case OpType::Mod:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bw);
+                break;
+            case OpType::And:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bw);
+                break;
+            case OpType::Or:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bw);
+                break;
+            case OpType::Xor:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
+                break;
+            case OpType::Shl:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
+                break;
+            case OpType::Shr:
+            case OpType::UShr:
+                lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
+                break;
+            case OpType::RotL:
+                lhs = MakeRotateExpr(lhs, sh, bw, true);
+                break;
+            case OpType::RotR:
+                lhs = MakeRotateExpr(lhs, sh, bw, false);
+                break;
+            default:
+                return "";
+            }
+        }
+        return lhs;
+    }
+
+    return "";
+}
+
+static std::string MaybeWrapChild(const std::string& emittedChild, OpType parentOp, const Expr* child,
                                   bool isRightChild) {
     if (NeedsParens(parentOp, child, isRightChild) && !IsWrapped(emittedChild))
         return "(" + emittedChild + ")";
@@ -149,111 +231,18 @@ static bool ShouldWrapForParent(OpType selfOp, int parentPrec, bool isRightChild
 }
 
 static std::string EmitNode(const Expr* e, uint32_t bw, int parentPrec = -1, bool isRightChild = false) {
-    using enum OpType;
+    std::vector<std::string> childExprs;
+    childExprs.reserve(e->inputs.size());
+    const int currentPrec = GetPrecedence(e->op);
+    for (size_t i = 0; i < e->inputs.size(); ++i)
+        childExprs.push_back(EmitNode(e->inputs[i], bw, currentPrec, i > 0));
 
-    if (e->op == OpType::Const) {
-        std::string emitted = ApplyMask(std::to_string(e->constValue) + "ull", bw);
-        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-            return "(" + emitted + ")";
-        return emitted;
-    }
-
-    if (e->op == OpType::Var) {
-        std::string emitted = ApplyMask(MakeVarName(e->id.value()), bw);
-        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-            return "(" + emitted + ")";
-        return emitted;
-    }
-
-    if (e->inputs.size() == 1) {
-        const int currentPrec = GetPrecedence(e->op);
-        std::string a = EmitNode(e->inputs[0], bw, currentPrec, true);
-        a = MaybeWrapChild(a, e->op, e->inputs[0], true);
-        std::string emitted;
-
-        switch (e->op) {
-        case Neg:
-            emitted = ApplyMask(EmitUnary("-", a), bw);
-            break;
-        case Not:
-            emitted = ApplyMask(EmitUnary("~", a), bw);
-            break;
-        default:
-            break;
-        }
-
-        if (!emitted.empty()) {
-            if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-                return "(" + emitted + ")";
-            return emitted;
-        }
-    }
-
-    if (e->inputs.size() >= 2) {
-        const int currentPrec = GetPrecedence(e->op);
-        std::string lhs = EmitNode(e->inputs[0], bw, currentPrec, false);
-
-        for (size_t i = 1; i < e->inputs.size(); ++i) {
-            std::string rhs = EmitNode(e->inputs[i], bw, currentPrec, true);
-            std::string sh = NormalizeShift(rhs, bw);
-            const Expr* leftExpr = (i == 1) ? e->inputs[0] : nullptr;
-            const std::string lhsWrapped = MaybeWrapChild(lhs, e->op, leftExpr, false);
-            const std::string rhsWrapped = MaybeWrapChild(rhs, e->op, e->inputs[i], true);
-
-            switch (e->op) {
-            case Add:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bw);
-                break;
-            case Sub:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bw);
-                break;
-            case Mul:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bw);
-                break;
-            case Div:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bw);
-                break;
-            case Mod:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bw);
-                break;
-
-            case And:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bw);
-                break;
-            case Or:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bw);
-                break;
-            case Xor:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
-                break;
-
-            case Shl:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
-                break;
-            case Shr:
-            case UShr:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
-                break;
-
-            case RotL: {
-                lhs = MakeRotateExpr(lhs, sh, bw, true);
-                break;
-            }
-            case RotR: {
-                lhs = MakeRotateExpr(lhs, sh, bw, false);
-                break;
-            }
-            default:
-                return "";
-            }
-        }
-
-        if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
-            return "(" + lhs + ")";
-        return lhs;
-    }
-
-    return "";
+    std::string emitted = CombineNode(e, bw, childExprs);
+    if (emitted.empty())
+        return "";
+    if (ShouldWrapForParent(e->op, parentPrec, isRightChild))
+        return "(" + emitted + ")";
+    return emitted;
 }
 
 static void CollectVars(const Expr* e, std::set<uint32_t>& out) {
@@ -365,76 +354,12 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
             return emitted;
         }
 
-        std::string emitted;
-        if (node->inputs.size() == 1) {
-            const int currentPrec = GetPrecedence(node->op);
-            std::string a = emitRec(node->inputs[0], currentPrec, true);
-            a = MaybeWrapChild(a, node->op, node->inputs[0], true);
-
-            switch (node->op) {
-            case OpType::Neg:
-                emitted = ApplyMask(EmitUnary("-", a), bw);
-                break;
-            case OpType::Not:
-                emitted = ApplyMask(EmitUnary("~", a), bw);
-                break;
-            default:
-                break;
-            }
-        } else if (node->inputs.size() >= 2) {
-            const int currentPrec = GetPrecedence(node->op);
-            std::string lhs = emitRec(node->inputs[0], currentPrec, false);
-            for (size_t i = 1; i < node->inputs.size(); ++i) {
-                std::string rhs = emitRec(node->inputs[i], currentPrec, true);
-                std::string sh = NormalizeShift(rhs, bw);
-                const Expr* leftExpr = (i == 1) ? node->inputs[0] : nullptr;
-                const std::string lhsWrapped = MaybeWrapChild(lhs, node->op, leftExpr, false);
-                const std::string rhsWrapped = MaybeWrapChild(rhs, node->op, node->inputs[i], true);
-
-                switch (node->op) {
-                case OpType::Add:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bw);
-                    break;
-                case OpType::Sub:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bw);
-                    break;
-                case OpType::Mul:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bw);
-                    break;
-                case OpType::Div:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bw);
-                    break;
-                case OpType::Mod:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bw);
-                    break;
-                case OpType::And:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bw);
-                    break;
-                case OpType::Or:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bw);
-                    break;
-                case OpType::Xor:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
-                    break;
-                case OpType::Shl:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
-                    break;
-                case OpType::Shr:
-                case OpType::UShr:
-                    lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
-                    break;
-                case OpType::RotL:
-                    lhs = MakeRotateExpr(lhs, sh, bw, true);
-                    break;
-                case OpType::RotR:
-                    lhs = MakeRotateExpr(lhs, sh, bw, false);
-                    break;
-                default:
-                    return "";
-                }
-            }
-            emitted = lhs;
-        }
+        std::vector<std::string> childExprs;
+        childExprs.reserve(node->inputs.size());
+        const int currentPrec = GetPrecedence(node->op);
+        for (size_t i = 0; i < node->inputs.size(); ++i)
+            childExprs.push_back(emitRec(node->inputs[i], currentPrec, i > 0));
+        std::string emitted = CombineNode(node, bw, childExprs);
 
         if (emitted.empty())
             emitted = kUnsupportedExpr;
