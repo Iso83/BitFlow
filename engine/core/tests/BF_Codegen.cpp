@@ -170,5 +170,19 @@ int main() {
     BF_TEST(t1Pos < t2Pos);
     BF_TEST(t2Pos < out1Pos);
 
+    // Case 13.3a — geen commutativiteit: (a ^ b) != (b ^ a)
+    auto xorAB = MakeOp(39, OpType::Xor, {a, b});
+    auto xorBA = MakeOp(40, OpType::Xor, {b, a});
+    const std::vector<const AST::Expr*> nonCommutativeOutputs = {xorAB, xorBA};
+    const auto nonCommutativeFn = Codegen::EmitCFunctionMulti(nonCommutativeOutputs, 32);
+    BF_TEST(nonCommutativeFn.find("uint64_t t1 = ") == std::string::npos);
+
+    // Case 13.3b — geen associativiteit: a + (b + c) != (a + b) + c
+    auto addRightNested = MakeOp(41, OpType::Add, {a, MakeOp(42, OpType::Add, {b, c})});
+    auto addLeftNested = MakeOp(43, OpType::Add, {MakeOp(44, OpType::Add, {a, b}), c});
+    const std::vector<const AST::Expr*> nonAssociativeOutputs = {addRightNested, addLeftNested};
+    const auto nonAssociativeFn = Codegen::EmitCFunctionMulti(nonAssociativeOutputs, 32);
+    BF_TEST(nonAssociativeFn.find("uint64_t t1 = ") == std::string::npos);
+
     return 0;
 }

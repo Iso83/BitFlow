@@ -275,6 +275,10 @@ static std::string BuildStructuralFingerprint(const Expr* e, std::unordered_map<
     } else if (e->op == OpType::Var) {
         key = "V(" + std::to_string(e->id.value()) + ")";
     } else {
+        // Exact structureel: input-volgorde en boom-vorm tellen mee.
+        // Dus géén commutativiteit/associativiteit in deze sleutel:
+        //  - (a ^ b) != (b ^ a)
+        //  - a + (b + c) != (a + b) + c
         key = "O(" + std::to_string(static_cast<int>(e->op)) + "[";
         for (size_t i = 0; i < e->inputs.size(); ++i) {
             if (i > 0)
