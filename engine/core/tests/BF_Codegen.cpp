@@ -132,6 +132,7 @@ int main() {
     BF_TEST(multiFn.find("Outputs bf_eval_multi(") != std::string::npos);
     BF_TEST(multiFn.find("Outputs r{};") != std::string::npos);
     BF_TEST(multiFn.find("uint64_t t1 = ") != std::string::npos);
+    BF_TEST(multiFn.find("& ((1ull << 32) - 1ull)") != std::string::npos);
     BF_TEST(multiFn.find("r.out1 = ") != std::string::npos);
     BF_TEST(multiFn.find("r.out2 = ") != std::string::npos);
 

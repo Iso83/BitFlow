@@ -369,7 +369,8 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
         if (IsTempEligible(node, useCount)) {
             const std::string tempName = "t" + std::to_string(tempState.nextTempId++);
             assignedNames[node] = tempName;
-            statements.push_back("    " + std::string(kDefaultType) + " " + tempName + " = " + emitted + ";");
+            statements.push_back("    " + std::string(kDefaultType) + " " + tempName + " = " + ApplyMask(emitted, bw) +
+                                 ";");
             std::string result = tempName;
             if (ShouldWrapForParent(OpType::Var, parentPrec, isRightChild))
                 result = "(" + result + ")";
