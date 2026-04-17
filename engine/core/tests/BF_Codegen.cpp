@@ -142,12 +142,18 @@ int main() {
     BF_TEST(multiFnAlias.find("r.out1 = ") != std::string::npos);
     BF_TEST(multiFnAlias.find("r.out2 = ") != std::string::npos);
 
-    // Case 12.4 — pointer-identiteit telt, structurele gelijkheid nog niet
+    // Case 12.4 — structurele gelijkheid telt nu ook voor CSE/temp-hergebruik
     auto addLeft = MakeOp(33, OpType::Add, {a, b});
     auto addRight = MakeOp(34, OpType::Add, {a, b}); // structureel gelijk, maar andere Expr*
     const std::vector<const AST::Expr*> nonSharedOutputs = {addLeft, addRight};
     const auto nonSharedFn = Codegen::EmitCFunctionMulti(nonSharedOutputs, 32);
-    BF_TEST(nonSharedFn.find("uint64_t t1 = ") == std::string::npos);
+    BF_TEST(nonSharedFn.find("uint64_t t1 = ") != std::string::npos);
+
+    // Case 12.5 — zelfde vorm maar andere inhoud is NIET structureel gelijk
+    auto addDifferent = MakeOp(38, OpType::Add, {a, c});
+    const std::vector<const AST::Expr*> shapeOnlyOutputs = {addLeft, addDifferent};
+    const auto shapeOnlyFn = Codegen::EmitCFunctionMulti(shapeOnlyOutputs, 32);
+    BF_TEST(shapeOnlyFn.find("uint64_t t1 = ") == std::string::npos);
 
     // Case 12.6 — post-order/temp statement order (children voor parent)
     auto sharedChild = MakeOp(35, OpType::Add, {a, b});
