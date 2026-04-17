@@ -117,7 +117,16 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
 
     Context ctx{};
     prog.result = Visit(root, bitWidth, ctx);
+    prog.results.push_back(prog.result);
     prog.statements = std::move(ctx.out);
+
+    // Step 14.7 (later):
+    // - C emitter over SSA statements:
+    //     uint64_t t0 = ...;
+    //     uint64_t t1 = ...;
+    // - dead code elimination on unused temps
+    // - register reuse / temp lifetime compaction
+    // - true multi-output BuildSSA API
     return prog;
 }
 
