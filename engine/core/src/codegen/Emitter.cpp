@@ -476,7 +476,14 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
     const std::map<uint32_t, std::string> varNames = {};
 
     if (outputs.empty()) {
-        return std::string("void ") + functionName + "() {\n}";
+        std::string out;
+        out += "struct Outputs {\n";
+        out += "};\n\n";
+        out += "Outputs " + functionName + "() {\n";
+        out += "    Outputs r{};\n";
+        out += "    return r;\n";
+        out += "}";
+        return out;
     }
 
     // 1) variabelen verzamelen uit alle outputs
@@ -523,7 +530,11 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
 
     // 5) code als functie teruggeven
     std::string out;
-    out += "void " + functionName + "(";
+    out += "struct Outputs {\n";
+    for (size_t i = 0; i < outputs.size(); ++i)
+        out += "    uint64_t out" + std::to_string(i + 1) + ";\n";
+    out += "};\n\n";
+    out += "Outputs " + functionName + "(";
     bool first = true;
     for (const auto& [id, name] : resolvedNames) {
         (void)id;
@@ -532,17 +543,13 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
         out += std::string(kDefaultType) + " " + name;
         first = false;
     }
-    for (size_t i = 0; i < outputs.size(); ++i) {
-        if (!first)
-            out += ", ";
-        out += std::string(kDefaultType) + "& out" + std::to_string(i);
-        first = false;
-    }
     out += ") {\n";
+    out += "    Outputs r{};\n";
     for (const std::string& decl : tempDecls)
         out += decl + "\n";
     for (size_t i = 0; i < outputExprs.size(); ++i)
-        out += "    out" + std::to_string(i) + " = " + outputExprs[i] + ";\n";
+        out += "    r.out" + std::to_string(i + 1) + " = " + outputExprs[i] + ";\n";
+    out += "    return r;\n";
     out += "}";
     return out;
 }
@@ -554,7 +561,14 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
 std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWidth, const std::string& functionName,
                           const std::map<uint32_t, std::string>& varNames) {
     if (roots.empty()) {
-        return std::string("void ") + functionName + "() {\n}";
+        std::string out;
+        out += "struct Outputs {\n";
+        out += "};\n\n";
+        out += "Outputs " + functionName + "() {\n";
+        out += "    Outputs r{};\n";
+        out += "    return r;\n";
+        out += "}";
+        return out;
     }
 
     std::set<uint32_t> sortedVars;
@@ -570,7 +584,12 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
         else
             resolvedNames[id] = MakeVarName(id);
     }
-    std::string out = "void " + functionName + "(";
+    std::string out;
+    out += "struct Outputs {\n";
+    for (size_t i = 0; i < roots.size(); ++i)
+        out += "    uint64_t out" + std::to_string(i + 1) + ";\n";
+    out += "};\n\n";
+    out += "Outputs " + functionName + "(";
     bool first = true;
     for (const auto& [id, name] : resolvedNames) {
         (void)id;
@@ -579,13 +598,8 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
         out += std::string(kDefaultType) + " " + name;
         first = false;
     }
-    for (size_t i = 0; i < roots.size(); ++i) {
-        if (!first)
-            out += ", ";
-        out += std::string(kDefaultType) + "& out" + std::to_string(i);
-        first = false;
-    }
     out += ") {\n";
+    out += "    Outputs r{};\n";
 
     std::vector<std::string> tempDecls;
     std::unordered_map<const Expr*, std::string> assignedNames;
@@ -605,7 +619,8 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     for (const std::string& decl : tempDecls)
         out += decl + "\n";
     for (size_t i = 0; i < outputExprs.size(); ++i)
-        out += "    out" + std::to_string(i) + " = " + outputExprs[i] + ";\n";
+        out += "    r.out" + std::to_string(i + 1) + " = " + outputExprs[i] + ";\n";
+    out += "    return r;\n";
     out += "}";
     return out;
 }

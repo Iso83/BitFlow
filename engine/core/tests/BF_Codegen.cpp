@@ -128,18 +128,18 @@ int main() {
     auto out1Expr = MakeOp(32, OpType::Xor, {shared, a});
     const std::vector<const AST::Expr*> outputs = {out0Expr, out1Expr};
     const auto multiFn = Codegen::EmitCFunction(outputs, 32, "bf_eval_multi");
-    BF_TEST(multiFn.find("void bf_eval_multi(") != std::string::npos);
-    BF_TEST(multiFn.find("uint64_t& out0") != std::string::npos);
-    BF_TEST(multiFn.find("uint64_t& out1") != std::string::npos);
+    BF_TEST(multiFn.find("struct Outputs") != std::string::npos);
+    BF_TEST(multiFn.find("Outputs bf_eval_multi(") != std::string::npos);
+    BF_TEST(multiFn.find("Outputs r{};") != std::string::npos);
     BF_TEST(multiFn.find("uint64_t t1 = ") != std::string::npos);
-    BF_TEST(multiFn.find("out0 = ") != std::string::npos);
-    BF_TEST(multiFn.find("out1 = ") != std::string::npos);
+    BF_TEST(multiFn.find("r.out1 = ") != std::string::npos);
+    BF_TEST(multiFn.find("r.out2 = ") != std::string::npos);
 
     // Case 12.3 — nieuwe API alias blijft non-breaking naast bestaande EmitCFunction APIs
     const auto multiFnAlias = Codegen::EmitCFunctionMulti(outputs, 32);
-    BF_TEST(multiFnAlias.find("void f(") != std::string::npos);
-    BF_TEST(multiFnAlias.find("uint64_t& out0") != std::string::npos);
-    BF_TEST(multiFnAlias.find("uint64_t& out1") != std::string::npos);
+    BF_TEST(multiFnAlias.find("Outputs f(") != std::string::npos);
+    BF_TEST(multiFnAlias.find("r.out1 = ") != std::string::npos);
+    BF_TEST(multiFnAlias.find("r.out2 = ") != std::string::npos);
 
     // Case 12.4 — pointer-identiteit telt, structurele gelijkheid nog niet
     auto addLeft = MakeOp(33, OpType::Add, {a, b});
@@ -156,12 +156,12 @@ int main() {
     const auto orderedFn = Codegen::EmitCFunctionMulti(orderedOutputs, 32);
     const auto t1Pos = orderedFn.find("uint64_t t1 = ");
     const auto t2Pos = orderedFn.find("uint64_t t2 = ");
-    const auto out0Pos = orderedFn.find("out0 = ");
+    const auto out1Pos = orderedFn.find("r.out1 = ");
     BF_TEST(t1Pos != std::string::npos);
     BF_TEST(t2Pos != std::string::npos);
-    BF_TEST(out0Pos != std::string::npos);
+    BF_TEST(out1Pos != std::string::npos);
     BF_TEST(t1Pos < t2Pos);
-    BF_TEST(t2Pos < out0Pos);
+    BF_TEST(t2Pos < out1Pos);
 
     return 0;
 }
