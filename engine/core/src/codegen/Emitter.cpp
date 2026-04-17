@@ -472,11 +472,83 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth, const std::string
 }
 
 std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t bitWidth) {
-    return EmitCFunction(outputs, bitWidth);
+    const std::string functionName = "f";
+    const std::map<uint32_t, std::string> varNames = {};
+
+    if (outputs.empty()) {
+        return std::string("void ") + functionName + "() {\n}";
+    }
+
+    // 1) variabelen verzamelen uit alle outputs
+    std::set<uint32_t> sortedVars;
+    CollectVarsMulti(outputs, sortedVars);
+    std::vector<uint32_t> vars(sortedVars.begin(), sortedVars.end());
+
+    // 2) use-counts opbouwen over alle outputs
+    const std::unordered_map<const Expr*, uint32_t> useCount = BuildUseCountMap(outputs);
+
+    // naam-resolutie voor parameters
+    std::map<uint32_t, std::string> resolvedNames;
+    for (const uint32_t id : vars) {
+        auto it = varNames.find(id);
+        if (it != varNames.end() && IsValidIdentifier(it->second)) {
+            resolvedNames[id] = it->second;
+            continue;
+        }
+        resolvedNames[id] = MakeVarName(id);
+    }
+
+    // 3) shared temps genereren
+    std::vector<std::string> tempDecls;
+    std::unordered_map<const Expr*, std::string> assignedNames;
+    TempEmitState tempState{};
+
+    // 4) per output outN toekennen
+    std::vector<std::string> outputExprs;
+    outputExprs.reserve(outputs.size());
+    for (const Expr* root : outputs) {
+        std::string expr = EmitNodeWithTemps(root, bitWidth, useCount, assignedNames, tempDecls, tempState);
+        if (expr.empty())
+            expr = kUnsupportedExpr;
+        outputExprs.push_back(ApplyMask(expr, bitWidth));
+    }
+
+    for (const auto& [id, name] : resolvedNames) {
+        const std::string fallback = MakeVarName(id);
+        for (std::string& decl : tempDecls)
+            ReplaceIdentifierToken(decl, fallback, name);
+        for (std::string& expr : outputExprs)
+            ReplaceIdentifierToken(expr, fallback, name);
+    }
+
+    // 5) code als functie teruggeven
+    std::string out;
+    out += "void " + functionName + "(";
+    bool first = true;
+    for (const auto& [id, name] : resolvedNames) {
+        (void)id;
+        if (!first)
+            out += ", ";
+        out += std::string(kDefaultType) + " " + name;
+        first = false;
+    }
+    for (size_t i = 0; i < outputs.size(); ++i) {
+        if (!first)
+            out += ", ";
+        out += std::string(kDefaultType) + "& out" + std::to_string(i);
+        first = false;
+    }
+    out += ") {\n";
+    for (const std::string& decl : tempDecls)
+        out += decl + "\n";
+    for (size_t i = 0; i < outputExprs.size(); ++i)
+        out += "    out" + std::to_string(i) + " = " + outputExprs[i] + ";\n";
+    out += "}";
+    return out;
 }
 
 std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWidth) {
-    return EmitCFunction(roots, bitWidth, "f", {});
+    return EmitCFunctionMulti(roots, bitWidth);
 }
 
 std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWidth, const std::string& functionName,
@@ -493,20 +565,12 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     std::map<uint32_t, std::string> resolvedNames;
     for (const uint32_t id : vars) {
         auto it = varNames.find(id);
-        if (it != varNames.end() && IsValidIdentifier(it->second)) {
+        if (it != varNames.end() && IsValidIdentifier(it->second))
             resolvedNames[id] = it->second;
-            continue;
-        }
-        resolvedNames[id] = MakeVarName(id);
+        else
+            resolvedNames[id] = MakeVarName(id);
     }
-
-    std::vector<std::string> tempDecls;
-    std::unordered_map<const Expr*, std::string> assignedNames;
-    TempEmitState tempState{};
-
-    std::string out;
-    out += "void " + functionName + "(";
-
+    std::string out = "void " + functionName + "(";
     bool first = true;
     for (const auto& [id, name] : resolvedNames) {
         (void)id;
@@ -523,15 +587,14 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     }
     out += ") {\n";
 
+    std::vector<std::string> tempDecls;
+    std::unordered_map<const Expr*, std::string> assignedNames;
+    TempEmitState tempState{};
     std::vector<std::string> outputExprs;
-    outputExprs.reserve(roots.size());
     for (const Expr* root : roots) {
         std::string expr = EmitNodeWithTemps(root, bitWidth, useCount, assignedNames, tempDecls, tempState);
-        if (expr.empty())
-            expr = kUnsupportedExpr;
-        outputExprs.push_back(ApplyMask(expr, bitWidth));
+        outputExprs.push_back(ApplyMask(expr.empty() ? std::string(kUnsupportedExpr) : expr, bitWidth));
     }
-
     for (const auto& [id, name] : resolvedNames) {
         const std::string fallback = MakeVarName(id);
         for (std::string& decl : tempDecls)
@@ -539,12 +602,10 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
         for (std::string& expr : outputExprs)
             ReplaceIdentifierToken(expr, fallback, name);
     }
-
     for (const std::string& decl : tempDecls)
         out += decl + "\n";
     for (size_t i = 0; i < outputExprs.size(); ++i)
         out += "    out" + std::to_string(i) + " = " + outputExprs[i] + ";\n";
-
     out += "}";
     return out;
 }
