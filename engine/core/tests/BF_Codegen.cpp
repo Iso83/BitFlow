@@ -135,5 +135,11 @@ int main() {
     BF_TEST(multiFn.find("out0 = ") != std::string::npos);
     BF_TEST(multiFn.find("out1 = ") != std::string::npos);
 
+    // Case 12.3 — nieuwe API alias blijft non-breaking naast bestaande EmitCFunction APIs
+    const auto multiFnAlias = Codegen::EmitCFunctionMulti(outputs, 32);
+    BF_TEST(multiFnAlias.find("void f(") != std::string::npos);
+    BF_TEST(multiFnAlias.find("uint64_t& out0") != std::string::npos);
+    BF_TEST(multiFnAlias.find("uint64_t& out1") != std::string::npos);
+
     return 0;
 }

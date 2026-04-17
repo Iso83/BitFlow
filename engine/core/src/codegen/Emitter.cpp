@@ -425,6 +425,10 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth, const std::string
     return out;
 }
 
+std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t bitWidth) {
+    return EmitCFunction(outputs, bitWidth);
+}
+
 std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWidth) {
     return EmitCFunction(roots, bitWidth, "f", {});
 }

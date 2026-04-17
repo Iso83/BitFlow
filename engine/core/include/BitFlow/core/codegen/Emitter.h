@@ -19,6 +19,7 @@ std::string EmitCParamList(const AST::Expr* root, uint32_t bitWidth,
                            const std::map<uint32_t, std::string>& varNames = {});
 std::string EmitCFunction(const AST::Expr* root, uint32_t bitWidth, const std::string& functionName,
                           const std::map<uint32_t, std::string>& varNames = {});
+std::string EmitCFunctionMulti(const std::vector<const AST::Expr*>& outputs, uint32_t bitWidth);
 std::string EmitCFunction(const std::vector<const AST::Expr*>& roots, uint32_t bitWidth);
 std::string EmitCFunction(const std::vector<const AST::Expr*>& roots, uint32_t bitWidth, const std::string& functionName,
                           const std::map<uint32_t, std::string>& varNames = {});
