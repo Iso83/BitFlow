@@ -333,25 +333,26 @@ static std::string BuildStructuralKeyImpl(const Expr* e, std::unordered_map<cons
     return key;
 }
 
-[[maybe_unused]] static std::string BuildStructuralKey(const Expr* e) {
+static std::string BuildStructuralKey(const Expr* e) {
     std::unordered_map<const Expr*, std::string> memo;
     return BuildStructuralKeyImpl(e, memo);
 }
 
-static void CountExprUsesStructural(const Expr* e, std::unordered_map<const Expr*, std::string>& keyMemo,
-                                    std::unordered_map<std::string, uint32_t>& counts) {
+static void CountStructuralUses(const Expr* e, std::unordered_map<std::string, uint32_t>& counts) {
     if (!e)
         return;
-    counts[BuildStructuralKeyImpl(e, keyMemo)] += 1;
+    counts[BuildStructuralKey(e)] += 1;
     for (const Expr* input : e->inputs)
-        CountExprUsesStructural(input, keyMemo, counts);
+        CountStructuralUses(input, counts);
 }
 
 static std::unordered_map<std::string, uint32_t> BuildUseCountMap(const std::vector<const Expr*>& roots,
                                                                   std::unordered_map<const Expr*, std::string>& keyMemo) {
     std::unordered_map<std::string, uint32_t> useCount;
-    for (const Expr* root : roots)
-        CountExprUsesStructural(root, keyMemo, useCount);
+    for (const Expr* root : roots) {
+        BuildStructuralKeyImpl(root, keyMemo);
+        CountStructuralUses(root, useCount);
+    }
     return useCount;
 }
 
