@@ -142,12 +142,18 @@ int main() {
     BF_TEST(multiFnAlias.find("r.out1 = ") != std::string::npos);
     BF_TEST(multiFnAlias.find("r.out2 = ") != std::string::npos);
 
-    // Case 12.4 — pointer-identiteit telt, structurele gelijkheid nog niet
+    // Case 12.4 — structurele gelijkheid telt nu ook voor CSE/temp-hergebruik
     auto addLeft = MakeOp(33, OpType::Add, {a, b});
     auto addRight = MakeOp(34, OpType::Add, {a, b}); // structureel gelijk, maar andere Expr*
     const std::vector<const AST::Expr*> nonSharedOutputs = {addLeft, addRight};
     const auto nonSharedFn = Codegen::EmitCFunctionMulti(nonSharedOutputs, 32);
-    BF_TEST(nonSharedFn.find("uint64_t t1 = ") == std::string::npos);
+    BF_TEST(nonSharedFn.find("uint64_t t1 = ") != std::string::npos);
+
+    // Case 12.5 — zelfde vorm maar andere inhoud is NIET structureel gelijk
+    auto addDifferent = MakeOp(38, OpType::Add, {a, c});
+    const std::vector<const AST::Expr*> shapeOnlyOutputs = {addLeft, addDifferent};
+    const auto shapeOnlyFn = Codegen::EmitCFunctionMulti(shapeOnlyOutputs, 32);
+    BF_TEST(shapeOnlyFn.find("uint64_t t1 = ") == std::string::npos);
 
     // Case 12.6 — post-order/temp statement order (children voor parent)
     auto sharedChild = MakeOp(35, OpType::Add, {a, b});
@@ -163,6 +169,20 @@ int main() {
     BF_TEST(out1Pos != std::string::npos);
     BF_TEST(t1Pos < t2Pos);
     BF_TEST(t2Pos < out1Pos);
+
+    // Case 13.3a — geen commutativiteit: (a ^ b) != (b ^ a)
+    auto xorAB = MakeOp(39, OpType::Xor, {a, b});
+    auto xorBA = MakeOp(40, OpType::Xor, {b, a});
+    const std::vector<const AST::Expr*> nonCommutativeOutputs = {xorAB, xorBA};
+    const auto nonCommutativeFn = Codegen::EmitCFunctionMulti(nonCommutativeOutputs, 32);
+    BF_TEST(nonCommutativeFn.find("uint64_t t1 = ") == std::string::npos);
+
+    // Case 13.3b — geen associativiteit: a + (b + c) != (a + b) + c
+    auto addRightNested = MakeOp(41, OpType::Add, {a, MakeOp(42, OpType::Add, {b, c})});
+    auto addLeftNested = MakeOp(43, OpType::Add, {MakeOp(44, OpType::Add, {a, b}), c});
+    const std::vector<const AST::Expr*> nonAssociativeOutputs = {addRightNested, addLeftNested};
+    const auto nonAssociativeFn = Codegen::EmitCFunctionMulti(nonAssociativeOutputs, 32);
+    BF_TEST(nonAssociativeFn.find("uint64_t t1 = ") == std::string::npos);
 
     return 0;
 }
