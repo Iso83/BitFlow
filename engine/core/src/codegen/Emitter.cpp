@@ -287,13 +287,19 @@ static std::unordered_map<const Expr*, uint32_t> BuildUseCountMap(const std::vec
     return useCount;
 }
 
+static bool IsTempEligible(const Expr* e, uint32_t useCount) {
+    if (!e)
+        return false;
+    return useCount > 1 && e->op != OpType::Const && e->op != OpType::Var;
+}
+
 static bool ShouldMaterializeNode(const Expr* e, const std::unordered_map<const Expr*, uint32_t>& useCount) {
-    if (!e || e->op == OpType::Const || e->op == OpType::Var)
+    if (!e)
         return false;
     auto it = useCount.find(e);
     if (it == useCount.end())
         return false;
-    return it->second > 1;
+    return IsTempEligible(e, it->second);
 }
 
 static bool IsIdentifierStart(char c) {
