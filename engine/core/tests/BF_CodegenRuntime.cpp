@@ -394,6 +394,26 @@ int TestCodegenRuntime_Case7_MultiOutputConstantOnly() {
     return 0;
 }
 
+int TestCodegenRuntime_Case8_MultiOutputStructuralIdenticalSeparateSubtrees() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto c = MakeVar(3);
+    auto d = MakeVar(4);
+
+    auto x1 = MakeOp(70, OpType::Xor, {a, b});
+    auto x2 = MakeOp(71, OpType::Xor, {a, b}); // apart Expr*, wel structureel identiek
+    auto outExpr1 = MakeOp(72, OpType::Add, {x1, c});
+    auto outExpr2 = MakeOp(73, OpType::And, {x2, d});
+
+    const std::vector<const AST::Expr*> outputs = {outExpr1, outExpr2};
+    const auto wrapper = Codegen::EmitCFunctionMulti(outputs, 32);
+    const auto [out1, out2] = CompileAndRunMultiWrapper(wrapper, "f(9, 5, 3, 6)");
+
+    BF_TEST(out1 == 15ull); // ((9 ^ 5) + 3)
+    BF_TEST(out2 == 4ull);  // ((9 ^ 5) & 6)
+    return 0;
+}
+
 } // namespace
 
 int main() {
@@ -404,5 +424,6 @@ int main() {
     BF_RUN_TEST(TestCodegenRuntime_Case5_MaskingOverflow8Bit);
     BF_RUN_TEST(TestCodegenRuntime_Case6_FunctionWrapperInvocation);
     BF_RUN_TEST(TestCodegenRuntime_Case7_MultiOutputConstantOnly);
+    BF_RUN_TEST(TestCodegenRuntime_Case8_MultiOutputStructuralIdenticalSeparateSubtrees);
     return 0;
 }
