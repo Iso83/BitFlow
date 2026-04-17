@@ -15,15 +15,16 @@ int main() {
         BF_TEST(p.result.empty());
     }
 
-    // Leaf-only tree should not create temporaries and should return leaf expression.
+    // Leaf-only tree should still allocate exactly one SSA variable.
     {
         auto v1 = MakeVar(1);
         auto p = BuildSSA(v1, 32);
-        BF_TEST(p.statements.empty());
-        BF_TEST(!p.result.empty());
+        BF_TEST(p.statements.size() == 1u);
+        BF_TEST(p.statements[0].name == "t0");
+        BF_TEST(p.result == "t0");
     }
 
-    // Shared sub-tree should be emitted only once.
+    // Shared sub-tree should be emitted exactly once, with one SSA var per unique node.
     {
         auto a = MakeVar(10);
         auto b = MakeVar(11);
@@ -33,10 +34,10 @@ int main() {
         auto out = MakeOp(101, OpType::Add, {x, x, c});
 
         auto p = BuildSSA(out, 32);
-        BF_TEST(p.statements.size() == 2u); // t0=xor, t1=add
+        BF_TEST(p.statements.size() == 5u); // a, b, xor, c, add
         BF_TEST(p.statements[0].name == "t0");
-        BF_TEST(p.statements[1].name == "t1");
-        BF_TEST(p.result == "t1");
+        BF_TEST(p.statements[4].name == "t4");
+        BF_TEST(p.result == "t4");
     }
 
     return 0;

@@ -1,6 +1,7 @@
+#include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
-#include <BitFlow/core/codegen_ssa/SsaBuilder.h>
+#include <BitFlow/core/codegen/Emitter.h>
 #include <cstddef>
 #include <string>
 #include <unordered_map>
@@ -131,13 +132,7 @@ struct BuildContext {
 
     std::string Lower(const AST::Expr* node) {
         if (node == nullptr)
-            return "0ull";
-
-        if (node->op == AST::OpType::Const)
-            return ApplyMask(std::to_string(node->constValue) + "ull", bitWidth);
-
-        if (node->op == AST::OpType::Var)
-            return ApplyMask("v" + std::to_string(node->id.value()), bitWidth);
+            return "";
 
         auto it = tempByNode.find(node);
         if (it != tempByNode.end())
@@ -148,9 +143,18 @@ struct BuildContext {
         for (const AST::Expr* input : node->inputs)
             loweredInputs.push_back(Lower(input));
 
+        if (node->op == AST::OpType::Const)
+            return CreateStatement(node, EmitCExpr(node, bitWidth));
+
+        if (node->op == AST::OpType::Var)
+            return CreateStatement(node, EmitCExpr(node, bitWidth));
+
+        return CreateStatement(node, EmitOp(node->op, loweredInputs, bitWidth));
+    }
+
+    std::string CreateStatement(const AST::Expr* node, std::string expr) {
         const std::string name = "t" + std::to_string(nextTemp++);
-        const std::string expr = EmitOp(node->op, loweredInputs, bitWidth);
-        program.statements.push_back(SsaStatement{name, expr});
+        program.statements.push_back(SsaStatement{name, std::move(expr)});
         tempByNode.emplace(node, name);
         return name;
     }
