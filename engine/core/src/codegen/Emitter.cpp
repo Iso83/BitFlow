@@ -346,7 +346,8 @@ static void CountStructuralUses(const Expr* e, std::unordered_map<std::string, u
         CountStructuralUses(input, counts);
 }
 
-static void CollectStructuralRepresentatives(const Expr* e, std::unordered_map<std::string, const Expr*>& reps) {
+[[maybe_unused]] static void CollectStructuralRepresentatives(const Expr* e,
+                                                              std::unordered_map<std::string, const Expr*>& reps) {
     if (!e)
         return;
 
@@ -368,7 +369,8 @@ static std::unordered_map<std::string, uint32_t> BuildUseCountMap(const std::vec
     return useCount;
 }
 
-static std::unordered_map<std::string, const Expr*> BuildRepresentativeMap(const std::vector<const Expr*>& roots) {
+[[maybe_unused]] static std::unordered_map<std::string, const Expr*>
+BuildRepresentativeMap(const std::vector<const Expr*>& roots) {
     std::unordered_map<std::string, const Expr*> reps;
     for (const Expr* root : roots)
         CollectStructuralRepresentatives(root, reps);
@@ -424,8 +426,7 @@ struct TempEmitState {
 
 static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw, const std::unordered_map<std::string, uint32_t>& counts,
                                      const std::unordered_map<const Expr*, std::string>& structuralKeys,
-                                     const std::unordered_map<std::string, const Expr*>& representatives,
-                                     std::unordered_map<std::string, std::string>& assignedNames,
+                                     std::unordered_map<std::string, std::string>& assignedNamesByKey,
                                      std::vector<std::string>& statements, TempEmitState& tempState) {
     std::function<std::string(const Expr*, int, bool)> emitRec;
     emitRec = [&](const Expr* node, int parentPrec, bool isRightChild) -> std::string {
@@ -449,8 +450,8 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw, const std::unor
         const auto itNodeKey = structuralKeys.find(node);
         const std::string nodeKey = (itNodeKey != structuralKeys.end()) ? itNodeKey->second : std::string{};
         if (!nodeKey.empty()) {
-            auto itAssigned = assignedNames.find(nodeKey);
-            if (itAssigned != assignedNames.end()) {
+            auto itAssigned = assignedNamesByKey.find(nodeKey);
+            if (itAssigned != assignedNamesByKey.end()) {
                 std::string emitted = itAssigned->second;
                 if (ShouldWrapForParent(OpType::Var, parentPrec, isRightChild))
                     emitted = "(" + emitted + ")";
@@ -470,14 +471,9 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw, const std::unor
 
         auto itCount = counts.find(nodeKey);
         const uint32_t useCount = (itCount != counts.end()) ? itCount->second : 0u;
-        const Expr* representative = node;
-        auto itRep = representatives.find(nodeKey);
-        if (itRep != representatives.end())
-            representative = itRep->second;
-
-        if (IsTempEligible(node, useCount) && representative == node) {
+        if (IsTempEligible(node, useCount)) {
             const std::string tempName = "t" + std::to_string(tempState.nextTempId++);
-            assignedNames[nodeKey] = tempName;
+            assignedNamesByKey[nodeKey] = tempName;
             statements.push_back("    " + std::string(kDefaultType) + " " + tempName + " = " + ApplyMask(emitted, bw) +
                                  ";");
             std::string result = tempName;
@@ -604,7 +600,6 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
     // 2) use-counts opbouwen over alle outputs
     std::unordered_map<const Expr*, std::string> structuralKeys;
     const std::unordered_map<std::string, uint32_t> useCount = BuildUseCountMap(outputs, structuralKeys);
-    const std::unordered_map<std::string, const Expr*> representatives = BuildRepresentativeMap(outputs);
 
     // naam-resolutie voor parameters
     std::map<uint32_t, std::string> resolvedNames;
@@ -619,7 +614,7 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
 
     // 3) shared temps genereren
     std::vector<std::string> tempDecls;
-    std::unordered_map<std::string, std::string> assignedNames;
+    std::unordered_map<std::string, std::string> assignedNamesByKey;
     TempEmitState tempState{};
 
     // 4) per output outN toekennen
@@ -627,7 +622,7 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
     outputExprs.reserve(outputs.size());
     for (const Expr* root : outputs) {
         std::string expr =
-            EmitNodeWithTemps(root, bitWidth, useCount, structuralKeys, representatives, assignedNames, tempDecls,
+            EmitNodeWithTemps(root, bitWidth, useCount, structuralKeys, assignedNamesByKey, tempDecls,
                               tempState);
         if (expr.empty())
             expr = kUnsupportedExpr;
@@ -690,7 +685,6 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     std::vector<uint32_t> vars(sortedVars.begin(), sortedVars.end());
     std::unordered_map<const Expr*, std::string> structuralKeys;
     const std::unordered_map<std::string, uint32_t> useCount = BuildUseCountMap(roots, structuralKeys);
-    const std::unordered_map<std::string, const Expr*> representatives = BuildRepresentativeMap(roots);
 
     std::map<uint32_t, std::string> resolvedNames;
     for (const uint32_t id : vars) {
@@ -718,12 +712,12 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     out += "    Outputs r{};\n";
 
     std::vector<std::string> tempDecls;
-    std::unordered_map<std::string, std::string> assignedNames;
+    std::unordered_map<std::string, std::string> assignedNamesByKey;
     TempEmitState tempState{};
     std::vector<std::string> outputExprs;
     for (const Expr* root : roots) {
         std::string expr =
-            EmitNodeWithTemps(root, bitWidth, useCount, structuralKeys, representatives, assignedNames, tempDecls,
+            EmitNodeWithTemps(root, bitWidth, useCount, structuralKeys, assignedNamesByKey, tempDecls,
                               tempState);
         outputExprs.push_back(ApplyMask(expr.empty() ? std::string(kUnsupportedExpr) : expr, bitWidth));
     }
