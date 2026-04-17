@@ -9,7 +9,6 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 namespace BitFlow::Core::Codegen {
@@ -273,26 +272,22 @@ static void CollectVarsMulti(const std::vector<const Expr*>& roots, std::set<uin
         CollectVars(root, out);
 }
 
-static void CollectUseCount(const Expr* e, std::unordered_map<const Expr*, size_t>& useCount,
-                            std::unordered_set<const Expr*>& visited) {
+static void CountExprUses(const Expr* e, std::unordered_map<const Expr*, uint32_t>& counts) {
     if (!e)
         return;
-    useCount[e] += 1;
-    if (!visited.insert(e).second)
-        return;
+    counts[e] += 1;
     for (const Expr* input : e->inputs)
-        CollectUseCount(input, useCount, visited);
+        CountExprUses(input, counts);
 }
 
-static std::unordered_map<const Expr*, size_t> BuildUseCountMap(const std::vector<const Expr*>& roots) {
-    std::unordered_map<const Expr*, size_t> useCount;
-    std::unordered_set<const Expr*> visited;
+static std::unordered_map<const Expr*, uint32_t> BuildUseCountMap(const std::vector<const Expr*>& roots) {
+    std::unordered_map<const Expr*, uint32_t> useCount;
     for (const Expr* root : roots)
-        CollectUseCount(root, useCount, visited);
+        CountExprUses(root, useCount);
     return useCount;
 }
 
-static bool ShouldMaterializeNode(const Expr* e, const std::unordered_map<const Expr*, size_t>& useCount) {
+static bool ShouldMaterializeNode(const Expr* e, const std::unordered_map<const Expr*, uint32_t>& useCount) {
     if (!e || e->op == OpType::Const || e->op == OpType::Var)
         return false;
     auto it = useCount.find(e);
@@ -442,7 +437,7 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     std::set<uint32_t> sortedVars;
     CollectVarsMulti(roots, sortedVars);
     std::vector<uint32_t> vars(sortedVars.begin(), sortedVars.end());
-    const std::unordered_map<const Expr*, size_t> useCount = BuildUseCountMap(roots);
+    const std::unordered_map<const Expr*, uint32_t> useCount = BuildUseCountMap(roots);
 
     std::map<uint32_t, std::string> resolvedNames;
     for (const uint32_t id : vars) {

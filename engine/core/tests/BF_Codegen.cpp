@@ -141,5 +141,12 @@ int main() {
     BF_TEST(multiFnAlias.find("uint64_t& out0") != std::string::npos);
     BF_TEST(multiFnAlias.find("uint64_t& out1") != std::string::npos);
 
+    // Case 12.4 — pointer-identiteit telt, structurele gelijkheid nog niet
+    auto addLeft = MakeOp(33, OpType::Add, {a, b});
+    auto addRight = MakeOp(34, OpType::Add, {a, b}); // structureel gelijk, maar andere Expr*
+    const std::vector<const AST::Expr*> nonSharedOutputs = {addLeft, addRight};
+    const auto nonSharedFn = Codegen::EmitCFunctionMulti(nonSharedOutputs, 32);
+    BF_TEST(nonSharedFn.find("uint64_t t1 = ") == std::string::npos);
+
     return 0;
 }
