@@ -143,55 +143,55 @@ bool TryFoldPureOp(uint32_t op, const std::vector<uint64_t>& in, uint32_t bitWid
 }
 
 bool EvalOp(uint32_t op, const std::vector<uint64_t>& in, uint64_t& out, uint32_t bw) {
+    if (bw == 0 || bw > 64)
+        return false;
+
     if (in.size() < 2)
         return false;
 
+    const uint64_t a = Mask(in[0], bw);
+    const uint32_t shift = static_cast<uint32_t>(in[1] % static_cast<uint64_t>(bw));
+
     switch (op) {
     case (uint32_t)AST::OpType::Add:
-        out = Mask(in[0] + in[1], bw);
+        out = Mask(a + in[1], bw);
         return true;
     case (uint32_t)AST::OpType::Sub:
-        out = Mask(in[0] - in[1], bw);
+        out = Mask(a - in[1], bw);
         return true;
     case (uint32_t)AST::OpType::Mul:
-        out = Mask(in[0] * in[1], bw);
+        out = Mask(a * in[1], bw);
         return true;
     case (uint32_t)AST::OpType::And:
-        out = Mask(in[0] & in[1], bw);
+        out = Mask(a & in[1], bw);
         return true;
     case (uint32_t)AST::OpType::Or:
-        out = Mask(in[0] | in[1], bw);
+        out = Mask(a | in[1], bw);
         return true;
     case (uint32_t)AST::OpType::Xor:
-        out = Mask(in[0] ^ in[1], bw);
+        out = Mask(a ^ in[1], bw);
         return true;
     case (uint32_t)AST::OpType::Shl:
-        out = Mask(in[0] << in[1], bw);
+        out = Mask(a << shift, bw);
         return true;
     case (uint32_t)AST::OpType::Shr:
     case (uint32_t)AST::OpType::UShr:
-        out = Mask(in[0] >> in[1], bw);
+        out = Mask(a >> shift, bw);
         return true;
     case (uint32_t)AST::OpType::RotL: {
-        if (bw == 0)
-            return false;
-        uint32_t s = static_cast<uint32_t>(in[1] % bw);
-        if (s == 0) {
-            out = Mask(in[0], bw);
+        if (shift == 0) {
+            out = a;
             return true;
         }
-        out = Mask((in[0] << s) | (in[0] >> (bw - s)), bw);
+        out = Mask((a << shift) | (a >> (bw - shift)), bw);
         return true;
     }
     case (uint32_t)AST::OpType::RotR: {
-        if (bw == 0)
-            return false;
-        uint32_t s = static_cast<uint32_t>(in[1] % bw);
-        if (s == 0) {
-            out = Mask(in[0], bw);
+        if (shift == 0) {
+            out = a;
             return true;
         }
-        out = Mask((in[0] >> s) | (in[0] << (bw - s)), bw);
+        out = Mask((a >> shift) | (a << (bw - shift)), bw);
         return true;
     }
     default:
@@ -322,6 +322,9 @@ void ApplyCSE(std::vector<Statement>& stmts) {
 }
 
 void ApplyConstantFolding(std::vector<Statement>& stmts, uint32_t bitWidth) {
+    if (bitWidth == 0 || bitWidth > 64)
+        return;
+
     std::unordered_map<uint32_t, uint64_t> constValues;
     std::unordered_map<uint32_t, uint32_t> replace;
 
