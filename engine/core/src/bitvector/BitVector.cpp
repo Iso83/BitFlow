@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <stdexcept>
 
 namespace BitFlow::Core::BitVector {
 
@@ -139,6 +140,141 @@ bf_uint bf_uint::RotR(uint32_t s) const {
 
     s %= m_bw;
     return Shr(s) | Shl(m_bw - s);
+}
+
+bf_uint bf_uint::operator+(const bf_uint& rhs) const {
+    if (m_bw != rhs.m_bw)
+        throw std::invalid_argument("bf_uint width mismatch");
+
+    bf_uint r(m_bw);
+
+    uint64_t carry = 0;
+
+    for (size_t i = 0; i < m_words.size(); ++i) {
+        uint64_t a = m_words[i];
+        uint64_t b = rhs.m_words[i];
+
+        uint64_t sum = a + b + carry;
+
+        carry = (sum < a) || (carry && sum == a);
+        r.m_words[i] = sum;
+    }
+
+    r.Normalize();
+    return r;
+}
+
+bf_uint bf_uint::operator-(const bf_uint& rhs) const {
+    if (m_bw != rhs.m_bw)
+        throw std::invalid_argument("bf_uint width mismatch");
+
+    bf_uint r(m_bw);
+    uint64_t borrow = 0;
+
+    for (size_t i = 0; i < m_words.size(); ++i) {
+        uint64_t a = m_words[i];
+        uint64_t b = rhs.m_words[i];
+        uint64_t sub = b + borrow;
+
+        r.m_words[i] = a - sub;
+        borrow = (a < sub) || (borrow && sub == 0);
+    }
+
+    r.Normalize();
+    return r;
+}
+
+bf_uint bf_uint::operator*(const bf_uint& rhs) const {
+    if (m_bw != rhs.m_bw)
+        throw std::invalid_argument("bf_uint width mismatch");
+
+    if (m_bw == 0)
+        return bf_uint(0);
+
+    bf_uint r(m_bw);
+    for (uint32_t bit = 0; bit < m_bw; ++bit) {
+        const size_t wi = bit / 64U;
+        const uint32_t bi = bit % 64U;
+        const uint64_t set = (rhs.m_words[wi] >> bi) & 1ULL;
+        if (set != 0ULL)
+            r = r + Shl(bit);
+    }
+
+    r.Normalize();
+    return r;
+}
+
+bf_uint bf_uint::operator/(const bf_uint& rhs) const {
+    if (m_bw != rhs.m_bw)
+        throw std::invalid_argument("bf_uint width mismatch");
+
+    bool rhsIsZero = true;
+    for (uint64_t w : rhs.m_words) {
+        if (w != 0) {
+            rhsIsZero = false;
+            break;
+        }
+    }
+    if (rhsIsZero)
+        throw std::domain_error("bf_uint division by zero");
+
+    if (m_bw == 0)
+        return bf_uint(0);
+
+    bf_uint q(m_bw);
+    bf_uint rem(m_bw);
+
+    for (uint32_t bit = m_bw; bit-- > 0;) {
+        rem = rem.Shl(1);
+
+        const size_t wi = bit / 64U;
+        const uint32_t bi = bit % 64U;
+        rem.m_words[0] |= (m_words[wi] >> bi) & 1ULL;
+
+        bool ge = true;
+        for (size_t i = rem.m_words.size(); i-- > 0;) {
+            if (rem.m_words[i] < rhs.m_words[i]) {
+                ge = false;
+                break;
+            }
+            if (rem.m_words[i] > rhs.m_words[i]) {
+                ge = true;
+                break;
+            }
+        }
+
+        if (ge) {
+            rem = rem - rhs;
+            q.m_words[wi] |= (1ULL << bi);
+        }
+    }
+
+    q.Normalize();
+    return q;
+}
+
+bf_uint bf_uint::operator%(const bf_uint& rhs) const {
+    if (m_bw != rhs.m_bw)
+        throw std::invalid_argument("bf_uint width mismatch");
+
+    bool rhsIsZero = true;
+    for (uint64_t w : rhs.m_words) {
+        if (w != 0) {
+            rhsIsZero = false;
+            break;
+        }
+    }
+    if (rhsIsZero)
+        throw std::domain_error("bf_uint modulo by zero");
+
+    if (m_bw == 0)
+        return bf_uint(0);
+
+    bf_uint q = (*this) / rhs;
+    bf_uint prod = q * rhs;
+    bf_uint rem = (*this) - prod;
+    rem.Normalize();
+    return rem;
 }
 
 } // namespace BitFlow::Core::BitVector
