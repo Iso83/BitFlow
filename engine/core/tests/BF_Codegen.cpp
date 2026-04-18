@@ -109,9 +109,9 @@ int main() {
     const auto dedupFn = Codegen::EmitCFunction(duplicateVarExpr, 32);
     BF_TEST(dedupFn.find("uint64_t f(uint64_t v1, uint64_t v2)") != std::string::npos);
 
-    // Case 10 — body gebruikt bestaande emitter output
-    const auto exprBody = Codegen::EmitCExpr(addExpr, 32);
-    BF_TEST(defaultFn.find("return " + exprBody + ";") != std::string::npos);
+    // Case 10 — body gebruikt SSA-locals en maskeert de return verplicht
+    BF_TEST(defaultFn.find("uint64_t t0 = ") != std::string::npos);
+    BF_TEST(defaultFn.find("return ((t0) & ((1ull << 32) - 1ull));") != std::string::npos);
 
     // Case 11 — gevraagde basis test voor EmitCFunction
     auto a2 = MakeVar(1);

@@ -511,29 +511,6 @@ std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
     return ApplyMask(expr, bitWidth);
 }
 
-std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
-    std::set<uint32_t> vars;
-    CollectVars(root, vars);
-
-    std::vector<uint32_t> ordered(vars.begin(), vars.end());
-
-    std::ostringstream out;
-
-    out << "uint64_t f(";
-
-    for (size_t i = 0; i < ordered.size(); ++i) {
-        if (i > 0)
-            out << ", ";
-        out << "uint64_t v" << ordered[i];
-    }
-
-    out << ") {\n";
-    out << "    return " << EmitCExpr(root, bitWidth) << ";\n";
-    out << "}";
-
-    return out.str();
-}
-
 std::map<uint32_t, std::string> BuildVarNameMap(const Expr* root, const std::map<uint32_t, std::string>& overrides) {
     std::set<uint32_t> sorted;
     CollectVars(root, sorted);
