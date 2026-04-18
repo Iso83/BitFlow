@@ -26,14 +26,14 @@ const Codegen::Statement* FindById(const std::vector<Codegen::Statement>& stmts,
 
 int main() {
     std::vector<Codegen::Statement> stmts = {
-        {0u, AST::OpType::Xor, {VarId(1), VarId(2)}},
-        {1u, AST::OpType::Xor, {VarId(1), VarId(2)}}, // duplicate subtree
-        {2u, AST::OpType::Add, {0u, 1u}},            // root
-        {3u, AST::OpType::Mul, {VarId(3), VarId(4)}} // unused
+        {0u, static_cast<uint32_t>(AST::OpType::Xor), {VarId(1), VarId(2)}},
+        {1u, static_cast<uint32_t>(AST::OpType::Xor), {VarId(1), VarId(2)}}, // duplicate subtree
+        {2u, static_cast<uint32_t>(AST::OpType::Add), {0u, 1u}},            // root
+        {3u, static_cast<uint32_t>(AST::OpType::Mul), {VarId(3), VarId(4)}} // unused
     };
 
     const size_t beforeCount = stmts.size();
-    Codegen::ApplyPerfPipeline(stmts, 2u);
+    Codegen::ApplyPerfPass(stmts, 2u);
 
     // identieke subtrees -> 1 compute
     BF_TEST(FindById(stmts, 1u) == nullptr);

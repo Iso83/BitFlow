@@ -1,10 +1,7 @@
 #include "PerfPass.h"
 
-#include <BitFlow/core/codegen_ssa/SsaBuilder.h>
-#include <cstdint>
 #include <functional>
 #include <queue>
-#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -42,7 +39,7 @@ void ApplyCSE(std::vector<Statement>& stmts) {
             if (replace.count(in))
                 in = replace[in];
 
-        Key k{static_cast<uint32_t>(s.op), s.inputs};
+        Key k{s.op, s.inputs};
 
         auto it = seen.find(k);
         if (it != seen.end()) {
@@ -57,7 +54,6 @@ void ApplyCSE(std::vector<Statement>& stmts) {
             if (replace.count(in))
                 in = replace[in];
 }
-
 
 void ApplyDCE(std::vector<Statement>& stmts, uint32_t rootId) {
     std::unordered_set<uint32_t> live;
@@ -82,8 +78,7 @@ void ApplyDCE(std::vector<Statement>& stmts, uint32_t rootId) {
     stmts.swap(filtered);
 }
 
-
-void ApplyTempReuse(std::vector<Statement>& stmts, uint32_t rootId) {
+void ApplyTempReuse(std::vector<Statement>& stmts) {
     std::unordered_map<uint32_t, int> useCount;
 
     for (auto& s : stmts)
@@ -102,11 +97,13 @@ void ApplyTempReuse(std::vector<Statement>& stmts, uint32_t rootId) {
             if (!IsTempId(in))
                 continue;
 
-            if (--useCount[in] == 0 && in != rootId)
+            if (--useCount[in] == 0)
                 freeTemps.push(in);
         }
 
-        if (s.id != rootId && !freeTemps.empty()) {
+        // Root is expected to be last after scheduling; keep its id stable.
+        const bool isLast = (&s == &stmts.back());
+        if (!isLast && !freeTemps.empty()) {
             uint32_t reuse = freeTemps.front();
             freeTemps.pop();
             remap[s.id] = reuse;
@@ -115,11 +112,10 @@ void ApplyTempReuse(std::vector<Statement>& stmts, uint32_t rootId) {
     }
 }
 
-
-void ApplyPerfPipeline(std::vector<Statement>& stmts, uint32_t rootId) {
+void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t rootId) {
     ApplyCSE(stmts);
     ApplyDCE(stmts, rootId);
-    ApplyTempReuse(stmts, rootId);
+    ApplyTempReuse(stmts);
 }
 
 } // namespace BitFlow::Core::Codegen

@@ -2,7 +2,7 @@
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 
-#include "../codegen/PerfPass.h"
+#include "codegen/PerfPass.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -117,7 +117,7 @@ void OptimizeStatements(std::vector<Statement>& statements, uint32_t& resultId) 
     if (statements.empty())
         return;
 
-    ApplyPerfPipeline(statements, resultId);
+    ApplyPerfPass(statements, resultId);
 
 }
 
@@ -154,7 +154,7 @@ uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
         inputs.push_back(Visit(in, bw, ctx));
 
     const uint32_t id = ctx.nextStmtId++;
-    ctx.statements.push_back({id, e->op, inputs});
+    ctx.statements.push_back({id, static_cast<uint32_t>(e->op), inputs});
     ctx.cache[e] = id;
     return id;
 }
@@ -180,7 +180,7 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
         for (uint32_t in : st.inputs)
             inputExprs.push_back(ValueExpr(in, ctx.valueToExpr));
 
-        prog.statements.push_back({"t" + std::to_string(st.id), BuildExpr(st.op, inputExprs)});
+        prog.statements.push_back({"t" + std::to_string(st.id), BuildExpr(static_cast<OpType>(st.op), inputExprs)});
     }
 
     return prog;
