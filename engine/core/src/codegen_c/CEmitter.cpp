@@ -10,6 +10,9 @@ namespace BitFlow::Core::Codegen {
 using namespace AST;
 
 static std::string MakeMask(uint32_t bw) {
+    if (bw == 32)
+        return "0xffffffffu";
+
     if (bw == 64)
         return "~0ull";
 

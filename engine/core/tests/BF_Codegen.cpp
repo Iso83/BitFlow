@@ -17,7 +17,7 @@ int main() {
     auto addCode = Codegen::EmitCExpr(addExpr, 32);
 
     BF_TEST(addCode.find("+") != std::string::npos);
-    BF_TEST(addCode.find("((1ull << 32) - 1ull)") != std::string::npos);
+    BF_TEST(addCode.find("0xffffffffu") != std::string::npos);
 
     auto c1 = MakeConst(11, 1);
     auto c40 = MakeConst(12, 40);
@@ -36,39 +36,39 @@ int main() {
 
     auto rotCode = Codegen::EmitCExpr(rotExpr, 32);
     BF_TEST(rotCode.find("% 32ull") != std::string::npos);
-    BF_TEST(rotCode.find("((1ull << 32) - 1ull)") != std::string::npos);
+    BF_TEST(rotCode.find("0xffffffffu") != std::string::npos);
 
     // Case 1 — precedence add/mul: (a + b) * c
     auto mulOverAddExpr = MakeOp(17, OpType::Mul, {MakeOp(18, OpType::Add, {a, b}), c});
     auto mulOverAddCode = Codegen::EmitCExpr(mulOverAddExpr, 32);
     BF_TEST(mulOverAddCode ==
-            "(((((((((v1) & ((1ull << 32) - 1ull)) + ((v2) & ((1ull << 32) - 1ull))) & ((1ull << 32) - 1ull))) * "
-            "((v3) & ((1ull << 32) - 1ull))) & ((1ull << 32) - 1ull))) & ((1ull << 32) - 1ull))");
+            "(((((((((v1) & 0xffffffffu) + ((v2) & 0xffffffffu)) & 0xffffffffu)) * "
+            "((v3) & 0xffffffffu)) & 0xffffffffu)) & 0xffffffffu)");
 
     // Case 2 — shift met add rechts: a << (b + c)
     auto shlAddExpr = MakeOp(19, OpType::Shl, {a, MakeOp(20, OpType::Add, {b, c})});
     auto shlAddCode = Codegen::EmitCExpr(shlAddExpr, 32);
     BF_TEST(shlAddCode ==
-            "((((((v1) & ((1ull << 32) - 1ull)) << ((((((v2) & ((1ull << 32) - 1ull)) + ((v3) & ((1ull << 32) - "
-            "1ull))) & ((1ull << 32) - 1ull))) % 32ull)) & ((1ull << 32) - 1ull))) & ((1ull << 32) - 1ull))");
+            "((((((v1) & 0xffffffffu) << ((((((v2) & 0xffffffffu) + ((v3) & 0xffffffffu)) & 0xffffffffu)) % 32ull)) "
+            "& 0xffffffffu)) & 0xffffffffu)");
 
     // Case 3 — unary boven binary: ~(a ^ b)
     auto notXorExpr = MakeOp(21, OpType::Not, {MakeOp(22, OpType::Xor, {a, b})});
     auto notXorCode = Codegen::EmitCExpr(notXorExpr, 32);
     BF_TEST(notXorCode ==
-            "((((~(((((v1) & ((1ull << 32) - 1ull)) ^ ((v2) & ((1ull << 32) - 1ull))) & ((1ull << 32) - 1ull)))) & "
-            "((1ull << 32) - 1ull))) & ((1ull << 32) - 1ull))");
+            "((((~(((((v1) & 0xffffffffu) ^ ((v2) & 0xffffffffu)) & 0xffffffffu))) & "
+            "0xffffffffu)) & 0xffffffffu)");
 
     // Case 4 — nested bitwise: (a ^ b) & c
     auto andOverXorExpr = MakeOp(23, OpType::And, {MakeOp(24, OpType::Xor, {a, b}), c});
     auto andOverXorCode = Codegen::EmitCExpr(andOverXorExpr, 32);
     BF_TEST(andOverXorCode ==
-            "(((((((((v1) & ((1ull << 32) - 1ull)) ^ ((v2) & ((1ull << 32) - 1ull))) & ((1ull << 32) - 1ull))) & "
-            "((v3) & ((1ull << 32) - 1ull))) & ((1ull << 32) - 1ull))) & ((1ull << 32) - 1ull))");
+            "(((((((((v1) & 0xffffffffu) ^ ((v2) & 0xffffffffu)) & 0xffffffffu)) & "
+            "((v3) & 0xffffffffu)) & 0xffffffffu)) & 0xffffffffu)");
 
     // Case 5 — canonical mask vorm (32/64 bit)
-    BF_TEST(Codegen::EmitCExpr(a, 32).find("((1ull << 32) - 1ull)") != std::string::npos);
-    BF_TEST(Codegen::EmitCExpr(a, 64) == "((((v1) & 0xffffffffffffffffull)) & 0xffffffffffffffffull)");
+    BF_TEST(Codegen::EmitCExpr(a, 32).find("0xffffffffu") != std::string::npos);
+    BF_TEST(Codegen::EmitCExpr(a, 64) == "((((v1) & ~0ull)) & ~0ull)");
 
     // Case 6 — variabele mapping (id -> naam)
     const std::map<uint32_t, std::string> names = {{1u, "lhs"}, {2u, "rhs"}};
@@ -112,7 +112,7 @@ int main() {
 
     // Case 10 — body gebruikt SSA-locals en maskeert de return verplicht
     BF_TEST(defaultFn.find("uint32_t t0 = ") != std::string::npos);
-    BF_TEST(defaultFn.find("return (t0) & ((1ull << 32) - 1);") != std::string::npos);
+    BF_TEST(defaultFn.find("return (t0) & 0xffffffffu;") != std::string::npos);
 
     // Case 11 — gevraagde basis test voor EmitCFunction
     auto a2 = MakeVar(1);
@@ -143,7 +143,7 @@ int main() {
     BF_TEST(multiFn.find("Outputs bf_eval_multi(") != std::string::npos);
     BF_TEST(multiFn.find("Outputs r{};") != std::string::npos);
     BF_TEST(multiFn.find("uint32_t t1 = ") != std::string::npos);
-    BF_TEST(multiFn.find("& ((1ull << 32) - 1ull)") != std::string::npos);
+    BF_TEST(multiFn.find("& 0xffffffffu") != std::string::npos);
     BF_TEST(multiFn.find("r.out1 = ") != std::string::npos);
     BF_TEST(multiFn.find("r.out2 = ") != std::string::npos);
 
