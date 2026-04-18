@@ -24,10 +24,6 @@ static std::string MakeVarName(uint32_t id) {
     return "v" + std::to_string(id);
 }
 
-static std::string BitWidthLiteral(uint32_t bw) {
-    return std::to_string(bw) + "ull";
-}
-
 static std::string ConstLiteral(uint32_t value, uint32_t bw) {
     if (bw <= 32U)
         return std::to_string(value) + "u";
@@ -108,22 +104,6 @@ static std::string ApplyMask(const std::string& expr, uint32_t bw) {
     return "((" + expr + ") & " + MakeMask(bw) + ")";
 }
 
-static std::string NormalizeShift(const std::string& rhs, uint32_t bw) {
-    return "((" + rhs + ") % " + BitWidthLiteral(bw) + ")";
-}
-
-static std::string MakeRotateExpr(const std::string& value, const std::string& shift, uint32_t bw, bool left) {
-    const std::string bwLiteral = BitWidthLiteral(bw);
-    const std::string mask = MakeMask(bw);
-
-    if (left)
-        return "(((" + value + " << " + shift + ") | (" + value + " >> (" + bwLiteral + " - " + shift + "))) & " +
-               mask + ")";
-
-    return "(((" + value + " >> " + shift + ") | (" + value + " << (" + bwLiteral + " - " + shift + "))) & " + mask +
-           ")";
-}
-
 static bool IsWrapped(const std::string& text) {
     return text.size() >= 2 && text.front() == '(' && text.back() == ')';
 }
@@ -165,10 +145,11 @@ static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std
         std::string lhs = childExprs[0];
         for (size_t i = 1; i < childExprs.size(); ++i) {
             std::string rhs = childExprs[i];
-            std::string sh = NormalizeShift(rhs, bw);
             const Expr* leftExpr = (i == 1) ? e->inputs[0] : nullptr;
             const std::string lhsWrapped = MaybeWrapChild(lhs, e->op, leftExpr, false);
             const std::string rhsWrapped = MaybeWrapChild(rhs, e->op, e->inputs[i], true);
+            const std::string bwStr = std::to_string(bw);
+            const std::string shift = "(" + rhsWrapped + " & (" + bwStr + " - 1))";
 
             switch (e->op) {
             case OpType::Add:
@@ -196,17 +177,21 @@ static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
                 break;
             case OpType::Shl:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
+                lhs = ApplyMask("(" + lhsWrapped + " << " + shift + ")", bw);
                 break;
             case OpType::Shr:
             case OpType::UShr:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
+                lhs = ApplyMask("(" + lhsWrapped + " >> " + shift + ")", bw);
                 break;
             case OpType::RotL:
-                lhs = MakeRotateExpr(lhs, sh, bw, true);
+                lhs = ApplyMask("((" + lhsWrapped + " << " + shift + ") | (" + lhsWrapped + " >> ((" + bwStr + " - " +
+                                shift + ") & (" + bwStr + " - 1))))",
+                                bw);
                 break;
             case OpType::RotR:
-                lhs = MakeRotateExpr(lhs, sh, bw, false);
+                lhs = ApplyMask("((" + lhsWrapped + " >> " + shift + ") | (" + lhsWrapped + " << ((" + bwStr + " - " +
+                                shift + ") & (" + bwStr + " - 1))))",
+                                bw);
                 break;
             default:
                 return "";
