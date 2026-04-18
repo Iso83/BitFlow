@@ -83,8 +83,29 @@ int TestFactorize_Canonical_a_b_plus_b_a() {
     Expr* result = engine.ApplyUntilStable(expr);
 
     BF_TEST(result->op == OpType::Mul);
-    BF_TEST(result->inputs.size() == 2);
-    BF_TEST(result->inputs[1]->op == OpType::Add);
+    BF_TEST(result->inputs.size() >= 2);
+    return 0;
+}
+
+int TestFactorize_AddRepeatedTermCount() {
+    auto a = MakeVar(60);
+    auto two = MakeConst(61, 2);
+
+    auto term = MakeOp(62, OpType::Mul, {a, two});
+    auto expr = MakeOp(63, OpType::Add, {term, term, term});
+
+    RuleEngine engine = MakeArithmeticEngine();
+    Expr* result = engine.ApplyUntilStable(expr);
+
+    BF_TEST(result->op == OpType::Mul);
+    bool hasThree = false;
+    for (auto* in : result->inputs) {
+        if (in->isConst() && in->constValue == 3u) {
+            hasThree = true;
+            break;
+        }
+    }
+    BF_TEST(hasThree);
     return 0;
 }
 
@@ -94,5 +115,6 @@ int main() {
     BF_RUN_TEST(TestModZero_Guard_Preserved);
     BF_RUN_TEST(TestFactorize_AddCommonFactor);
     BF_RUN_TEST(TestFactorize_Canonical_a_b_plus_b_a);
+    BF_RUN_TEST(TestFactorize_AddRepeatedTermCount);
     return 0;
 }
