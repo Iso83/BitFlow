@@ -4,11 +4,20 @@
 #include <string>
 #include <vector>
 
+#include <BitFlow/core/ast/OpType.h>
+
 namespace BitFlow::Core::AST {
 struct Expr;
 }
 
 namespace BitFlow::Core::Codegen {
+
+
+struct Statement {
+    uint32_t id;
+    AST::OpType op;
+    std::vector<uint32_t> inputs;
+};
 
 struct SsaStatement {
     std::string name;
