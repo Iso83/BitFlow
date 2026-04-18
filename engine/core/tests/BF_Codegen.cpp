@@ -200,5 +200,13 @@ int main() {
     BF_TEST(code32.find("uint32_t") != std::string::npos);
     BF_TEST(code64.find("uint64_t") != std::string::npos);
 
+    // Case 17.12 — bf_uint pad voor brede bitwidth in C emitter
+    auto a5 = MakeVar(1);
+    auto b5 = MakeVar(2);
+    auto expr5 = MakeOp(48, OpType::Xor, {a5, b5});
+    auto code128 = Codegen::EmitCFunction(expr5, 128);
+    BF_TEST(code128.find("bf_uint") != std::string::npos);
+    BF_TEST(code128.find("Rot") == std::string::npos); // sanity
+
     return 0;
 }
