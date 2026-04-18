@@ -102,25 +102,35 @@ int main() {
 
     // Case 9 — nieuwe API overload met default functienaam
     const auto defaultFn = Codegen::EmitCFunction(addExpr, 32);
-    BF_TEST(defaultFn.find("uint64_t f(uint64_t v1, uint64_t v2)") != std::string::npos);
+    BF_TEST(defaultFn.find("uint64_t eval(uint64_t v1, uint64_t v2)") != std::string::npos);
     BF_TEST(defaultFn.find("return ") != std::string::npos);
 
     // Case 9b — signature gebruikt sorted ids zonder duplicaten
     const auto dedupFn = Codegen::EmitCFunction(duplicateVarExpr, 32);
-    BF_TEST(dedupFn.find("uint64_t f(uint64_t v1, uint64_t v2)") != std::string::npos);
+    BF_TEST(dedupFn.find("uint64_t eval(uint64_t v1, uint64_t v2)") != std::string::npos);
 
-    // Case 10 — body gebruikt bestaande emitter output
-    const auto exprBody = Codegen::EmitCExpr(addExpr, 32);
-    BF_TEST(defaultFn.find("return " + exprBody + ";") != std::string::npos);
+    // Case 10 — body gebruikt SSA-locals en maskeert de return verplicht
+    BF_TEST(defaultFn.find("uint64_t t0 = ") != std::string::npos);
+    BF_TEST(defaultFn.find("return (t0) & ((1ull << 32) - 1);") != std::string::npos);
 
     // Case 11 — gevraagde basis test voor EmitCFunction
     auto a2 = MakeVar(1);
     auto b2 = MakeVar(2);
     auto expr = MakeOp(29, OpType::Add, {a2, b2});
     auto code = Codegen::EmitCFunction(expr, 32);
-    BF_TEST(code.find("uint64_t f(") != std::string::npos);
+    BF_TEST(code.find("uint64_t eval(") != std::string::npos);
     BF_TEST(code.find("v1") != std::string::npos);
     BF_TEST(code.find("v2") != std::string::npos);
+
+    // Case 15.7 — SSA emitter basischeck: (a + b) * (a + b)
+    auto a3 = MakeVar(1);
+    auto b3 = MakeVar(2);
+    auto add3 = MakeOp(45, OpType::Add, {a3, b3});
+    auto expr3 = MakeOp(46, OpType::Mul, {add3, add3});
+    auto code3 = Codegen::EmitCFunction(expr3, 32);
+    BF_TEST(code3.find("uint64_t eval") != std::string::npos);
+    BF_TEST(code3.find("t0") != std::string::npos);
+    BF_TEST(code3.find("return") != std::string::npos);
 
     // Case 12.2 — meerdere outputs + gedeelde subexpressies + tijdelijke variabelen + statements
     auto shared = MakeOp(30, OpType::Add, {a, b});
