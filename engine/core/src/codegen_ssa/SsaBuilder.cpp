@@ -1,6 +1,10 @@
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
+
+#include "codegen/PerfPass.h"
+
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -13,14 +17,37 @@ using namespace AST;
 
 namespace {
 
+constexpr uint32_t kVarTag = 0x40000000u;
+constexpr uint32_t kConstTag = 0x80000000u;
+
 struct Context {
-    std::unordered_map<const Expr*, std::string> cache;
-    std::vector<SsaStatement> out;
-    uint32_t counter = 0;
+    std::unordered_map<const Expr*, uint32_t> cache;
+    std::vector<Statement> statements;
+
+    uint32_t nextStmtId = 0;
+    uint32_t nextConstId = 0;
+
+    std::unordered_map<uint32_t, std::string> valueToExpr;
+    std::unordered_map<std::string, uint32_t> exprToConst;
 };
 
-std::string MakeTemp(Context& ctx) {
-    return "t" + std::to_string(ctx.counter++);
+bool IsStatementId(uint32_t id) {
+    return (id & kVarTag) == 0u;
+}
+
+uint32_t MakeVarValueId(uint32_t varId) {
+    return kVarTag | (varId & ~kVarTag);
+}
+
+uint32_t InternConstValueId(Context& ctx, const std::string& value) {
+    auto it = ctx.exprToConst.find(value);
+    if (it != ctx.exprToConst.end())
+        return it->second;
+
+    const uint32_t id = kConstTag | ctx.nextConstId++;
+    ctx.exprToConst[value] = id;
+    ctx.valueToExpr[id] = value;
+    return id;
 }
 
 std::string LeafExpr(const Expr* e, uint32_t bw) {
@@ -86,31 +113,43 @@ std::string BuildExpr(OpType op, const std::vector<std::string>& in) {
     }
 }
 
-std::string Visit(const Expr* e, uint32_t bw, Context& ctx) {
+
+std::string ValueExpr(uint32_t valueId, const std::unordered_map<uint32_t, std::string>& valueToExpr) {
+    auto it = valueToExpr.find(valueId);
+    if (it != valueToExpr.end())
+        return it->second;
+    if (IsStatementId(valueId))
+        return "t" + std::to_string(valueId);
+    return "0";
+}
+
+uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
     auto it = ctx.cache.find(e);
     if (it != ctx.cache.end())
         return it->second;
 
-    // Leaf nodes stay inline (no SSA temp required by the rules).
-    if (e->op == OpType::Const || e->op == OpType::Var) {
-        std::string value = LeafExpr(e, bw);
-        ctx.cache[e] = value;
-        return value;
+    if (e->op == OpType::Var) {
+        const uint32_t valueId = MakeVarValueId(e->id.value());
+        ctx.valueToExpr[valueId] = LeafExpr(e, bw);
+        ctx.cache[e] = valueId;
+        return valueId;
     }
 
-    // Post-order: children first.
-    std::vector<std::string> inputs;
+    if (e->op == OpType::Const) {
+        const uint32_t valueId = InternConstValueId(ctx, LeafExpr(e, bw));
+        ctx.cache[e] = valueId;
+        return valueId;
+    }
+
+    std::vector<uint32_t> inputs;
     inputs.reserve(e->inputs.size());
     for (const Expr* in : e->inputs)
         inputs.push_back(Visit(in, bw, ctx));
 
-    // Non-leaf -> exactly one SSA temp.
-    std::string expr = BuildExpr(e->op, inputs);
-    std::string name = MakeTemp(ctx);
-
-    ctx.out.push_back({name, expr});
-    ctx.cache[e] = name;
-    return name;
+    const uint32_t id = ctx.nextStmtId++;
+    ctx.statements.push_back({id, static_cast<uint32_t>(e->op), inputs});
+    ctx.cache[e] = id;
+    return id;
 }
 
 } // namespace
@@ -121,17 +160,22 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
         return prog;
 
     Context ctx{};
-    prog.result = Visit(root, bitWidth, ctx);
-    prog.results.push_back(prog.result);
-    prog.statements = std::move(ctx.out);
+    uint32_t resultId = Visit(root, bitWidth, ctx);
+    ApplyPerfPass(ctx.statements, resultId);
 
-    // Step 14.7 (later):
-    // - C emitter over SSA statements:
-    //     uint64_t t0 = ...;
-    //     uint64_t t1 = ...;
-    // - dead code elimination on unused temps
-    // - register reuse / temp lifetime compaction
-    // - true multi-output BuildSSA API
+    prog.result = ValueExpr(resultId, ctx.valueToExpr);
+    prog.results.push_back(prog.result);
+
+    prog.statements.reserve(ctx.statements.size());
+    for (const Statement& st : ctx.statements) {
+        std::vector<std::string> inputExprs;
+        inputExprs.reserve(st.inputs.size());
+        for (uint32_t in : st.inputs)
+            inputExprs.push_back(ValueExpr(in, ctx.valueToExpr));
+
+        prog.statements.push_back({"t" + std::to_string(st.id), BuildExpr(static_cast<OpType>(st.op), inputExprs)});
+    }
+
     return prog;
 }
 
