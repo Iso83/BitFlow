@@ -5,10 +5,6 @@
 
 namespace BitFlow::Core::BitVector {
 
-// Representatie:
-// - little-endian words: m_words[0] bevat de LSB 64 bits
-// - wordgrootte: 64-bit (uint64_t)
-// - aantal words: ceil(bitWidth / 64)
 class bf_uint {
 public:
     bf_uint(uint32_t bitWidth);
@@ -38,7 +34,7 @@ public:
     bf_uint RotR(uint32_t s) const;
 
 private:
-    uint32_t m_bw;
+    uint32_t m_bw = 0;
     std::vector<uint64_t> m_words;
 
     void Normalize(); // mask toepassen
