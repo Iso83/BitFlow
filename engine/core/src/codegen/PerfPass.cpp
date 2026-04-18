@@ -17,6 +17,12 @@ uint64_t MaskFor(uint32_t bitWidth) {
     return (uint64_t{1} << bitWidth) - 1ULL;
 }
 
+uint64_t Mask(uint64_t v, uint32_t bw) {
+    if (bw >= 64U)
+        return v;
+    return v & ((1ULL << bw) - 1ULL);
+}
+
 uint32_t NormalizeShift(uint64_t amount, uint32_t bitWidth) {
     return static_cast<uint32_t>(amount % static_cast<uint64_t>(bitWidth));
 }
@@ -131,6 +137,63 @@ bool TryFoldPureOp(uint32_t op, const std::vector<uint64_t>& in, uint32_t bitWid
         return true;
     case AST::OpType::Var:
     case AST::OpType::Const:
+    default:
+        return false;
+    }
+}
+
+bool EvalOp(uint32_t op, const std::vector<uint64_t>& in, uint64_t& out, uint32_t bw) {
+    if (in.size() < 2)
+        return false;
+
+    switch (op) {
+    case (uint32_t)AST::OpType::Add:
+        out = Mask(in[0] + in[1], bw);
+        return true;
+    case (uint32_t)AST::OpType::Sub:
+        out = Mask(in[0] - in[1], bw);
+        return true;
+    case (uint32_t)AST::OpType::Mul:
+        out = Mask(in[0] * in[1], bw);
+        return true;
+    case (uint32_t)AST::OpType::And:
+        out = Mask(in[0] & in[1], bw);
+        return true;
+    case (uint32_t)AST::OpType::Or:
+        out = Mask(in[0] | in[1], bw);
+        return true;
+    case (uint32_t)AST::OpType::Xor:
+        out = Mask(in[0] ^ in[1], bw);
+        return true;
+    case (uint32_t)AST::OpType::Shl:
+        out = Mask(in[0] << in[1], bw);
+        return true;
+    case (uint32_t)AST::OpType::Shr:
+    case (uint32_t)AST::OpType::UShr:
+        out = Mask(in[0] >> in[1], bw);
+        return true;
+    case (uint32_t)AST::OpType::RotL: {
+        if (bw == 0)
+            return false;
+        uint32_t s = static_cast<uint32_t>(in[1] % bw);
+        if (s == 0) {
+            out = Mask(in[0], bw);
+            return true;
+        }
+        out = Mask((in[0] << s) | (in[0] >> (bw - s)), bw);
+        return true;
+    }
+    case (uint32_t)AST::OpType::RotR: {
+        if (bw == 0)
+            return false;
+        uint32_t s = static_cast<uint32_t>(in[1] % bw);
+        if (s == 0) {
+            out = Mask(in[0], bw);
+            return true;
+        }
+        out = Mask((in[0] >> s) | (in[0] << (bw - s)), bw);
+        return true;
+    }
     default:
         return false;
     }
@@ -260,13 +323,43 @@ void ApplyCSE(std::vector<Statement>& stmts) {
 
 void ApplyConstantFolding(std::vector<Statement>& stmts, uint32_t bitWidth) {
     std::unordered_map<uint32_t, uint64_t> constValues;
+    std::unordered_map<uint32_t, uint32_t> replace;
+
     for (const auto& s : stmts)
         for (uint32_t in : s.inputs)
             if ((in & kConstTag) != 0u)
                 constValues[in] = static_cast<uint64_t>(in & ~kConstTag);
 
-    uint32_t rootId = 0;
-    ApplyConstantFoldWithMap(stmts, rootId, constValues, bitWidth);
+    for (const auto& s : stmts)
+        if (constValues.count(s.id))
+            constValues[s.id] = Mask(constValues[s.id], bitWidth);
+
+    for (auto& s : stmts) {
+        for (auto& in : s.inputs)
+            if (replace.count(in))
+                in = replace[in];
+
+        std::vector<uint64_t> inVals;
+        bool allConst = true;
+        for (auto in : s.inputs) {
+            if (!constValues.count(in)) {
+                allConst = false;
+                break;
+            }
+            inVals.push_back(constValues[in]);
+        }
+
+        if (!allConst)
+            continue;
+
+        uint64_t out = 0;
+        if (!EvalOp(s.op, inVals, out, bitWidth))
+            continue;
+
+        constValues[s.id] = out;
+        replace[s.id] = s.id;
+        s.inputs.clear();
+    }
 }
 
 // ============================
