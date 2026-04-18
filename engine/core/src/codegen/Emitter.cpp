@@ -123,18 +123,30 @@ static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std
     if (!e)
         return "";
 
-    if (e->op == OpType::Const)
-        return ApplyMask(ConstLiteral(e->constValue, bw), bw);
+    const bool useBfUint = (bw > 64U);
 
-    if (e->op == OpType::Var)
+    if (e->op == OpType::Const) {
+        if (useBfUint)
+            return "bf_uint(" + std::to_string(e->constValue) + ", " + std::to_string(bw) + ")";
+        return ApplyMask(ConstLiteral(e->constValue, bw), bw);
+    }
+
+    if (e->op == OpType::Var) {
+        if (useBfUint)
+            return MakeVarName(e->id.value());
         return ApplyMask(MakeVarName(e->id.value()), bw);
+    }
 
     if (e->inputs.size() == 1 && childExprs.size() == 1) {
         std::string a = MaybeWrapChild(childExprs[0], e->op, e->inputs[0], true);
         switch (e->op) {
         case OpType::Neg:
+            if (useBfUint)
+                return EmitUnary("-", a);
             return ApplyMask(EmitUnary("-", a), bw);
         case OpType::Not:
+            if (useBfUint)
+                return EmitUnary("~", a);
             return ApplyMask(EmitUnary("~", a), bw);
         default:
             return "";
@@ -153,42 +165,90 @@ static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std
 
             switch (e->op) {
             case OpType::Add:
+                if (useBfUint) {
+                    lhs = EmitBinary(lhsWrapped, "+", rhsWrapped);
+                    break;
+                }
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "+", rhsWrapped), bw);
                 break;
             case OpType::Sub:
+                if (useBfUint) {
+                    lhs = EmitBinary(lhsWrapped, "-", rhsWrapped);
+                    break;
+                }
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "-", rhsWrapped), bw);
                 break;
             case OpType::Mul:
+                if (useBfUint) {
+                    lhs = EmitBinary(lhsWrapped, "*", rhsWrapped);
+                    break;
+                }
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "*", rhsWrapped), bw);
                 break;
             case OpType::Div:
+                if (useBfUint) {
+                    lhs = EmitBinary(lhsWrapped, "/", rhsWrapped);
+                    break;
+                }
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "/", rhsWrapped), bw);
                 break;
             case OpType::Mod:
+                if (useBfUint) {
+                    lhs = EmitBinary(lhsWrapped, "%", rhsWrapped);
+                    break;
+                }
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "%", rhsWrapped), bw);
                 break;
             case OpType::And:
+                if (useBfUint) {
+                    lhs = EmitBinary(lhsWrapped, "&", rhsWrapped);
+                    break;
+                }
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "&", rhsWrapped), bw);
                 break;
             case OpType::Or:
+                if (useBfUint) {
+                    lhs = EmitBinary(lhsWrapped, "|", rhsWrapped);
+                    break;
+                }
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "|", rhsWrapped), bw);
                 break;
             case OpType::Xor:
+                if (useBfUint) {
+                    lhs = EmitBinary(lhsWrapped, "^", rhsWrapped);
+                    break;
+                }
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
                 break;
             case OpType::Shl:
+                if (useBfUint) {
+                    lhs = lhsWrapped + ".Shl(" + rhsWrapped + ")";
+                    break;
+                }
                 lhs = ApplyMask("(" + lhsWrapped + " << " + shift + ")", bw);
                 break;
             case OpType::Shr:
             case OpType::UShr:
+                if (useBfUint) {
+                    lhs = lhsWrapped + ".Shr(" + rhsWrapped + ")";
+                    break;
+                }
                 lhs = ApplyMask("(" + lhsWrapped + " >> " + shift + ")", bw);
                 break;
             case OpType::RotL:
+                if (useBfUint) {
+                    lhs = lhsWrapped + ".RotL(" + rhsWrapped + ")";
+                    break;
+                }
                 lhs = ApplyMask("((" + lhsWrapped + " << " + shift + ") | (" + lhsWrapped + " >> ((" + bwStr + " - " +
                                     shift + ") & (" + bwStr + " - 1))))",
                                 bw);
                 break;
             case OpType::RotR:
+                if (useBfUint) {
+                    lhs = lhsWrapped + ".RotR(" + rhsWrapped + ")";
+                    break;
+                }
                 lhs = ApplyMask("((" + lhsWrapped + " >> " + shift + ") | (" + lhsWrapped + " << ((" + bwStr + " - " +
                                     shift + ") & (" + bwStr + " - 1))))",
                                 bw);
