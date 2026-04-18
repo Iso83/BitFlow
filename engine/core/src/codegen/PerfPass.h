@@ -15,8 +15,7 @@ struct Statement {
 void ApplyCSE(std::vector<Statement>& stmts);
 void ApplyDCE(std::vector<Statement>& stmts, uint32_t rootId);
 void ApplyTempReuse(std::vector<Statement>& stmts);
-void ApplyConstantFold(std::vector<Statement>& stmts, uint32_t& rootId,
-                       std::unordered_map<uint32_t, uint64_t>& constValues, uint32_t bitWidth);
+void ApplyConstantFolding(std::vector<Statement>& stmts, uint32_t bitWidth);
 
 // convenience
 void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t rootId);

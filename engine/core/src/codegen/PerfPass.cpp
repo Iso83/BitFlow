@@ -154,6 +154,59 @@ uint32_t FindOrCreateConstId(std::unordered_map<uint32_t, uint64_t>& constValues
     constValues[newId] = value;
     return newId;
 }
+
+void ApplyConstantFoldWithMap(std::vector<Statement>& stmts, uint32_t& rootId,
+                              std::unordered_map<uint32_t, uint64_t>& constValues, uint32_t bitWidth) {
+    if (bitWidth == 0 || bitWidth > 64)
+        return;
+
+    const uint64_t mask = MaskFor(bitWidth);
+    std::unordered_map<uint32_t, uint32_t> replace;
+    std::vector<Statement> folded;
+    folded.reserve(stmts.size());
+
+    for (auto& s : stmts) {
+        for (auto& in : s.inputs)
+            if (replace.count(in))
+                in = replace[in];
+
+        bool allInputsConst = !s.inputs.empty();
+        std::vector<uint64_t> inValues;
+        inValues.reserve(s.inputs.size());
+        for (uint32_t in : s.inputs) {
+            auto it = constValues.find(in);
+            if (it == constValues.end()) {
+                allInputsConst = false;
+                break;
+            }
+            inValues.push_back(it->second & mask);
+        }
+
+        if (!allInputsConst) {
+            folded.push_back(s);
+            continue;
+        }
+
+        uint64_t out = 0;
+        if (!TryFoldPureOp(s.op, inValues, bitWidth, out)) {
+            folded.push_back(s);
+            continue;
+        }
+
+        const uint32_t constId = FindOrCreateConstId(constValues, out & mask);
+        replace[s.id] = constId;
+    }
+
+    for (auto& s : folded)
+        for (auto& in : s.inputs)
+            if (replace.count(in))
+                in = replace[in];
+
+    if (replace.count(rootId))
+        rootId = replace[rootId];
+
+    stmts.swap(folded);
+}
 }
 
 // ============================
@@ -205,57 +258,15 @@ void ApplyCSE(std::vector<Statement>& stmts) {
                 in = replace[in];
 }
 
-void ApplyConstantFold(std::vector<Statement>& stmts, uint32_t& rootId, std::unordered_map<uint32_t, uint64_t>& constValues,
-                       uint32_t bitWidth) {
-    if (bitWidth == 0 || bitWidth > 64)
-        return;
+void ApplyConstantFolding(std::vector<Statement>& stmts, uint32_t bitWidth) {
+    std::unordered_map<uint32_t, uint64_t> constValues;
+    for (const auto& s : stmts)
+        for (uint32_t in : s.inputs)
+            if ((in & kConstTag) != 0u)
+                constValues[in] = static_cast<uint64_t>(in & ~kConstTag);
 
-    const uint64_t mask = MaskFor(bitWidth);
-    std::unordered_map<uint32_t, uint32_t> replace;
-    std::vector<Statement> folded;
-    folded.reserve(stmts.size());
-
-    for (auto& s : stmts) {
-        for (auto& in : s.inputs)
-            if (replace.count(in))
-                in = replace[in];
-
-        bool allInputsConst = !s.inputs.empty();
-        std::vector<uint64_t> inValues;
-        inValues.reserve(s.inputs.size());
-        for (uint32_t in : s.inputs) {
-            auto it = constValues.find(in);
-            if (it == constValues.end()) {
-                allInputsConst = false;
-                break;
-            }
-            inValues.push_back(it->second & mask);
-        }
-
-        if (!allInputsConst) {
-            folded.push_back(s);
-            continue;
-        }
-
-        uint64_t out = 0;
-        if (!TryFoldPureOp(s.op, inValues, bitWidth, out)) {
-            folded.push_back(s);
-            continue;
-        }
-
-        const uint32_t constId = FindOrCreateConstId(constValues, out & mask);
-        replace[s.id] = constId;
-    }
-
-    for (auto& s : folded)
-        for (auto& in : s.inputs)
-            if (replace.count(in))
-                in = replace[in];
-
-    if (replace.count(rootId))
-        rootId = replace[rootId];
-
-    stmts.swap(folded);
+    uint32_t rootId = 0;
+    ApplyConstantFoldWithMap(stmts, rootId, constValues, bitWidth);
 }
 
 // ============================
@@ -339,7 +350,7 @@ void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t rootId) {
 
 void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t& rootId, std::unordered_map<uint32_t, uint64_t>& constValues,
                    uint32_t bitWidth) {
-    ApplyConstantFold(stmts, rootId, constValues, bitWidth);
+    ApplyConstantFoldWithMap(stmts, rootId, constValues, bitWidth);
     ApplyCSE(stmts);
     ApplyDCE(stmts, rootId);
     ApplyTempReuse(stmts);
