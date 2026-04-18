@@ -453,7 +453,10 @@ void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t rootId) {
 
 void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t& rootId, std::unordered_map<uint32_t, uint64_t>& constValues,
                    uint32_t bitWidth) {
-    ApplyConstantFoldWithMap(stmts, rootId, constValues, bitWidth);
+    // Keep folding semantics aligned with ConstantEval: fold only for 1..64 bit.
+    if (bitWidth >= 1U && bitWidth <= 64U)
+        ApplyConstantFoldWithMap(stmts, rootId, constValues, bitWidth);
+
     ApplyCSE(stmts);
     ApplyDCE(stmts, rootId);
     ApplyTempReuse(stmts, &rootId);
