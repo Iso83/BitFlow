@@ -528,7 +528,7 @@ Core::Rules::RuleEngine BuildRuleEngine(const CliOptions& opt, const std::unorde
     const bool hasStageSelection = opt.normalize || opt.simplify || opt.factorize;
     const bool runNormalize = hasStageSelection ? opt.normalize : true;
     const bool runSimplify = hasStageSelection ? opt.simplify : true;
-    const bool runFactorize = hasStageSelection ? opt.factorize : false;
+    const bool runFactorize = hasStageSelection ? opt.factorize : true;
 
     Core::Rules::RuleEngine engine;
     if (runNormalize)
