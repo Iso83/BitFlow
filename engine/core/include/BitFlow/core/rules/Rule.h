@@ -42,6 +42,7 @@ enum class RuleId {
     Simplify_Idempotent,
     Simplify_And_Idempotent,
     Simplify_Complement,
+    Simplify_AndXorReduction,
 
     // Simplify - Dominance / Identity
     Simplify_AndZeroDominance,
@@ -109,6 +110,7 @@ Rule Get_Not_Xor_Rule();
 Rule Get_Idempotent_Rule();
 Rule Get_And_Idempotent_Rule();
 Rule Get_Complement_Rule();
+Rule Get_And_Xor_Reduction_Rule();
 Rule Get_And_ZeroDominance_Rule();
 Rule Get_And_OneIdentity_Rule();
 Rule Get_Or_OneDominance_Rule();

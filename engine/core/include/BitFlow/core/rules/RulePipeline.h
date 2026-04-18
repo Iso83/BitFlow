@@ -28,6 +28,9 @@ inline void Add_Simplify_Bitwise_Rules(RuleEngine& engine) {
     engine.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
 
+    // Reduction
+    engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
+
     // Fold
     engine.AddRule(Simplify::Bitwise::Get_Xor_Fold_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Fold_Rule());
