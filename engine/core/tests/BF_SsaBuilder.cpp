@@ -100,5 +100,18 @@ int main() {
         BF_TEST(prog.result == "t0");
     }
 
+    // Stap 20.8 — ((2 + 3) * 4) => 20, folded to direct constant root.
+    {
+        auto c2 = MakeConst(401, 2);
+        auto c3 = MakeConst(402, 3);
+        auto c4 = MakeConst(403, 4);
+        auto add = MakeOp(404, OpType::Add, {c2, c3});
+        auto mul = MakeOp(405, OpType::Mul, {add, c4});
+
+        auto prog = BuildSSA(mul, 8);
+        BF_TEST(prog.statements.empty()); // aantal statements omlaag naar direct constant root
+        BF_TEST(prog.result == "20");
+    }
+
     return 0;
 }
