@@ -437,8 +437,10 @@ void ApplyTempReuse(std::vector<Statement>& stmts) {
 // ============================
 
 void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t rootId) {
-    std::unordered_map<uint32_t, uint64_t> constValues;
-    ApplyPerfPass(stmts, rootId, constValues, 64U);
+    ApplyConstantFolding(stmts, 64U);
+    ApplyCSE(stmts);
+    ApplyDCE(stmts, rootId);
+    ApplyTempReuse(stmts);
 }
 
 void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t& rootId, std::unordered_map<uint32_t, uint64_t>& constValues,
