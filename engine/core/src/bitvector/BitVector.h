@@ -1,43 +1,43 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
-#include <string>
 #include <vector>
 
 namespace BitFlow::Core::BitVector {
 
-class BitVector {
+class bf_uint {
 public:
-    explicit BitVector(uint32_t bitWidth = 0);
-    BitVector(uint32_t bitWidth, uint64_t value);
+    bf_uint(uint32_t bitWidth);
+    bf_uint(uint64_t value, uint32_t bitWidth);
 
-    [[nodiscard]] uint32_t BitWidth() const noexcept;
-    [[nodiscard]] bool Empty() const noexcept;
+    uint32_t BitWidth() const noexcept;
 
-    [[nodiscard]] uint64_t Low64() const noexcept;
-    [[nodiscard]] std::string ToHexString() const;
+    // arithmetic
+    bf_uint operator+(const bf_uint& rhs) const;
+    bf_uint operator-(const bf_uint& rhs) const;
+    bf_uint operator*(const bf_uint& rhs) const;
+    bf_uint operator/(const bf_uint& rhs) const;
+    bf_uint operator%(const bf_uint& rhs) const;
 
-    void Clear() noexcept;
-    void SetFromU64(uint64_t value) noexcept;
+    // bitwise
+    bf_uint operator&(const bf_uint& rhs) const;
+    bf_uint operator|(const bf_uint& rhs) const;
+    bf_uint operator^(const bf_uint& rhs) const;
+    bf_uint operator~() const;
 
-    void NotInPlace() noexcept;
-    void AndInPlace(const BitVector& rhs);
-    void OrInPlace(const BitVector& rhs);
-    void XorInPlace(const BitVector& rhs);
+    // shifts
+    bf_uint Shl(uint32_t s) const;
+    bf_uint Shr(uint32_t s) const;
 
-    void AddInPlace(const BitVector& rhs);
-    void SubInPlace(const BitVector& rhs);
+    // rotates
+    bf_uint RotL(uint32_t s) const;
+    bf_uint RotR(uint32_t s) const;
 
 private:
-    static constexpr uint32_t kWordBits = 64U;
+    uint32_t m_bw;
+    std::vector<uint64_t> m_words;
 
-    [[nodiscard]] size_t WordCount() const noexcept;
-    void EnsureSameWidth(const BitVector& rhs) const;
-    void TrimExcessBits() noexcept;
-
-    uint32_t bitWidth_ = 0;
-    std::vector<uint64_t> words_{};
+    void Normalize(); // mask toepassen
 };
 
 } // namespace BitFlow::Core::BitVector
