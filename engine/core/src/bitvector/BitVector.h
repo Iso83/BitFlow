@@ -5,6 +5,10 @@
 
 namespace BitFlow::Core::BitVector {
 
+// Representatie:
+// - little-endian words: m_words[0] bevat de LSB 64 bits
+// - wordgrootte: 64-bit (uint64_t)
+// - aantal words: ceil(bitWidth / 64)
 class bf_uint {
 public:
     bf_uint(uint32_t bitWidth);

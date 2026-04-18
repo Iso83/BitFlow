@@ -1,12 +1,17 @@
 #include "bitvector/BitVector.h"
 
+#include <cstddef>
 #include <stdexcept>
 
 namespace BitFlow::Core::BitVector {
 namespace {
 
+constexpr uint32_t kWordBits = 64U;
+static_assert(sizeof(uint64_t) * 8U == kWordBits, "bf_uint verwacht 64-bit woorden");
+
 size_t WordCountFor(uint32_t bw) {
-    return static_cast<size_t>((bw + 63U) / 64U);
+    // ceil(bitWidth / 64)
+    return static_cast<size_t>((bw + (kWordBits - 1U)) / kWordBits);
 }
 
 void EnsureCompatible(const bf_uint& lhs, const bf_uint& rhs) {
@@ -19,6 +24,18 @@ uint32_t NormalizeShift(uint32_t shift, uint32_t bw) {
         return 0U;
 
     return shift % bw;
+}
+
+bool IsGreaterOrEqualWords(const std::vector<uint64_t>& lhs, const std::vector<uint64_t>& rhs) {
+    for (size_t i = lhs.size(); i-- > 0;) {
+        if (lhs[i] > rhs[i])
+            return true;
+
+        if (lhs[i] < rhs[i])
+            return false;
+    }
+
+    return true;
 }
 
 } // namespace
@@ -92,7 +109,7 @@ bf_uint bf_uint::operator*(const bf_uint& rhs) const {
                                           static_cast<uint64_t>(prod) + carry;
 
             out.m_words[k] = static_cast<uint64_t>(acc);
-            carry = static_cast<uint64_t>((prod >> 64U) + (acc >> 64U));
+            carry = static_cast<uint64_t>((prod >> kWordBits) + (acc >> kWordBits));
         }
     }
 
@@ -113,29 +130,13 @@ bf_uint bf_uint::operator/(const bf_uint& rhs) const {
     for (uint32_t bit = m_bw; bit-- > 0;) {
         remainder = remainder.Shl(1);
 
-        const uint32_t word = bit / 64U;
-        const uint32_t offset = bit % 64U;
+        const uint32_t word = bit / kWordBits;
+        const uint32_t offset = bit % kWordBits;
         const uint64_t bitValue = (m_words[word] >> offset) & 1ULL;
         if (!remainder.m_words.empty())
             remainder.m_words[0] |= bitValue;
 
-        // if remainder >= rhs then subtract and set quotient bit
-        bool ge = false;
-        for (size_t i = remainder.m_words.size(); i-- > 0;) {
-            if (remainder.m_words[i] > rhs.m_words[i]) {
-                ge = true;
-                break;
-            }
-
-            if (remainder.m_words[i] < rhs.m_words[i]) {
-                ge = false;
-                goto done_compare;
-            }
-        }
-        ge = true;
-
-    done_compare:
-        if (ge) {
+        if (IsGreaterOrEqualWords(remainder.m_words, rhs.m_words)) {
             remainder = remainder - rhs;
             quotient.m_words[word] |= (1ULL << offset);
         }
@@ -205,8 +206,8 @@ bf_uint bf_uint::Shl(uint32_t s) const {
         return out;
 
     const uint32_t shift = NormalizeShift(s, m_bw);
-    const uint32_t wordShift = shift / 64U;
-    const uint32_t bitShift = shift % 64U;
+    const uint32_t wordShift = shift / kWordBits;
+    const uint32_t bitShift = shift % kWordBits;
 
     for (size_t i = m_words.size(); i-- > 0;) {
         if (i < wordShift)
@@ -214,7 +215,7 @@ bf_uint bf_uint::Shl(uint32_t s) const {
 
         uint64_t value = m_words[i - wordShift] << bitShift;
         if (bitShift != 0U && i > wordShift)
-            value |= (m_words[i - wordShift - 1] >> (64U - bitShift));
+            value |= (m_words[i - wordShift - 1] >> (kWordBits - bitShift));
 
         out.m_words[i] = value;
     }
@@ -229,8 +230,8 @@ bf_uint bf_uint::Shr(uint32_t s) const {
         return out;
 
     const uint32_t shift = NormalizeShift(s, m_bw);
-    const uint32_t wordShift = shift / 64U;
-    const uint32_t bitShift = shift % 64U;
+    const uint32_t wordShift = shift / kWordBits;
+    const uint32_t bitShift = shift % kWordBits;
 
     for (size_t i = 0; i < m_words.size(); ++i) {
         const size_t src = i + wordShift;
@@ -239,7 +240,7 @@ bf_uint bf_uint::Shr(uint32_t s) const {
 
         uint64_t value = m_words[src] >> bitShift;
         if (bitShift != 0U && src + 1 < m_words.size())
-            value |= (m_words[src + 1] << (64U - bitShift));
+            value |= (m_words[src + 1] << (kWordBits - bitShift));
 
         out.m_words[i] = value;
     }
@@ -274,7 +275,7 @@ void bf_uint::Normalize() {
     if (m_words.empty())
         return;
 
-    const uint32_t remainder = m_bw % 64U;
+    const uint32_t remainder = m_bw % kWordBits;
     if (remainder == 0U)
         return;
 
