@@ -12,6 +12,11 @@ static uint64_t Mask64(uint32_t bits) {
     return (1ull << bits) - 1;
 }
 
+static void EnsureSameBitWidth(const bf_uint& lhs, const bf_uint& rhs) {
+    if (lhs.BitWidth() != rhs.BitWidth())
+        throw std::invalid_argument("bf_uint width mismatch");
+}
+
 bf_uint::bf_uint(uint32_t bw)
     : m_bw(bw) {
     m_words.resize((bw + 63) / 64, 0);
@@ -39,23 +44,32 @@ void bf_uint::Normalize() {
 }
 
 bf_uint bf_uint::operator&(const bf_uint& rhs) const {
+    EnsureSameBitWidth(*this, rhs);
+
     bf_uint r(m_bw);
     for (size_t i = 0; i < m_words.size(); ++i)
         r.m_words[i] = m_words[i] & rhs.m_words[i];
+    r.Normalize();
     return r;
 }
 
 bf_uint bf_uint::operator|(const bf_uint& rhs) const {
+    EnsureSameBitWidth(*this, rhs);
+
     bf_uint r(m_bw);
     for (size_t i = 0; i < m_words.size(); ++i)
         r.m_words[i] = m_words[i] | rhs.m_words[i];
+    r.Normalize();
     return r;
 }
 
 bf_uint bf_uint::operator^(const bf_uint& rhs) const {
+    EnsureSameBitWidth(*this, rhs);
+
     bf_uint r(m_bw);
     for (size_t i = 0; i < m_words.size(); ++i)
         r.m_words[i] = m_words[i] ^ rhs.m_words[i];
+    r.Normalize();
     return r;
 }
 
@@ -143,8 +157,7 @@ bf_uint bf_uint::RotR(uint32_t s) const {
 }
 
 bf_uint bf_uint::operator+(const bf_uint& rhs) const {
-    if (m_bw != rhs.m_bw)
-        throw std::invalid_argument("bf_uint width mismatch");
+    EnsureSameBitWidth(*this, rhs);
 
     bf_uint r(m_bw);
 
@@ -165,8 +178,7 @@ bf_uint bf_uint::operator+(const bf_uint& rhs) const {
 }
 
 bf_uint bf_uint::operator-(const bf_uint& rhs) const {
-    if (m_bw != rhs.m_bw)
-        throw std::invalid_argument("bf_uint width mismatch");
+    EnsureSameBitWidth(*this, rhs);
 
     bf_uint r(m_bw);
     uint64_t borrow = 0;
@@ -185,8 +197,7 @@ bf_uint bf_uint::operator-(const bf_uint& rhs) const {
 }
 
 bf_uint bf_uint::operator*(const bf_uint& rhs) const {
-    if (m_bw != rhs.m_bw)
-        throw std::invalid_argument("bf_uint width mismatch");
+    EnsureSameBitWidth(*this, rhs);
 
     if (m_bw == 0)
         return bf_uint(0);
@@ -205,8 +216,7 @@ bf_uint bf_uint::operator*(const bf_uint& rhs) const {
 }
 
 bf_uint bf_uint::operator/(const bf_uint& rhs) const {
-    if (m_bw != rhs.m_bw)
-        throw std::invalid_argument("bf_uint width mismatch");
+    EnsureSameBitWidth(*this, rhs);
 
     bool rhsIsZero = true;
     for (uint64_t w : rhs.m_words) {
@@ -254,8 +264,7 @@ bf_uint bf_uint::operator/(const bf_uint& rhs) const {
 }
 
 bf_uint bf_uint::operator%(const bf_uint& rhs) const {
-    if (m_bw != rhs.m_bw)
-        throw std::invalid_argument("bf_uint width mismatch");
+    EnsureSameBitWidth(*this, rhs);
 
     bool rhsIsZero = true;
     for (uint64_t w : rhs.m_words) {
