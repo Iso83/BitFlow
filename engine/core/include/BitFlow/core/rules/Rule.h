@@ -21,10 +21,12 @@ enum class RuleId {
 
     Simplify_MulOne,
     Simplify_DivOne,
+    Simplify_NegNeg,
 
     Simplify_XorZero,
 
     Simplify_AddFold,
+    Simplify_ArithmeticConstCombine,
     Simplify_AndFold,
     Simplify_OrFold,
     Simplify_XorFold,
@@ -53,6 +55,7 @@ enum class RuleId {
 
     Factorize_XorAnd,
     Factorize_XorPairCancel,
+    Factorize_AddCommonFactor,
     Factorize_AndAbsorb,
     Factorize_OrAbsorb,
     Factorize_Distribute
@@ -61,10 +64,6 @@ enum class RuleId {
 struct Rule {
     RuleId id;
     bool (*match)(const AST::Expr&);
-    // Rewrite contract:
-    // - return nullptr when no rewrite is applied
-    // - return a replacement Expr* when rewritten (preferred: fresh node)
-    // - returning the same input pointer is treated as a no-op by the engine
     AST::Expr* (*rewrite)(AST::Expr&);
     int stage;
 
@@ -72,90 +71,60 @@ struct Rule {
 };
 
 namespace Normalize {
-
-// Flatten (associativity)
 Rule Get_Flatten_Rule();
-
-// Order (canonical commutative ordering)
 Rule Get_Order_Rule();
-
 } // namespace Normalize
 
 namespace Simplify::Arithmetic {
+Rule Get_Add_Zero_Rule();
+Rule Get_Mul_One_Rule();
+Rule Get_Mul_Zero_Rule();
+Rule Get_Sub_Zero_Rule();
+Rule Get_Div_One_Rule();
+Rule Get_Mod_Zero_Guard_Rule();
+Rule Get_Shift_Zero_Rule();
+Rule Get_Rotate_Modulo_Bitwidth_Rule();
+Rule Get_Neg_Neg_Rule();
 
-// Identity / neutral (arithmetic)
-Rule Get_Add_Zero_Rule();               // deps: Normalize_Flatten
-Rule Get_Mul_One_Rule();                // deps: Normalize_Flatten
-Rule Get_Mul_Zero_Rule();               // deps: Normalize_Flatten
-Rule Get_Sub_Zero_Rule();               // deps: Normalize_Flatten
-Rule Get_Div_One_Rule();                // deps: Normalize_Flatten
-Rule Get_Mod_Zero_Guard_Rule();         // deps: Normalize_Flatten
-Rule Get_Shift_Zero_Rule();             // deps: Normalize_Flatten
-Rule Get_Rotate_Modulo_Bitwidth_Rule(); // deps: Normalize_Flatten
-
-// Constant folding (arithmetic)
-Rule Get_Add_Fold_Rule(); // deps: Normalize_Flatten
-
+Rule Get_Add_Fold_Rule();
+Rule Get_Const_Combine_Rule();
 } // namespace Simplify::Arithmetic
 
 namespace Simplify {
-
-// SHA patterns
-Rule Get_CH_Simplify_Rule();  // deps: Normalize_Flatten, Normalize_Order
-Rule Get_MAJ_Simplify_Rule(); // deps: Normalize_Flatten, Normalize_Order
-
+Rule Get_CH_Simplify_Rule();
+Rule Get_MAJ_Simplify_Rule();
 } // namespace Simplify
 
 namespace Simplify::Bitwise {
-
-// Identity / neutral
-Rule Get_Xor_Zero_Rule(); // deps: Normalize_Flatten
-
-// Constant folding
-Rule Get_And_Fold_Rule(); // deps: Normalize_Flatten
-Rule Get_Or_Fold_Rule();  // deps: Normalize_Flatten
-Rule Get_Xor_Fold_Rule(); // deps: Normalize_Flatten
-
-// Cancellation
-Rule Get_And_Cancel_Rule(); // deps: Normalize_Flatten
-Rule Get_Or_Cancel_Rule();  // deps: Normalize_Flatten
-Rule Get_Xor_Cancel_Rule(); // deps: Normalize_Flatten, Normalize_Order
-
-// NOT transforms
+Rule Get_Xor_Zero_Rule();
+Rule Get_And_Fold_Rule();
+Rule Get_Or_Fold_Rule();
+Rule Get_Xor_Fold_Rule();
+Rule Get_And_Cancel_Rule();
+Rule Get_Or_Cancel_Rule();
+Rule Get_Xor_Cancel_Rule();
 Rule Get_Not_Rule();
 Rule Get_NotPushdown_Rule();
-Rule Get_Not_Xor_Rule(); // deps: Normalize_Flatten
-
-// Idempotent
-Rule Get_Idempotent_Rule();     // deps: Normalize_Flatten
-Rule Get_And_Idempotent_Rule(); // deps: Normalize_Flatten
-
-// Complement
-Rule Get_Complement_Rule(); // deps: Normalize_Flatten, Simplify_Idempotent
-
-// Dominance / identity
-Rule Get_And_ZeroDominance_Rule(); // deps: Normalize_Flatten
-Rule Get_And_OneIdentity_Rule();   // deps: Normalize_Flatten
-Rule Get_Or_OneDominance_Rule();   // deps: Normalize_Flatten
-Rule Get_Or_ZeroIdentity_Rule();   // deps: Normalize_Flatten
-
+Rule Get_Not_Xor_Rule();
+Rule Get_Idempotent_Rule();
+Rule Get_And_Idempotent_Rule();
+Rule Get_Complement_Rule();
+Rule Get_And_ZeroDominance_Rule();
+Rule Get_And_OneIdentity_Rule();
+Rule Get_Or_OneDominance_Rule();
+Rule Get_Or_ZeroIdentity_Rule();
 } // namespace Simplify::Bitwise
 
+namespace Factorize::Arithmetic {
+Rule Get_Add_CommonFactor_Rule();
+}
+
 namespace Factorize::Bitwise {
-
-// Common factor
-Rule Get_Xor_And_Rule(); // deps: Normalize_Flatten, Normalize_Order
-
-// XOR pair cancel
-Rule Get_Xor_Pair_Cancel_Rule(); // deps: Normalize_Flatten, Simplify_XorCancel
-
-// Absorption
-Rule Get_And_Absorb_Rule(); // deps: Normalize_Flatten
-Rule Get_Or_Absorb_Rule();  // deps: Normalize_Flatten
-
-// Distribute
-Rule Get_Distribute_Rule(); // deps: Normalize_Flatten
-
+Rule Get_Xor_And_Rule();
+Rule Get_Xor_Pair_Cancel_Rule();
+Rule Get_And_Absorb_Rule();
+Rule Get_Or_Absorb_Rule();
+Rule Get_Distribute_Rule();
 } // namespace Factorize::Bitwise
 
 } // namespace BitFlow::Core::Rules

@@ -61,8 +61,29 @@ inline void Add_Factorize_Bitwise_Rules(RuleEngine& engine) {
     engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Or_Absorb_Rule());
 
-    // optional
-    // engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
+}
+
+// =========================================================
+// Simplify (Arithmetic)
+// =========================================================
+inline void Add_Simplify_Arithmetic_Rules(RuleEngine& engine) {
+    engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Sub_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Mul_One_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Mul_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Div_One_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Mod_Zero_Guard_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Neg_Neg_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Add_Fold_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Const_Combine_Rule());
+}
+
+// =========================================================
+// Factorize (Arithmetic)
+// =========================================================
+inline void Add_Factorize_Arithmetic_Rules(RuleEngine& engine) {
+    engine.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
 }
 
 // =========================================================

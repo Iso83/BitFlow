@@ -398,7 +398,7 @@ void ApplyDCE(std::vector<Statement>& stmts, uint32_t rootId) {
 // Temp reuse
 // ============================
 
-void ApplyTempReuse(std::vector<Statement>& stmts) {
+void ApplyTempReuse(std::vector<Statement>& stmts, uint32_t* rootId) {
     std::unordered_map<uint32_t, int> useCount;
 
     auto isTempId = [](uint32_t id) { return (id & (kVarTag | kConstTag)) == 0u; };
@@ -433,6 +433,11 @@ void ApplyTempReuse(std::vector<Statement>& stmts) {
             s.id = reuse;
         }
     }
+
+    if (rootId) {
+        while (remap.count(*rootId))
+            *rootId = remap[*rootId];
+    }
 }
 
 // ============================
@@ -443,15 +448,18 @@ void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t rootId) {
     ApplyConstantFolding(stmts, 64U);
     ApplyCSE(stmts);
     ApplyDCE(stmts, rootId);
-    ApplyTempReuse(stmts);
+    ApplyTempReuse(stmts, &rootId);
 }
 
 void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t& rootId, std::unordered_map<uint32_t, uint64_t>& constValues,
                    uint32_t bitWidth) {
-    ApplyConstantFoldWithMap(stmts, rootId, constValues, bitWidth);
+    // Keep folding semantics aligned with ConstantEval: fold only for 1..64 bit.
+    if (bitWidth >= 1U && bitWidth <= 64U)
+        ApplyConstantFoldWithMap(stmts, rootId, constValues, bitWidth);
+
     ApplyCSE(stmts);
     ApplyDCE(stmts, rootId);
-    ApplyTempReuse(stmts);
+    ApplyTempReuse(stmts, &rootId);
 }
 
 } // namespace BitFlow::Core::Codegen

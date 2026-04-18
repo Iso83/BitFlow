@@ -51,7 +51,7 @@ uint32_t InternConstValueId(Context& ctx, const std::string& value) {
 }
 
 uint64_t MaskFor(uint32_t bitWidth) {
-    if (bitWidth == 64U)
+    if (bitWidth >= 64U)
         return ~uint64_t{0};
     return (uint64_t{1} << bitWidth) - 1ULL;
 }
@@ -141,9 +141,9 @@ uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
     }
 
     if (e->op == OpType::Const) {
-        const uint64_t maskedValue = e->constValue & MaskFor(bw);
-        const uint32_t valueId = InternConstValueId(ctx, std::to_string(maskedValue));
-        ctx.constValues[valueId] = maskedValue;
+        const uint64_t value = (bw > 64U) ? static_cast<uint64_t>(e->constValue) : (e->constValue & MaskFor(bw));
+        const uint32_t valueId = InternConstValueId(ctx, std::to_string(value));
+        ctx.constValues[valueId] = value;
         ctx.cache[e] = valueId;
         return valueId;
     }
@@ -171,7 +171,7 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
     ApplyPerfPass(ctx.statements, resultId, ctx.constValues, bitWidth);
     for (const auto& [id, value] : ctx.constValues)
         if (!ctx.valueToExpr.count(id))
-            ctx.valueToExpr[id] = std::to_string(value & MaskFor(bitWidth));
+            ctx.valueToExpr[id] = (bitWidth > 64U) ? std::to_string(value) : std::to_string(value & MaskFor(bitWidth));
 
     prog.result = ValueExpr(resultId, ctx.valueToExpr);
     prog.results.push_back(prog.result);
