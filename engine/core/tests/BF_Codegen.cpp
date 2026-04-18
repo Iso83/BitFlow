@@ -102,23 +102,23 @@ int main() {
 
     // Case 9 — nieuwe API overload met default functienaam
     const auto defaultFn = Codegen::EmitCFunction(addExpr, 32);
-    BF_TEST(defaultFn.find("uint64_t f(uint64_t v1, uint64_t v2)") != std::string::npos);
+    BF_TEST(defaultFn.find("uint64_t eval(uint64_t v1, uint64_t v2)") != std::string::npos);
     BF_TEST(defaultFn.find("return ") != std::string::npos);
 
     // Case 9b — signature gebruikt sorted ids zonder duplicaten
     const auto dedupFn = Codegen::EmitCFunction(duplicateVarExpr, 32);
-    BF_TEST(dedupFn.find("uint64_t f(uint64_t v1, uint64_t v2)") != std::string::npos);
+    BF_TEST(dedupFn.find("uint64_t eval(uint64_t v1, uint64_t v2)") != std::string::npos);
 
     // Case 10 — body gebruikt SSA-locals en maskeert de return verplicht
     BF_TEST(defaultFn.find("uint64_t t0 = ") != std::string::npos);
-    BF_TEST(defaultFn.find("return ((t0) & ((1ull << 32) - 1ull));") != std::string::npos);
+    BF_TEST(defaultFn.find("return (t0) & ((1ull << 32) - 1);") != std::string::npos);
 
     // Case 11 — gevraagde basis test voor EmitCFunction
     auto a2 = MakeVar(1);
     auto b2 = MakeVar(2);
     auto expr = MakeOp(29, OpType::Add, {a2, b2});
     auto code = Codegen::EmitCFunction(expr, 32);
-    BF_TEST(code.find("uint64_t f(") != std::string::npos);
+    BF_TEST(code.find("uint64_t eval(") != std::string::npos);
     BF_TEST(code.find("v1") != std::string::npos);
     BF_TEST(code.find("v2") != std::string::npos);
 
