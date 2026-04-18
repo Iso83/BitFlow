@@ -1,6 +1,7 @@
 #include <BitFlow/core/bitvector/BitVector.h>
 
 #include <algorithm>
+#include <cstddef>
 
 namespace BitFlow::Core::BitVector {
 
@@ -34,6 +35,35 @@ void bf_uint::Normalize() {
     if (rem != 0) {
         m_words.back() &= Mask64(rem);
     }
+}
+
+bf_uint bf_uint::operator&(const bf_uint& rhs) const {
+    bf_uint r(m_bw);
+    for (size_t i = 0; i < m_words.size(); ++i)
+        r.m_words[i] = m_words[i] & rhs.m_words[i];
+    return r;
+}
+
+bf_uint bf_uint::operator|(const bf_uint& rhs) const {
+    bf_uint r(m_bw);
+    for (size_t i = 0; i < m_words.size(); ++i)
+        r.m_words[i] = m_words[i] | rhs.m_words[i];
+    return r;
+}
+
+bf_uint bf_uint::operator^(const bf_uint& rhs) const {
+    bf_uint r(m_bw);
+    for (size_t i = 0; i < m_words.size(); ++i)
+        r.m_words[i] = m_words[i] ^ rhs.m_words[i];
+    return r;
+}
+
+bf_uint bf_uint::operator~() const {
+    bf_uint r(m_bw);
+    for (size_t i = 0; i < m_words.size(); ++i)
+        r.m_words[i] = ~m_words[i];
+    r.Normalize();
+    return r;
 }
 
 } // namespace BitFlow::Core::BitVector
