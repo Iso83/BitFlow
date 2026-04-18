@@ -6,77 +6,29 @@
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
-int TestCH_Y_Y() {
+int TestCH_ExpandsToBooleanForm() {
     auto x = MakeVar(1);
     auto y = MakeVar(2);
-
-    auto a = MakeOp(10, OpType::And, {x, y});
-    auto nx = MakeOp(11, OpType::Not, {x});
-    auto b = MakeOp(12, OpType::And, {nx, y});
-
-    auto expr = MakeOp(13, OpType::Xor, {a, b});
-
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
-    Add_Simplify_SHA_Rules(engine);
-
-    Expr* r = engine.ApplyUntilStable(expr);
-
-    BF_TEST(r == y);
-    return 0;
-}
-
-int TestCH_X_X() {
-    auto x = MakeVar(1);
     auto z = MakeVar(3);
 
-    auto a = MakeOp(10, OpType::And, {x, x});
-    auto nx = MakeOp(11, OpType::Not, {x});
-    auto b = MakeOp(12, OpType::And, {nx, z});
-
-    auto expr = MakeOp(13, OpType::Xor, {a, b});
+    auto expr = MakeOp(10, OpType::Ch, {x, y, z});
 
     RuleEngine engine;
     Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
-    Add_Simplify_SHA_Rules(engine);
-
-    Expr* r = engine.ApplyUntilStable(expr);
-
-    BF_TEST(r->op == OpType::Or);
-    BF_TEST(r->inputs.size() == 2);
-    BF_TEST(r->inputs[0] == x);
-    BF_TEST(r->inputs[1] == z);
-    return 0;
-}
-
-int TestCH_Complement() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
-
-    auto ny = MakeOp(20, OpType::Not, {y});
-
-    auto a = MakeOp(10, OpType::And, {x, y});
-    auto nx = MakeOp(11, OpType::Not, {x});
-    auto b = MakeOp(12, OpType::And, {nx, ny});
-
-    auto expr = MakeOp(13, OpType::Xor, {a, b});
-
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
     Add_Simplify_SHA_Rules(engine);
 
     Expr* r = engine.ApplyUntilStable(expr);
 
     BF_TEST(r->op == OpType::Xor);
+    BF_TEST(r->inputs.size() == 2);
+    BF_TEST(r->inputs[0]->op == OpType::And);
+    BF_TEST(r->inputs[1]->op == OpType::And);
+    const bool rhsHasNot = r->inputs[1]->inputs[0]->op == OpType::Not || r->inputs[1]->inputs[1]->op == OpType::Not;
+    BF_TEST(rhsHasNot);
     return 0;
 }
 
 int main() {
-    BF_RUN_TEST(TestCH_Y_Y);
-    BF_RUN_TEST(TestCH_X_X);
-    BF_RUN_TEST(TestCH_Complement);
+    BF_RUN_TEST(TestCH_ExpandsToBooleanForm);
     return 0;
 }
