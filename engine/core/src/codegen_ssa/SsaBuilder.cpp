@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -120,34 +119,14 @@ void OptimizeStatements(std::vector<Statement>& statements, uint32_t& resultId) 
 
     ApplyCSE(statements);
 
-    std::unordered_set<uint32_t> live;
-    if (IsStatementId(resultId))
-        live.insert(resultId);
-
-    std::vector<Statement> dceRev;
-    dceRev.reserve(statements.size());
-
-    for (auto it = statements.rbegin(); it != statements.rend(); ++it) {
-        const Statement& st = *it;
-        if (live.find(st.id) == live.end())
-            continue;
-
-        live.erase(st.id);
-        for (uint32_t in : st.inputs)
-            if (IsStatementId(in))
-                live.insert(in);
-
-        dceRev.push_back(st);
-    }
-
-    std::reverse(dceRev.begin(), dceRev.end());
+    ApplyDCE(statements, resultId);
 
     std::unordered_map<uint32_t, uint32_t> compact;
     std::vector<Statement> compacted;
-    compacted.reserve(dceRev.size());
+    compacted.reserve(statements.size());
 
     uint32_t nextId = 0;
-    for (const Statement& st : dceRev) {
+    for (const Statement& st : statements) {
         Statement rewritten = st;
         for (uint32_t& in : rewritten.inputs) {
             auto it = compact.find(in);
