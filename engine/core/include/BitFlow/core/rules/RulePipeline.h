@@ -61,8 +61,7 @@ inline void Add_Factorize_Bitwise_Rules(RuleEngine& engine) {
     engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Or_Absorb_Rule());
 
-    // optional
-    // engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 }
 
 

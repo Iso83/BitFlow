@@ -44,6 +44,7 @@ static Expr* BuildXor(const std::vector<Expr*>& inputs) {
 
 #pragma endregion
 
+
 #pragma region Match
 
 static bool Match_Distribute_And_Over_Xor(const Expr& e) {
@@ -54,8 +55,17 @@ static bool Match_Distribute_And_Over_Xor(const Expr& e) {
         return false;
 
     for (const Expr* in : e.inputs) {
-        if (in->op == OpType::Xor && in->inputs.size() >= 2)
-            return true;
+        if (in->op != OpType::Xor || in->inputs.size() < 2)
+            continue;
+
+        const size_t termCount = in->inputs.size();
+        const size_t otherCount = e.inputs.size() - 1;
+
+        // beperkte distributie: voorkom explosie
+        if (termCount * (otherCount + 1) > 12)
+            continue;
+
+        return true;
     }
 
     return false;
