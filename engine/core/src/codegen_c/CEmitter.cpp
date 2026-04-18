@@ -14,7 +14,7 @@ static std::string MakeMask(uint32_t bw) {
     if (bw == 64)
         return "~0ull";
 
-    return "((1ull << " + std::to_string(bw) + ") - 1)";
+    return "((1ull << " + std::to_string(bw) + ") - 1ull)";
 }
 
 // verzamel variabelen (vX)
@@ -42,7 +42,7 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
     std::ostringstream ss;
 
     // signature
-    ss << "uint64_t eval(";
+    ss << "uint64_t f(";
 
     bool first = true;
     for (auto id : vars) {
@@ -60,7 +60,7 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
 
     // return
     std::string mask = MakeMask(bitWidth);
-    const std::string result = prog.result.empty() ? "0" : prog.result;
+    const std::string result = prog.result.empty() ? "0ull" : prog.result;
 
     ss << "    return (" << result << ") & " << mask << ";\n";
     ss << "}";
