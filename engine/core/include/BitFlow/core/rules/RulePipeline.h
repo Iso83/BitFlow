@@ -28,6 +28,11 @@ inline void Add_Simplify_Bitwise_Rules(RuleEngine& engine) {
     engine.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
 
+    // Reduction
+    engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Not_Reduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_And_Reduction_Rule());
+
     // Fold
     engine.AddRule(Simplify::Bitwise::Get_Xor_Fold_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Fold_Rule());
@@ -84,6 +89,7 @@ inline void Add_Simplify_Arithmetic_Rules(RuleEngine& engine) {
 // =========================================================
 inline void Add_Factorize_Arithmetic_Rules(RuleEngine& engine) {
     engine.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
+    engine.AddRule(Factorize::Arithmetic::Get_Mul_CombineConstants_Rule());
 }
 
 // =========================================================

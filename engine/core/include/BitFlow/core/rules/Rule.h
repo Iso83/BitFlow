@@ -42,6 +42,9 @@ enum class RuleId {
     Simplify_Idempotent,
     Simplify_And_Idempotent,
     Simplify_Complement,
+    Simplify_AndXorReduction,
+    Simplify_XorAndReduction,
+    Simplify_XorNotReduction,
 
     // Simplify - Dominance / Identity
     Simplify_AndZeroDominance,
@@ -56,6 +59,7 @@ enum class RuleId {
     Factorize_XorAnd,
     Factorize_XorPairCancel,
     Factorize_AddCommonFactor,
+    Factorize_MulCombineConstants,
     Factorize_AndAbsorb,
     Factorize_OrAbsorb,
     Factorize_Distribute
@@ -109,6 +113,9 @@ Rule Get_Not_Xor_Rule();
 Rule Get_Idempotent_Rule();
 Rule Get_And_Idempotent_Rule();
 Rule Get_Complement_Rule();
+Rule Get_And_Xor_Reduction_Rule();
+Rule Get_Xor_And_Reduction_Rule();
+Rule Get_Xor_Not_Reduction_Rule();
 Rule Get_And_ZeroDominance_Rule();
 Rule Get_And_OneIdentity_Rule();
 Rule Get_Or_OneDominance_Rule();
@@ -117,7 +124,8 @@ Rule Get_Or_ZeroIdentity_Rule();
 
 namespace Factorize::Arithmetic {
 Rule Get_Add_CommonFactor_Rule();
-}
+Rule Get_Mul_CombineConstants_Rule();
+} // namespace Factorize::Arithmetic
 
 namespace Factorize::Bitwise {
 Rule Get_Xor_And_Rule();
