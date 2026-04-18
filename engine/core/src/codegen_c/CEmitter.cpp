@@ -56,10 +56,11 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
     ss << ") {\n";
 
     for (const auto& st : prog.statements)
-        ss << "    " << ctype << " " << st.name << " = " << st.expr << ";\n";
+        ss << "    " << ctype << " " << st.name << " = (" << ctype << ")((" << st.expr << ") & (" << ctype << ")("
+           << mask << "));\n";
 
     const std::string result = prog.result.empty() ? "0" : prog.result;
-    ss << "    return (" << result << ") & " << mask << ";\n";
+    ss << "    return (" << ctype << ")((" << result << ") & (" << ctype << ")(" << mask << "));\n";
     ss << "}\n\n";
 
     ss << ctype << " f(";

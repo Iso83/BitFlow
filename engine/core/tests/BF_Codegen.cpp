@@ -111,7 +111,7 @@ int main() {
 
     // Case 10 — body gebruikt SSA-locals en maskeert de return verplicht
     BF_TEST(defaultFn.find("uint32_t t0 = ") != std::string::npos);
-    BF_TEST(defaultFn.find("return (t0) & 0xffffffffu;") != std::string::npos);
+    BF_TEST(defaultFn.find("return (uint32_t)((t0) & (uint32_t)(0xffffffffu));") != std::string::npos);
 
     // Case 11 — gevraagde basis test voor EmitCFunction
     auto a2 = MakeVar(1);
