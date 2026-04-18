@@ -21,6 +21,17 @@ namespace {
 #define BF_PCLOSE pclose
 #endif
 
+static int CompileCppSource(const std::string& file, const std::string& exe) {
+    int res = std::system(("g++ -std=c++20 " + file + " -o " + exe).c_str());
+    if (res != 0)
+        res = std::system(("c++ -std=c++20 " + file + " -o " + exe).c_str());
+#if defined(_WIN32)
+    if (res != 0)
+        res = std::system(("cl /nologo /std:c++20 /O2 /EHsc " + file + " /Fe:" + exe).c_str());
+#endif
+    return res;
+}
+
 static uint64_t CompileAndRun(const std::string& expr) {
     static std::atomic<uint64_t> counter{0};
     const uint64_t id = counter.fetch_add(1);
@@ -42,7 +53,7 @@ static uint64_t CompileAndRun(const std::string& expr) {
     out << "}\n";
     out.close();
 
-    int res = std::system(("c++ -std=c++20 " + file + " -o " + exe).c_str());
+    int res = CompileCppSource(file, exe);
     if (res != 0) {
         std::remove(file.c_str());
         return 0;
@@ -58,6 +69,9 @@ static uint64_t CompileAndRun(const std::string& expr) {
     if (!pipe) {
         std::remove(file.c_str());
         std::remove(exe.c_str());
+#if defined(_WIN32)
+        std::remove((base + ".obj").c_str());
+#endif
         return 0;
     }
 
@@ -66,12 +80,18 @@ static uint64_t CompileAndRun(const std::string& expr) {
         BF_PCLOSE(pipe);
         std::remove(file.c_str());
         std::remove(exe.c_str());
+#if defined(_WIN32)
+        std::remove((base + ".obj").c_str());
+#endif
         return 0;
     }
 
     BF_PCLOSE(pipe);
     std::remove(file.c_str());
     std::remove(exe.c_str());
+#if defined(_WIN32)
+    std::remove((base + ".obj").c_str());
+#endif
     return static_cast<uint64_t>(std::stoull(buffer));
 }
 
@@ -97,7 +117,7 @@ static uint64_t CompileAndRunWrapper(const std::string& wrapper, const std::stri
     out << "}\n";
     out.close();
 
-    int res = std::system(("c++ -std=c++20 " + file + " -o " + exe).c_str());
+    int res = CompileCppSource(file, exe);
     if (res != 0) {
         std::remove(file.c_str());
         return 0;
@@ -113,6 +133,9 @@ static uint64_t CompileAndRunWrapper(const std::string& wrapper, const std::stri
     if (!pipe) {
         std::remove(file.c_str());
         std::remove(exe.c_str());
+#if defined(_WIN32)
+        std::remove((base + ".obj").c_str());
+#endif
         return 0;
     }
 
@@ -121,12 +144,18 @@ static uint64_t CompileAndRunWrapper(const std::string& wrapper, const std::stri
         BF_PCLOSE(pipe);
         std::remove(file.c_str());
         std::remove(exe.c_str());
+#if defined(_WIN32)
+        std::remove((base + ".obj").c_str());
+#endif
         return 0;
     }
 
     BF_PCLOSE(pipe);
     std::remove(file.c_str());
     std::remove(exe.c_str());
+#if defined(_WIN32)
+    std::remove((base + ".obj").c_str());
+#endif
     return static_cast<uint64_t>(std::stoull(buffer));
 }
 
