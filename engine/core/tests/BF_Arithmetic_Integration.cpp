@@ -98,14 +98,17 @@ int TestFactorize_AddRepeatedTermCount() {
     Expr* result = engine.ApplyUntilStable(expr);
 
     BF_TEST(result->op == OpType::Mul);
-    bool hasThree = false;
+    BF_TEST(result->inputs.size() == 2);
+    bool hasSix = false;
+    bool hasA = false;
     for (auto* in : result->inputs) {
-        if (in->isConst() && in->constValue == 3u) {
-            hasThree = true;
-            break;
-        }
+        if (in->isConst() && in->constValue == 6u)
+            hasSix = true;
+        if (in->id == a->id)
+            hasA = true;
     }
-    BF_TEST(hasThree);
+    BF_TEST(hasSix);
+    BF_TEST(hasA);
     return 0;
 }
 
