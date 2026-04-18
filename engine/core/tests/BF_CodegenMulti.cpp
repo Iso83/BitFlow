@@ -42,7 +42,7 @@ int main() {
     auto sharedOut2 = MakeOp(22, OpType::And, {shared, d});
     const std::vector<const AST::Expr*> sharedOutputs = {sharedOut1, sharedOut2};
     const auto sharedCode = Codegen::EmitCFunctionMulti(sharedOutputs, 32);
-    BF_TEST(sharedCode.find("uint64_t t1 = ") != std::string::npos);
+    BF_TEST(sharedCode.find("uint32_t t1 = ") != std::string::npos);
     BF_TEST(CountSubstring(sharedCode, "^") == 1u);
     BF_TEST(sharedCode.find("r.out1 = ") != std::string::npos);
     BF_TEST(sharedCode.find("r.out2 = ") != std::string::npos);
@@ -53,9 +53,9 @@ int main() {
     auto leafConst = MakeConst(31, 7);
     const std::vector<const AST::Expr*> leafOutputs = {leafVar, leafConst};
     const auto leafCode = Codegen::EmitCFunctionMulti(leafOutputs, 32);
-    BF_TEST(leafCode.find("uint64_t t1 = v30;") == std::string::npos);
-    BF_TEST(leafCode.find("uint64_t t1 = 7ull;") == std::string::npos);
-    BF_TEST(leafCode.find("uint64_t t1 = ") == std::string::npos);
+    BF_TEST(leafCode.find("uint32_t t1 = v30;") == std::string::npos);
+    BF_TEST(leafCode.find("uint32_t t1 = 7ull;") == std::string::npos);
+    BF_TEST(leafCode.find("uint32_t t1 = ") == std::string::npos);
 
     // Case 4 — nested shared nodes
     auto s1 = MakeOp(40, OpType::Xor, {a, b});
@@ -64,8 +64,8 @@ int main() {
     auto nestedOut2 = MakeOp(43, OpType::Add, {s2, s1});
     const std::vector<const AST::Expr*> nestedOutputs = {nestedOut1, nestedOut2};
     const auto nestedCode = Codegen::EmitCFunctionMulti(nestedOutputs, 32);
-    const auto t1Pos = nestedCode.find("uint64_t t1 = ");
-    const auto t2Pos = nestedCode.find("uint64_t t2 = ");
+    const auto t1Pos = nestedCode.find("uint32_t t1 = ");
+    const auto t2Pos = nestedCode.find("uint32_t t2 = ");
     const auto out1Pos = nestedCode.find("r.out1 = ");
     BF_TEST(t1Pos != std::string::npos);
     BF_TEST(t2Pos != std::string::npos);

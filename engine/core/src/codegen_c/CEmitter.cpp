@@ -8,6 +8,14 @@ namespace BitFlow::Core::Codegen {
 
 using namespace AST;
 
+static std::string CTypeForBitWidth(uint32_t bitWidth) {
+    if (bitWidth <= 32U)
+        return "uint32_t";
+    if (bitWidth <= 64U)
+        return "uint64_t";
+    return "bf_bitvec_t";
+}
+
 static std::string MakeMask(uint32_t bw) {
     if (bw == 64)
         return "~0ull";
@@ -37,32 +45,33 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
 
     std::ostringstream ss;
     const std::string mask = MakeMask(bitWidth);
+    const std::string cType = CTypeForBitWidth(bitWidth);
 
-    ss << "uint64_t eval(";
+    ss << cType << " eval(";
 
     bool first = true;
     for (auto id : vars) {
         if (!first)
             ss << ", ";
-        ss << "uint64_t v" << id;
+        ss << cType << " v" << id;
         first = false;
     }
 
     ss << ") {\n";
 
     for (const auto& st : prog.statements)
-        ss << "    uint64_t " << st.name << " = ((" << st.expr << ")) & " << mask << ";\n";
+        ss << "    " << cType << " " << st.name << " = ((" << st.expr << ")) & " << mask << ";\n";
 
     const std::string result = prog.result.empty() ? "0" : prog.result;
     ss << "    return (" << result << ") & " << mask << ";\n";
     ss << "}\n\n";
 
-    ss << "uint64_t f(";
+    ss << cType << " f(";
     first = true;
     for (auto id : vars) {
         if (!first)
             ss << ", ";
-        ss << "uint64_t v" << id;
+        ss << cType << " v" << id;
         first = false;
     }
     ss << ") {\n";
