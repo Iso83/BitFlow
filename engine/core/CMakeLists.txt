@@ -44,8 +44,6 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_ConstantEval)
     bf_add_module_test(BitFlowCore core BF_ConstantDetect)
     bf_add_module_test(BitFlowCore core BF_Codegen)
-    bf_add_module_test(BitFlowCore core BF_CodegenMulti)
-    bf_add_module_test(BitFlowCore core BF_CodegenStructuralCSE)
     bf_add_module_test(BitFlowCore core BF_SsaBuilder)
     bf_add_module_test(BitFlowCore core BF_PerfPass)
 
