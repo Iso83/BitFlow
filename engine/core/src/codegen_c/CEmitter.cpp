@@ -57,6 +57,26 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
 
     const std::string result = prog.result.empty() ? "0" : prog.result;
     ss << "    return (" << result << ") & " << mask << ";\n";
+    ss << "}\n\n";
+
+    ss << "uint64_t f(";
+    first = true;
+    for (auto id : vars) {
+        if (!first)
+            ss << ", ";
+        ss << "uint64_t v" << id;
+        first = false;
+    }
+    ss << ") {\n";
+    ss << "    return eval(";
+    first = true;
+    for (auto id : vars) {
+        if (!first)
+            ss << ", ";
+        ss << "v" << id;
+        first = false;
+    }
+    ss << ");\n";
     ss << "}";
 
     return ss.str();
