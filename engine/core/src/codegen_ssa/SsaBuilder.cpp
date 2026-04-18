@@ -1,6 +1,9 @@
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
+
+#include "../codegen/PerfPass.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <string>
@@ -27,24 +30,6 @@ struct Context {
 
     std::unordered_map<uint32_t, std::string> valueToExpr;
     std::unordered_map<std::string, uint32_t> exprToConst;
-};
-
-struct StatementKey {
-    OpType op = OpType::Const;
-    std::vector<uint32_t> inputs;
-
-    bool operator==(const StatementKey& other) const {
-        return op == other.op && inputs == other.inputs;
-    }
-};
-
-struct StatementKeyHash {
-    size_t operator()(const StatementKey& key) const {
-        size_t h = static_cast<size_t>(key.op);
-        for (uint32_t in : key.inputs)
-            h = (h * 16777619u) ^ static_cast<size_t>(in + 0x9e3779b9u);
-        return h;
-    }
 };
 
 bool IsStatementId(uint32_t id) {
@@ -129,65 +114,20 @@ std::string BuildExpr(OpType op, const std::vector<std::string>& in) {
     }
 }
 
-uint32_t FindAlias(uint32_t id, std::unordered_map<uint32_t, uint32_t>& alias) {
-    auto it = alias.find(id);
-    if (it == alias.end())
-        return id;
-
-    uint32_t root = id;
-    while (true) {
-        auto next = alias.find(root);
-        if (next == alias.end() || next->second == root)
-            break;
-        root = next->second;
-    }
-
-    alias[id] = root;
-    return root;
-}
-
-void OptimizeStatements(std::vector<Statement>& statements, uint32_t& resultId, std::vector<uint32_t>& resultIds) {
+void OptimizeStatements(std::vector<Statement>& statements, uint32_t& resultId) {
     if (statements.empty())
         return;
 
-    std::unordered_map<uint32_t, uint32_t> alias;
-    std::unordered_map<StatementKey, uint32_t, StatementKeyHash> keyToId;
-
-    std::vector<Statement> cse;
-    cse.reserve(statements.size());
-
-    for (const Statement& st : statements) {
-        Statement canonical = st;
-        for (uint32_t& in : canonical.inputs)
-            in = FindAlias(in, alias);
-
-        StatementKey key{canonical.op, canonical.inputs};
-        auto it = keyToId.find(key);
-        if (it != keyToId.end()) {
-            alias[st.id] = it->second;
-            continue;
-        }
-
-        alias[st.id] = st.id;
-        keyToId.emplace(std::move(key), st.id);
-        cse.push_back(std::move(canonical));
-    }
-
-    resultId = FindAlias(resultId, alias);
-    for (uint32_t& out : resultIds)
-        out = FindAlias(out, alias);
+    ApplyCSE(statements);
 
     std::unordered_set<uint32_t> live;
     if (IsStatementId(resultId))
         live.insert(resultId);
-    for (uint32_t out : resultIds)
-        if (IsStatementId(out))
-            live.insert(out);
 
     std::vector<Statement> dceRev;
-    dceRev.reserve(cse.size());
+    dceRev.reserve(statements.size());
 
-    for (auto it = cse.rbegin(); it != cse.rend(); ++it) {
+    for (auto it = statements.rbegin(); it != statements.rend(); ++it) {
         const Statement& st = *it;
         if (live.find(st.id) == live.end())
             continue;
@@ -224,12 +164,6 @@ void OptimizeStatements(std::vector<Statement>& statements, uint32_t& resultId, 
     auto itResult = compact.find(resultId);
     if (itResult != compact.end())
         resultId = itResult->second;
-
-    for (uint32_t& out : resultIds) {
-        auto itOut = compact.find(out);
-        if (itOut != compact.end())
-            out = itOut->second;
-    }
 
     statements = std::move(compacted);
 }
@@ -281,9 +215,7 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
 
     Context ctx{};
     uint32_t resultId = Visit(root, bitWidth, ctx);
-    std::vector<uint32_t> resultIds = {resultId};
-
-    OptimizeStatements(ctx.statements, resultId, resultIds);
+    OptimizeStatements(ctx.statements, resultId);
 
     prog.result = ValueExpr(resultId, ctx.valueToExpr);
     prog.results.push_back(prog.result);
