@@ -6,6 +6,10 @@
 #include <unordered_set>
 
 namespace BitFlow::Core::Codegen {
+namespace {
+constexpr uint32_t kVarTag = 0x40000000u;
+constexpr uint32_t kConstTag = 0x80000000u;
+}
 
 // ============================
 // CSE
@@ -92,7 +96,7 @@ void ApplyDCE(std::vector<Statement>& stmts, uint32_t rootId) {
 void ApplyTempReuse(std::vector<Statement>& stmts) {
     std::unordered_map<uint32_t, int> useCount;
 
-    auto isTempId = [](uint32_t id) { return (id & 0x40000000u) == 0u; };
+    auto isTempId = [](uint32_t id) { return (id & (kVarTag | kConstTag)) == 0u; };
 
     for (auto& s : stmts)
         for (auto in : s.inputs)

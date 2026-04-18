@@ -78,5 +78,27 @@ int main() {
         BF_TEST(prog.results[0] == prog.result);
     }
 
+    // Stap 20.2 — statement-level constant folding for pure ops (all-const inputs only).
+    {
+        auto c250 = MakeConst(302, 250);
+        auto c10 = MakeConst(303, 10);
+        auto add = MakeOp(300, OpType::Add, {c250, c10}); // 260 -> 4 on 8-bit
+
+        auto prog = BuildSSA(add, 8);
+        BF_TEST(prog.statements.empty());
+        BF_TEST(prog.result == "4");
+    }
+
+    // Stap 20.2 — do not fold when not all inputs are constant.
+    {
+        auto v1 = MakeVar(1);
+        auto c1 = MakeConst(304, 1);
+        auto add = MakeOp(301, OpType::Add, {v1, c1});
+
+        auto prog = BuildSSA(add, 8);
+        BF_TEST(prog.statements.size() == 1u);
+        BF_TEST(prog.result == "t0");
+    }
+
     return 0;
 }
