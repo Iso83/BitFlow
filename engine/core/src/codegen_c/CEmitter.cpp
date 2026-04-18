@@ -41,33 +41,33 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
 
     std::ostringstream ss;
     const std::string mask = MakeMask(bitWidth);
-    const std::string cType = GetCType(bitWidth);
+    auto ctype = GetCType(bitWidth);
 
-    ss << cType << " eval(";
+    ss << ctype << " eval(";
 
     bool first = true;
     for (auto id : vars) {
         if (!first)
             ss << ", ";
-        ss << cType << " v" << id;
+        ss << ctype << " v" << id;
         first = false;
     }
 
     ss << ") {\n";
 
     for (const auto& st : prog.statements)
-        ss << "    " << cType << " " << st.name << " = ((" << st.expr << ")) & " << mask << ";\n";
+        ss << "    " << ctype << " " << st.name << " = " << st.expr << ";\n";
 
     const std::string result = prog.result.empty() ? "0" : prog.result;
     ss << "    return (" << result << ") & " << mask << ";\n";
     ss << "}\n\n";
 
-    ss << cType << " f(";
+    ss << ctype << " f(";
     first = true;
     for (auto id : vars) {
         if (!first)
             ss << ", ";
-        ss << cType << " v" << id;
+        ss << ctype << " v" << id;
         first = false;
     }
     ss << ") {\n";
