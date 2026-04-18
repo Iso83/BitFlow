@@ -3,12 +3,17 @@
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 #include <cstdint>
 #include <functional>
+#include <queue>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 namespace BitFlow::Core::Codegen {
+
+static bool IsTempId(uint32_t id) {
+    return (id & 0x40000000u) == 0u;
+}
 
 struct Key {
     uint32_t op;
@@ -75,6 +80,39 @@ void ApplyDCE(std::vector<Statement>& stmts, uint32_t rootId) {
             filtered.push_back(s);
 
     stmts.swap(filtered);
+}
+
+
+void ApplyTempReuse(std::vector<Statement>& stmts) {
+    std::unordered_map<uint32_t, int> useCount;
+
+    for (auto& s : stmts)
+        for (auto in : s.inputs)
+            if (IsTempId(in))
+                useCount[in]++;
+
+    std::queue<uint32_t> freeTemps;
+    std::unordered_map<uint32_t, uint32_t> remap;
+
+    for (auto& s : stmts) {
+        for (auto& in : s.inputs) {
+            if (remap.count(in))
+                in = remap[in];
+
+            if (!IsTempId(in))
+                continue;
+
+            if (--useCount[in] == 0)
+                freeTemps.push(in);
+        }
+
+        if (!freeTemps.empty()) {
+            uint32_t reuse = freeTemps.front();
+            freeTemps.pop();
+            remap[s.id] = reuse;
+            s.id = reuse;
+        }
+    }
 }
 
 } // namespace BitFlow::Core::Codegen

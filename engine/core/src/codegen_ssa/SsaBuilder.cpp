@@ -120,31 +120,10 @@ void OptimizeStatements(std::vector<Statement>& statements, uint32_t& resultId) 
     ApplyCSE(statements);
 
     ApplyDCE(statements, resultId);
+    ApplyTempReuse(statements);
 
-    std::unordered_map<uint32_t, uint32_t> compact;
-    std::vector<Statement> compacted;
-    compacted.reserve(statements.size());
-
-    uint32_t nextId = 0;
-    for (const Statement& st : statements) {
-        Statement rewritten = st;
-        for (uint32_t& in : rewritten.inputs) {
-            auto it = compact.find(in);
-            if (it != compact.end())
-                in = it->second;
-        }
-
-        const uint32_t newId = nextId++;
-        compact[st.id] = newId;
-        rewritten.id = newId;
-        compacted.push_back(std::move(rewritten));
-    }
-
-    auto itResult = compact.find(resultId);
-    if (itResult != compact.end())
-        resultId = itResult->second;
-
-    statements = std::move(compacted);
+    if (IsStatementId(resultId) && !statements.empty())
+        resultId = statements.back().id;
 }
 
 std::string ValueExpr(uint32_t valueId, const std::unordered_map<uint32_t, std::string>& valueToExpr) {
