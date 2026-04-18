@@ -54,5 +54,17 @@ int main() {
     BF_TEST(stmts.size() < beforeCount);
     BF_TEST(stmts.size() == 2u);
 
+    // CSE exact match only: (a ^ b) != (b ^ a)
+    {
+        std::vector<Codegen::Statement> exactOnly = {
+            {0u, static_cast<uint32_t>(AST::OpType::Xor), {VarId(7), VarId(8)}},
+            {1u, static_cast<uint32_t>(AST::OpType::Xor), {VarId(8), VarId(7)}},
+            {2u, static_cast<uint32_t>(AST::OpType::Add), {0u, 1u}}
+        };
+
+        Codegen::ApplyPerfPass(exactOnly, 2u);
+        BF_TEST(exactOnly.size() == 3u); // geen CSE op niet-exacte input-volgorde
+    }
+
     return 0;
 }
