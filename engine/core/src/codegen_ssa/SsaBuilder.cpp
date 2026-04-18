@@ -119,8 +119,6 @@ void OptimizeStatements(std::vector<Statement>& statements, uint32_t& resultId) 
 
     ApplyPerfPipeline(statements, resultId);
 
-    if (IsStatementId(resultId) && !statements.empty())
-        resultId = statements.back().id;
 }
 
 std::string ValueExpr(uint32_t valueId, const std::unordered_map<uint32_t, std::string>& valueToExpr) {

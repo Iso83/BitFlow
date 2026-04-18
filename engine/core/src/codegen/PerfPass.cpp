@@ -83,7 +83,7 @@ void ApplyDCE(std::vector<Statement>& stmts, uint32_t rootId) {
 }
 
 
-void ApplyTempReuse(std::vector<Statement>& stmts) {
+void ApplyTempReuse(std::vector<Statement>& stmts, uint32_t rootId) {
     std::unordered_map<uint32_t, int> useCount;
 
     for (auto& s : stmts)
@@ -102,11 +102,11 @@ void ApplyTempReuse(std::vector<Statement>& stmts) {
             if (!IsTempId(in))
                 continue;
 
-            if (--useCount[in] == 0)
+            if (--useCount[in] == 0 && in != rootId)
                 freeTemps.push(in);
         }
 
-        if (!freeTemps.empty()) {
+        if (s.id != rootId && !freeTemps.empty()) {
             uint32_t reuse = freeTemps.front();
             freeTemps.pop();
             remap[s.id] = reuse;
@@ -119,7 +119,7 @@ void ApplyTempReuse(std::vector<Statement>& stmts) {
 void ApplyPerfPipeline(std::vector<Statement>& stmts, uint32_t rootId) {
     ApplyCSE(stmts);
     ApplyDCE(stmts, rootId);
-    ApplyTempReuse(stmts);
+    ApplyTempReuse(stmts, rootId);
 }
 
 } // namespace BitFlow::Core::Codegen

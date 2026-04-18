@@ -10,7 +10,7 @@ struct Statement;
 
 void ApplyCSE(std::vector<Statement>& stmts);
 void ApplyDCE(std::vector<Statement>& stmts, uint32_t rootId);
-void ApplyTempReuse(std::vector<Statement>& stmts);
+void ApplyTempReuse(std::vector<Statement>& stmts, uint32_t rootId);
 void ApplyPerfPipeline(std::vector<Statement>& stmts, uint32_t rootId);
 
 } // namespace BitFlow::Core::Codegen
