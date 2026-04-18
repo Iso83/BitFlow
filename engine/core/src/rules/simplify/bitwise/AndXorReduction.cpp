@@ -4,6 +4,7 @@
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
@@ -12,54 +13,70 @@ using OpType = AST::OpType;
 using namespace BitFlow::Core::Expression;
 
 static bool Match_And_Xor_Reduction(const Expr& e) {
-    if (e.op != OpType::And || e.inputs.size() != 2)
+    if (e.op != OpType::And)
         return false;
 
-    const Expr* a = e.inputs[0];
-    const Expr* b = e.inputs[1];
+    for (size_t i = 0; i < e.inputs.size(); ++i) {
+        const Expr* x = e.inputs[i];
 
-    if (b->op == OpType::Xor && b->inputs.size() == 2) {
-        if (b->inputs[0]->id.value() == a->id.value() || b->inputs[1]->id.value() == a->id.value())
-            return true;
-    }
+        for (size_t j = 0; j < e.inputs.size(); ++j) {
+            if (i == j)
+                continue;
 
-    if (a->op == OpType::Xor && a->inputs.size() == 2) {
-        if (a->inputs[0]->id.value() == b->id.value() || a->inputs[1]->id.value() == b->id.value())
-            return true;
+            const Expr* other = e.inputs[j];
+            if (other->op != OpType::Xor || other->inputs.size() != 2)
+                continue;
+
+            if (other->inputs[0]->id.value() == x->id.value() || other->inputs[1]->id.value() == x->id.value())
+                return true;
+        }
     }
 
     return false;
 }
 
 static Expr* Rewrite_And_Xor_Reduction(Expr& e) {
-    Expr* x = nullptr;
-    Expr* y = nullptr;
+    for (size_t i = 0; i < e.inputs.size(); ++i) {
+        Expr* x = e.inputs[i];
 
-    Expr* a = e.inputs[0];
-    Expr* b = e.inputs[1];
+        for (size_t j = 0; j < e.inputs.size(); ++j) {
+            if (i == j)
+                continue;
 
-    if (b->op == OpType::Xor && b->inputs.size() == 2) {
-        if (b->inputs[0]->id.value() == a->id.value()) {
-            x = a;
-            y = b->inputs[1];
-        } else if (b->inputs[1]->id.value() == a->id.value()) {
-            x = a;
-            y = b->inputs[0];
-        }
-    } else if (a->op == OpType::Xor && a->inputs.size() == 2) {
-        if (a->inputs[0]->id.value() == b->id.value()) {
-            x = b;
-            y = a->inputs[1];
-        } else if (a->inputs[1]->id.value() == b->id.value()) {
-            x = b;
-            y = a->inputs[0];
+            Expr* other = e.inputs[j];
+            if (other->op != OpType::Xor || other->inputs.size() != 2)
+                continue;
+
+            Expr* y = nullptr;
+            if (other->inputs[0]->id.value() == x->id.value())
+                y = other->inputs[1];
+            else if (other->inputs[1]->id.value() == x->id.value())
+                y = other->inputs[0];
+
+            if (!y)
+                continue;
+
+            std::vector<Expr*> newInputs;
+            newInputs.reserve(e.inputs.size());
+
+            for (size_t k = 0; k < e.inputs.size(); ++k) {
+                if (k == j)
+                    continue;
+
+                if (k == i) {
+                    newInputs.push_back(x);
+                    newInputs.push_back(MakeOpInterned(OpType::Not, {y}));
+                    continue;
+                }
+
+                newInputs.push_back(e.inputs[k]);
+            }
+
+            return MakeOpInterned(OpType::And, std::move(newInputs));
         }
     }
 
-    if (!x || !y)
-        return nullptr;
-
-    return MakeOpInterned(OpType::And, {x, MakeOpInterned(OpType::Not, {y})});
+    return nullptr;
 }
 
 Rule Get_And_Xor_Reduction_Rule() {

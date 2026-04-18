@@ -5,6 +5,24 @@
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
 
+static bool HasInput(Expr* andExpr, Expr* needle) {
+    for (Expr* in : andExpr->inputs) {
+        if (in == needle)
+            return true;
+    }
+
+    return false;
+}
+
+static bool HasNotOf(Expr* andExpr, Expr* child) {
+    for (Expr* in : andExpr->inputs) {
+        if (in->op == OpType::Not && in->inputs.size() == 1 && in->inputs[0] == child)
+            return true;
+    }
+
+    return false;
+}
+
 int TestAndXorReduction_RightXor() {
     auto x = MakeVar(1);
     auto y = MakeVar(2);
@@ -20,10 +38,8 @@ int TestAndXorReduction_RightXor() {
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
-    BF_TEST(r->inputs[0] == x);
-    BF_TEST(r->inputs[1]->op == OpType::Not);
-    BF_TEST(r->inputs[1]->inputs.size() == 1);
-    BF_TEST(r->inputs[1]->inputs[0] == y);
+    BF_TEST(HasInput(r, x));
+    BF_TEST(HasNotOf(r, y));
     return 0;
 }
 
@@ -42,15 +58,41 @@ int TestAndXorReduction_LeftXor() {
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
-    BF_TEST(r->inputs[0] == x);
-    BF_TEST(r->inputs[1]->op == OpType::Not);
-    BF_TEST(r->inputs[1]->inputs.size() == 1);
-    BF_TEST(r->inputs[1]->inputs[0] == y);
+    BF_TEST(HasInput(r, x));
+    BF_TEST(HasNotOf(r, y));
+    return 0;
+}
+
+int TestAndXorReduction_MultiArgAnd() {
+    auto a = MakeVar(1);
+    auto b = MakeVar(2);
+    auto c = MakeVar(3);
+
+    auto axc = MakeOp(4, OpType::Xor, {a, c});
+    auto bxc = MakeOp(5, OpType::Xor, {b, c});
+    auto expr = MakeOp(6, OpType::And, {c, axc, bxc});
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
+
+    Expr* r = engine.ApplyUntilStable(expr);
+
+    BF_TEST(r->op == OpType::And);
+    BF_TEST(HasInput(r, c));
+    BF_TEST(HasNotOf(r, a));
+    BF_TEST(HasNotOf(r, b));
+
+    for (Expr* in : r->inputs)
+        BF_TEST(in->op != OpType::Xor);
+
     return 0;
 }
 
 int main() {
     BF_RUN_TEST(TestAndXorReduction_RightXor);
     BF_RUN_TEST(TestAndXorReduction_LeftXor);
+    BF_RUN_TEST(TestAndXorReduction_MultiArgAnd);
     return 0;
 }
