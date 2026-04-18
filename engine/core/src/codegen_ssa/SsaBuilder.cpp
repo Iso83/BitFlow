@@ -27,6 +27,7 @@ struct Context {
     uint32_t nextConstId = 0;
 
     std::unordered_map<uint32_t, std::string> valueToExpr;
+    std::unordered_map<uint32_t, uint64_t> constValues;
     std::unordered_map<std::string, uint32_t> exprToConst;
 };
 
@@ -47,6 +48,12 @@ uint32_t InternConstValueId(Context& ctx, const std::string& value) {
     ctx.exprToConst[value] = id;
     ctx.valueToExpr[id] = value;
     return id;
+}
+
+uint64_t MaskFor(uint32_t bitWidth) {
+    if (bitWidth == 64U)
+        return ~uint64_t{0};
+    return (uint64_t{1} << bitWidth) - 1ULL;
 }
 
 std::string LeafExpr(const Expr* e, uint32_t bw) {
@@ -134,7 +141,9 @@ uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
     }
 
     if (e->op == OpType::Const) {
-        const uint32_t valueId = InternConstValueId(ctx, LeafExpr(e, bw));
+        const uint64_t maskedValue = e->constValue & MaskFor(bw);
+        const uint32_t valueId = InternConstValueId(ctx, std::to_string(maskedValue));
+        ctx.constValues[valueId] = maskedValue;
         ctx.cache[e] = valueId;
         return valueId;
     }
@@ -159,7 +168,10 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
 
     Context ctx{};
     uint32_t resultId = Visit(root, bitWidth, ctx);
-    ApplyPerfPass(ctx.statements, resultId);
+    ApplyPerfPass(ctx.statements, resultId, ctx.constValues, bitWidth);
+    for (const auto& [id, value] : ctx.constValues)
+        if (!ctx.valueToExpr.count(id))
+            ctx.valueToExpr[id] = std::to_string(value & MaskFor(bitWidth));
 
     prog.result = ValueExpr(resultId, ctx.valueToExpr);
     prog.results.push_back(prog.result);

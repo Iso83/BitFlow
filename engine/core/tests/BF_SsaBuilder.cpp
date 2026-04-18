@@ -78,5 +78,40 @@ int main() {
         BF_TEST(prog.results[0] == prog.result);
     }
 
+    // Stap 20.2 — statement-level constant folding for pure ops (all-const inputs only).
+    {
+        auto c250 = MakeConst(302, 250);
+        auto c10 = MakeConst(303, 10);
+        auto add = MakeOp(300, OpType::Add, {c250, c10}); // 260 -> 4 on 8-bit
+
+        auto prog = BuildSSA(add, 8);
+        BF_TEST(prog.statements.empty());
+        BF_TEST(prog.result == "4");
+    }
+
+    // Stap 20.2 — do not fold when not all inputs are constant.
+    {
+        auto v1 = MakeVar(1);
+        auto c1 = MakeConst(304, 1);
+        auto add = MakeOp(301, OpType::Add, {v1, c1});
+
+        auto prog = BuildSSA(add, 8);
+        BF_TEST(prog.statements.size() == 1u);
+        BF_TEST(prog.result == "t0");
+    }
+
+    // Stap 20.8 — ((2 + 3) * 4) => 20, folded to direct constant root.
+    {
+        auto c2 = MakeConst(401, 2);
+        auto c3 = MakeConst(402, 3);
+        auto c4 = MakeConst(403, 4);
+        auto add = MakeOp(404, OpType::Add, {c2, c3});
+        auto mul = MakeOp(405, OpType::Mul, {add, c4});
+
+        auto prog = BuildSSA(mul, 8);
+        BF_TEST(prog.statements.empty()); // aantal statements omlaag naar direct constant root
+        BF_TEST(prog.result == "20");
+    }
+
     return 0;
 }
