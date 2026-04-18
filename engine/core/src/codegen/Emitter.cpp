@@ -1,6 +1,7 @@
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen/Emitter.h>
+#include <BitFlow/core/codegen/TypeMap.h>
 #include <algorithm>
 #include <cstddef>
 #include <functional>
@@ -18,14 +19,15 @@ using namespace AST;
 namespace {
 
 static constexpr const char* kUnsupportedExpr = "0ull /* unsupported */";
-static constexpr const char* kDefaultType = "uint64_t";
 
 static std::string MakeVarName(uint32_t id) {
     return "v" + std::to_string(id);
 }
 
-static std::string BitWidthLiteral(uint32_t bw) {
-    return std::to_string(bw) + "ull";
+static std::string ConstLiteral(uint32_t value, uint32_t bw) {
+    if (bw <= 32U)
+        return std::to_string(value) + "u";
+    return std::to_string(value) + "ull";
 }
 
 static int GetPrecedence(OpType op) {
@@ -89,30 +91,17 @@ static bool NeedsParens(OpType parentOp, const Expr* child, bool isRightChild) {
 }
 
 static std::string MakeMask(uint32_t bw) {
-    if (bw == 64)
-        return "0xffffffffffffffffull";
+    if (bw == 32)
+        return "0xffffffffu";
 
-    return "((1ull << " + std::to_string(bw) + ") - 1ull)";
+    if (bw == 64)
+        return "~0ull";
+
+    return "((1ull << " + std::to_string(bw) + ") - 1)";
 }
 
 static std::string ApplyMask(const std::string& expr, uint32_t bw) {
     return "((" + expr + ") & " + MakeMask(bw) + ")";
-}
-
-static std::string NormalizeShift(const std::string& rhs, uint32_t bw) {
-    return "((" + rhs + ") % " + BitWidthLiteral(bw) + ")";
-}
-
-static std::string MakeRotateExpr(const std::string& value, const std::string& shift, uint32_t bw, bool left) {
-    const std::string bwLiteral = BitWidthLiteral(bw);
-    const std::string mask = MakeMask(bw);
-
-    if (left)
-        return "(((" + value + " << " + shift + ") | (" + value + " >> (" + bwLiteral + " - " + shift + "))) & " +
-               mask + ")";
-
-    return "(((" + value + " >> " + shift + ") | (" + value + " << (" + bwLiteral + " - " + shift + "))) & " + mask +
-           ")";
 }
 
 static bool IsWrapped(const std::string& text) {
@@ -135,7 +124,7 @@ static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std
         return "";
 
     if (e->op == OpType::Const)
-        return ApplyMask(std::to_string(e->constValue) + "ull", bw);
+        return ApplyMask(ConstLiteral(e->constValue, bw), bw);
 
     if (e->op == OpType::Var)
         return ApplyMask(MakeVarName(e->id.value()), bw);
@@ -156,10 +145,11 @@ static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std
         std::string lhs = childExprs[0];
         for (size_t i = 1; i < childExprs.size(); ++i) {
             std::string rhs = childExprs[i];
-            std::string sh = NormalizeShift(rhs, bw);
             const Expr* leftExpr = (i == 1) ? e->inputs[0] : nullptr;
             const std::string lhsWrapped = MaybeWrapChild(lhs, e->op, leftExpr, false);
             const std::string rhsWrapped = MaybeWrapChild(rhs, e->op, e->inputs[i], true);
+            const std::string bwStr = std::to_string(bw);
+            const std::string shift = "(" + rhsWrapped + " & (" + bwStr + " - 1))";
 
             switch (e->op) {
             case OpType::Add:
@@ -187,17 +177,21 @@ static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std
                 lhs = ApplyMask(EmitBinary(lhsWrapped, "^", rhsWrapped), bw);
                 break;
             case OpType::Shl:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, "<<", sh), bw);
+                lhs = ApplyMask("(" + lhsWrapped + " << " + shift + ")", bw);
                 break;
             case OpType::Shr:
             case OpType::UShr:
-                lhs = ApplyMask(EmitBinary(lhsWrapped, ">>", sh), bw);
+                lhs = ApplyMask("(" + lhsWrapped + " >> " + shift + ")", bw);
                 break;
             case OpType::RotL:
-                lhs = MakeRotateExpr(lhs, sh, bw, true);
+                lhs = ApplyMask("((" + lhsWrapped + " << " + shift + ") | (" + lhsWrapped + " >> ((" + bwStr + " - " +
+                                    shift + ") & (" + bwStr + " - 1))))",
+                                bw);
                 break;
             case OpType::RotR:
-                lhs = MakeRotateExpr(lhs, sh, bw, false);
+                lhs = ApplyMask("((" + lhsWrapped + " >> " + shift + ") | (" + lhsWrapped + " << ((" + bwStr + " - " +
+                                    shift + ") & (" + bwStr + " - 1))))",
+                                bw);
                 break;
             default:
                 return "";
@@ -434,7 +428,7 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
             return kUnsupportedExpr;
 
         if (node->op == OpType::Const) {
-            std::string emitted = ApplyMask(std::to_string(node->constValue) + "ull", bw);
+            std::string emitted = ApplyMask(ConstLiteral(node->constValue, bw), bw);
             if (ShouldWrapForParent(node->op, parentPrec, isRightChild))
                 return "(" + emitted + ")";
             return emitted;
@@ -482,8 +476,7 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
         if (IsTempEligible(node, structuralUseCount) && representative == node) {
             const std::string tempName = "t" + std::to_string(tempState.nextTempId++);
             tempNamesByKey[nodeKey] = tempName;
-            statements.push_back("    " + std::string(kDefaultType) + " " + tempName + " = " + ApplyMask(emitted, bw) +
-                                 ";");
+            statements.push_back("    " + GetCType(bw) + " " + tempName + " = " + ApplyMask(emitted, bw) + ";");
             std::string result = tempName;
             if (ShouldWrapForParent(OpType::Var, parentPrec, isRightChild))
                 result = "(" + result + ")";
@@ -529,7 +522,6 @@ std::map<uint32_t, std::string> BuildVarNameMap(const Expr* root, const std::map
 }
 
 std::string EmitCParamList(const Expr* root, uint32_t bitWidth, const std::map<uint32_t, std::string>& varNames) {
-    (void)bitWidth;
     std::map<uint32_t, std::string> resolvedNames = BuildVarNameMap(root, varNames);
     std::string params;
     bool first = true;
@@ -537,7 +529,7 @@ std::string EmitCParamList(const Expr* root, uint32_t bitWidth, const std::map<u
         (void)id;
         if (!first)
             params += ", ";
-        params += std::string(kDefaultType) + " " + name;
+        params += GetCType(bitWidth) + " " + name;
         first = false;
     }
     return params;
@@ -554,7 +546,7 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth, const std::string
     }
 
     std::string out;
-    out += std::string(kDefaultType) + " " + functionName + "(";
+    out += GetCType(bitWidth) + " " + functionName + "(";
     out += EmitCParamList(root, bitWidth, varNames);
     out += ") {\n";
     out += "    return " + expr + ";\n";
@@ -626,7 +618,7 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
     std::string out;
     out += "struct Outputs {\n";
     for (size_t i = 0; i < outputs.size(); ++i)
-        out += "    uint64_t out" + std::to_string(i + 1) + ";\n";
+        out += "    " + GetCType(bitWidth) + " out" + std::to_string(i + 1) + ";\n";
     out += "};\n\n";
     out += "Outputs " + functionName + "(";
     bool first = true;
@@ -634,7 +626,7 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
         (void)id;
         if (!first)
             out += ", ";
-        out += std::string(kDefaultType) + " " + name;
+        out += GetCType(bitWidth) + " " + name;
         first = false;
     }
     out += ") {\n";
@@ -683,7 +675,7 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     std::string out;
     out += "struct Outputs {\n";
     for (size_t i = 0; i < roots.size(); ++i)
-        out += "    uint64_t out" + std::to_string(i + 1) + ";\n";
+        out += "    " + GetCType(bitWidth) + " out" + std::to_string(i + 1) + ";\n";
     out += "};\n\n";
     out += "Outputs " + functionName + "(";
     bool first = true;
@@ -691,7 +683,7 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
         (void)id;
         if (!first)
             out += ", ";
-        out += std::string(kDefaultType) + " " + name;
+        out += GetCType(bitWidth) + " " + name;
         first = false;
     }
     out += ") {\n";
