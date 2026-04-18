@@ -37,7 +37,11 @@ int main() {
 
     // identieke subtrees -> 1 compute
     BF_TEST(FindById(stmts, 1u) == nullptr);
-    const auto* root = FindById(stmts, 2u);
+    const Codegen::Statement* root = nullptr;
+    for (const auto& st : stmts)
+        if (st.op == static_cast<uint32_t>(AST::OpType::Add))
+            root = &st;
+
     BF_TEST(root != nullptr);
     BF_TEST(root->inputs.size() == 2u);
     BF_TEST(root->inputs[0] == 0u);
