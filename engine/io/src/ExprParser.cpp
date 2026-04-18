@@ -249,6 +249,19 @@ class PrattParser {
             return MakeOp(OpType::RotR, {args[0], args[1]});
         }
 
+        if (identifier.text == "ch") {
+            if (args.size() != 3)
+                throw ParseErrorAt("Function ch expects exactly 3 arguments", identifier);
+            return MakeOp(OpType::Ch, {args[0], args[1], args[2]});
+        }
+
+        if (identifier.text == "maj") {
+            if (args.size() != 3)
+                throw ParseErrorAt("Function maj expects exactly 3 arguments", identifier);
+            return MakeOp(OpType::Maj, {args[0], args[1], args[2]});
+        }
+
+
         throw ParseErrorAt("Unknown function: " + identifier.text, identifier);
     }
 

@@ -66,6 +66,31 @@ int TestExprParser_ParsesRotlCall() {
     return 0;
 }
 
+
+int TestExprParser_ParsesChCall() {
+    auto parsed = BitFlow::IO::Parse("ch(a, b, c)");
+    Expr* root = parsed.root;
+
+    BF_TEST(root->op == OpType::Ch);
+    BF_TEST(root->inputs.size() == 3);
+    BF_TEST(root->inputs[0]->op == OpType::Var);
+    BF_TEST(root->inputs[1]->op == OpType::Var);
+    BF_TEST(root->inputs[2]->op == OpType::Var);
+    return 0;
+}
+
+int TestExprParser_ParsesMajCall() {
+    auto parsed = BitFlow::IO::Parse("maj(x, y, z)");
+    Expr* root = parsed.root;
+
+    BF_TEST(root->op == OpType::Maj);
+    BF_TEST(root->inputs.size() == 3);
+    BF_TEST(root->inputs[0]->op == OpType::Var);
+    BF_TEST(root->inputs[1]->op == OpType::Var);
+    BF_TEST(root->inputs[2]->op == OpType::Var);
+    return 0;
+}
+
 int TestExprParser_MixedExpressionShape() {
     auto parsed = BitFlow::IO::Parse("~a ^ b & (c + 3) << 2");
     Expr* root = parsed.root;
@@ -95,6 +120,8 @@ int main() {
     BF_RUN_TEST(TestExprParser_ParsesUnaryAndBinaryMinus);
     BF_RUN_TEST(TestExprParser_ParsesRotrCall);
     BF_RUN_TEST(TestExprParser_ParsesRotlCall);
+    BF_RUN_TEST(TestExprParser_ParsesChCall);
+    BF_RUN_TEST(TestExprParser_ParsesMajCall);
     BF_RUN_TEST(TestExprParser_MixedExpressionShape);
     BF_RUN_TEST(TestExprParser_ShiftOperators);
     return 0;
