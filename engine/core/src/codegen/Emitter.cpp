@@ -1,6 +1,7 @@
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen/Emitter.h>
+#include <BitFlow/core/codegen/TypeMap.h>
 #include <algorithm>
 #include <cstddef>
 #include <functional>
@@ -18,14 +19,6 @@ using namespace AST;
 namespace {
 
 static constexpr const char* kUnsupportedExpr = "0ull /* unsupported */";
-
-static std::string CTypeForBitWidth(uint32_t bitWidth) {
-    if (bitWidth <= 32U)
-        return "uint32_t";
-    if (bitWidth <= 64U)
-        return "uint64_t";
-    return "bf_bitvec_t";
-}
 
 static std::string MakeVarName(uint32_t id) {
     return "v" + std::to_string(id);
@@ -489,7 +482,7 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
         if (IsTempEligible(node, structuralUseCount) && representative == node) {
             const std::string tempName = "t" + std::to_string(tempState.nextTempId++);
             tempNamesByKey[nodeKey] = tempName;
-            statements.push_back("    " + CTypeForBitWidth(bw) + " " + tempName + " = " + ApplyMask(emitted, bw) + ";");
+            statements.push_back("    " + GetCType(bw) + " " + tempName + " = " + ApplyMask(emitted, bw) + ";");
             std::string result = tempName;
             if (ShouldWrapForParent(OpType::Var, parentPrec, isRightChild))
                 result = "(" + result + ")";
@@ -542,7 +535,7 @@ std::string EmitCParamList(const Expr* root, uint32_t bitWidth, const std::map<u
         (void)id;
         if (!first)
             params += ", ";
-        params += CTypeForBitWidth(bitWidth) + " " + name;
+        params += GetCType(bitWidth) + " " + name;
         first = false;
     }
     return params;
@@ -559,7 +552,7 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth, const std::string
     }
 
     std::string out;
-    out += CTypeForBitWidth(bitWidth) + " " + functionName + "(";
+    out += GetCType(bitWidth) + " " + functionName + "(";
     out += EmitCParamList(root, bitWidth, varNames);
     out += ") {\n";
     out += "    return " + expr + ";\n";
@@ -631,7 +624,7 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
     std::string out;
     out += "struct Outputs {\n";
     for (size_t i = 0; i < outputs.size(); ++i)
-        out += "    " + CTypeForBitWidth(bitWidth) + " out" + std::to_string(i + 1) + ";\n";
+        out += "    " + GetCType(bitWidth) + " out" + std::to_string(i + 1) + ";\n";
     out += "};\n\n";
     out += "Outputs " + functionName + "(";
     bool first = true;
@@ -639,7 +632,7 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& outputs, uint32_t
         (void)id;
         if (!first)
             out += ", ";
-        out += CTypeForBitWidth(bitWidth) + " " + name;
+        out += GetCType(bitWidth) + " " + name;
         first = false;
     }
     out += ") {\n";
@@ -688,7 +681,7 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
     std::string out;
     out += "struct Outputs {\n";
     for (size_t i = 0; i < roots.size(); ++i)
-        out += "    " + CTypeForBitWidth(bitWidth) + " out" + std::to_string(i + 1) + ";\n";
+        out += "    " + GetCType(bitWidth) + " out" + std::to_string(i + 1) + ";\n";
     out += "};\n\n";
     out += "Outputs " + functionName + "(";
     bool first = true;
@@ -696,7 +689,7 @@ std::string EmitCFunction(const std::vector<const Expr*>& roots, uint32_t bitWid
         (void)id;
         if (!first)
             out += ", ";
-        out += CTypeForBitWidth(bitWidth) + " " + name;
+        out += GetCType(bitWidth) + " " + name;
         first = false;
     }
     out += ") {\n";

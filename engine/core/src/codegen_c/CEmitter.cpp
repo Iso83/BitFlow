@@ -1,4 +1,5 @@
 #include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/codegen/TypeMap.h>
 #include <BitFlow/core/codegen_c/CEmitter.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 #include <set>
@@ -7,14 +8,6 @@
 namespace BitFlow::Core::Codegen {
 
 using namespace AST;
-
-static std::string CTypeForBitWidth(uint32_t bitWidth) {
-    if (bitWidth <= 32U)
-        return "uint32_t";
-    if (bitWidth <= 64U)
-        return "uint64_t";
-    return "bf_bitvec_t";
-}
 
 static std::string MakeMask(uint32_t bw) {
     if (bw == 64)
@@ -45,7 +38,7 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
 
     std::ostringstream ss;
     const std::string mask = MakeMask(bitWidth);
-    const std::string cType = CTypeForBitWidth(bitWidth);
+    const std::string cType = GetCType(bitWidth);
 
     ss << cType << " eval(";
 
