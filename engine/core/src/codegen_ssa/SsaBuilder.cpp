@@ -117,10 +117,7 @@ void OptimizeStatements(std::vector<Statement>& statements, uint32_t& resultId) 
     if (statements.empty())
         return;
 
-    ApplyCSE(statements);
-
-    ApplyDCE(statements, resultId);
-    ApplyTempReuse(statements);
+    ApplyPerfPipeline(statements, resultId);
 
     if (IsStatementId(resultId) && !statements.empty())
         resultId = statements.back().id;

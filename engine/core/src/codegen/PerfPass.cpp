@@ -115,4 +115,11 @@ void ApplyTempReuse(std::vector<Statement>& stmts) {
     }
 }
 
+
+void ApplyPerfPipeline(std::vector<Statement>& stmts, uint32_t rootId) {
+    ApplyCSE(stmts);
+    ApplyDCE(stmts, rootId);
+    ApplyTempReuse(stmts);
+}
+
 } // namespace BitFlow::Core::Codegen
