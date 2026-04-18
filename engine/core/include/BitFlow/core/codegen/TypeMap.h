@@ -10,7 +10,9 @@ inline std::string GetCType(uint32_t bw) {
         return "uint32_t";
     if (bw <= 64U)
         return "uint64_t";
-    return "bf_uint"; // placeholder (Stap 17)
+    if (bw > 64U)
+        return "bf_uint";
+    return "uint64_t";
 }
 
 } // namespace BitFlow::Core::Codegen

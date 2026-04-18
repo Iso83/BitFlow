@@ -1,4 +1,5 @@
 #include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/bitvector/BitVector.h>
 #include <BitFlow/core/codegen/TypeMap.h>
 #include <BitFlow/core/codegen_c/CEmitter.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
@@ -40,8 +41,9 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
     CollectVars(root, vars);
 
     std::ostringstream ss;
-    const std::string mask = MakeMask(bitWidth);
     auto ctype = GetCType(bitWidth);
+    const bool useBfUint = (bitWidth > 64U);
+    const std::string mask = MakeMask(bitWidth);
 
     ss << ctype << " eval(";
 
@@ -55,12 +57,22 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
 
     ss << ") {\n";
 
-    for (const auto& st : prog.statements)
-        ss << "    " << ctype << " " << st.name << " = (" << ctype << ")((" << st.expr << ") & (" << ctype << ")("
-           << mask << "));\n";
+    for (const auto& st : prog.statements) {
+        if (useBfUint)
+            ss << "    " << ctype << " " << st.name << " = " << st.expr << ";\n";
+        else
+            ss << "    " << ctype << " " << st.name << " = (" << ctype << ")((" << st.expr << ") & (" << ctype
+               << ")(" << mask << "));\n";
+    }
 
-    const std::string result = prog.result.empty() ? "0" : prog.result;
-    ss << "    return (" << ctype << ")((" << result << ") & (" << ctype << ")(" << mask << "));\n";
+    const std::string result = prog.result.empty()
+                                   ? (useBfUint ? "bf_uint(0ull, " + std::to_string(bitWidth) + ")" : "0")
+                                   : prog.result;
+
+    if (useBfUint)
+        ss << "    return " << result << ";\n";
+    else
+        ss << "    return (" << ctype << ")((" << result << ") & (" << ctype << ")(" << mask << "));\n";
     ss << "}\n\n";
 
     ss << ctype << " f(";
