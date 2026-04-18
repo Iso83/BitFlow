@@ -27,7 +27,7 @@ struct Context {
     uint32_t nextConstId = 0;
 
     std::unordered_map<uint32_t, std::string> valueToExpr;
-    std::unordered_map<uint32_t, uint64_t> valueToConst;
+    std::unordered_map<uint32_t, uint64_t> constValues;
     std::unordered_map<std::string, uint32_t> exprToConst;
 };
 
@@ -50,18 +50,10 @@ uint32_t InternConstValueId(Context& ctx, const std::string& value) {
     return id;
 }
 
-bool IsConstValueId(uint32_t id) {
-    return (id & kConstTag) != 0u;
-}
-
 uint64_t MaskFor(uint32_t bitWidth) {
     if (bitWidth == 64U)
         return ~uint64_t{0};
     return (uint64_t{1} << bitWidth) - 1ULL;
-}
-
-uint32_t NormalizeShift(uint64_t amount, uint32_t bitWidth) {
-    return static_cast<uint32_t>(amount % static_cast<uint64_t>(bitWidth));
 }
 
 std::string LeafExpr(const Expr* e, uint32_t bw) {
@@ -136,128 +128,6 @@ std::string ValueExpr(uint32_t valueId, const std::unordered_map<uint32_t, std::
     return "0";
 }
 
-bool TryFoldPureOp(OpType op, const std::vector<uint64_t>& in, uint32_t bitWidth, uint64_t& outValue) {
-    const uint64_t mask = MaskFor(bitWidth);
-
-    switch (op) {
-    case OpType::Not:
-        if (in.size() != 1)
-            return false;
-        outValue = (~in[0]) & mask;
-        return true;
-    case OpType::Neg:
-        if (in.size() != 1)
-            return false;
-        outValue = (~in[0] + 1ULL) & mask;
-        return true;
-    case OpType::And:
-    case OpType::Or:
-    case OpType::Xor:
-    case OpType::Add:
-    case OpType::Mul: {
-        if (in.empty())
-            return false;
-
-        uint64_t acc = in[0] & mask;
-        for (size_t i = 1; i < in.size(); ++i) {
-            switch (op) {
-            case OpType::And:
-                acc &= in[i];
-                break;
-            case OpType::Or:
-                acc |= in[i];
-                break;
-            case OpType::Xor:
-                acc ^= in[i];
-                break;
-            case OpType::Add:
-                acc += in[i];
-                break;
-            case OpType::Mul:
-                acc *= in[i];
-                break;
-            default:
-                return false;
-            }
-            acc &= mask;
-        }
-        outValue = acc;
-        return true;
-    }
-    case OpType::Sub:
-    case OpType::Div:
-    case OpType::Mod:
-    case OpType::Shl:
-    case OpType::Shr:
-    case OpType::UShr:
-    case OpType::RotL:
-    case OpType::RotR: {
-        if (in.size() != 2)
-            return false;
-
-        const uint64_t a = in[0] & mask;
-        const uint64_t b = in[1] & mask;
-
-        switch (op) {
-        case OpType::Sub:
-            outValue = (a - b) & mask;
-            return true;
-        case OpType::Div:
-            if (b == 0)
-                return false;
-            outValue = (a / b) & mask;
-            return true;
-        case OpType::Mod:
-            if (b == 0)
-                return false;
-            outValue = (a % b) & mask;
-            return true;
-        case OpType::Shl:
-            outValue = ((a << NormalizeShift(b, bitWidth)) & mask);
-            return true;
-        case OpType::Shr:
-        case OpType::UShr:
-            outValue = ((a >> NormalizeShift(b, bitWidth)) & mask);
-            return true;
-        case OpType::RotL: {
-            const uint32_t shift = NormalizeShift(b, bitWidth);
-            if (shift == 0) {
-                outValue = a;
-                return true;
-            }
-            outValue = (((a << shift) | (a >> (bitWidth - shift))) & mask);
-            return true;
-        }
-        case OpType::RotR: {
-            const uint32_t shift = NormalizeShift(b, bitWidth);
-            if (shift == 0) {
-                outValue = a;
-                return true;
-            }
-            outValue = (((a >> shift) | (a << (bitWidth - shift))) & mask);
-            return true;
-        }
-        default:
-            return false;
-        }
-    }
-    case OpType::Ch:
-    case OpType::Maj:
-        if (in.size() != 3)
-            return false;
-        if (op == OpType::Ch) {
-            outValue = ((in[0] & in[1]) ^ ((~in[0]) & in[2])) & mask;
-            return true;
-        }
-        outValue = ((in[0] & in[1]) ^ (in[0] & in[2]) ^ (in[1] & in[2])) & mask;
-        return true;
-    case OpType::Var:
-    case OpType::Const:
-    default:
-        return false;
-    }
-}
-
 uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
     auto it = ctx.cache.find(e);
     if (it != ctx.cache.end())
@@ -273,7 +143,7 @@ uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
     if (e->op == OpType::Const) {
         const uint64_t maskedValue = e->constValue & MaskFor(bw);
         const uint32_t valueId = InternConstValueId(ctx, std::to_string(maskedValue));
-        ctx.valueToConst[valueId] = maskedValue;
+        ctx.constValues[valueId] = maskedValue;
         ctx.cache[e] = valueId;
         return valueId;
     }
@@ -282,37 +152,6 @@ uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
     inputs.reserve(e->inputs.size());
     for (const Expr* in : e->inputs)
         inputs.push_back(Visit(in, bw, ctx));
-
-    // Stap 20.2 — statement-level constant folding:
-    // - only pure ops
-    // - only when all inputs are constant
-    // - always masked to bitWidth
-    bool allInputsConst = !inputs.empty();
-    std::vector<uint64_t> constInputs;
-    constInputs.reserve(inputs.size());
-    for (uint32_t in : inputs) {
-        if (!IsConstValueId(in)) {
-            allInputsConst = false;
-            break;
-        }
-        auto itConst = ctx.valueToConst.find(in);
-        if (itConst == ctx.valueToConst.end()) {
-            allInputsConst = false;
-            break;
-        }
-        constInputs.push_back(itConst->second);
-    }
-
-    if (allInputsConst) {
-        uint64_t folded = 0;
-        if (TryFoldPureOp(e->op, constInputs, bw, folded)) {
-            const uint64_t masked = folded & MaskFor(bw);
-            const uint32_t valueId = InternConstValueId(ctx, std::to_string(masked));
-            ctx.valueToConst[valueId] = masked;
-            ctx.cache[e] = valueId;
-            return valueId;
-        }
-    }
 
     const uint32_t id = ctx.nextStmtId++;
     ctx.statements.push_back({id, static_cast<uint32_t>(e->op), inputs});
@@ -329,7 +168,10 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
 
     Context ctx{};
     uint32_t resultId = Visit(root, bitWidth, ctx);
-    ApplyPerfPass(ctx.statements, resultId);
+    ApplyPerfPass(ctx.statements, resultId, ctx.constValues, bitWidth);
+    for (const auto& [id, value] : ctx.constValues)
+        if (!ctx.valueToExpr.count(id))
+            ctx.valueToExpr[id] = std::to_string(value & MaskFor(bitWidth));
 
     prog.result = ValueExpr(resultId, ctx.valueToExpr);
     prog.results.push_back(prog.result);

@@ -4,6 +4,7 @@
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 #include <TestAssert.h>
 #include <cstdint>
+#include <unordered_map>
 #include <vector>
 
 using namespace BitFlow::Core;
@@ -62,6 +63,27 @@ int main() {
 
         Codegen::ApplyPerfPass(exactOnly, 2u);
         BF_TEST(exactOnly.size() == 3u); // geen CSE op niet-exacte input-volgorde
+    }
+
+    // Stap 20.3 — constant tracking via constValues map (statement-level fold).
+    {
+        constexpr uint32_t kConstTag = 0x80000000u;
+        uint32_t rootId = 1u;
+        std::unordered_map<uint32_t, uint64_t> constValues = {
+            {kConstTag | 1u, 250u},
+            {kConstTag | 2u, 10u},
+        };
+
+        std::vector<Codegen::Statement> foldable = {
+            {0u, static_cast<uint32_t>(AST::OpType::Add), {kConstTag | 1u, kConstTag | 2u}},
+            {1u, static_cast<uint32_t>(AST::OpType::Xor), {0u, kConstTag | 2u}},
+        };
+
+        Codegen::ApplyPerfPass(foldable, rootId, constValues, 8u);
+        BF_TEST(foldable.empty());
+        BF_TEST((rootId & kConstTag) != 0u);
+        BF_TEST(constValues.count(rootId) == 1u);
+        BF_TEST(constValues[rootId] == 14u); // ((250+10)&0xFF) ^ 10 = 14
     }
 
     return 0;

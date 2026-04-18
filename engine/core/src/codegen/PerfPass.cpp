@@ -1,5 +1,6 @@
 #include "PerfPass.h"
 
+#include <BitFlow/core/ast/OpType.h>
 #include <functional>
 #include <queue>
 #include <unordered_map>
@@ -9,6 +10,150 @@ namespace BitFlow::Core::Codegen {
 namespace {
 constexpr uint32_t kVarTag = 0x40000000u;
 constexpr uint32_t kConstTag = 0x80000000u;
+
+uint64_t MaskFor(uint32_t bitWidth) {
+    if (bitWidth == 64U)
+        return ~uint64_t{0};
+    return (uint64_t{1} << bitWidth) - 1ULL;
+}
+
+uint32_t NormalizeShift(uint64_t amount, uint32_t bitWidth) {
+    return static_cast<uint32_t>(amount % static_cast<uint64_t>(bitWidth));
+}
+
+bool TryFoldPureOp(uint32_t op, const std::vector<uint64_t>& in, uint32_t bitWidth, uint64_t& outValue) {
+    const uint64_t mask = MaskFor(bitWidth);
+    const AST::OpType opType = static_cast<AST::OpType>(op);
+
+    switch (opType) {
+    case AST::OpType::Not:
+        if (in.size() != 1)
+            return false;
+        outValue = (~in[0]) & mask;
+        return true;
+    case AST::OpType::Neg:
+        if (in.size() != 1)
+            return false;
+        outValue = (~in[0] + 1ULL) & mask;
+        return true;
+    case AST::OpType::And:
+    case AST::OpType::Or:
+    case AST::OpType::Xor:
+    case AST::OpType::Add:
+    case AST::OpType::Mul:
+        if (in.empty())
+            return false;
+        outValue = in[0] & mask;
+        for (size_t i = 1; i < in.size(); ++i) {
+            switch (opType) {
+            case AST::OpType::And:
+                outValue &= in[i];
+                break;
+            case AST::OpType::Or:
+                outValue |= in[i];
+                break;
+            case AST::OpType::Xor:
+                outValue ^= in[i];
+                break;
+            case AST::OpType::Add:
+                outValue += in[i];
+                break;
+            case AST::OpType::Mul:
+                outValue *= in[i];
+                break;
+            default:
+                return false;
+            }
+            outValue &= mask;
+        }
+        return true;
+    case AST::OpType::Sub:
+    case AST::OpType::Div:
+    case AST::OpType::Mod:
+    case AST::OpType::Shl:
+    case AST::OpType::Shr:
+    case AST::OpType::UShr:
+    case AST::OpType::RotL:
+    case AST::OpType::RotR:
+        if (in.size() != 2)
+            return false;
+        switch (opType) {
+        case AST::OpType::Sub:
+            outValue = (in[0] - in[1]) & mask;
+            return true;
+        case AST::OpType::Div:
+            if (in[1] == 0)
+                return false;
+            outValue = (in[0] / in[1]) & mask;
+            return true;
+        case AST::OpType::Mod:
+            if (in[1] == 0)
+                return false;
+            outValue = (in[0] % in[1]) & mask;
+            return true;
+        case AST::OpType::Shl:
+            outValue = (in[0] << NormalizeShift(in[1], bitWidth)) & mask;
+            return true;
+        case AST::OpType::Shr:
+        case AST::OpType::UShr:
+            outValue = (in[0] >> NormalizeShift(in[1], bitWidth)) & mask;
+            return true;
+        case AST::OpType::RotL: {
+            const uint32_t shift = NormalizeShift(in[1], bitWidth);
+            if (shift == 0) {
+                outValue = in[0] & mask;
+                return true;
+            }
+            outValue = ((in[0] << shift) | (in[0] >> (bitWidth - shift))) & mask;
+            return true;
+        }
+        case AST::OpType::RotR: {
+            const uint32_t shift = NormalizeShift(in[1], bitWidth);
+            if (shift == 0) {
+                outValue = in[0] & mask;
+                return true;
+            }
+            outValue = ((in[0] >> shift) | (in[0] << (bitWidth - shift))) & mask;
+            return true;
+        }
+        default:
+            return false;
+        }
+    case AST::OpType::Ch:
+    case AST::OpType::Maj:
+        if (in.size() != 3)
+            return false;
+        if (opType == AST::OpType::Ch) {
+            outValue = ((in[0] & in[1]) ^ ((~in[0]) & in[2])) & mask;
+            return true;
+        }
+        outValue = ((in[0] & in[1]) ^ (in[0] & in[2]) ^ (in[1] & in[2])) & mask;
+        return true;
+    case AST::OpType::Var:
+    case AST::OpType::Const:
+    default:
+        return false;
+    }
+}
+
+uint32_t FindOrCreateConstId(std::unordered_map<uint32_t, uint64_t>& constValues, uint64_t value) {
+    for (const auto& [id, v] : constValues)
+        if (v == value)
+            return id;
+
+    uint32_t nextConstIndex = 0;
+    for (const auto& [id, _] : constValues) {
+        if ((id & kConstTag) == 0u)
+            continue;
+        uint32_t index = id & ~kConstTag;
+        if (index >= nextConstIndex)
+            nextConstIndex = index + 1;
+    }
+
+    const uint32_t newId = kConstTag | nextConstIndex;
+    constValues[newId] = value;
+    return newId;
+}
 }
 
 // ============================
@@ -58,6 +203,59 @@ void ApplyCSE(std::vector<Statement>& stmts) {
         for (auto& in : s.inputs)
             if (replace.count(in))
                 in = replace[in];
+}
+
+void ApplyConstantFold(std::vector<Statement>& stmts, uint32_t& rootId, std::unordered_map<uint32_t, uint64_t>& constValues,
+                       uint32_t bitWidth) {
+    if (bitWidth == 0 || bitWidth > 64)
+        return;
+
+    const uint64_t mask = MaskFor(bitWidth);
+    std::unordered_map<uint32_t, uint32_t> replace;
+    std::vector<Statement> folded;
+    folded.reserve(stmts.size());
+
+    for (auto& s : stmts) {
+        for (auto& in : s.inputs)
+            if (replace.count(in))
+                in = replace[in];
+
+        bool allInputsConst = !s.inputs.empty();
+        std::vector<uint64_t> inValues;
+        inValues.reserve(s.inputs.size());
+        for (uint32_t in : s.inputs) {
+            auto it = constValues.find(in);
+            if (it == constValues.end()) {
+                allInputsConst = false;
+                break;
+            }
+            inValues.push_back(it->second & mask);
+        }
+
+        if (!allInputsConst) {
+            folded.push_back(s);
+            continue;
+        }
+
+        uint64_t out = 0;
+        if (!TryFoldPureOp(s.op, inValues, bitWidth, out)) {
+            folded.push_back(s);
+            continue;
+        }
+
+        const uint32_t constId = FindOrCreateConstId(constValues, out & mask);
+        replace[s.id] = constId;
+    }
+
+    for (auto& s : folded)
+        for (auto& in : s.inputs)
+            if (replace.count(in))
+                in = replace[in];
+
+    if (replace.count(rootId))
+        rootId = replace[rootId];
+
+    stmts.swap(folded);
 }
 
 // ============================
@@ -135,6 +333,13 @@ void ApplyTempReuse(std::vector<Statement>& stmts) {
 // ============================
 
 void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t rootId) {
+    std::unordered_map<uint32_t, uint64_t> constValues;
+    ApplyPerfPass(stmts, rootId, constValues, 64U);
+}
+
+void ApplyPerfPass(std::vector<Statement>& stmts, uint32_t& rootId, std::unordered_map<uint32_t, uint64_t>& constValues,
+                   uint32_t bitWidth) {
+    ApplyConstantFold(stmts, rootId, constValues, bitWidth);
     ApplyCSE(stmts);
     ApplyDCE(stmts, rootId);
     ApplyTempReuse(stmts);
