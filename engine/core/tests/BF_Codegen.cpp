@@ -194,5 +194,14 @@ int main() {
     const auto nonAssociativeFn = Codegen::EmitCFunctionMulti(nonAssociativeOutputs, 32);
     BF_TEST(nonAssociativeFn.find("uint32_t t1 = ") == std::string::npos);
 
+    // Case 16.8 — bitwidth bepaalt function signature type
+    auto a4 = MakeVar(1);
+    auto b4 = MakeVar(2);
+    auto expr4 = MakeOp(47, OpType::Add, {a4, b4});
+    auto code32 = Codegen::EmitCFunction(expr4, 32);
+    auto code64 = Codegen::EmitCFunction(expr4, 64);
+    BF_TEST(code32.find("uint32_t") != std::string::npos);
+    BF_TEST(code64.find("uint64_t") != std::string::npos);
+
     return 0;
 }
