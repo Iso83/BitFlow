@@ -28,6 +28,12 @@ static std::string BitWidthLiteral(uint32_t bw) {
     return std::to_string(bw) + "ull";
 }
 
+static std::string ConstLiteral(uint32_t value, uint32_t bw) {
+    if (bw <= 32U)
+        return std::to_string(value) + "u";
+    return std::to_string(value) + "ull";
+}
+
 static int GetPrecedence(OpType op) {
     switch (op) {
     case OpType::Const:
@@ -138,7 +144,7 @@ static std::string CombineNode(const Expr* e, uint32_t bw, const std::vector<std
         return "";
 
     if (e->op == OpType::Const)
-        return ApplyMask(std::to_string(e->constValue) + "ull", bw);
+        return ApplyMask(ConstLiteral(e->constValue, bw), bw);
 
     if (e->op == OpType::Var)
         return ApplyMask(MakeVarName(e->id.value()), bw);
@@ -437,7 +443,7 @@ static std::string EmitNodeWithTemps(const Expr* e, uint32_t bw,
             return kUnsupportedExpr;
 
         if (node->op == OpType::Const) {
-            std::string emitted = ApplyMask(std::to_string(node->constValue) + "ull", bw);
+            std::string emitted = ApplyMask(ConstLiteral(node->constValue, bw), bw);
             if (ShouldWrapForParent(node->op, parentPrec, isRightChild))
                 return "(" + emitted + ")";
             return emitted;
