@@ -125,4 +125,20 @@ bf_uint bf_uint::Shr(uint32_t s) const {
     return r;
 }
 
+bf_uint bf_uint::RotL(uint32_t s) const {
+    if (m_bw == 0)
+        return bf_uint(0);
+
+    s %= m_bw;
+    return Shl(s) | Shr(m_bw - s);
+}
+
+bf_uint bf_uint::RotR(uint32_t s) const {
+    if (m_bw == 0)
+        return bf_uint(0);
+
+    s %= m_bw;
+    return Shr(s) | Shl(m_bw - s);
+}
+
 } // namespace BitFlow::Core::BitVector
