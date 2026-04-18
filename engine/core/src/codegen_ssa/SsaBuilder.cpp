@@ -23,9 +23,13 @@ std::string MakeTemp(Context& ctx) {
     return "t" + std::to_string(ctx.counter++);
 }
 
-std::string LeafExpr(const Expr* e) {
+std::string LeafExpr(const Expr* e, uint32_t bw) {
     if (e->op == OpType::Var)
         return "v" + std::to_string(e->id.value());
+
+    if (bw > 64U)
+        return "bf_uint(" + std::to_string(e->constValue) + "ull, " + std::to_string(bw) + ")";
+
     return std::to_string(e->constValue);
 }
 
@@ -83,14 +87,13 @@ std::string BuildExpr(OpType op, const std::vector<std::string>& in) {
 }
 
 std::string Visit(const Expr* e, uint32_t bw, Context& ctx) {
-    (void)bw;
     auto it = ctx.cache.find(e);
     if (it != ctx.cache.end())
         return it->second;
 
     // Leaf nodes stay inline (no SSA temp required by the rules).
     if (e->op == OpType::Const || e->op == OpType::Var) {
-        std::string value = LeafExpr(e);
+        std::string value = LeafExpr(e, bw);
         ctx.cache[e] = value;
         return value;
     }
@@ -114,7 +117,7 @@ std::string Visit(const Expr* e, uint32_t bw, Context& ctx) {
 
 SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
     SsaProgram prog{};
-    if (root == nullptr || bitWidth == 0 || bitWidth > 64)
+    if (root == nullptr || bitWidth == 0)
         return prog;
 
     Context ctx{};
