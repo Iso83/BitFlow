@@ -55,12 +55,8 @@ if(BF_BUILD_TESTS)
         bf_add_module_test(BitFlowCore core BF_FuzzEvalVsCodegen)
     endif()
 
-    # Intentionally NOT active yet:
-    # - BF_CodegenMulti
-    # - BF_CodegenStructuralCSE
-    # Both tests depend on Codegen::EmitCFunctionMulti(...), which is not part of
-    # the current Emitter API and therefore cannot compile in the active test set.
-    # Keep these files as staged tests until multi-output codegen API lands.
+    bf_add_module_test(BitFlowCore core BF_CodegenMulti)
+    bf_add_module_test(BitFlowCore core BF_CodegenStructuralCSE)
 
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order) 

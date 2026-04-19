@@ -176,6 +176,77 @@ uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
     return id;
 }
 
+struct MultiContext {
+    std::unordered_map<const Expr*, std::string> keyMemo;
+    std::unordered_map<std::string, uint32_t> keyCount;
+    std::unordered_map<std::string, std::string> keyToTemp;
+    uint32_t nextTempId = 1;
+};
+
+std::string StructuralKey(const Expr* e, uint32_t bitWidth, MultiContext& ctx) {
+    if (!e)
+        return "null";
+
+    auto it = ctx.keyMemo.find(e);
+    if (it != ctx.keyMemo.end())
+        return it->second;
+
+    std::string key;
+    if (e->op == OpType::Var) {
+        key = "var:" + std::to_string(e->id.value());
+    } else if (e->op == OpType::Const) {
+        const uint64_t value =
+            (bitWidth > 64U) ? static_cast<uint64_t>(e->constValue) : (e->constValue & MaskFor(bitWidth));
+        key = "const:" + std::to_string(value);
+    } else {
+        key = "op:" + std::to_string(static_cast<uint32_t>(e->op)) + "(";
+        for (size_t i = 0; i < e->inputs.size(); ++i) {
+            if (i != 0)
+                key += ",";
+            key += StructuralKey(e->inputs[i], bitWidth, ctx);
+        }
+        key += ")";
+    }
+
+    ctx.keyMemo[e] = key;
+    return key;
+}
+
+void CountRefs(const Expr* e, uint32_t bitWidth, MultiContext& ctx) {
+    if (!e)
+        return;
+    ++ctx.keyCount[StructuralKey(e, bitWidth, ctx)];
+    for (const Expr* in : e->inputs)
+        CountRefs(in, bitWidth, ctx);
+}
+
+std::string ScheduleExpr(const Expr* e, uint32_t bitWidth, MultiContext& ctx, SsaProgram& prog) {
+    if (!e)
+        return "0";
+    if (e->op == OpType::Var || e->op == OpType::Const)
+        return LeafExpr(e, bitWidth);
+
+    std::vector<std::string> inputExprs;
+    inputExprs.reserve(e->inputs.size());
+    for (const Expr* in : e->inputs)
+        inputExprs.push_back(ScheduleExpr(in, bitWidth, ctx, prog));
+
+    const std::string expr = BuildExpr(e->op, inputExprs);
+    const std::string key = StructuralKey(e, bitWidth, ctx);
+
+    if (ctx.keyCount[key] <= 1)
+        return expr;
+
+    auto it = ctx.keyToTemp.find(key);
+    if (it != ctx.keyToTemp.end())
+        return it->second;
+
+    const std::string tempName = "t" + std::to_string(ctx.nextTempId++);
+    ctx.keyToTemp[key] = tempName;
+    prog.statements.push_back({tempName, expr});
+    return tempName;
+}
+
 } // namespace
 
 SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
@@ -204,6 +275,24 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
         prog.statements.push_back({"t" + std::to_string(st.id), BuildExpr(static_cast<OpType>(st.op), inputExprs)});
     }
 
+    return prog;
+}
+
+SsaProgram BuildSSA(const std::vector<const Expr*>& roots, uint32_t bitWidth) {
+    SsaProgram prog{};
+    if (roots.empty() || bitWidth == 0U)
+        return prog;
+
+    MultiContext ctx{};
+    for (const Expr* root : roots)
+        CountRefs(root, bitWidth, ctx);
+
+    prog.results.reserve(roots.size());
+    for (const Expr* root : roots)
+        prog.results.push_back(ScheduleExpr(root, bitWidth, ctx, prog));
+
+    if (!prog.results.empty())
+        prog.result = prog.results.front();
     return prog;
 }
 

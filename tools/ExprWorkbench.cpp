@@ -628,32 +628,15 @@ int main(int argc, char** argv) {
                 std::cout << ReplaceVarTokens(Core::Codegen::EmitCFunction(outputs[0].expr, opt.bitWidth), names)
                           << "\n\n";
             } else {
-                std::vector<uint32_t> varVec;
+                std::vector<const Expr*> roots;
+                roots.reserve(outputs.size());
                 for (const auto& out : outputs)
-                    CollectVars(out.expr, varVec);
-                std::sort(varVec.begin(), varVec.end());
-                varVec.erase(std::unique(varVec.begin(), varVec.end()), varVec.end());
+                    roots.push_back(out.expr);
 
-                const std::string ctype =
-                    (opt.bitWidth <= 32U) ? "uint32_t" : ((opt.bitWidth <= 64U) ? "uint64_t" : "bf_uint");
-
-                std::cout << "struct Outputs {\n";
-                for (const auto& out : outputs)
-                    std::cout << "    " << ctype << " " << out.name << ";\n";
-                std::cout << "};\n\n";
-                std::cout << "Outputs f(";
-                for (size_t i = 0; i < varVec.size(); ++i) {
-                    if (i)
-                        std::cout << ", ";
-                    const uint32_t id = varVec[i];
-                    std::cout << ctype << " " << names[id];
-                }
-                std::cout << ") {\n";
-                std::cout << "    Outputs r{};\n";
-                for (const auto& out : outputs)
-                    std::cout << "    r." << out.name << " = "
-                              << ReplaceVarTokens(Core::Codegen::EmitCExpr(out.expr, opt.bitWidth), names) << ";\n";
-                std::cout << "    return r;\n}" << "\n\n";
+                std::cout << ReplaceVarTokens(Core::Codegen::EmitCFunctionMulti(roots, opt.bitWidth), names) << "\n";
+                for (size_t i = 0; i < outputs.size(); ++i)
+                    std::cout << "// out" << (i + 1) << " = " << outputs[i].name << "\n";
+                std::cout << "\n";
             }
         }
 
