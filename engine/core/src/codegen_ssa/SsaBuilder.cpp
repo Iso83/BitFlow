@@ -5,6 +5,8 @@
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 #include <algorithm>
 #include <cstdint>
+#include <iomanip>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -56,14 +58,29 @@ uint64_t MaskFor(uint32_t bitWidth) {
     return (uint64_t{1} << bitWidth) - 1ULL;
 }
 
+std::string FormatUnsignedLiteral(uint64_t value, uint32_t bitWidth) {
+    if (bitWidth > 64U)
+        return std::to_string(value) + "ull";
+
+    std::ostringstream ss;
+    ss << "0x" << std::hex << std::nouppercase << value;
+
+    if (bitWidth <= 32U)
+        ss << "u";
+    else
+        ss << "ull";
+
+    return ss.str();
+}
+
 std::string LeafExpr(const Expr* e, uint32_t bw) {
     if (e->op == OpType::Var)
         return "v" + std::to_string(e->id.value());
 
     if (bw > 64U)
-        return "bf_uint(" + std::to_string(e->constValue) + "ull, " + std::to_string(bw) + ")";
+        return "bf_uint(" + FormatUnsignedLiteral(e->constValue, bw) + ", " + std::to_string(bw) + ")";
 
-    return std::to_string(e->constValue);
+    return FormatUnsignedLiteral(e->constValue & MaskFor(bw), bw);
 }
 
 std::string FoldNary(const std::vector<std::string>& in, const char* op) {
@@ -142,7 +159,7 @@ uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
 
     if (e->op == OpType::Const) {
         const uint64_t value = (bw > 64U) ? static_cast<uint64_t>(e->constValue) : (e->constValue & MaskFor(bw));
-        const uint32_t valueId = InternConstValueId(ctx, std::to_string(value));
+        const uint32_t valueId = InternConstValueId(ctx, FormatUnsignedLiteral(value, bw));
         ctx.constValues[valueId] = value;
         ctx.cache[e] = valueId;
         return valueId;
@@ -171,7 +188,7 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
     ApplyPerfPass(ctx.statements, resultId, ctx.constValues, bitWidth);
     for (const auto& [id, value] : ctx.constValues)
         if (!ctx.valueToExpr.count(id))
-            ctx.valueToExpr[id] = (bitWidth > 64U) ? std::to_string(value) : std::to_string(value & MaskFor(bitWidth));
+            ctx.valueToExpr[id] = FormatUnsignedLiteral((bitWidth > 64U) ? value : (value & MaskFor(bitWidth)), bitWidth);
 
     prog.result = ValueExpr(resultId, ctx.valueToExpr);
     prog.results.push_back(prog.result);

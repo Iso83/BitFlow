@@ -42,5 +42,10 @@ int main() {
     const auto wideFn = Codegen::EmitCFunction(xorExpr, 128);
     BF_TEST(wideFn.find("bf_uint") != std::string::npos);
 
+    // Unsigned literal suffixing should stay explicit in 64-bit mode.
+    auto constExpr64 = MakeConst(31, 0xffffffffu);
+    const auto constCode64 = Codegen::EmitCExpr(constExpr64, 64);
+    BF_TEST(constCode64.find("0xffffffffull") != std::string::npos);
+
     return 0;
 }
