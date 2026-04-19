@@ -47,5 +47,10 @@ int main() {
     const auto constCode64 = Codegen::EmitCExpr(constExpr64, 64);
     BF_TEST(constCode64.find("0xffffffffull") != std::string::npos);
 
+    // Large 32-bit constants should keep explicit unsigned suffixing too.
+    auto constExpr32 = MakeConst(32, 0x80000000u);
+    const auto constCode32 = Codegen::EmitCExpr(constExpr32, 32);
+    BF_TEST(constCode32.find("0x80000000u") != std::string::npos);
+
     return 0;
 }

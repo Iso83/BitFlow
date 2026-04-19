@@ -48,4 +48,13 @@ if(BF_BUILD_TOOLS)
     target_link_libraries(BitFlow_ExprWorkbench PRIVATE BitFlowCore BitFlowIO)
     set_target_properties(BitFlow_ExprWorkbench PROPERTIES OUTPUT_NAME "bitflow_expr")
     set_property(TARGET BitFlow_ExprWorkbench PROPERTY FOLDER "tools")
+
+    if(BF_BUILD_TESTS)
+        add_test(
+            NAME BF_ExprWorkbench_StageProfiles
+            COMMAND ${CMAKE_COMMAND} -E env
+                BF_EXPR_WORKBENCH=$<TARGET_FILE:BitFlow_ExprWorkbench>
+                ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/tests/ctest/ExprWorkbenchProfiles.cmake
+        )
+    endif()
 endif()
