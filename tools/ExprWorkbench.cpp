@@ -526,9 +526,16 @@ void RunVerify(const Expr* rewritten, uint32_t bitWidth) {
 
 Core::Rules::RuleEngine BuildRuleEngine(const CliOptions& opt, const std::unordered_map<uint32_t, std::string>& names) {
     const bool hasStageSelection = opt.normalize || opt.simplify || opt.factorize;
-    const bool runNormalize = hasStageSelection ? opt.normalize : true;
-    const bool runSimplify = hasStageSelection ? opt.simplify : true;
-    const bool runFactorize = hasStageSelection ? opt.factorize : false;
+
+    bool runNormalize = true;
+    bool runSimplify = true;
+    bool runFactorize = false;
+
+    if (hasStageSelection) {
+        runFactorize = opt.factorize;
+        runSimplify = opt.simplify || runFactorize;
+        runNormalize = opt.normalize || runSimplify;
+    }
 
     Core::Rules::RuleEngine engine;
     if (runNormalize)

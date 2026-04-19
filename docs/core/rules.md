@@ -1,286 +1,114 @@
-# Core Rules-documentatie
-
-Dit document beschrijft de huidige rule-engine in `engine/core`, inclusief:
-- de **uitvoer-volgorde** (stages + pipeline-order),
-- de **wiskundige transformaties** per rule,
-- en hoe de engine regels toepast tot een vaste vorm (*stable form*).
-
----
-
-## 1) Canonicalization buiten de rule-pipeline
-
-### Interning / Deduplicatie (alle nodes)
-Na rewrites wordt geïnternd zodat structureel gelijke expressies dezelfde instance/id krijgen.
-
-Voorbeeld (commutatief equivalent):
-- $(A \oplus B) \equiv (B \oplus A)$
-- na canonicalization/intering kunnen beide naar dezelfde interned representatie wijzen.
-
----
-
-## 2) Hoe rules toegepast worden (engine-gedrag)
-
-De engine werkt in grote lijnen als volgt:
-1. **Recursief naar kinderen** (post-order): eerst inputs herschrijven.
-2. **ApplyOnce op huidige node**: rules van boven naar beneden in pipeline-volgorde aflopen.
-3. Zodra een rule iets wijzigt, herstart de scan vanaf de eerste rule.
-4. Herhaal tot geen enkele rule meer wijzigt.
-5. **Intern** het eindresultaat.
-6. `ApplyUntilStable` herhaalt dit over de boom tot pointer-identiteit stabiel blijft.
-
-Belangrijk: in debug mag stage-volgorde niet teruglopen (anders exception op `AddRule`).
-
----
-
-## 3) Stage-volgorde
-
-De stage-enum is:
-1. `Stage_Normalize`
-2. `Stage_Simplify`
-3. `Stage_Factorize`
-
-Dit borgt: normaliseren $\rightarrow$ vereenvoudigen $\rightarrow$ factoriseren.<br>
-
----
-
-## 4) Actieve pipeline-volgorde (huidige Add_Bitwise_Simplify_Pipeline)
-
-Rules worden exact in deze volgorde toegevoegd:
-
-### Stage Normalize
-1. **Flatten**
-2. **Order**
-
-### Stage Simplify
-3. **Xor_Cancel**
-4. **Xor_Fold**
-5. **Xor_Zero**
-6. **And_Fold**
-7. **Or_Fold**
-
-### Stage Factorize
-8. **Xor_And_CommonFactor**
-9. **Xor_Pair_Cancel**
-
-> Opmerking: `Add_Zero` bestaat als rule, maar zit momenteel niet in deze pipeline.
-
----
-
-## 5) Rules met wiskundige stappen
-
-## Stage Normalize
-
-### 5.1 Flatten
-Doel: geneste knopen met dezelfde operator 1 niveau omhoog trekken.
-
-Voorbeelden:
-- $(X \oplus Y) \oplus Z \rightarrow X \oplus Y \oplus Z$
-- $X \oplus (Y \oplus Z) \rightarrow X \oplus Y \oplus Z$
-- analoog voor andere operators met identieke parent/child-op.
-
-Mechaniek:
-- Voor elke input: als `input.op == parent.op` en niet-const met children, splice diens children in parent.
-
----
-
-### 5.2 Order (alleen commutatieve ops)
-Commutatieve operators: $+, \oplus, \land, \lor$.
-
-Stap:
-- sorteer inputs oplopend op expr-id.
-
-Effect:
-- canonical order, bv. $Y \oplus X \oplus X \rightarrow X \oplus X \oplus Y$
-- hierdoor worden cancel/fold-matches later deterministischer.
-
----
-
-## Stage Simplify
-
-### 5.3 Xor_Cancel
-Regel: gelijke termen in XOR heffen elkaar paarsgewijs op.
-
-Wiskundig:
-- $A \oplus A = 0$
-- algemeen: termen met even multipliciteit verdwijnen; oneven multipliciteit blijft 1x staan.
-
-Voorbeelden:
-- $A \oplus B \oplus A \rightarrow B$
-- $A \oplus A \rightarrow 0$
-- $A \oplus A \oplus A \rightarrow A$
-
----
-
-### 5.4 Xor_Fold
-Regel: XOR alle constanten samen tot 1 constante accumulator.
-
-Wiskundig:
-- $(C_1 \oplus C_2 \oplus \dots \oplus C_n) = C_{acc}$
-- expressie wordt: niet-constante termen $\oplus$ eventueel $C_{acc}$ (alleen als $C_{acc} \neq 0$).
-
-Voorbeelden:
-- $A \oplus 5 \oplus 3 \rightarrow A \oplus 6$
-- $A \oplus 1 \oplus 1 \rightarrow A$
-- $7 \oplus 7 \rightarrow 0$
-
----
-
-### 5.5 Xor_Zero
-Regel: verwijder neutraal element 0 uit XOR.
-
-Wiskundig:
-- $X \oplus 0 = X$
-
-Voorbeelden:
-- $A \oplus 0 \rightarrow A$
-- $A \oplus B \oplus 0 \rightarrow A \oplus B$
-- alleen nullen $0 \oplus 0 \rightarrow 0$
-
----
-
-### 5.6 And_Fold
-Regels voor AND met constanten:
-- absorberend: $X \land 0 = 0$
-- neutraal: $X \land 1 = X$
-
-Voorbeelden:
-- $A \land 0 \land B \rightarrow 0$
-- $A \land 1 \land B \rightarrow A \land B$
-- alleen enen $1 \land 1 \rightarrow 1$
-
----
-
-### 5.7 Or_Fold
-Regels voor OR met constanten:
-- absorberend: $X \lor 1 = 1$
-- neutraal: $X \lor 0 = X$
-
-Voorbeelden:
-- $A \lor 1 \lor B \rightarrow 1$
-- $A \lor 0 \lor B \rightarrow A \lor B$
-- alleen nullen $0 \lor 0 \rightarrow 0$
-
----
-
-## Stage Factorize
-
-### 5.8 Xor_And_CommonFactor
-Patroon met 2 AND-termen onder XOR die een gemeenschappelijke factor delen:
-- $(a \land b) \oplus (a \land c) \rightarrow a \land (b \oplus c)$
-
-Ook varianten door operand-volgorde:
-- $(b \land a) \oplus (c \land a) \rightarrow a \land (b \oplus c)$
-- etc.
-
----
-
-### 5.9 Xor_Pair_Cancel
-Patroon met 2 XOR-termen onder XOR met 1 gedeelde term:
-- $(a \oplus b) \oplus (a \oplus c) \rightarrow b \oplus c$
-
-Afleiding:
-- $a \oplus a = 0$
-- daarna $0 \oplus b \oplus c = b \oplus c$.
-
----
-
-## 6) Niet-actieve maar aanwezige rule
-
-### Add_Zero (bestaat, niet in huidige pipeline)
-Wiskundig:
-- $X + 0 = X$
-
-Gedrag gelijk aan `Rewrite_Remove_Zero`:
-- verwijdert alle `0` inputs,
-- bij leeg resultaat retourneert `0`,
-- bij 1 term retourneert die term.
-
----
-
-## 7) Praktische implicatie van de volgorde
-
-Omdat Normalize eerst draait, worden vormen eerst vlak en geordend, waardoor Simplify-rules (zoals XOR-cancel) consistenter matchen. Factorize komt pas daarna, zodat patronen op al vereenvoudigde input werken.
-
----
-
-## 8) Constant-evaluator semantiek (voorbereiding codegen)
-
-De core bevat naast rules ook een **constante evaluator**:
-
-```cpp
-EvalResult EvaluateConstant(const Expr* root, uint32_t bitWidth);
-```
-
-Het evaluatiemodel is expliciet **bitvector-semantiek** (wiskundige term), met:
-- vaste bitbreedte `w = bitWidth`,
-- waarden in het domein $\{0, \dots, 2^w - 1\}$,
-- en operaties onder **modulaire rekenkunde** (wiskundige term) modulo $2^w$.
-
-Kort: elke tussenstap en elk eindresultaat wordt geïnterpreteerd als een unsigned bitvector van breedte `w`.
-
-### 8.1 Bitwidth is verplicht
-
-- `bitWidth` moet in `[1, 64]` liggen.
-- Bij `bitWidth == 0` of `bitWidth > 64`: status `InvalidBitWidth`.
-- Masker:
-  - $\text{mask} = 2^w - 1$ voor $w < 64$
-  - $\text{mask} = 2^{64}-1$ voor $w = 64$
-- Normalisatie:
-  - $x \leftarrow x \land \text{mask}$
-
-### 8.2 Unsigned-only
-
-Alle evaluatie gebeurt in `uint64_t` (geen signed pad), dus:
-- geen arithmetic right shift,
-- `Shr` en `UShr` zijn logisch-rechts voor unsigned waarden,
-- `Neg` gebruikt two’s-complement binnen bitbreedte:
-  - $-x \equiv (\sim x + 1) \bmod 2^w$.
-
-### 8.3 Shift/rotate semantiek
-
-Voor shift/rotate-count `n` geldt:
-- $k = n \bmod w$
-
-Daarmee:
-- $\text{Shl}(x,n) = (x \ll k) \land \text{mask}$
-- $\text{Shr}(x,n) = (x \gg k) \land \text{mask}$
-- $\text{UShr}(x,n) = (x \gg k) \land \text{mask}$
-- $\text{RotL}(x,n) = ((x \ll k) \lor (x \gg (w-k))) \land \text{mask}$
-- $\text{RotR}(x,n) = ((x \gg k) \lor (x \ll (w-k))) \land \text{mask}$
-
-Dit maakt gedrag deterministisch en compiler-onafhankelijk binnen het gekozen bitvector-model.
-
----
-
-## 9) Evaluator contract
-
-### 9.1 Input contract
-- `root` mag elke AST-subboom zijn.
-- Evaluatie gebeurt **alleen** als de boom volledig constant is; anders `NotConstant`.
-- Er is geen impliciete parser/IO-koppeling in core.
-
-### 9.2 Output contract
-
-`EvalResult`:
-- `status`:
-  - `Success`
-  - `NotConstant`
-  - `DivisionByZero`
-  - `ModuloByZero`
-  - `InvalidBitWidth`
-  - `UnsupportedOp`
-- `value` is alleen betekenisvol bij `Success`.
-
-### 9.3 Failure contract
-
-- Geen exceptions als control-flow.
-- Geen fallback-waarden.
-- Geen logging/IO in evaluator-pad.
-
----
-
-## 10) Relatie met tools en IO
-
-- Evaluator wordt **expliciet** aangeroepen (opt-in).
-- Parser (`Parse`) en printer (`ToString`) blijven semantisch los van evaluatie.
-- Tools mogen `Parse -> EvaluateConstant -> print` doen, maar evaluatie wordt niet automatisch in IO gepusht.
+# Core rules en evaluatie (huidige codebasis)
+
+Deze pagina beschrijft **alleen wat vandaag effectief in de code zit** in `engine/core`:
+- stages en rule-ordering,
+- actieve pipelines (`RulePipeline.h`),
+- aanwezige arithmetic/bitwise/CH/MAJ rules,
+- factorize-paden,
+- constant evaluator-semantiek.
+
+## 1. Rule engine gedrag
+
+`RuleEngine` werkt als volgt:
+1. `ApplyRecursive`: herschrijf eerst kinderen (post-order).
+2. `ApplyOnce`: loop rules in toegevoegde volgorde.
+3. Bij eerste succesvolle rewrite: herstart rule-scan vanaf rule 1.
+4. Interning gebeurt op output (`ExprIntern::Intern`).
+5. `ApplyUntilStable` herhaalt tot pointer-identiteit stabiel blijft.
+
+Daarnaast valideert `AddRule`:
+- geen duplicate `RuleId`,
+- geldige rule,
+- dependency-ids (`deps`) moeten al aanwezig zijn,
+- in debug geen stage-regressie.
+
+## 2. Huidige stages
+
+Volgens `RuleStage.h`:
+1. `Stage_Normalize` (0)
+2. `Stage_Simplify_Pushdown` (1)
+3. `Stage_Simplify` (2)
+4. `Stage_Factorize` (3)
+
+Praktisch: `Simplify_NotPushdown` draait in de pushdown-stage; de rest van simplify in `Stage_Simplify`.
+
+## 3. Actieve pipelines in `RulePipeline.h`
+
+### 3.1 Normalize
+`Add_Normalize_Rules`:
+- `Normalize_Flatten`
+- `Normalize_Order`
+
+### 3.2 Simplify (bitwise)
+`Add_Simplify_Bitwise_Rules` voegt toe (in deze volgorde):
+- NOT: `Simplify_NotPushdown`, `Simplify_Not`, `Simplify_NotXor`
+- Cancel: `Simplify_XorCancel`, `Simplify_AndCancel`, `Simplify_OrCancel`
+- Reductions: `Simplify_AndXorReduction`, `Simplify_XorNotReduction`, `Simplify_XorAndReduction`
+- Fold: `Simplify_XorFold`, `Simplify_AndFold`, `Simplify_OrFold`
+- Neutral/structure: `Simplify_XorZero`, `Simplify_Idempotent`, `Simplify_And_Idempotent`
+- Logical/dominance: `Simplify_Complement`, `Simplify_AndZeroDominance`, `Simplify_AndOneIdentity`, `Simplify_OrOneDominance`, `Simplify_OrZeroIdentity`
+
+### 3.3 Simplify (arithmetic)
+`Add_Simplify_Arithmetic_Rules`:
+- `Simplify_AddZero`
+- `Simplify_SubZero`
+- `Simplify_MulOne`
+- `Simplify_MulZero`
+- `Simplify_DivOne`
+- `Simplify_ModZeroGuard`
+- `Simplify_NegNeg`
+- `Simplify_AddFold`
+- `Simplify_ArithmeticConstCombine`
+
+> Let op: `Simplify_ShiftZero` en `Simplify_RotateModuloBitwidth` bestaan als rule factories en `RuleId`, maar worden momenteel **niet** toegevoegd in `Add_Simplify_Arithmetic_Rules`.
+
+### 3.4 Simplify (SHA)
+`Add_Simplify_SHA_Rules` (optioneel, aparte pipeline call):
+- `Simplify_CH`
+- `Simplify_MAJ`
+
+### 3.5 Factorize (bitwise)
+`Add_Factorize_Bitwise_Rules`:
+- `Factorize_XorAnd`
+- `Factorize_XorPairCancel`
+- `Factorize_AndAbsorb`
+- `Factorize_OrAbsorb`
+- `Factorize_Distribute`
+
+### 3.6 Factorize (arithmetic)
+`Add_Factorize_Arithmetic_Rules`:
+- `Factorize_AddCommonFactor`
+- `Factorize_MulCombineConstants`
+
+## 4. Dependency-paden (relevant voor pipeline-combinaties)
+
+Voorbeelden van harde dependencies in rules:
+- veel simplify-rules vereisen `Normalize_Flatten`.
+- `Factorize_XorPairCancel` vereist `Normalize_Flatten` + `Simplify_XorCancel`.
+- `Factorize_XorAnd` en `Factorize_AddCommonFactor` vereisen `Normalize_Flatten` + `Normalize_Order`.
+- `Factorize_MulCombineConstants` vereist `Factorize_AddCommonFactor` + normalize-dependencies.
+
+Conclusie: factorize-profielen moeten in praktijk normalize (en deels simplify) beschikbaar maken.
+
+## 5. CH/MAJ status
+
+- `Simplify_CH` en `Simplify_MAJ` bestaan en worden gebruikt via `Add_Simplify_SHA_Rules`.
+- Ze zitten **niet** in de standaard bitwise/arithmetic simplify pipeline; alleen wanneer die SHA-pipeline expliciet wordt toegevoegd.
+
+## 6. Evaluator-semantiek (`EvaluateConstant`)
+
+`EvaluateConstant(const Expr* root, uint32_t bitWidth)`:
+- ondersteunt bitwidth `1..64`; anders `InvalidBitWidth`.
+- werkt op `uint64_t` met maskering per stap (`mask = 2^w - 1`, of all-ones bij `w=64`).
+- `Var` geeft `NotConstant`.
+- ongeldige arity/op geeft `UnsupportedOp`.
+- `Div` met 0 => `DivisionByZero`; `Mod` met 0 => `ModuloByZero`.
+- `Neg` gebruikt two’s-complement (`~x + 1`) binnen mask.
+- `Shl/Shr/UShr/RotL/RotR` normaliseren shift amount via `amount % bitWidth`.
+- `Shr` en `UShr` zijn in evaluator effectief dezelfde logische right shift op unsigned data.
+- `Ch` en `Maj` worden expliciet geëvalueerd met de standaard bitwise formules.
+
+## 7. Scope-opmerking
+
+Deze pagina documenteert alleen de huidige, gecompileerde en aangeroepen rule/eval onderdelen in `engine/core`.
+Geen roadmap, geen wishlist, geen toekomstige semantiek.
