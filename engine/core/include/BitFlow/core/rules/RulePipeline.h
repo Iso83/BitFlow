@@ -89,6 +89,7 @@ inline void Add_Simplify_Arithmetic_Rules(RuleEngine& engine) {
 // =========================================================
 inline void Add_Factorize_Arithmetic_Rules(RuleEngine& engine) {
     engine.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
+    engine.AddRule(Factorize::Arithmetic::Get_Mul_CombineConstants_Rule());
 }
 
 // =========================================================

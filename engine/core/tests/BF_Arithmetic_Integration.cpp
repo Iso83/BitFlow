@@ -112,6 +112,28 @@ int TestFactorize_AddRepeatedTermCount() {
     return 0;
 }
 
+int TestFactorize_CombineNestedMulConstants() {
+    auto a = MakeVar(70);
+    auto expr = MakeOp(71, OpType::Mul, {MakeConst(72, 3), MakeOp(73, OpType::Mul, {a, MakeConst(74, 2)})});
+
+    RuleEngine engine = MakeArithmeticEngine();
+    Expr* result = engine.ApplyUntilStable(expr);
+
+    BF_TEST(result->op == OpType::Mul);
+    BF_TEST(result->inputs.size() == 2);
+    bool hasSix = false;
+    bool hasA = false;
+    for (auto* in : result->inputs) {
+        if (in->isConst() && in->constValue == 6u)
+            hasSix = true;
+        if (in->id == a->id)
+            hasA = true;
+    }
+    BF_TEST(hasSix);
+    BF_TEST(hasA);
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestSimplify_NegNeg);
     BF_RUN_TEST(TestSimplify_ConstCombine_Basic);
@@ -119,5 +141,6 @@ int main() {
     BF_RUN_TEST(TestFactorize_AddCommonFactor);
     BF_RUN_TEST(TestFactorize_Canonical_a_b_plus_b_a);
     BF_RUN_TEST(TestFactorize_AddRepeatedTermCount);
+    BF_RUN_TEST(TestFactorize_CombineNestedMulConstants);
     return 0;
 }

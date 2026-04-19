@@ -22,27 +22,6 @@ static size_t CountExprTreeNodes(const Expr* e) {
     return nodes;
 }
 
-static Expr* BuildCountedTerm(Expr* term, int count) {
-    if (count <= 1)
-        return term;
-
-    if (term->op == OpType::Mul && term->inputs.size() == 2) {
-        Expr* lhs = term->inputs[0];
-        Expr* rhs = term->inputs[1];
-
-        if (lhs->isConst()) {
-            const uint32_t scaled = static_cast<uint32_t>(static_cast<uint64_t>(lhs->constValue) * count);
-            return MakeOpInterned(OpType::Mul, {ConstPool::Get(scaled), rhs});
-        }
-        if (rhs->isConst()) {
-            const uint32_t scaled = static_cast<uint32_t>(static_cast<uint64_t>(rhs->constValue) * count);
-            return MakeOpInterned(OpType::Mul, {ConstPool::Get(scaled), lhs});
-        }
-    }
-
-    return MakeOpInterned(OpType::Mul, {ConstPool::Get(static_cast<uint32_t>(count)), term});
-}
-
 static bool Match_Add_CommonFactor(const Expr& e) {
     if (e.op != OpType::Add || e.inputs.size() < 2)
         return false;
@@ -93,7 +72,12 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
     normalizedAddTerms.reserve(order.size());
     for (Expr* term : order) {
         const int count = counts[term];
-        normalizedAddTerms.push_back(BuildCountedTerm(term, count));
+        if (count == 1) {
+            normalizedAddTerms.push_back(term);
+            continue;
+        }
+
+        normalizedAddTerms.push_back(MakeOpInterned(OpType::Mul, {ConstPool::Get(static_cast<uint32_t>(count)), term}));
     }
 
     if (normalizedAddTerms.empty())

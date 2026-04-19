@@ -59,6 +59,7 @@ enum class RuleId {
     Factorize_XorAnd,
     Factorize_XorPairCancel,
     Factorize_AddCommonFactor,
+    Factorize_MulCombineConstants,
     Factorize_AndAbsorb,
     Factorize_OrAbsorb,
     Factorize_Distribute
@@ -123,6 +124,7 @@ Rule Get_Or_ZeroIdentity_Rule();
 
 namespace Factorize::Arithmetic {
 Rule Get_Add_CommonFactor_Rule();
+Rule Get_Mul_CombineConstants_Rule();
 }
 
 namespace Factorize::Bitwise {
