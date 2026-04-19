@@ -37,6 +37,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 if(BF_BUILD_TESTS)
+    # Active always-on core test set.
     bf_add_module_test(BitFlowCore core BF_AST_OpTypeHelpers)
     bf_add_module_test(BitFlowCore core BF_Dedup)
     bf_add_module_test(BitFlowCore core BF_ExprIntern_KeyBuilder)
@@ -48,10 +49,18 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_PerfPass)
     bf_add_module_test(BitFlowCore core BF_Arithmetic_Integration)
 
+    # Optional runtime/compiler-invoking tests (slow + toolchain dependent).
     if(BF_ENABLE_CODEGEN_RUNTIME_TESTS)
         bf_add_module_test(BitFlowCore core BF_CodegenRuntime)
         bf_add_module_test(BitFlowCore core BF_FuzzEvalVsCodegen)
     endif()
+
+    # Intentionally NOT active yet:
+    # - BF_CodegenMulti
+    # - BF_CodegenStructuralCSE
+    # Both tests depend on Codegen::EmitCFunctionMulti(...), which is not part of
+    # the current Emitter API and therefore cannot compile in the active test set.
+    # Keep these files as staged tests until multi-output codegen API lands.
 
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order) 
