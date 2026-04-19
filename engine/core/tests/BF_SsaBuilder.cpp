@@ -86,7 +86,7 @@ int main() {
 
         auto prog = BuildSSA(add, 8);
         BF_TEST(prog.statements.empty());
-        BF_TEST(prog.result == "4");
+        BF_TEST(prog.result == "0x4u");
     }
 
     // Stap 20.2 — do not fold when not all inputs are constant.
@@ -110,7 +110,7 @@ int main() {
 
         auto prog = BuildSSA(mul, 8);
         BF_TEST(prog.statements.empty()); // aantal statements omlaag naar direct constant root
-        BF_TEST(prog.result == "20");
+        BF_TEST(prog.result == "0x14u");
     }
 
     return 0;
