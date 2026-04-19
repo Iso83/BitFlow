@@ -149,4 +149,63 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
     return ss.str();
 }
 
+std::string EmitCFunctionMulti(const std::vector<const Expr*>& roots, uint32_t bitWidth) {
+    const std::string ctype = GetCType(bitWidth);
+    if (roots.empty() || bitWidth == 0U)
+        return "struct EvalResult {\n};\n\nEvalResult eval() {\n    return EvalResult{};\n}\n\nEvalResult f() {\n    return eval();\n}";
+
+    const SsaProgram prog = BuildSSA(roots, bitWidth);
+
+    std::set<uint32_t> vars;
+    for (const Expr* root : roots)
+        CollectVars(root, vars);
+
+    std::ostringstream ss;
+    ss << "struct EvalResult {\n";
+    for (size_t i = 0; i < roots.size(); ++i)
+        ss << "    " << ctype << " out" << (i + 1) << ";\n";
+    ss << "};\n\n";
+
+    ss << "EvalResult eval(";
+    bool first = true;
+    for (uint32_t id : vars) {
+        if (!first)
+            ss << ", ";
+        ss << ctype << " v" << id;
+        first = false;
+    }
+    ss << ") {\n";
+
+    for (const auto& st : prog.statements)
+        ss << "    " << ctype << " " << st.name << " = " << ApplyMask(st.expr, bitWidth) << ";\n";
+
+    ss << "    EvalResult r{};\n";
+    for (size_t i = 0; i < prog.results.size(); ++i)
+        ss << "    r.out" << (i + 1) << " = " << ApplyMask(prog.results[i], bitWidth) << ";\n";
+    ss << "    return r;\n";
+    ss << "}\n\n";
+
+    ss << "EvalResult f(";
+    first = true;
+    for (uint32_t id : vars) {
+        if (!first)
+            ss << ", ";
+        ss << ctype << " v" << id;
+        first = false;
+    }
+    ss << ") {\n";
+    ss << "    return eval(";
+    first = true;
+    for (uint32_t id : vars) {
+        if (!first)
+            ss << ", ";
+        ss << "v" << id;
+        first = false;
+    }
+    ss << ");\n";
+    ss << "}";
+
+    return ss.str();
+}
+
 } // namespace BitFlow::Core::Codegen

@@ -25,5 +25,6 @@ struct SsaProgram {
 };
 
 SsaProgram BuildSSA(const AST::Expr* root, uint32_t bitWidth);
+SsaProgram BuildSSA(const std::vector<const AST::Expr*>& roots, uint32_t bitWidth);
 
 } // namespace BitFlow::Core::Codegen
