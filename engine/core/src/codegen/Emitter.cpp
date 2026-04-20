@@ -99,39 +99,39 @@ std::string EmitCRuntimeSupport(uint32_t bitWidth) {
     ss << "// - bitWidth > 64: bf_rotl/bf_rotr operate on bf_uint (C++ runtime type)\n";
 
     if (bitWidth <= 32U) {
-        ss << "static inline uint32_t bf_rotl(uint32_t value, uint32_t shift) {\n";
+        ss << "[[maybe_unused]] static inline uint32_t bf_rotl(uint32_t value, uint32_t shift) {\n";
         ss << "    shift &= 31u;\n";
         ss << "    if (shift == 0u)\n";
         ss << "        return value;\n";
         ss << "    return static_cast<uint32_t>((value << shift) | (value >> ((32u - shift) & 31u)));\n";
         ss << "}\n\n";
 
-        ss << "static inline uint32_t bf_rotr(uint32_t value, uint32_t shift) {\n";
+        ss << "[[maybe_unused]] static inline uint32_t bf_rotr(uint32_t value, uint32_t shift) {\n";
         ss << "    shift &= 31u;\n";
         ss << "    if (shift == 0u)\n";
         ss << "        return value;\n";
         ss << "    return static_cast<uint32_t>((value >> shift) | (value << ((32u - shift) & 31u)));\n";
         ss << "}\n\n";
     } else if (bitWidth <= 64U) {
-        ss << "static inline uint64_t bf_rotl(uint64_t value, uint32_t shift) {\n";
+        ss << "[[maybe_unused]] static inline uint64_t bf_rotl(uint64_t value, uint32_t shift) {\n";
         ss << "    shift &= 63u;\n";
         ss << "    if (shift == 0u)\n";
         ss << "        return value;\n";
         ss << "    return (value << shift) | (value >> ((64u - shift) & 63u));\n";
         ss << "}\n\n";
 
-        ss << "static inline uint64_t bf_rotr(uint64_t value, uint32_t shift) {\n";
+        ss << "[[maybe_unused]] static inline uint64_t bf_rotr(uint64_t value, uint32_t shift) {\n";
         ss << "    shift &= 63u;\n";
         ss << "    if (shift == 0u)\n";
         ss << "        return value;\n";
         ss << "    return (value >> shift) | (value << ((64u - shift) & 63u));\n";
         ss << "}\n\n";
     } else {
-        ss << "static inline bf_uint bf_rotl(const bf_uint& value, uint32_t shift) {\n";
+        ss << "[[maybe_unused]] static inline bf_uint bf_rotl(const bf_uint& value, uint32_t shift) {\n";
         ss << "    return value.RotL(shift);\n";
         ss << "}\n\n";
 
-        ss << "static inline bf_uint bf_rotr(const bf_uint& value, uint32_t shift) {\n";
+        ss << "[[maybe_unused]] static inline bf_uint bf_rotr(const bf_uint& value, uint32_t shift) {\n";
         ss << "    return value.RotR(shift);\n";
         ss << "}\n\n";
     }

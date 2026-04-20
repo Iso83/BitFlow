@@ -22,12 +22,13 @@ namespace {
 #endif
 
 static int CompileCppSource(const std::string& file, const std::string& exe) {
-    int res = std::system(("g++ -std=c++20 " + file + " -o " + exe).c_str());
+    const std::string strictFlags = " -Wall -Wextra -Wpedantic -Werror";
+    int res = std::system(("g++ -std=c++20" + strictFlags + " " + file + " -o " + exe).c_str());
     if (res != 0)
-        res = std::system(("c++ -std=c++20 " + file + " -o " + exe).c_str());
+        res = std::system(("c++ -std=c++20" + strictFlags + " " + file + " -o " + exe).c_str());
 #if defined(_WIN32)
     if (res != 0)
-        res = std::system(("cl /nologo /std:c++20 /O2 /EHsc " + file + " /Fe:" + exe).c_str());
+        res = std::system(("cl /nologo /std:c++20 /O2 /W4 /WX /EHsc " + file + " /Fe:" + exe).c_str());
 #endif
     return res;
 }
