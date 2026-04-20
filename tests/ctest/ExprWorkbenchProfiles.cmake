@@ -65,6 +65,23 @@ function(require_not_in_output pattern)
     endif()
 endfunction()
 
+function(require_not_in_rewritten pattern)
+    string(FIND "${EXPR_WORKBENCH_LAST_OUT}" "[rewritten]" _rw_pos)
+    if(_rw_pos EQUAL -1)
+        message(FATAL_ERROR "[rewritten] section not found.\nstdout:
+${EXPR_WORKBENCH_LAST_OUT}")
+    endif()
+
+    string(LENGTH "${EXPR_WORKBENCH_LAST_OUT}" _out_len)
+    string(SUBSTRING "${EXPR_WORKBENCH_LAST_OUT}" ${_rw_pos} ${_out_len} _rewritten_tail)
+
+    string(FIND "${_rewritten_tail}" "${pattern}" _exp_pos)
+    if(NOT _exp_pos EQUAL -1)
+        message(FATAL_ERROR "Unexpected substring found in rewritten output: '${pattern}'\nstdout:
+${EXPR_WORKBENCH_LAST_OUT}")
+    endif()
+endfunction()
+
 # Stage profile matrix should not trigger dependency errors.
 run_expr("--normalize" "x" "[rewritten]")
 run_expr("--simplify" "x" "[rewritten]")
@@ -124,5 +141,28 @@ run_regression_case("(a + 3) ^ ((b & 255) + (a - a))")
 # Rotate/shift edge cases.
 run_regression_case("rotl(a, 32) ^ rotr(b, 64) ^ (c << 32) ^ (d >> 64)")
 
-# CH/MAJ usage should remain stable across rewrite/eval/codegen.
-run_regression_case("ch(a, b, c) ^ maj(a, b, c)")
+# CH simplify regression: functional forms must be eliminated after simplify.
+run_expr_all("--simplify;--verify" "ch(a,b,c)")
+require_in_output("[rewritten]")
+require_in_output("[verify]")
+require_in_output("cases=128, passed=128, failed=0")
+require_not_in_rewritten("ch(")
+
+run_expr_all("--simplify;--verify" "maj(a,b,c)")
+require_in_output("[rewritten]")
+require_in_output("[verify]")
+require_in_output("cases=128, passed=128, failed=0")
+require_not_in_rewritten("maj(")
+
+# Constant check cases for simplify/verify parity.
+run_expr_all("--simplify;--verify" "ch(a,50,30)^((a&50)^(~a&30))")
+require_in_output("[rewritten]")
+require_not_in_rewritten("ch(")
+require_in_output("[verify]")
+require_in_output("cases=128, passed=128, failed=0")
+
+run_expr_all("--simplify;--verify" "maj(a,50,30)^((a&50)^(a&30)^(50&30))")
+require_in_output("[rewritten]")
+require_not_in_rewritten("maj(")
+require_in_output("[verify]")
+require_in_output("cases=128, passed=128, failed=0")

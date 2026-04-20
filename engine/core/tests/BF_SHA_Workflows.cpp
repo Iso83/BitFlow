@@ -51,6 +51,64 @@ int TestMAJ_HelperMatchesBooleanDefinition() {
     return 0;
 }
 
+
+int TestSmallSigma0_UsesExpectedRotateAndShiftRecipe() {
+    Builder b;
+    auto x = b.Var();
+    auto sigma = b.SmallSigma0(x);
+
+    BF_TEST(sigma->op == OpType::Xor);
+    BF_TEST(sigma->inputs.size() == 3);
+
+    BF_TEST(sigma->inputs[0]->op == OpType::RotR);
+    BF_TEST(sigma->inputs[0]->inputs.size() == 2);
+    BF_TEST(sigma->inputs[0]->inputs[0] == x);
+    BF_TEST(sigma->inputs[0]->inputs[1]->op == OpType::Const);
+    BF_TEST(sigma->inputs[0]->inputs[1]->constValue == 7U);
+
+    BF_TEST(sigma->inputs[1]->op == OpType::RotR);
+    BF_TEST(sigma->inputs[1]->inputs.size() == 2);
+    BF_TEST(sigma->inputs[1]->inputs[0] == x);
+    BF_TEST(sigma->inputs[1]->inputs[1]->op == OpType::Const);
+    BF_TEST(sigma->inputs[1]->inputs[1]->constValue == 18U);
+
+    BF_TEST(sigma->inputs[2]->op == OpType::Shr);
+    BF_TEST(sigma->inputs[2]->inputs.size() == 2);
+    BF_TEST(sigma->inputs[2]->inputs[0] == x);
+    BF_TEST(sigma->inputs[2]->inputs[1]->op == OpType::Const);
+    BF_TEST(sigma->inputs[2]->inputs[1]->constValue == 3U);
+
+    return 0;
+}
+
+int TestSmallSigma1_UsesExpectedRotateAndShiftRecipe() {
+    Builder b;
+    auto x = b.Var();
+    auto sigma = b.SmallSigma1(x);
+
+    BF_TEST(sigma->op == OpType::Xor);
+    BF_TEST(sigma->inputs.size() == 3);
+
+    BF_TEST(sigma->inputs[0]->op == OpType::RotR);
+    BF_TEST(sigma->inputs[0]->inputs.size() == 2);
+    BF_TEST(sigma->inputs[0]->inputs[0] == x);
+    BF_TEST(sigma->inputs[0]->inputs[1]->op == OpType::Const);
+    BF_TEST(sigma->inputs[0]->inputs[1]->constValue == 17U);
+
+    BF_TEST(sigma->inputs[1]->op == OpType::RotR);
+    BF_TEST(sigma->inputs[1]->inputs.size() == 2);
+    BF_TEST(sigma->inputs[1]->inputs[0] == x);
+    BF_TEST(sigma->inputs[1]->inputs[1]->op == OpType::Const);
+    BF_TEST(sigma->inputs[1]->inputs[1]->constValue == 19U);
+
+    BF_TEST(sigma->inputs[2]->op == OpType::Shr);
+    BF_TEST(sigma->inputs[2]->inputs.size() == 2);
+    BF_TEST(sigma->inputs[2]->inputs[0] == x);
+    BF_TEST(sigma->inputs[2]->inputs[1]->op == OpType::Const);
+    BF_TEST(sigma->inputs[2]->inputs[1]->constValue == 10U);
+
+    return 0;
+}
 int TestBigSigma1_UsesExpectedRotateRecipe() {
     Builder b;
     auto x = b.Var();
@@ -112,6 +170,8 @@ int TestRoundFragments_AreDirectlyEvaluatable() {
 int main() {
     BF_RUN_TEST(TestCH_HelperMatchesBooleanDefinition);
     BF_RUN_TEST(TestMAJ_HelperMatchesBooleanDefinition);
+    BF_RUN_TEST(TestSmallSigma0_UsesExpectedRotateAndShiftRecipe);
+    BF_RUN_TEST(TestSmallSigma1_UsesExpectedRotateAndShiftRecipe);
     BF_RUN_TEST(TestBigSigma1_UsesExpectedRotateRecipe);
     BF_RUN_TEST(TestRoundFragments_AreDirectlyEvaluatable);
     return 0;
