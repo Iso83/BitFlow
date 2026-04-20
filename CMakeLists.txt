@@ -4,7 +4,14 @@ project(BitFlow LANGUAGES C CXX)
 option(BF_BUILD_TESTS "Build tests" ON)
 
 if(BF_BUILD_TESTS)
-    option(BF_ENABLE_CODEGEN_RUNTIME_TESTS "Enable slow runtime compile tests" OFF)
+    option(BF_ENABLE_CODEGEN_RUNTIME_TESTS "Legacy switch: enable all slow runtime + fuzz tests" OFF)
+    option(BF_ENABLE_RUNTIME_COMPILE_TESTS "Enable slow runtime compile tests" OFF)
+    option(BF_ENABLE_FUZZ_PROPERTY_TESTS "Enable fuzz/property tests" OFF)
+
+    if(BF_ENABLE_CODEGEN_RUNTIME_TESTS)
+        set(BF_ENABLE_RUNTIME_COMPILE_TESTS ON CACHE BOOL "" FORCE)
+        set(BF_ENABLE_FUZZ_PROPERTY_TESTS ON CACHE BOOL "" FORCE)
+    endif()
 
     enable_testing()
     include(cmake/BitFlowTests.cmake)
@@ -56,5 +63,6 @@ if(BF_BUILD_TOOLS)
                 BF_EXPR_WORKBENCH=$<TARGET_FILE:BitFlow_ExprWorkbench>
                 ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/tests/ctest/ExprWorkbenchProfiles.cmake
         )
+        set_tests_properties(BF_ExprWorkbench_StageProfiles PROPERTIES LABELS "unit;tool")
     endif()
 endif()

@@ -1,32 +1,36 @@
-# Core test/build inventory (stap 21.4)
+# Core test/build inventory (stap 25.3)
 
-Deze inventaris noteert welke tests in `engine/core/tests` al in de tree staan, maar (bewust) niet standaard actief zijn in CMake.
+Deze inventaris noteert het onderscheid tussen snelle unit-tests, tragere runtime-compile tests en fuzz/property tests.
 
-## 1) Bewust niet in CMake opgenomen wegens ontbrekende API
+## 1) Snelle unit tests (standaard actief)
 
-- `BF_CodegenMulti.cpp`
-- `BF_CodegenStructuralCSE.cpp`
+- Alle reguliere `bf_add_module_test(...)` tests in `engine/core/CMakeLists.txt` en `engine/io/CMakeLists.txt` draaien standaard met label `unit`.
+- De ExprWorkbench profile test (`BF_ExprWorkbench_StageProfiles`) heeft labels `unit;tool`.
 
-Reden:
-- Beide tests gebruiken `Codegen::EmitCFunctionMulti(...)`.
-- De huidige publieke API in `engine/core/include/BitFlow/core/codegen/Emitter.h` expose’t enkel:
-  - `EmitCExpr(...)`
-  - `EmitCFunction(...)`
-- Zonder `EmitCFunctionMulti(...)` in de actuele codebasis compileren deze tests niet.
+Voorbeeld:
+- `ctest -L unit`
 
-Status:
-- testbestanden blijven aanwezig als staged coverage voor toekomstige multi-output codegen,
-- ze worden pas aan CMake gekoppeld zodra de API effectief beschikbaar is.
+## 2) Trage runtime compile tests (optioneel)
 
-## 2) Bewust optioneel in CMake (wel compileerbaar)
+- `BF_CodegenRuntime.cpp` draait alleen als `BF_ENABLE_RUNTIME_COMPILE_TESTS=ON`.
+- Label: `runtime_compile`.
 
-- `BF_CodegenRuntime.cpp`
-- `BF_FuzzEvalVsCodegen.cpp`
+Voorbeeld:
+- `cmake -S . -B build -DBF_ENABLE_RUNTIME_COMPILE_TESTS=ON`
+- `ctest -L runtime_compile`
 
-Reden:
-- Deze draaien externe compiler/runtime stappen en zijn traag/toolchain-afhankelijk.
-- Daarom hangen ze achter `BF_ENABLE_CODEGEN_RUNTIME_TESTS`.
+## 3) Fuzz/property tests (optioneel)
 
-## 3) Coherentie van de actieve testset
+- `BF_FuzzEvalVsCodegen.cpp` draait alleen als `BF_ENABLE_FUZZ_PROPERTY_TESTS=ON`.
+- Labels: `fuzz;property`.
 
-De actieve set bevat alleen tests die met de huidige publieke API en standaard buildopties compileerbaar en stabiel uitvoerbaar zijn.
+Voorbeeld:
+- `cmake -S . -B build -DBF_ENABLE_FUZZ_PROPERTY_TESTS=ON`
+- `ctest -L fuzz`
+- `ctest -L property`
+
+## 4) Backward compatibility
+
+- Bestaande vlag `BF_ENABLE_CODEGEN_RUNTIME_TESTS` blijft beschikbaar als legacy switch en zet intern beide opties aan:
+  - `BF_ENABLE_RUNTIME_COMPILE_TESTS=ON`
+  - `BF_ENABLE_FUZZ_PROPERTY_TESTS=ON`
