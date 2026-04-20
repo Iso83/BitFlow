@@ -166,3 +166,22 @@ require_in_output("[rewritten]")
 require_not_in_rewritten("maj(")
 require_in_output("[verify]")
 require_in_output("cases=128, passed=128, failed=0")
+
+
+# Pipeline alignment sentinel:
+# keep tool simplify flow aligned with core SHA simplify flow (incl. Add_Simplify_SHA_Rules).
+run_expr_all("--simplify;--emit-c;--verify" "ch(a,b,c)^maj(a,b,c)")
+require_in_output("[rewritten]")
+require_in_output("[c-expr]")
+require_in_output("[verify]")
+require_in_output("cases=128, passed=128, failed=0")
+require_not_in_rewritten("ch(")
+require_not_in_rewritten("maj(")
+
+# Explicit normalize+simplify variant to mirror core normalize+simplify test flow.
+run_expr_all("--normalize;--simplify;--verify" "ch(a,b,c)^maj(a,b,c)")
+require_in_output("[rewritten]")
+require_in_output("[verify]")
+require_in_output("cases=128, passed=128, failed=0")
+require_not_in_rewritten("ch(")
+require_not_in_rewritten("maj(")
