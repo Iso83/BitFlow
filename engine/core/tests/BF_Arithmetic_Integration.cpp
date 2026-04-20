@@ -216,11 +216,24 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
         Expr* result = engine.ApplyUntilStable(expr);
         BF_TEST(result->op == OpType::Add);
         bool hasB = false;
+        bool hasA2 = false;
         for (auto* in : result->inputs) {
             if (in->id == b->id)
                 hasB = true;
+            if (in->op == OpType::Mul) {
+                bool hasA = false;
+                bool hasTwo = false;
+                for (auto* factor : in->inputs) {
+                    if (factor->id == a->id)
+                        hasA = true;
+                    if (factor->isConst() && factor->constValue == 2u)
+                        hasTwo = true;
+                }
+                hasA2 = hasA && hasTwo;
+            }
         }
         BF_TEST(hasB);
+        BF_TEST(hasA2);
     }
 
     {
