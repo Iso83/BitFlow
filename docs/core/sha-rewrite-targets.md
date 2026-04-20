@@ -1,4 +1,4 @@
-# SHA rewrite targets (stap 26.2)
+# SHA rewrite targets (stap 26.2 + stap 29 canonical forms)
 
 Doel: voor SHA-fragmenten expliciet vastleggen naar welke vorm we nu *wel* willen rewriten,
 zonder al een volledige SHA-256 pipeline af te dwingen.
@@ -13,19 +13,33 @@ We richten ons alleen op kleine bouwstenen en round-subexpressies:
 
 ## Canonical/rewrite-doelen
 
-### Target A — CH-expansie
+### Target A — CH-canonical vorm
 
 `Ch(x,y,z)` rewrite-doel:
 
 - `Xor(And(x,y), And(Not(x), z))`
 - met normale normalize-regels (`Flatten`, `Order`) op commutatieve knopen.
 
-### Target B — MAJ-expansie
+Voor stap 29 is dit de **enige gewenste canonical doelvorm** voor CH-fragmenten.
+
+Kleine, expliciet ondersteunde convergentie-routes:
+
+- `Ch(x,y,z)` → `Xor(And(x,y), And(Not(x), z))`
+- `Xor(z, And(x, Xor(y, z)))` → `Xor(And(x,y), And(Not(x), z))`
+
+### Target B — MAJ-canonical vorm
 
 `Maj(x,y,z)` rewrite-doel:
 
 - `Xor(And(x,y), And(x,z), And(y,z))`
 - met normale normalize-regels (`Flatten`, `Order`) op commutatieve knopen.
+
+Voor stap 29 is dit de **enige gewenste canonical doelvorm** voor MAJ-fragmenten.
+
+Kleine, expliciet ondersteunde convergentie-routes:
+
+- `Maj(x,y,z)` → `Xor(And(x,y), And(x,z), And(y,z))`
+- `Or(And(x,y), And(z, Xor(x,y)))` → `Xor(And(x,y), And(x,z), And(y,z))`
 
 ### Target C — kleine round-fragmenten zonder high-level SHA-ops
 
@@ -35,9 +49,11 @@ Voor round-subexpressies (bijv. `Add(BigSigma1(e), Ch(e,f,g))` en
 - geen `Ch`/`Maj` meer aanwezig na `Add_Simplify_SHA_Rules`;
 - fragment blijft in reguliere core-ops (`Add`, `Xor`, `And`, `Not`, `RotR`, ...);
 - nog **geen** verplichting om alles volledig te unrollen/factorizen.
+- CH/MAJ-subexpressies convergeren naar bovenstaande canonical vormen.
 
 ## Niet-doelen (bewust uitgesteld)
 
 - Geen complete canonical vorm voor volledige `T1`/`T2` ketens met alle algebra.
 - Geen globale optimalisatie-doelen voor volledige SHA-256 rounds.
 - Geen verplichting op één unieke rotatie-volgorde voorbij bestaande order-regels.
+- Geen algemene boolean minimization engine.

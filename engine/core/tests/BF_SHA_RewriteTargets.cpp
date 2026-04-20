@@ -35,6 +35,55 @@ RuleEngine MakeShaRewriteEngine() {
     return engine;
 }
 
+bool IsAndPair(const Expr* e, const Expr* a, const Expr* b) {
+    if (!e || e->op != OpType::And || e->inputs.size() != 2)
+        return false;
+
+    const Expr* lhs = e->inputs[0];
+    const Expr* rhs = e->inputs[1];
+    return (lhs->id.value() == a->id.value() && rhs->id.value() == b->id.value()) ||
+           (lhs->id.value() == b->id.value() && rhs->id.value() == a->id.value());
+}
+
+bool IsAndNotPair(const Expr* e, const Expr* x, const Expr* z) {
+    if (!e || e->op != OpType::And || e->inputs.size() != 2)
+        return false;
+
+    const Expr* lhs = e->inputs[0];
+    const Expr* rhs = e->inputs[1];
+
+    auto isNotOfX = [&](const Expr* candidate) {
+        return candidate && candidate->op == OpType::Not && candidate->inputs.size() == 1 &&
+               candidate->inputs[0]->id.value() == x->id.value();
+    };
+
+    return (isNotOfX(lhs) && rhs->id.value() == z->id.value()) || (isNotOfX(rhs) && lhs->id.value() == z->id.value());
+}
+
+bool IsCanonicalCH(const Expr* e, const Expr* x, const Expr* y, const Expr* z) {
+    if (!e || e->op != OpType::Xor || e->inputs.size() != 2)
+        return false;
+
+    return (IsAndPair(e->inputs[0], x, y) && IsAndNotPair(e->inputs[1], x, z)) ||
+           (IsAndPair(e->inputs[1], x, y) && IsAndNotPair(e->inputs[0], x, z));
+}
+
+bool IsCanonicalMAJ(const Expr* e, const Expr* x, const Expr* y, const Expr* z) {
+    if (!e || e->op != OpType::Xor || e->inputs.size() != 3)
+        return false;
+
+    bool hasXY = false;
+    bool hasXZ = false;
+    bool hasYZ = false;
+    for (const Expr* in : e->inputs) {
+        hasXY = hasXY || IsAndPair(in, x, y);
+        hasXZ = hasXZ || IsAndPair(in, x, z);
+        hasYZ = hasYZ || IsAndPair(in, y, z);
+    }
+
+    return hasXY && hasXZ && hasYZ;
+}
+
 int TestRewriteTarget_CH_ExpandsAwayHighLevelOp() {
     Builder b;
     auto x = b.Var();
@@ -45,8 +94,7 @@ int TestRewriteTarget_CH_ExpandsAwayHighLevelOp() {
     auto rewritten = MakeShaRewriteEngine().ApplyUntilStable(expr);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
-    BF_TEST(rewritten->op == OpType::Xor);
-    BF_TEST(rewritten->inputs.size() == 2);
+    BF_TEST(IsCanonicalCH(rewritten, x, y, z));
     return 0;
 }
 
@@ -60,8 +108,35 @@ int TestRewriteTarget_MAJ_ExpandsAwayHighLevelOp() {
     auto rewritten = MakeShaRewriteEngine().ApplyUntilStable(expr);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Maj));
-    BF_TEST(rewritten->op == OpType::Xor);
-    BF_TEST(rewritten->inputs.size() == 3);
+    BF_TEST(IsCanonicalMAJ(rewritten, x, y, z));
+    return 0;
+}
+
+int TestRewriteTarget_CH_EquivalentForm_ConvergesToCanonical() {
+    Builder b;
+    auto x = b.Var();
+    auto y = b.Var();
+    auto z = b.Var();
+
+    // Equivalent CH vorm: z ^ (x & (y ^ z))
+    auto expr = b.Xor({z, b.And(x, b.Xor({y, z}))});
+    auto rewritten = MakeShaRewriteEngine().ApplyUntilStable(expr);
+
+    BF_TEST(IsCanonicalCH(rewritten, x, y, z));
+    return 0;
+}
+
+int TestRewriteTarget_MAJ_EquivalentOrForm_ConvergesToCanonical() {
+    Builder b;
+    auto x = b.Var();
+    auto y = b.Var();
+    auto z = b.Var();
+
+    // Equivalent MAJ vorm: (x & y) | (z & (x ^ y))
+    auto expr = MakeOp(9999, OpType::Or, {b.And(x, y), b.And(z, b.Xor({x, y}))});
+    auto rewritten = MakeShaRewriteEngine().ApplyUntilStable(expr);
+
+    BF_TEST(IsCanonicalMAJ(rewritten, x, y, z));
     return 0;
 }
 
@@ -102,6 +177,8 @@ int TestRewriteTarget_RoundT2Core_HasNoCHOrMAJ() {
 int main() {
     BF_RUN_TEST(TestRewriteTarget_CH_ExpandsAwayHighLevelOp);
     BF_RUN_TEST(TestRewriteTarget_MAJ_ExpandsAwayHighLevelOp);
+    BF_RUN_TEST(TestRewriteTarget_CH_EquivalentForm_ConvergesToCanonical);
+    BF_RUN_TEST(TestRewriteTarget_MAJ_EquivalentOrForm_ConvergesToCanonical);
     BF_RUN_TEST(TestRewriteTarget_RoundT1Core_HasNoCHOrMAJ);
     BF_RUN_TEST(TestRewriteTarget_RoundT2Core_HasNoCHOrMAJ);
     return 0;
