@@ -79,6 +79,8 @@ inline void Add_Simplify_Arithmetic_Rules(RuleEngine& engine) {
     engine.AddRule(Simplify::Arithmetic::Get_Mul_Zero_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_Div_One_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_Mod_Zero_Guard_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Shift_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Modulo_Bitwidth_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_Neg_Neg_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_Add_Fold_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_Const_Combine_Rule());

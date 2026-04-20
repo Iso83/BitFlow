@@ -51,7 +51,7 @@ Expr* RunRoundFragmentPipeline(Expr* fragment) {
     return MakeShaFactorizeEngine().ApplyRecursive(normalizedSimplified);
 }
 
-int TestEndToEnd_T1SigmaChoiceCore_ManyConcreteCases() {
+int TestRoundFragments_T1SigmaChoiceCore_ManyConcreteCases() {
     constexpr std::array<std::array<uint32_t, 3>, 4> cases = {{{0x510E527FU, 0x9B05688CU, 0x1F83D9ABU},
                                                                {0x00000000U, 0xFFFFFFFFU, 0xA5A5A5A5U},
                                                                {0x13579BDFU, 0x2468ACE0U, 0x0F0FF0F0U},
@@ -97,7 +97,7 @@ int TestEndToEnd_T1SigmaChoiceCore_ManyConcreteCases() {
     return 0;
 }
 
-int TestEndToEnd_T2PartCore_ManyConcreteCases() {
+int TestRoundFragments_T2PartCore_ManyConcreteCases() {
     constexpr std::array<std::array<uint32_t, 3>, 4> cases = {{{0x6A09E667U, 0xBB67AE85U, 0x3C6EF372U},
                                                                {0x00000000U, 0xFFFFFFFFU, 0x12345678U},
                                                                {0x13579BDFU, 0x2468ACE0U, 0x0F0FF0F0U},
@@ -142,7 +142,7 @@ int TestEndToEnd_T2PartCore_ManyConcreteCases() {
     return 0;
 }
 
-int TestEndToEnd_T1PartCore_ManyConcreteCases() {
+int TestRoundFragments_T1PartCore_ManyConcreteCases() {
     constexpr std::array<std::array<uint32_t, 4>, 4> cases = {{{0x5BE0CD19U, 0x510E527FU, 0x9B05688CU, 0x1F83D9ABU},
                                                                {0x00000000U, 0xFFFFFFFFU, 0xAAAAAAAAU, 0x55555555U},
                                                                {0x13579BDFU, 0x2468ACE0U, 0x0F0FF0F0U, 0xF0F00F0FU},
@@ -199,8 +199,8 @@ int TestEndToEnd_T1PartCore_ManyConcreteCases() {
 } // namespace
 
 int main() {
-    BF_RUN_TEST(TestEndToEnd_T1SigmaChoiceCore_ManyConcreteCases);
-    BF_RUN_TEST(TestEndToEnd_T2PartCore_ManyConcreteCases);
-    BF_RUN_TEST(TestEndToEnd_T1PartCore_ManyConcreteCases);
+    BF_RUN_TEST(TestRoundFragments_T1SigmaChoiceCore_ManyConcreteCases);
+    BF_RUN_TEST(TestRoundFragments_T2PartCore_ManyConcreteCases);
+    BF_RUN_TEST(TestRoundFragments_T1PartCore_ManyConcreteCases);
     return 0;
 }
