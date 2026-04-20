@@ -32,7 +32,7 @@ static int CompileCppSource(const std::string& file, const std::string& exe) {
     return res;
 }
 
-static uint64_t CompileAndRun(const std::string& expr) {
+static uint64_t CompileAndRun(const std::string& expr, const std::string& support = {}) {
     static std::atomic<uint64_t> counter{0};
     const uint64_t id = counter.fetch_add(1);
     const std::string base = "bf_codegen_test_" + std::to_string(id);
@@ -45,6 +45,9 @@ static uint64_t CompileAndRun(const std::string& expr) {
 
     std::ofstream out(file);
     out << "#include <cstdint>\n";
+    out << support;
+    if (!support.empty() && support.back() != '\n')
+        out << "\n";
     out << "#include <iostream>\n";
     out << "int main(){\n";
     out << "uint64_t v = " << expr << ";\n";
@@ -95,7 +98,8 @@ static uint64_t CompileAndRun(const std::string& expr) {
     return static_cast<uint64_t>(std::stoull(buffer));
 }
 
-static uint64_t CompileAndRunWrapper(const std::string& wrapper, const std::string& invocation) {
+static uint64_t CompileAndRunWrapper(const std::string& wrapper, const std::string& invocation,
+                                     const std::string& support = {}) {
     static std::atomic<uint64_t> counter{100000};
     const uint64_t id = counter.fetch_add(1);
 
@@ -109,6 +113,9 @@ static uint64_t CompileAndRunWrapper(const std::string& wrapper, const std::stri
 
     std::ofstream out(file);
     out << "#include <cstdint>\n";
+    out << support;
+    if (!support.empty() && support.back() != '\n')
+        out << "\n";
     out << wrapper << "\n";
     out << "#include <iostream>\n";
     out << "int main(){\n";
@@ -167,13 +174,18 @@ int main() {
     auto expr = MakeOp(3, OpType::Add, {c1, c2});
     auto eval = Eval::EvaluateConstant(expr, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
-    BF_TEST(eval.value == CompileAndRun(Codegen::EmitCExpr(expr, 32)));
+    BF_TEST(eval.value == CompileAndRun(Codegen::EmitCExpr(expr, 32), Codegen::EmitCRuntimeSupport(32)));
 
     auto a = MakeVar(11);
     auto b = MakeVar(12);
     auto wrapperExpr = MakeOp(13, OpType::Mul, {MakeOp(14, OpType::Add, {a, b}), MakeConst(15, 2)});
     auto wrapper = Codegen::EmitCFunction(wrapperExpr, 32);
-    BF_TEST(CompileAndRunWrapper(wrapper, "f(5, 7)") == 24ull);
+    BF_TEST(CompileAndRunWrapper(wrapper, "f(5, 7)", Codegen::EmitCRuntimeSupport(32)) == 24ull);
+
+    auto rotlExpr = MakeOp(16, OpType::RotL, {MakeConst(17, 0x81), MakeConst(18, 1)});
+    auto rotlEval = Eval::EvaluateConstant(rotlExpr, 8);
+    BF_TEST(rotlEval.status == Eval::EvalStatus::Success);
+    BF_TEST(rotlEval.value == CompileAndRun(Codegen::EmitCExpr(rotlExpr, 8), Codegen::EmitCRuntimeSupport(8)));
 
     return 0;
 }
