@@ -66,7 +66,10 @@ static std::string InlineSsaResult(const SsaProgram& prog, uint32_t bitWidth) {
     for (const auto& [name, value] : env)
         ReplaceIdentifierToken(expr, name, value);
 
-    return ApplyMask(expr, bitWidth);
+    expr = ApplyMask(expr, bitWidth);
+    ReplaceIdentifierToken(expr, "rotl", "bf_rotl");
+    ReplaceIdentifierToken(expr, "rotr", "bf_rotr");
+    return expr;
 }
 
 static void CollectVars(const Expr* e, std::set<uint32_t>& out) {
@@ -81,6 +84,60 @@ static void CollectVars(const Expr* e, std::set<uint32_t>& out) {
 }
 
 } // namespace
+
+std::string EmitCRuntimeSupport(uint32_t bitWidth) {
+    std::ostringstream ss;
+    ss << "#include <cstdint>\n";
+
+    if (bitWidth > 64U)
+        ss << "#include <BitFlow/core/bitvector/BitVector.h>\n";
+
+    ss << "\n";
+    ss << "// BitFlow generated rotate contract:\n";
+    ss << "// - bitWidth <= 32: bf_rotl/bf_rotr operate on uint32_t\n";
+    ss << "// - bitWidth <= 64: bf_rotl/bf_rotr operate on uint64_t\n";
+    ss << "// - bitWidth > 64: bf_rotl/bf_rotr operate on bf_uint (C++ runtime type)\n";
+
+    if (bitWidth <= 32U) {
+        ss << "[[maybe_unused]] static inline uint32_t bf_rotl(uint32_t value, uint32_t shift) {\n";
+        ss << "    shift &= 31u;\n";
+        ss << "    if (shift == 0u)\n";
+        ss << "        return value;\n";
+        ss << "    return static_cast<uint32_t>((value << shift) | (value >> ((32u - shift) & 31u)));\n";
+        ss << "}\n\n";
+
+        ss << "[[maybe_unused]] static inline uint32_t bf_rotr(uint32_t value, uint32_t shift) {\n";
+        ss << "    shift &= 31u;\n";
+        ss << "    if (shift == 0u)\n";
+        ss << "        return value;\n";
+        ss << "    return static_cast<uint32_t>((value >> shift) | (value << ((32u - shift) & 31u)));\n";
+        ss << "}\n\n";
+    } else if (bitWidth <= 64U) {
+        ss << "[[maybe_unused]] static inline uint64_t bf_rotl(uint64_t value, uint32_t shift) {\n";
+        ss << "    shift &= 63u;\n";
+        ss << "    if (shift == 0u)\n";
+        ss << "        return value;\n";
+        ss << "    return (value << shift) | (value >> ((64u - shift) & 63u));\n";
+        ss << "}\n\n";
+
+        ss << "[[maybe_unused]] static inline uint64_t bf_rotr(uint64_t value, uint32_t shift) {\n";
+        ss << "    shift &= 63u;\n";
+        ss << "    if (shift == 0u)\n";
+        ss << "        return value;\n";
+        ss << "    return (value >> shift) | (value << ((64u - shift) & 63u));\n";
+        ss << "}\n\n";
+    } else {
+        ss << "[[maybe_unused]] static inline bf_uint bf_rotl(const bf_uint& value, uint32_t shift) {\n";
+        ss << "    return value.RotL(shift);\n";
+        ss << "}\n\n";
+
+        ss << "[[maybe_unused]] static inline bf_uint bf_rotr(const bf_uint& value, uint32_t shift) {\n";
+        ss << "    return value.RotR(shift);\n";
+        ss << "}\n\n";
+    }
+
+    return ss.str();
+}
 
 std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
     if (!root || bitWidth == 0U)
@@ -116,14 +173,21 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
 
     std::unordered_set<std::string> declared;
     for (const auto& st : prog.statements) {
+        std::string stmtExpr = ApplyMask(st.expr, bitWidth);
+        ReplaceIdentifierToken(stmtExpr, "rotl", "bf_rotl");
+        ReplaceIdentifierToken(stmtExpr, "rotr", "bf_rotr");
+
         if (!declared.insert(st.name).second) {
-            ss << "    " << st.name << " = " << ApplyMask(st.expr, bitWidth) << ";\n";
+            ss << "    " << st.name << " = " << stmtExpr << ";\n";
             continue;
         }
-        ss << "    " << ctype << " " << st.name << " = " << ApplyMask(st.expr, bitWidth) << ";\n";
+        ss << "    " << ctype << " " << st.name << " = " << stmtExpr << ";\n";
     }
 
-    ss << "    return " << ApplyMask(prog.result.empty() ? std::string("0") : prog.result, bitWidth) << ";\n";
+    std::string resultExpr = ApplyMask(prog.result.empty() ? std::string("0") : prog.result, bitWidth);
+    ReplaceIdentifierToken(resultExpr, "rotl", "bf_rotl");
+    ReplaceIdentifierToken(resultExpr, "rotr", "bf_rotr");
+    ss << "    return " << resultExpr << ";\n";
     ss << "}\n\n";
 
     ss << ctype << " f(";
@@ -177,12 +241,20 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& roots, uint32_t b
     }
     ss << ") {\n";
 
-    for (const auto& st : prog.statements)
-        ss << "    " << ctype << " " << st.name << " = " << ApplyMask(st.expr, bitWidth) << ";\n";
+    for (const auto& st : prog.statements) {
+        std::string stmtExpr = ApplyMask(st.expr, bitWidth);
+        ReplaceIdentifierToken(stmtExpr, "rotl", "bf_rotl");
+        ReplaceIdentifierToken(stmtExpr, "rotr", "bf_rotr");
+        ss << "    " << ctype << " " << st.name << " = " << stmtExpr << ";\n";
+    }
 
     ss << "    EvalResult r{};\n";
-    for (size_t i = 0; i < prog.results.size(); ++i)
-        ss << "    r.out" << (i + 1) << " = " << ApplyMask(prog.results[i], bitWidth) << ";\n";
+    for (size_t i = 0; i < prog.results.size(); ++i) {
+        std::string resultExpr = ApplyMask(prog.results[i], bitWidth);
+        ReplaceIdentifierToken(resultExpr, "rotl", "bf_rotl");
+        ReplaceIdentifierToken(resultExpr, "rotr", "bf_rotr");
+        ss << "    r.out" << (i + 1) << " = " << resultExpr << ";\n";
+    }
     ss << "    return r;\n";
     ss << "}\n\n";
 
