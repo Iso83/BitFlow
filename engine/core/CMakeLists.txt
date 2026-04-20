@@ -87,4 +87,10 @@ if(BF_BUILD_TESTS)
 
     bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_CH)
     bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_MAJ)
+
+    # SHA workflow helpers/examples
+    bf_add_module_test(BitFlowCore core BF_SHA_Fragments)
+    bf_add_module_test(BitFlowCore core BF_SHA_Workflows)
+    bf_add_module_test(BitFlowCore core BF_SHA_RewriteTargets)
+    bf_add_module_test(BitFlowCore core BF_SHA_EndToEnd)
 endif()

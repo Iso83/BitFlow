@@ -543,6 +543,7 @@ Core::Rules::RuleEngine BuildRuleEngine(const CliOptions& opt, const std::unorde
     if (runSimplify) {
         Core::Rules::Add_Simplify_Bitwise_Rules(engine);
         Core::Rules::Add_Simplify_Arithmetic_Rules(engine);
+        Core::Rules::Add_Simplify_SHA_Rules(engine);
     }
     if (runFactorize) {
         Core::Rules::Add_Factorize_Bitwise_Rules(engine);

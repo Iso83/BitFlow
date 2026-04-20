@@ -1,7 +1,10 @@
 #include <BitFlow/core/bitvector/BitVector.h>
 #include <BitFlow/core/codegen/Emitter.h>
 #include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/rules/RuleEngine.h>
+#include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
+#include <SHA_Expr.h>
 #include <TestAssert.h>
 #include <atomic>
 #include <cstdio>
@@ -313,6 +316,48 @@ int main() {
                                "bf_uint(0x1112131415161718ull, 128)); "
                                "auto out1 = r.out1.ToUint64(); auto out2 = r.out2.ToUint64(); "
                                "(void)out1; (void)out2;"));
+
+    // SHA fragment end-to-end runtime path: build -> rewrite -> emit -> compile/run.
+    {
+        using namespace BitFlow::Core::Testing::SHA;
+        Rules::RuleEngine simplifyEngine;
+        Rules::Add_Normalize_Rules(simplifyEngine);
+        Rules::Add_Simplify_Bitwise_Rules(simplifyEngine);
+        Rules::Add_Simplify_SHA_Rules(simplifyEngine);
+
+        Rules::RuleEngine factorizeEngine;
+        Rules::Add_Normalize_Rules(factorizeEngine);
+        Rules::Add_Simplify_Bitwise_Rules(factorizeEngine);
+        Rules::Add_Factorize_Bitwise_Rules(factorizeEngine);
+
+        Builder sb;
+        auto aSha = sb.Var();
+        auto bSha = sb.Var();
+        auto cSha = sb.Var();
+        auto t2Core = sb.Add({sb.BigSigma0(aSha), sb.Maj(aSha, bSha, cSha)});
+        auto normalizedSimplified = simplifyEngine.ApplyUntilStable(t2Core);
+        auto rewritten = factorizeEngine.ApplyRecursive(normalizedSimplified);
+
+        const auto support = Codegen::EmitCRuntimeSupport(32);
+        const auto wrapperSha = Codegen::EmitCFunction(rewritten, 32);
+
+        constexpr uint32_t aIn = 0x6A09E667U;
+        constexpr uint32_t bIn = 0xBB67AE85U;
+        constexpr uint32_t cIn = 0x3C6EF372U;
+        const auto rotr32 = [](uint32_t x, uint32_t amount) {
+            const uint32_t s = amount & 31u;
+            if (s == 0u)
+                return x;
+            return static_cast<uint32_t>((x >> s) | (x << (32u - s)));
+        };
+        const uint32_t sigma0 = rotr32(aIn, 2u) ^ rotr32(aIn, 13u) ^ rotr32(aIn, 22u);
+        const uint32_t maj = (aIn & bIn) ^ (aIn & cIn) ^ (bIn & cIn);
+        const uint64_t expected = static_cast<uint64_t>(static_cast<uint32_t>(sigma0 + maj));
+
+        const std::string invocation =
+            "f(" + std::to_string(aIn) + "u, " + std::to_string(bIn) + "u, " + std::to_string(cIn) + "u)";
+        BF_TEST(CompileAndRunWrapper(wrapperSha, invocation, support) == expected);
+    }
 
     return 0;
 }
