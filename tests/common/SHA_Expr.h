@@ -68,6 +68,22 @@ class Builder {
         return Xor({RotR(x, 17), RotR(x, 19), MakeOp(NextId(), OpType::Shr, {x, Const(10)})});
     }
 
+    Expr* RoundT1ChoiceCore(Expr* e, Expr* f, Expr* g) {
+        return Ch(e, f, g);
+    }
+
+    Expr* RoundT1SigmaChoiceCore(Expr* e, Expr* f, Expr* g) {
+        return Add({BigSigma1(e), RoundT1ChoiceCore(e, f, g)});
+    }
+
+    Expr* RoundT1PartCore(Expr* h, Expr* e, Expr* f, Expr* g) {
+        return Add({h, RoundT1SigmaChoiceCore(e, f, g)});
+    }
+
+    Expr* RoundT2PartCore(Expr* a, Expr* b, Expr* c) {
+        return Add({BigSigma0(a), Maj(a, b, c)});
+    }
+
     // Typical SHA-256 round fragments.
     Expr* RoundT1(Expr* h, Expr* e, Expr* f, Expr* g, Expr* k, Expr* w) {
         return Add({h, BigSigma1(e), Ch(e, f, g), k, w});
