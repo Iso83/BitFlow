@@ -4,7 +4,7 @@ Deze inventaris noteert het onderscheid tussen snelle unit-tests, tragere runtim
 
 ## 1) Snelle unit tests (standaard actief)
 
-- Alle reguliere `bf_add_module_test(...)` tests in `engine/core/CMakeLists.txt` en `engine/io/CMakeLists.txt` draaien standaard met label `unit`.
+- Alle reguliere `bf_add_module_test(...)` tests in `engine/core/CMakeLists.txt` en `engine/io/CMakeLists.txt` krijgen automatisch label `unit` (default in `cmake/BitFlowTests.cmake`).
 - De ExprWorkbench profile test (`BF_ExprWorkbench_StageProfiles`) heeft labels `unit;tool`.
 
 Voorbeeld:
