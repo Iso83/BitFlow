@@ -1,5 +1,6 @@
 #include "expression/ExprClone.h"
 #include "expression/ExprFactory.h"
+#include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/ast/Expression.h>
@@ -85,7 +86,7 @@ static bool Match_XorCancel(const Expr& e) {
 
     for (size_t i = 1; i < e.inputs.size(); ++i) {
         if (!e.inputs[i]->isConst() && !e.inputs[i - 1]->isConst() &&
-            e.inputs[i - 1]->id.value() == e.inputs[i]->id.value())
+            CompareExprCanonical(e.inputs[i - 1], e.inputs[i]) == 0)
             return true;
     }
 
@@ -167,7 +168,7 @@ static Expr* Rewrite_XorCancel(Expr& e) {
         }
 
         size_t j = i + 1;
-        while (j < e.inputs.size() && !e.inputs[j]->isConst() && e.inputs[j]->id.value() == cur->id.value())
+        while (j < e.inputs.size() && !e.inputs[j]->isConst() && CompareExprCanonical(e.inputs[j], cur) == 0)
             ++j;
 
         const size_t count = j - i;
@@ -180,7 +181,7 @@ static Expr* Rewrite_XorCancel(Expr& e) {
     if (constParity != 0)
         oddTerms.push_back(ConstPool::Get(constParity));
 
-    std::sort(oddTerms.begin(), oddTerms.end(), [](Expr* a, Expr* b) { return a->id.value() < b->id.value(); });
+    std::sort(oddTerms.begin(), oddTerms.end(), [](Expr* a, Expr* b) { return CanonicalExprLess(a, b); });
 
     return BuildXorParityResult(oddTerms);
 }

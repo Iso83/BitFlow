@@ -19,7 +19,7 @@ static bool Match_Order(const Expr& e) {
         return false;
 
     for (size_t i = 1; i < e.inputs.size(); ++i) {
-        if (e.inputs[i - 1]->id.value() > e.inputs[i]->id.value())
+        if (CanonicalExprLess(e.inputs[i], e.inputs[i - 1]))
             return true;
     }
 
@@ -29,7 +29,7 @@ static bool Match_Order(const Expr& e) {
 static Expr* Rewrite_Order(Expr& e) {
     std::vector<Expr*> sorted = e.inputs;
 
-    std::sort(sorted.begin(), sorted.end(), [](Expr* a, Expr* b) { return a->id.value() < b->id.value(); });
+    std::sort(sorted.begin(), sorted.end(), [](Expr* a, Expr* b) { return CanonicalExprLess(a, b); });
 
     Expr* target = Expression::CloneExpr(&e);
     target->inputs = std::move(sorted);

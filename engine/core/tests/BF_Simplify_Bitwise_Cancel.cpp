@@ -259,6 +259,40 @@ int TestXorParity_RewriteKeepsCanonicalOrder() {
     return 0;
 }
 
+int TestXorParity_StructuralRotatePairCancelsToZero() {
+    auto x = MakeVar(1);
+    auto rotA = MakeOp(10, OpType::RotR, {x, MakeConst(11, 2)});
+    auto rotB = MakeOp(12, OpType::RotR, {x, MakeConst(13, 2)});
+    auto expr = MakeOp(14, OpType::Xor, {rotA, rotB});
+
+    RuleEngine engine;
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
+
+    Expr* r = engine.ApplyUntilStable(expr);
+
+    BF_TEST(r->isConst());
+    BF_TEST(r->constValue == 0);
+    return 0;
+}
+
+int TestXorParity_StructuralRotateDuplicateLeavesSingle() {
+    auto x = MakeVar(1);
+    auto rot2A = MakeOp(20, OpType::RotR, {x, MakeConst(21, 2)});
+    auto rot13 = MakeOp(22, OpType::RotR, {x, MakeConst(23, 13)});
+    auto rot2B = MakeOp(24, OpType::RotR, {x, MakeConst(25, 2)});
+    auto expr = MakeOp(26, OpType::Xor, {rot2A, rot13, rot2B});
+
+    RuleEngine engine;
+    Add_Normalize_Rules(engine);
+    Add_Simplify_Bitwise_Rules(engine);
+
+    Expr* r = engine.ApplyUntilStable(expr);
+
+    BF_TEST(r == rot13);
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAndCancelPair);
     BF_RUN_TEST(TestAndCancelMixed);
@@ -274,5 +308,7 @@ int main() {
     BF_RUN_TEST(TestXorParity_WithConstCancel);
     BF_RUN_TEST(TestXorParity_WithConstMixed);
     BF_RUN_TEST(TestXorParity_RewriteKeepsCanonicalOrder);
+    BF_RUN_TEST(TestXorParity_StructuralRotatePairCancelsToZero);
+    BF_RUN_TEST(TestXorParity_StructuralRotateDuplicateLeavesSingle);
     return 0;
 }

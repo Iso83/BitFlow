@@ -35,6 +35,13 @@ RuleEngine MakeShaNormalizeSimplifyEngine() {
     return engine;
 }
 
+RuleEngine MakeShaCanonicalEngine() {
+    RuleEngine engine;
+    Add_Normalize_Rules(engine);
+    Add_Simplify_SHA_Rules(engine);
+    return engine;
+}
+
 uint32_t RotR32(uint32_t x, uint32_t amount) {
     const uint32_t s = amount & 31U;
     if (s == 0U)
@@ -49,13 +56,15 @@ int TestFragment_CH_RewriteAndConstantEval() {
     constexpr uint32_t z = 0x00FF00FFU;
 
     auto ch = b.Ch(b.Const(x), b.Const(y), b.Const(z));
-    auto rewritten = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(ch);
+    auto rewritten = MakeShaCanonicalEngine().ApplyUntilStable(ch);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
 
-    const auto eval = Eval::EvaluateConstant(rewritten, 32);
-    BF_TEST(eval.status == Eval::EvalStatus::Success);
-    BF_TEST(static_cast<uint32_t>(eval.value) == ((x & y) ^ ((~x) & z)));
+    const auto evalOriginal = Eval::EvaluateConstant(ch, 32);
+    const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
+    BF_TEST(evalOriginal.status == Eval::EvalStatus::Success);
+    BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
+    BF_TEST(evalRewritten.value == evalOriginal.value);
     return 0;
 }
 
@@ -66,7 +75,7 @@ int TestFragment_MAJ_RewriteAndConstantEval() {
     constexpr uint32_t z = 0x0F0FF0F0U;
 
     auto maj = b.Maj(b.Const(x), b.Const(y), b.Const(z));
-    auto rewritten = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(maj);
+    auto rewritten = MakeShaCanonicalEngine().ApplyUntilStable(maj);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Maj));
 
