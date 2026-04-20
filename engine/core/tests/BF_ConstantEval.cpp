@@ -150,10 +150,18 @@ int TestEvaluate_WideBitWidth_UsesBfUintPath() {
     auto add = MakeOp(5, OpType::Add, {rotl, shl});
     auto mod = MakeOp(6, OpType::Mod, {add, MakeConst(7, 257)});
 
+    auto wide = EvaluateConstantWide(mod, 128);
     EvalResult r = EvaluateConstant(mod, 128);
 
+    BF_TEST(wide.status == EvalStatus::Success);
+    BF_TEST(wide.value.BitWidth() == 128U);
     BF_TEST(r.status == EvalStatus::Success);
     BF_TEST(r.value == ((0x102ULL + 0x102ULL) % 257ULL));
+
+    auto rotr = MakeOp(8, OpType::RotR, {c2, MakeConst(9, 1)});
+    auto rotrWide = EvaluateConstantWide(rotr, 128);
+    BF_TEST(rotrWide.status == EvalStatus::Success);
+    BF_TEST(rotrWide.value.Shr(127).ToUint64() == 1ULL);
     return 0;
 }
 

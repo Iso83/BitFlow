@@ -211,11 +211,6 @@ EvalResult EvalExpr(const AST::Expr* node, uint32_t bitWidth, uint64_t mask) {
     }
 }
 
-struct WideEvalResult {
-    EvalStatus status = EvalStatus::UnsupportedOp;
-    BitVector::bf_uint value = BitVector::bf_uint(0, 0);
-};
-
 WideEvalResult MakeWide(EvalStatus status, uint32_t bitWidth) {
     return WideEvalResult{status, BitVector::bf_uint(0, bitWidth)};
 }
@@ -224,7 +219,7 @@ WideEvalResult MakeWideSuccess(const BitVector::bf_uint& value) {
     return WideEvalResult{EvalStatus::Success, value};
 }
 
-WideEvalResult EvalExprWide(const AST::Expr* node, uint32_t bitWidth) {
+WideEvalResult EvalExprWideImpl(const AST::Expr* node, uint32_t bitWidth) {
     if (node == nullptr)
         return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
 
@@ -237,7 +232,7 @@ WideEvalResult EvalExprWide(const AST::Expr* node, uint32_t bitWidth) {
     const auto evalChild = [&](size_t index) -> WideEvalResult {
         if (index >= node->inputs.size())
             return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
-        return EvalExprWide(node->inputs[index], bitWidth);
+        return EvalExprWideImpl(node->inputs[index], bitWidth);
     };
 
     switch (node->op) {
@@ -361,16 +356,21 @@ WideEvalResult EvalExprWide(const AST::Expr* node, uint32_t bitWidth) {
 } // namespace
 
 EvalResult EvaluateConstant(const AST::Expr* root, uint32_t bitWidth) {
-    if (bitWidth == 0)
-        return Make(EvalStatus::InvalidBitWidth);
+    WideEvalResult wide = EvaluateConstantWide(root, bitWidth);
+    return EvalResult{wide.status, wide.value.ToUint64()};
+}
 
-    if (bitWidth > 64U) {
-        WideEvalResult wide = EvalExprWide(root, bitWidth);
-        return EvalResult{wide.status, wide.value.ToUint64()};
+WideEvalResult EvaluateConstantWide(const AST::Expr* root, uint32_t bitWidth) {
+    if (bitWidth == 0)
+        return MakeWide(EvalStatus::InvalidBitWidth, 0);
+
+    if (bitWidth <= 64U) {
+        uint64_t mask = MaskFor(bitWidth);
+        EvalResult narrow = EvalExpr(root, bitWidth, mask);
+        return WideEvalResult{narrow.status, BitVector::bf_uint(narrow.value, bitWidth)};
     }
 
-    uint64_t mask = MaskFor(bitWidth);
-    return EvalExpr(root, bitWidth, mask);
+    return EvalExprWideImpl(root, bitWidth);
 }
 
 } // namespace BitFlow::Core::Eval
