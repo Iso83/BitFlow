@@ -84,6 +84,36 @@ bool IsCanonicalMAJ(const Expr* e, const Expr* x, const Expr* y, const Expr* z) 
     return hasXY && hasXZ && hasYZ;
 }
 
+bool ContainsCanonicalCH(const Expr* root, const Expr* x, const Expr* y, const Expr* z) {
+    if (root == nullptr)
+        return false;
+
+    if (IsCanonicalCH(root, x, y, z))
+        return true;
+
+    for (const Expr* in : root->inputs) {
+        if (ContainsCanonicalCH(in, x, y, z))
+            return true;
+    }
+
+    return false;
+}
+
+bool ContainsCanonicalMAJ(const Expr* root, const Expr* x, const Expr* y, const Expr* z) {
+    if (root == nullptr)
+        return false;
+
+    if (IsCanonicalMAJ(root, x, y, z))
+        return true;
+
+    for (const Expr* in : root->inputs) {
+        if (ContainsCanonicalMAJ(in, x, y, z))
+            return true;
+    }
+
+    return false;
+}
+
 int TestRewriteTarget_CH_ExpandsAwayHighLevelOp() {
     Builder b;
     auto x = b.Var();
@@ -153,6 +183,7 @@ int TestRewriteTarget_RoundT1Core_HasNoCHOrMAJ() {
     BF_TEST(rewritten->op == OpType::Add);
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
     BF_TEST(!ContainsOp(rewritten, OpType::Maj));
+    BF_TEST(ContainsCanonicalCH(rewritten, e, f, g));
     return 0;
 }
 
@@ -169,6 +200,41 @@ int TestRewriteTarget_RoundT2Core_HasNoCHOrMAJ() {
     BF_TEST(rewritten->op == OpType::Add);
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
     BF_TEST(!ContainsOp(rewritten, OpType::Maj));
+    BF_TEST(ContainsCanonicalMAJ(rewritten, a, bVar, c));
+    return 0;
+}
+
+int TestRewriteTarget_RoundFragment_CH_InLargerExpr_UsesCanonicalSubform() {
+    Builder b;
+    auto e = b.Var();
+    auto f = b.Var();
+    auto g = b.Var();
+    auto h = b.Var();
+
+    // Mini-fragment: een grotere expressie waarin CH als subexpressie zit.
+    auto fragment = b.Add({h, b.BigSigma1(e), b.Ch(e, f, g)});
+    auto rewritten = MakeShaRewriteEngine().ApplyUntilStable(fragment);
+
+    BF_TEST(rewritten->op == OpType::Add);
+    BF_TEST(!ContainsOp(rewritten, OpType::Ch));
+    BF_TEST(ContainsCanonicalCH(rewritten, e, f, g));
+    return 0;
+}
+
+int TestRewriteTarget_RoundFragment_MAJ_InLargerExpr_UsesCanonicalSubform() {
+    Builder b;
+    auto a = b.Var();
+    auto bVar = b.Var();
+    auto c = b.Var();
+    auto d = b.Var();
+
+    // Mini-fragment: een grotere expressie waarin MAJ als subexpressie zit.
+    auto fragment = b.Add({d, b.BigSigma0(a), b.Maj(a, bVar, c)});
+    auto rewritten = MakeShaRewriteEngine().ApplyUntilStable(fragment);
+
+    BF_TEST(rewritten->op == OpType::Add);
+    BF_TEST(!ContainsOp(rewritten, OpType::Maj));
+    BF_TEST(ContainsCanonicalMAJ(rewritten, a, bVar, c));
     return 0;
 }
 
@@ -181,5 +247,7 @@ int main() {
     BF_RUN_TEST(TestRewriteTarget_MAJ_EquivalentOrForm_ConvergesToCanonical);
     BF_RUN_TEST(TestRewriteTarget_RoundT1Core_HasNoCHOrMAJ);
     BF_RUN_TEST(TestRewriteTarget_RoundT2Core_HasNoCHOrMAJ);
+    BF_RUN_TEST(TestRewriteTarget_RoundFragment_CH_InLargerExpr_UsesCanonicalSubform);
+    BF_RUN_TEST(TestRewriteTarget_RoundFragment_MAJ_InLargerExpr_UsesCanonicalSubform);
     return 0;
 }
