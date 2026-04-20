@@ -76,6 +76,59 @@ int TestFragment_MAJ_RewriteAndConstantEval() {
     return 0;
 }
 
+
+int TestFragment_SmallSigma0_RewriteEmitEvalConsistency() {
+    Builder b;
+    constexpr uint32_t x = 0x12345678U;
+
+    auto sigma0 = b.SmallSigma0(b.Const(x));
+    auto rewritten = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(sigma0);
+
+    const auto evalOriginal = Eval::EvaluateConstant(sigma0, 32);
+    const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
+
+    BF_TEST(evalOriginal.status == Eval::EvalStatus::Success);
+    BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
+
+    const uint32_t expected = RotR32(x, 7) ^ RotR32(x, 18) ^ (x >> 3);
+    BF_TEST(static_cast<uint32_t>(evalOriginal.value) == expected);
+    BF_TEST(static_cast<uint32_t>(evalRewritten.value) == expected);
+
+    auto v = b.Var();
+    auto sigma0Var = b.SmallSigma0(v);
+    const auto emitted = Codegen::EmitCExpr(MakeShaNormalizeSimplifyEngine().ApplyUntilStable(sigma0Var), 32);
+    BF_TEST(emitted.find("bf_rotr") != std::string::npos);
+    BF_TEST(emitted.find(">>") != std::string::npos);
+
+    return 0;
+}
+
+int TestFragment_SmallSigma1_RewriteEmitEvalConsistency() {
+    Builder b;
+    constexpr uint32_t x = 0x89ABCDEFU;
+
+    auto sigma1 = b.SmallSigma1(b.Const(x));
+    auto rewritten = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(sigma1);
+
+    const auto evalOriginal = Eval::EvaluateConstant(sigma1, 32);
+    const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
+
+    BF_TEST(evalOriginal.status == Eval::EvalStatus::Success);
+    BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
+
+    const uint32_t expected = RotR32(x, 17) ^ RotR32(x, 19) ^ (x >> 10);
+    BF_TEST(static_cast<uint32_t>(evalOriginal.value) == expected);
+    BF_TEST(static_cast<uint32_t>(evalRewritten.value) == expected);
+
+    auto v = b.Var();
+    auto sigma1Var = b.SmallSigma1(v);
+    const auto emitted = Codegen::EmitCExpr(MakeShaNormalizeSimplifyEngine().ApplyUntilStable(sigma1Var), 32);
+    BF_TEST(emitted.find("bf_rotr") != std::string::npos);
+    BF_TEST(emitted.find(">>") != std::string::npos);
+
+    return 0;
+}
+
 int TestFragment_Sigma1_EmitUsesRotateRuntimeContract() {
     Builder b;
     constexpr uint32_t e = 0x510E527FU;
@@ -99,6 +152,8 @@ int TestFragment_Sigma1_EmitUsesRotateRuntimeContract() {
 int main() {
     BF_RUN_TEST(TestFragment_CH_RewriteAndConstantEval);
     BF_RUN_TEST(TestFragment_MAJ_RewriteAndConstantEval);
+    BF_RUN_TEST(TestFragment_SmallSigma0_RewriteEmitEvalConsistency);
+    BF_RUN_TEST(TestFragment_SmallSigma1_RewriteEmitEvalConsistency);
     BF_RUN_TEST(TestFragment_Sigma1_EmitUsesRotateRuntimeContract);
     return 0;
 }
