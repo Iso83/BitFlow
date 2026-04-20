@@ -73,5 +73,9 @@ int main() {
     BF_TEST(t1Pos < t2Pos);
     BF_TEST(t2Pos < out1Pos);
 
+    // Case 5 — wide outputs must initialize struct without default bf_uint ctor.
+    const auto wideCode = Codegen::EmitCFunctionMulti(nestedOutputs, 128);
+    BF_TEST(wideCode.find("EvalResult r{bf_uint(0ull, 128), bf_uint(0ull, 128)};") != std::string::npos);
+
     return 0;
 }

@@ -1,10 +1,12 @@
 #include <BitFlow/core/codegen/Emitter.h>
+#include <BitFlow/core/bitvector/BitVector.h>
 #include <BitFlow/core/eval/ConstantEval.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -23,14 +25,24 @@ namespace {
 #endif
 
 static int CompileCppSource(const std::string& file, const std::string& exe) {
+    namespace fs = std::filesystem;
+    static const fs::path repoRoot = [] {
+        fs::path p = fs::path(__FILE__);
+        return p.parent_path().parent_path().parent_path().parent_path();
+    }();
+    const fs::path includeDir = repoRoot / "engine/core/include";
+    const fs::path runtimeSrc = repoRoot / "engine/core/src/bitvector/BitVector.cpp";
+
     const std::string strictFlags = " -Wall -Wextra -Wpedantic -Werror";
-    const std::string includeFlags =
-        " -I. -Iengine/core/include -I../engine/core/include -I/workspace/BitFlow/engine/core/include";
-    const std::string runtimeSrc = " /workspace/BitFlow/engine/core/src/bitvector/BitVector.cpp";
+    const std::string includeFlags = " -I\"" + includeDir.string() + "\"";
+    const std::string runtimeFlags = " \"" + runtimeSrc.string() + "\"";
     int res =
-        std::system(("g++ -std=c++20" + strictFlags + includeFlags + " " + file + runtimeSrc + " -o " + exe).c_str());
+        std::system(("g++ -std=c++20" + strictFlags + includeFlags + " \"" + file + "\"" + runtimeFlags + " -o \"" +
+                     exe + "\"")
+                        .c_str());
     if (res != 0)
-        res = std::system(("c++ -std=c++20" + strictFlags + includeFlags + " " + file + runtimeSrc + " -o " + exe)
+        res = std::system(("c++ -std=c++20" + strictFlags + includeFlags + " \"" + file + "\"" + runtimeFlags +
+                           " -o \"" + exe + "\"")
                               .c_str());
 #if defined(_WIN32)
     if (res != 0)
@@ -173,6 +185,41 @@ static uint64_t CompileAndRunWrapper(const std::string& wrapper, const std::stri
     return static_cast<uint64_t>(std::stoull(buffer));
 }
 
+static bool CompileWrapperOnly(const std::string& wrapper, const std::string& support,
+                               const std::string& probeStmt) {
+    static std::atomic<uint64_t> counter{200000};
+    const uint64_t id = counter.fetch_add(1);
+
+    const std::string base = "bf_codegen_compile_only_" + std::to_string(id);
+    const std::string file = base + ".cpp";
+#if defined(_WIN32)
+    const std::string exe = base + ".exe";
+#else
+    const std::string exe = base;
+#endif
+
+    std::ofstream out(file);
+    out << "#include <cstdint>\n";
+    out << support;
+    if (!support.empty() && support.back() != '\n')
+        out << "\n";
+    out << wrapper << "\n";
+    out << "int main(){\n";
+    out << probeStmt << "\n";
+    out << "return 0;\n";
+    out << "}\n";
+    out.close();
+
+    const int res = CompileCppSource(file, exe);
+    std::remove(file.c_str());
+    if (res == 0)
+        std::remove(exe.c_str());
+#if defined(_WIN32)
+    std::remove((base + ".obj").c_str());
+#endif
+    return res == 0;
+}
+
 } // namespace
 
 int main() {
@@ -232,6 +279,27 @@ int main() {
     auto wideEval = Eval::EvaluateConstant(wideEvalExpr, 128);
     BF_TEST(wideEval.status == Eval::EvalStatus::Success);
     BF_TEST(CompileAndRunWrapper(wideFn, "f(bf_uint(0x81ull, 128)).ToUint64()", support128) == wideEval.value);
+
+    // 96-bit generated code must compile and run under the same bf_uint contract.
+    auto v96 = MakeVar(60);
+    auto expr96 = MakeOp(61, OpType::Xor,
+                         {MakeOp(62, OpType::RotR, {v96, MakeConst(63, 7)}), MakeConst(64, 0x55)});
+    auto fn96 = Codegen::EmitCFunction(expr96, 96);
+    const auto support96 = Codegen::EmitCRuntimeSupport(96);
+    BF_TEST(CompileWrapperOnly(fn96, support96, "auto out = f(bf_uint(0x123456789ull, 96)).ToUint64(); (void)out;"));
+
+    // 128-bit multi-output codegen should remain compileable with wide runtime support.
+    auto wA = MakeVar(70);
+    auto wB = MakeVar(71);
+    auto wOut1 = MakeOp(72, OpType::Add, {wA, wB});
+    auto wOut2 = MakeOp(73, OpType::RotL, {MakeOp(74, OpType::Xor, {wA, wB}), MakeConst(75, 17)});
+    std::vector<const AST::Expr*> wideOutputs = {wOut1, wOut2};
+    auto wideMultiFn = Codegen::EmitCFunctionMulti(wideOutputs, 128);
+    BF_TEST(CompileWrapperOnly(wideMultiFn, support128,
+                               "auto r = f(bf_uint(0x1020304050607080ull, 128), "
+                               "bf_uint(0x1112131415161718ull, 128)); "
+                               "auto out1 = r.out1.ToUint64(); auto out2 = r.out2.ToUint64(); "
+                               "(void)out1; (void)out2;"));
 
     return 0;
 }

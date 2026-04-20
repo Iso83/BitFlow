@@ -29,6 +29,12 @@ static std::string ApplyMask(const std::string& expr, uint32_t bitWidth) {
     return "((" + expr + ") & " + MakeMask(bitWidth) + ")";
 }
 
+static std::string ZeroValueExpr(uint32_t bitWidth) {
+    if (bitWidth > 64U)
+        return "bf_uint(0ull, " + std::to_string(bitWidth) + ")";
+    return "0";
+}
+
 static bool IsWordChar(char c) {
     const bool isLower = (c >= 'a' && c <= 'z');
     const bool isUpper = (c >= 'A' && c <= 'Z');
@@ -256,7 +262,13 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& roots, uint32_t b
         ss << "    " << ctype << " " << st.name << " = " << stmtExpr << ";\n";
     }
 
-    ss << "    EvalResult r{};\n";
+    ss << "    EvalResult r{";
+    for (size_t i = 0; i < prog.results.size(); ++i) {
+        if (i != 0)
+            ss << ", ";
+        ss << ZeroValueExpr(bitWidth);
+    }
+    ss << "};\n";
     for (size_t i = 0; i < prog.results.size(); ++i) {
         std::string resultExpr = ApplyMask(prog.results[i], bitWidth);
         ReplaceIdentifierToken(resultExpr, "rotl", "bf_rotl");
