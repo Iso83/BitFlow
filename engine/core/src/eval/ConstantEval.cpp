@@ -1,4 +1,5 @@
 #include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/bitvector/BitVector.h>
 #include <BitFlow/core/eval/ConstantEval.h>
 
 namespace BitFlow::Core::Eval {
@@ -210,14 +211,166 @@ EvalResult EvalExpr(const AST::Expr* node, uint32_t bitWidth, uint64_t mask) {
     }
 }
 
+WideEvalResult MakeWide(EvalStatus status, uint32_t bitWidth) {
+    return WideEvalResult{status, BitVector::bf_uint(0, bitWidth)};
+}
+
+WideEvalResult MakeWideSuccess(const BitVector::bf_uint& value) {
+    return WideEvalResult{EvalStatus::Success, value};
+}
+
+WideEvalResult EvalExprWideImpl(const AST::Expr* node, uint32_t bitWidth) {
+    if (node == nullptr)
+        return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+
+    if (node->op == AST::OpType::Var)
+        return MakeWide(EvalStatus::NotConstant, bitWidth);
+
+    if (node->op == AST::OpType::Const)
+        return MakeWideSuccess(BitVector::bf_uint(node->constValue, bitWidth));
+
+    const auto evalChild = [&](size_t index) -> WideEvalResult {
+        if (index >= node->inputs.size())
+            return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+        return EvalExprWideImpl(node->inputs[index], bitWidth);
+    };
+
+    switch (node->op) {
+    case AST::OpType::Not: {
+        if (node->inputs.size() != 1)
+            return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+        WideEvalResult a = evalChild(0);
+        if (a.status != EvalStatus::Success)
+            return a;
+        return MakeWideSuccess(~a.value);
+    }
+    case AST::OpType::Neg: {
+        if (node->inputs.size() != 1)
+            return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+        WideEvalResult a = evalChild(0);
+        if (a.status != EvalStatus::Success)
+            return a;
+        return MakeWideSuccess(-a.value);
+    }
+    case AST::OpType::And:
+    case AST::OpType::Or:
+    case AST::OpType::Xor:
+    case AST::OpType::Add:
+    case AST::OpType::Mul: {
+        if (node->inputs.empty())
+            return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+        WideEvalResult first = evalChild(0);
+        if (first.status != EvalStatus::Success)
+            return first;
+        BitVector::bf_uint acc = first.value;
+        for (size_t i = 1; i < node->inputs.size(); ++i) {
+            WideEvalResult term = evalChild(i);
+            if (term.status != EvalStatus::Success)
+                return term;
+            switch (node->op) {
+            case AST::OpType::And:
+                acc = acc & term.value;
+                break;
+            case AST::OpType::Or:
+                acc = acc | term.value;
+                break;
+            case AST::OpType::Xor:
+                acc = acc ^ term.value;
+                break;
+            case AST::OpType::Add:
+                acc = acc + term.value;
+                break;
+            case AST::OpType::Mul:
+                acc = acc * term.value;
+                break;
+            default:
+                return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+            }
+        }
+        return MakeWideSuccess(acc);
+    }
+    case AST::OpType::Sub:
+    case AST::OpType::Div:
+    case AST::OpType::Mod:
+    case AST::OpType::Shl:
+    case AST::OpType::Shr:
+    case AST::OpType::UShr:
+    case AST::OpType::RotL:
+    case AST::OpType::RotR: {
+        if (node->inputs.size() != 2)
+            return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+        WideEvalResult a = evalChild(0);
+        if (a.status != EvalStatus::Success)
+            return a;
+        WideEvalResult b = evalChild(1);
+        if (b.status != EvalStatus::Success)
+            return b;
+        switch (node->op) {
+        case AST::OpType::Sub:
+            return MakeWideSuccess(a.value - b.value);
+        case AST::OpType::Div:
+            if (b.value.IsZero())
+                return MakeWide(EvalStatus::DivisionByZero, bitWidth);
+            return MakeWideSuccess(a.value / b.value);
+        case AST::OpType::Mod:
+            if (b.value.IsZero())
+                return MakeWide(EvalStatus::ModuloByZero, bitWidth);
+            return MakeWideSuccess(a.value % b.value);
+        case AST::OpType::Shl:
+            return MakeWideSuccess(a.value.Shl(b.value.ToUint32()));
+        case AST::OpType::Shr:
+        case AST::OpType::UShr:
+            return MakeWideSuccess(a.value.Shr(b.value.ToUint32()));
+        case AST::OpType::RotL:
+            return MakeWideSuccess(a.value.RotL(b.value.ToUint32()));
+        case AST::OpType::RotR:
+            return MakeWideSuccess(a.value.RotR(b.value.ToUint32()));
+        default:
+            return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+        }
+    }
+    case AST::OpType::Ch:
+    case AST::OpType::Maj: {
+        if (node->inputs.size() != 3)
+            return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+        WideEvalResult a = evalChild(0);
+        if (a.status != EvalStatus::Success)
+            return a;
+        WideEvalResult b = evalChild(1);
+        if (b.status != EvalStatus::Success)
+            return b;
+        WideEvalResult c = evalChild(2);
+        if (c.status != EvalStatus::Success)
+            return c;
+        if (node->op == AST::OpType::Ch)
+            return MakeWideSuccess((a.value & b.value) ^ ((~a.value) & c.value));
+        return MakeWideSuccess((a.value & b.value) ^ (a.value & c.value) ^ (b.value & c.value));
+    }
+    case AST::OpType::Var:
+    case AST::OpType::Const:
+    default:
+        return MakeWide(EvalStatus::UnsupportedOp, bitWidth);
+    }
+}
+
 } // namespace
 
 EvalResult EvaluateConstant(const AST::Expr* root, uint32_t bitWidth) {
-    if (bitWidth == 0 || bitWidth > 64)
-        return Make(EvalStatus::InvalidBitWidth);
+    WideEvalResult wide = EvaluateConstantWide(root, bitWidth);
+    return EvalResult{wide.status, wide.value.ToUint64()};
+}
 
-    uint64_t mask = MaskFor(bitWidth);
-    return EvalExpr(root, bitWidth, mask);
+WideEvalResult EvaluateConstantWide(const AST::Expr* root, uint32_t bitWidth) {
+    if (bitWidth == 0)
+        return MakeWide(EvalStatus::InvalidBitWidth, 0);
+
+    if (bitWidth <= 64U) {
+        uint64_t mask = MaskFor(bitWidth);
+        EvalResult narrow = EvalExpr(root, bitWidth, mask);
+        return WideEvalResult{narrow.status, BitVector::bf_uint(narrow.value, bitWidth)};
+    }
+
+    return EvalExprWideImpl(root, bitWidth);
 }
 
 } // namespace BitFlow::Core::Eval

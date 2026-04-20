@@ -135,10 +135,33 @@ int TestEvaluate_InvalidBitWidth() {
     auto c = MakeConst(1, 5);
 
     EvalResult r0 = EvaluateConstant(c, 0);
-    EvalResult r65 = EvaluateConstant(c, 65);
 
     BF_TEST(r0.status == EvalStatus::InvalidBitWidth);
-    BF_TEST(r65.status == EvalStatus::InvalidBitWidth);
+    BF_TEST(EvaluateConstant(c, 65).status == EvalStatus::Success);
+    return 0;
+}
+
+int TestEvaluate_WideBitWidth_UsesBfUintPath() {
+    auto c1 = MakeConst(1, 0x81);
+    auto c2 = MakeConst(2, 1);
+
+    auto rotl = MakeOp(3, OpType::RotL, {c1, c2});
+    auto shl = MakeOp(4, OpType::Shl, {c1, c2});
+    auto add = MakeOp(5, OpType::Add, {rotl, shl});
+    auto mod = MakeOp(6, OpType::Mod, {add, MakeConst(7, 257)});
+
+    auto wide = EvaluateConstantWide(mod, 128);
+    EvalResult r = EvaluateConstant(mod, 128);
+
+    BF_TEST(wide.status == EvalStatus::Success);
+    BF_TEST(wide.value.BitWidth() == 128U);
+    BF_TEST(r.status == EvalStatus::Success);
+    BF_TEST(r.value == ((0x102ULL + 0x102ULL) % 257ULL));
+
+    auto rotr = MakeOp(8, OpType::RotR, {c2, MakeConst(9, 1)});
+    auto rotrWide = EvaluateConstantWide(rotr, 128);
+    BF_TEST(rotrWide.status == EvalStatus::Success);
+    BF_TEST(rotrWide.value.Shr(127).ToUint64() == 1ULL);
     return 0;
 }
 
@@ -150,5 +173,6 @@ int main() {
     BF_RUN_TEST(TestEvaluate_DivisionModuloByZero);
     BF_RUN_TEST(TestEvaluate_NotConstantCases);
     BF_RUN_TEST(TestEvaluate_InvalidBitWidth);
+    BF_RUN_TEST(TestEvaluate_WideBitWidth_UsesBfUintPath);
     return 0;
 }

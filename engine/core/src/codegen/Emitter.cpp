@@ -29,6 +29,12 @@ static std::string ApplyMask(const std::string& expr, uint32_t bitWidth) {
     return "((" + expr + ") & " + MakeMask(bitWidth) + ")";
 }
 
+static std::string ZeroValueExpr(uint32_t bitWidth) {
+    if (bitWidth > 64U)
+        return "bf_uint(0ull, " + std::to_string(bitWidth) + ")";
+    return "0";
+}
+
 static bool IsWordChar(char c) {
     const bool isLower = (c >= 'a' && c <= 'z');
     const bool isUpper = (c >= 'A' && c <= 'Z');
@@ -89,8 +95,10 @@ std::string EmitCRuntimeSupport(uint32_t bitWidth) {
     std::ostringstream ss;
     ss << "#include <cstdint>\n";
 
-    if (bitWidth > 64U)
+    if (bitWidth > 64U) {
         ss << "#include <BitFlow/core/bitvector/BitVector.h>\n";
+        ss << "using bf_uint = BitFlow::Core::BitVector::bf_uint;\n";
+    }
 
     ss << "\n";
     ss << "// BitFlow generated rotate contract:\n";
@@ -130,9 +138,15 @@ std::string EmitCRuntimeSupport(uint32_t bitWidth) {
         ss << "[[maybe_unused]] static inline bf_uint bf_rotl(const bf_uint& value, uint32_t shift) {\n";
         ss << "    return value.RotL(shift);\n";
         ss << "}\n\n";
+        ss << "[[maybe_unused]] static inline bf_uint bf_rotl(const bf_uint& value, const bf_uint& shift) {\n";
+        ss << "    return value.RotL(shift.ToUint32());\n";
+        ss << "}\n\n";
 
         ss << "[[maybe_unused]] static inline bf_uint bf_rotr(const bf_uint& value, uint32_t shift) {\n";
         ss << "    return value.RotR(shift);\n";
+        ss << "}\n\n";
+        ss << "[[maybe_unused]] static inline bf_uint bf_rotr(const bf_uint& value, const bf_uint& shift) {\n";
+        ss << "    return value.RotR(shift.ToUint32());\n";
         ss << "}\n\n";
     }
 
@@ -248,7 +262,13 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& roots, uint32_t b
         ss << "    " << ctype << " " << st.name << " = " << stmtExpr << ";\n";
     }
 
-    ss << "    EvalResult r{};\n";
+    ss << "    EvalResult r{";
+    for (size_t i = 0; i < prog.results.size(); ++i) {
+        if (i != 0)
+            ss << ", ";
+        ss << ZeroValueExpr(bitWidth);
+    }
+    ss << "};\n";
     for (size_t i = 0; i < prog.results.size(); ++i) {
         std::string resultExpr = ApplyMask(prog.results[i], bitWidth);
         ReplaceIdentifierToken(resultExpr, "rotl", "bf_rotl");
