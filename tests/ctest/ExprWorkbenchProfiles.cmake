@@ -58,6 +58,13 @@ function(require_in_output pattern)
     endif()
 endfunction()
 
+function(require_not_in_output pattern)
+    string(FIND "${EXPR_WORKBENCH_LAST_OUT}" "${pattern}" _exp_pos)
+    if(NOT _exp_pos EQUAL -1)
+        message(FATAL_ERROR "Unexpected substring found: '${pattern}'\nstdout:\n${EXPR_WORKBENCH_LAST_OUT}")
+    endif()
+endfunction()
+
 # Stage profile matrix should not trigger dependency errors.
 run_expr("--normalize" "x" "[rewritten]")
 run_expr("--simplify" "x" "[rewritten]")
@@ -95,3 +102,27 @@ require_in_output("[rewritten]")
 require_in_output("mix = 0")
 require_in_output("[ssa]")
 require_in_output("[c-expr]")
+
+# Rewrite/eval/codegen regression bundle.
+function(run_regression_case expr)
+    run_expr_all("--simplify;--emit-c;--verify" "${expr}")
+    require_in_output("[parsed]")
+    require_in_output("[rewritten]")
+    require_in_output("[c-expr]")
+    require_in_output("[verify]")
+    require_in_output("cases=128, passed=128, failed=0")
+    require_not_in_output("unsupported")
+    require_not_in_output("invalid")
+endfunction()
+
+# Sensitive simplify case.
+run_regression_case("(a^b)&c&(a^c)")
+
+# Mixed arithmetic/bitwise rewrites.
+run_regression_case("(a + 3) ^ ((b & 255) + (a - a))")
+
+# Rotate/shift edge cases.
+run_regression_case("rotl(a, 32) ^ rotr(b, 64) ^ (c << 32) ^ (d >> 64)")
+
+# CH/MAJ usage should remain stable across rewrite/eval/codegen.
+run_regression_case("ch(a, b, c) ^ maj(a, b, c)")
