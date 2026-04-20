@@ -38,10 +38,13 @@ inline int CompareExprCanonical(const AST::Expr* a, const AST::Expr* b) {
             return inputCmp;
     }
 
-    if (a->id.value() == b->id.value())
-        return 0;
+    if (a->op == AST::OpType::Var) {
+        if (a->id.value() == b->id.value())
+            return 0;
+        return a->id.value() < b->id.value() ? -1 : 1;
+    }
 
-    return a->id.value() < b->id.value() ? -1 : 1;
+    return 0;
 }
 
 inline bool CanonicalExprLess(const AST::Expr* a, const AST::Expr* b) {
