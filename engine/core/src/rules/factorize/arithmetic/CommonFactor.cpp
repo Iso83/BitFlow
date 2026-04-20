@@ -22,15 +22,56 @@ static size_t CountExprTreeNodes(const Expr* e) {
     return nodes;
 }
 
+struct LinearTerm {
+    const Expr* base = nullptr;
+    uint32_t coeff = 0;
+};
+
+static bool DecomposeLinearTerm(const Expr* term, LinearTerm& out) {
+    if (term->isConst())
+        return false;
+
+    if (term->op != OpType::Mul) {
+        out.base = term;
+        out.coeff = 1u;
+        return true;
+    }
+
+    uint32_t coeff = 1u;
+    const Expr* base = nullptr;
+    bool sawConst = false;
+    for (Expr* factor : term->inputs) {
+        if (factor->isConst()) {
+            coeff *= factor->constValue;
+            sawConst = true;
+            continue;
+        }
+
+        if (base != nullptr)
+            return false;
+        base = factor;
+    }
+
+    if (!sawConst || base == nullptr)
+        return false;
+
+    out.base = base;
+    out.coeff = coeff;
+    return true;
+}
+
 static bool Match_Add_CommonFactor(const Expr& e) {
     if (e.op != OpType::Add || e.inputs.size() < 2)
         return false;
 
-    // identical addends: t + t (+ ...)
-    std::unordered_map<const Expr*, int> counts;
+    // linear multiplicity by base: x + x, x + x*k, x*m + x*n
+    std::unordered_map<uint32_t, int> baseTermCounts;
     for (const Expr* input : e.inputs) {
-        if (++counts[input] >= 2)
-            return true;
+        LinearTerm linear{};
+        if (DecomposeLinearTerm(input, linear)) {
+            if (++baseTermCounts[linear.base->id.value()] >= 2)
+                return true;
+        }
     }
 
     // common multiplicative factor: x*y + x*z
@@ -57,33 +98,49 @@ static bool Match_Add_CommonFactor(const Expr& e) {
 }
 
 static Expr* Rewrite_Add_CommonFactor(Expr& e) {
-    std::unordered_map<Expr*, int> counts;
-    std::vector<Expr*> order;
-    order.reserve(e.inputs.size());
+    std::unordered_map<uint32_t, uint32_t> coeffByBaseId;
+    std::unordered_map<uint32_t, Expr*> baseExprById;
+    std::vector<uint32_t> baseOrder;
+    baseOrder.reserve(e.inputs.size());
+    std::vector<Expr*> passthroughTerms;
+    passthroughTerms.reserve(e.inputs.size());
 
-    // collapse identical addends into k*term
     for (Expr* input : e.inputs) {
-        if (counts.emplace(input, 0).second)
-            order.push_back(input);
-        counts[input]++;
-    }
-
-    std::vector<Expr*> normalizedAddTerms;
-    normalizedAddTerms.reserve(order.size());
-    for (Expr* term : order) {
-        const int count = counts[term];
-        if (count == 1) {
-            normalizedAddTerms.push_back(term);
+        LinearTerm linear{};
+        if (!DecomposeLinearTerm(input, linear)) {
+            passthroughTerms.push_back(input);
             continue;
         }
 
-        normalizedAddTerms.push_back(MakeOpInterned(OpType::Mul, {ConstPool::Get(static_cast<uint32_t>(count)), term}));
+        const uint32_t baseId = linear.base->id.value();
+        if (coeffByBaseId.emplace(baseId, 0u).second) {
+            baseOrder.push_back(baseId);
+            baseExprById[baseId] = const_cast<Expr*>(linear.base);
+        }
+        coeffByBaseId[baseId] += linear.coeff;
     }
+
+    std::vector<Expr*> normalizedAddTerms;
+    normalizedAddTerms.reserve(baseOrder.size() + passthroughTerms.size());
+    for (uint32_t baseId : baseOrder) {
+        Expr* base = baseExprById[baseId];
+        const uint32_t coeff = coeffByBaseId[baseId];
+        if (coeff == 0u)
+            continue;
+        if (coeff == 1u) {
+            normalizedAddTerms.push_back(base);
+            continue;
+        }
+        normalizedAddTerms.push_back(MakeOpInterned(OpType::Mul, {base, ConstPool::Get(coeff)}));
+    }
+    for (Expr* term : passthroughTerms)
+        normalizedAddTerms.push_back(term);
 
     if (normalizedAddTerms.empty())
         return nullptr;
     if (normalizedAddTerms.size() == 1)
         return normalizedAddTerms[0];
+    const bool mergedLinearTerms = normalizedAddTerms.size() < e.inputs.size();
 
     // try common-factor extraction across binary multiplications
     std::unordered_map<Expr*, int> factorFrequency;
@@ -110,7 +167,7 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
 
     if (!common || bestFrequency < 2) {
         Expr* candidate = MakeOpInterned(OpType::Add, normalizedAddTerms);
-        if (CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
+        if (!mergedLinearTerms && CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
             return nullptr;
         return candidate;
     }
@@ -136,7 +193,7 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
 
     if (sharedInnerTerms.size() < 2) {
         Expr* candidate = MakeOpInterned(OpType::Add, normalizedAddTerms);
-        if (CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
+        if (!mergedLinearTerms && CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
             return nullptr;
         return candidate;
     }
