@@ -134,6 +134,122 @@ int TestFactorize_CombineNestedMulConstants() {
     return 0;
 }
 
+int TestFactorize_AddLinearMultiplicityMixedForms() {
+    RuleEngine engine = MakeArithmeticEngine();
+    auto a = MakeVar(80);
+    auto b = MakeVar(81);
+
+    {
+        auto expr = MakeOp(82, OpType::Add, {a, a});
+        Expr* result = engine.ApplyUntilStable(expr);
+        BF_TEST(result->op == OpType::Mul);
+        BF_TEST(result->inputs.size() == 2);
+    }
+
+    {
+        auto expr = MakeOp(83, OpType::Add, {a, a, a});
+        Expr* result = engine.ApplyUntilStable(expr);
+        BF_TEST(result->op == OpType::Mul);
+        bool hasThree = false;
+        bool hasA = false;
+        for (auto* in : result->inputs) {
+            if (in->isConst() && in->constValue == 3u)
+                hasThree = true;
+            if (in->id == a->id)
+                hasA = true;
+        }
+        BF_TEST(hasThree);
+        BF_TEST(hasA);
+    }
+
+    {
+        auto expr = MakeOp(84, OpType::Add, {a, MakeOp(85, OpType::Mul, {a, MakeConst(86, 2)})});
+        Expr* result = engine.ApplyUntilStable(expr);
+        BF_TEST(result->op == OpType::Mul);
+        bool hasThree = false;
+        bool hasA = false;
+        for (auto* in : result->inputs) {
+            if (in->isConst() && in->constValue == 3u)
+                hasThree = true;
+            if (in->id == a->id)
+                hasA = true;
+        }
+        BF_TEST(hasThree);
+        BF_TEST(hasA);
+    }
+
+    {
+        auto expr = MakeOp(87, OpType::Add, {MakeOp(88, OpType::Mul, {a, MakeConst(89, 2)}), a});
+        Expr* result = engine.ApplyUntilStable(expr);
+        BF_TEST(result->op == OpType::Mul);
+        bool hasThree = false;
+        bool hasA = false;
+        for (auto* in : result->inputs) {
+            if (in->isConst() && in->constValue == 3u)
+                hasThree = true;
+            if (in->id == a->id)
+                hasA = true;
+        }
+        BF_TEST(hasThree);
+        BF_TEST(hasA);
+    }
+
+    {
+        auto expr =
+            MakeOp(90, OpType::Add, {MakeOp(91, OpType::Mul, {a, MakeConst(92, 2)}), MakeOp(93, OpType::Mul, {a, MakeConst(94, 3)})});
+        Expr* result = engine.ApplyUntilStable(expr);
+        BF_TEST(result->op == OpType::Mul);
+        bool hasFive = false;
+        bool hasA = false;
+        for (auto* in : result->inputs) {
+            if (in->isConst() && in->constValue == 5u)
+                hasFive = true;
+            if (in->id == a->id)
+                hasA = true;
+        }
+        BF_TEST(hasFive);
+        BF_TEST(hasA);
+    }
+
+    {
+        auto expr = MakeOp(95, OpType::Add, {b, a, a});
+        Expr* result = engine.ApplyUntilStable(expr);
+        BF_TEST(result->op == OpType::Add);
+        bool hasB = false;
+        for (auto* in : result->inputs) {
+            if (in->id == b->id)
+                hasB = true;
+        }
+        BF_TEST(hasB);
+    }
+
+    {
+        auto expr = MakeOp(96, OpType::Add, {MakeOp(97, OpType::Mul, {a, MakeConst(98, 0)}), a});
+        Expr* result = engine.ApplyUntilStable(expr);
+        BF_TEST(result->id == a->id);
+    }
+
+    {
+        auto expr = MakeOp(99,
+                           OpType::Add,
+                           {MakeOp(100, OpType::Mul, {a, MakeConst(101, 1)}), MakeOp(102, OpType::Mul, {a, MakeConst(103, 2)})});
+        Expr* result = engine.ApplyUntilStable(expr);
+        BF_TEST(result->op == OpType::Mul);
+        bool hasThree = false;
+        bool hasA = false;
+        for (auto* in : result->inputs) {
+            if (in->isConst() && in->constValue == 3u)
+                hasThree = true;
+            if (in->id == a->id)
+                hasA = true;
+        }
+        BF_TEST(hasThree);
+        BF_TEST(hasA);
+    }
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestSimplify_NegNeg);
     BF_RUN_TEST(TestSimplify_ConstCombine_Basic);
@@ -142,5 +258,6 @@ int main() {
     BF_RUN_TEST(TestFactorize_Canonical_a_b_plus_b_a);
     BF_RUN_TEST(TestFactorize_AddRepeatedTermCount);
     BF_RUN_TEST(TestFactorize_CombineNestedMulConstants);
+    BF_RUN_TEST(TestFactorize_AddLinearMultiplicityMixedForms);
     return 0;
 }

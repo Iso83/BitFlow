@@ -26,10 +26,29 @@ static bool Match_Add_CommonFactor(const Expr& e) {
     if (e.op != OpType::Add || e.inputs.size() < 2)
         return false;
 
-    // identical addends: t + t (+ ...)
-    std::unordered_map<const Expr*, int> counts;
+    // linear multiplicity by base: x + x, x + x*k, x*m + x*n
+    std::unordered_map<uint32_t, int> baseTermCounts;
     for (const Expr* input : e.inputs) {
-        if (++counts[input] >= 2)
+        const Expr* base = input;
+        if (input->op == OpType::Mul) {
+            const Expr* nonConst = nullptr;
+            bool hasConst = false;
+            for (const Expr* factor : input->inputs) {
+                if (factor->isConst()) {
+                    hasConst = true;
+                    continue;
+                }
+                if (nonConst != nullptr) {
+                    nonConst = nullptr;
+                    break;
+                }
+                nonConst = factor;
+            }
+            if (hasConst && nonConst != nullptr)
+                base = nonConst;
+        }
+
+        if (++baseTermCounts[base->id.value()] >= 2)
             return true;
     }
 
@@ -57,28 +76,76 @@ static bool Match_Add_CommonFactor(const Expr& e) {
 }
 
 static Expr* Rewrite_Add_CommonFactor(Expr& e) {
-    std::unordered_map<Expr*, int> counts;
-    std::vector<Expr*> order;
-    order.reserve(e.inputs.size());
+    struct LinearTerm {
+        Expr* base = nullptr;
+        uint32_t coeff = 0;
+    };
 
-    // collapse identical addends into k*term
+    auto DecomposeLinearTerm = [](Expr* term, LinearTerm& out) {
+        if (term->op != OpType::Mul) {
+            out.base = term;
+            out.coeff = 1u;
+            return true;
+        }
+
+        uint32_t coeff = 1u;
+        Expr* base = nullptr;
+        for (Expr* factor : term->inputs) {
+            if (factor->isConst()) {
+                coeff *= factor->constValue;
+                continue;
+            }
+
+            if (base != nullptr)
+                return false;
+            base = factor;
+        }
+
+        if (base == nullptr)
+            return false;
+
+        out.base = base;
+        out.coeff = coeff;
+        return true;
+    };
+
+    std::unordered_map<uint32_t, uint32_t> coeffByBaseId;
+    std::unordered_map<uint32_t, Expr*> baseExprById;
+    std::vector<uint32_t> baseOrder;
+    baseOrder.reserve(e.inputs.size());
+    std::vector<Expr*> passthroughTerms;
+    passthroughTerms.reserve(e.inputs.size());
+
     for (Expr* input : e.inputs) {
-        if (counts.emplace(input, 0).second)
-            order.push_back(input);
-        counts[input]++;
-    }
-
-    std::vector<Expr*> normalizedAddTerms;
-    normalizedAddTerms.reserve(order.size());
-    for (Expr* term : order) {
-        const int count = counts[term];
-        if (count == 1) {
-            normalizedAddTerms.push_back(term);
+        LinearTerm linear{};
+        if (!DecomposeLinearTerm(input, linear)) {
+            passthroughTerms.push_back(input);
             continue;
         }
 
-        normalizedAddTerms.push_back(MakeOpInterned(OpType::Mul, {ConstPool::Get(static_cast<uint32_t>(count)), term}));
+        const uint32_t baseId = linear.base->id.value();
+        if (coeffByBaseId.emplace(baseId, 0u).second) {
+            baseOrder.push_back(baseId);
+            baseExprById[baseId] = linear.base;
+        }
+        coeffByBaseId[baseId] += linear.coeff;
     }
+
+    std::vector<Expr*> normalizedAddTerms;
+    normalizedAddTerms.reserve(baseOrder.size() + passthroughTerms.size());
+    for (uint32_t baseId : baseOrder) {
+        Expr* base = baseExprById[baseId];
+        const uint32_t coeff = coeffByBaseId[baseId];
+        if (coeff == 0u)
+            continue;
+        if (coeff == 1u) {
+            normalizedAddTerms.push_back(base);
+            continue;
+        }
+        normalizedAddTerms.push_back(MakeOpInterned(OpType::Mul, {ConstPool::Get(coeff), base}));
+    }
+    for (Expr* term : passthroughTerms)
+        normalizedAddTerms.push_back(term);
 
     if (normalizedAddTerms.empty())
         return nullptr;
