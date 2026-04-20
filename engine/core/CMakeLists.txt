@@ -90,4 +90,5 @@ if(BF_BUILD_TESTS)
 
     # SHA workflow helpers/examples
     bf_add_module_test(BitFlowCore core BF_SHA_Workflows)
+    bf_add_module_test(BitFlowCore core BF_SHA_RewriteTargets)
 endif()
