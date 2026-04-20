@@ -46,4 +46,3 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowIO io BF_ExprPrinter)
     bf_add_module_test(BitFlowIO io BF_Lexer)
 endif()
-

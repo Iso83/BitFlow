@@ -50,9 +50,12 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_Arithmetic_Integration)
 
     # Optional runtime/compiler-invoking tests (slow + toolchain dependent).
-    if(BF_ENABLE_CODEGEN_RUNTIME_TESTS)
-        bf_add_module_test(BitFlowCore core BF_CodegenRuntime)
-        bf_add_module_test(BitFlowCore core BF_FuzzEvalVsCodegen)
+    if(BF_ENABLE_RUNTIME_COMPILE_TESTS)
+        bf_add_module_test(BitFlowCore core BF_CodegenRuntime LABELS runtime_compile)
+    endif()
+
+    if(BF_ENABLE_FUZZ_PROPERTY_TESTS)
+        bf_add_module_test(BitFlowCore core BF_FuzzEvalVsCodegen LABELS "fuzz;property")
     endif()
 
     bf_add_module_test(BitFlowCore core BF_CodegenMulti)
@@ -60,7 +63,7 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_BitVector)
 
     # Rules
-    bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order) 
+    bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order)
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Flatten)
 
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Fold)
