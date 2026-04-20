@@ -96,9 +96,7 @@ inline void Add_Factorize_Arithmetic_Rules(RuleEngine& engine) {
 // Simplify (SHA - optional)
 // =========================================================
 inline void Add_Simplify_SHA_Rules(RuleEngine& engine) {
-    engine.AddRule(Simplify::Get_CH_Canonicalize_Rule());
     engine.AddRule(Simplify::Get_CH_Simplify_Rule());
-    engine.AddRule(Simplify::Get_MAJ_Canonicalize_Rule());
     engine.AddRule(Simplify::Get_MAJ_Simplify_Rule());
 }
 

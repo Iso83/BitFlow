@@ -52,10 +52,8 @@ enum class RuleId {
     Simplify_OrOneDominance,
     Simplify_OrZeroIdentity,
 
-    Simplify_CHCanonicalize,
     Simplify_CH,
 
-    Simplify_MAJCanonicalize,
     Simplify_MAJ,
 
     Factorize_XorAnd,
@@ -97,9 +95,7 @@ Rule Get_Const_Combine_Rule();
 } // namespace Simplify::Arithmetic
 
 namespace Simplify {
-Rule Get_CH_Canonicalize_Rule();
 Rule Get_CH_Simplify_Rule();
-Rule Get_MAJ_Canonicalize_Rule();
 Rule Get_MAJ_Simplify_Rule();
 } // namespace Simplify
 

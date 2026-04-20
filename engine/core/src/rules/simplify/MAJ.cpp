@@ -55,10 +55,6 @@ static bool Capture_MAJ_BitwiseEquivalent(const Expr& e, Expr*& x, Expr*& y, Exp
     return false;
 }
 
-static bool Match_MAJ(const Expr& e) {
-    return e.op == OpType::Maj && e.inputs.size() == 3;
-}
-
 static Expr* MakeCanonical_MAJ(Expr* x, Expr* y, Expr* z) {
     Expr* xy = Expression::MakeOpInterned(OpType::And, {x, y});
     Expr* xz = Expression::MakeOpInterned(OpType::And, {x, z});
@@ -67,14 +63,20 @@ static Expr* MakeCanonical_MAJ(Expr* x, Expr* y, Expr* z) {
     return Expression::MakeOpInterned(OpType::Xor, {xy, xz, yz});
 }
 
-static bool Match_MAJ_Canonicalize(const Expr& e) {
+static bool Match_MAJ(const Expr& e) {
+    if (e.op == OpType::Maj && e.inputs.size() == 3)
+        return true;
+
     Expr* x = nullptr;
     Expr* y = nullptr;
     Expr* z = nullptr;
     return Capture_MAJ_BitwiseEquivalent(e, x, y, z);
 }
 
-static Expr* Rewrite_MAJ_Canonicalize(Expr& e) {
+static Expr* Rewrite_MAJ(Expr& e) {
+    if (e.op == OpType::Maj && e.inputs.size() == 3)
+        return MakeCanonical_MAJ(e.inputs[0], e.inputs[1], e.inputs[2]);
+
     Expr* x = nullptr;
     Expr* y = nullptr;
     Expr* z = nullptr;
@@ -82,22 +84,6 @@ static Expr* Rewrite_MAJ_Canonicalize(Expr& e) {
         return nullptr;
 
     return MakeCanonical_MAJ(x, y, z);
-}
-
-static Expr* Rewrite_MAJ(Expr& e) {
-    Expr* x = e.inputs[0];
-    Expr* y = e.inputs[1];
-    Expr* z = e.inputs[2];
-
-    return MakeCanonical_MAJ(x, y, z);
-}
-
-Rule Get_MAJ_Canonicalize_Rule() {
-    return Rule{RuleId::Simplify_MAJCanonicalize,
-                &Match_MAJ_Canonicalize,
-                &Rewrite_MAJ_Canonicalize,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
 }
 
 Rule Get_MAJ_Simplify_Rule() {
