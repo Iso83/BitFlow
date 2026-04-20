@@ -280,19 +280,27 @@ int main() {
     BF_TEST(wideEval.status == Eval::EvalStatus::Success);
     BF_TEST(CompileAndRunWrapper(wideFn, "f(bf_uint(0x81ull, 128)).ToUint64()", support128) == wideEval.value);
 
+    // Wide shift path: evaluator/codegen alignment on supported low-64 projection.
+    auto wideShiftFnExpr = MakeOp(56, OpType::Shl, {MakeVar(57), MakeConst(58, 7)});
+    auto wideShiftFn = Codegen::EmitCFunction(wideShiftFnExpr, 128);
+    auto wideShiftEvalExpr = MakeOp(59, OpType::Shl, {MakeConst(60, 0x1234), MakeConst(61, 7)});
+    auto wideShiftEval = Eval::EvaluateConstant(wideShiftEvalExpr, 128);
+    BF_TEST(wideShiftEval.status == Eval::EvalStatus::Success);
+    BF_TEST(CompileAndRunWrapper(wideShiftFn, "f(bf_uint(0x1234ull, 128)).ToUint64()", support128) == wideShiftEval.value);
+
     // 96-bit generated code must compile and run under the same bf_uint contract.
-    auto v96 = MakeVar(60);
-    auto expr96 = MakeOp(61, OpType::Xor,
-                         {MakeOp(62, OpType::RotR, {v96, MakeConst(63, 7)}), MakeConst(64, 0x55)});
+    auto v96 = MakeVar(160);
+    auto expr96 = MakeOp(161, OpType::Xor,
+                         {MakeOp(162, OpType::RotR, {v96, MakeConst(163, 7)}), MakeConst(164, 0x55)});
     auto fn96 = Codegen::EmitCFunction(expr96, 96);
     const auto support96 = Codegen::EmitCRuntimeSupport(96);
     BF_TEST(CompileWrapperOnly(fn96, support96, "auto out = f(bf_uint(0x123456789ull, 96)).ToUint64(); (void)out;"));
 
     // 128-bit multi-output codegen should remain compileable with wide runtime support.
-    auto wA = MakeVar(70);
-    auto wB = MakeVar(71);
-    auto wOut1 = MakeOp(72, OpType::Add, {wA, wB});
-    auto wOut2 = MakeOp(73, OpType::RotL, {MakeOp(74, OpType::Xor, {wA, wB}), MakeConst(75, 17)});
+    auto wA = MakeVar(170);
+    auto wB = MakeVar(171);
+    auto wOut1 = MakeOp(172, OpType::Add, {wA, wB});
+    auto wOut2 = MakeOp(173, OpType::RotL, {MakeOp(174, OpType::Xor, {wA, wB}), MakeConst(175, 17)});
     std::vector<const AST::Expr*> wideOutputs = {wOut1, wOut2};
     auto wideMultiFn = Codegen::EmitCFunctionMulti(wideOutputs, 128);
     BF_TEST(CompileWrapperOnly(wideMultiFn, support128,
