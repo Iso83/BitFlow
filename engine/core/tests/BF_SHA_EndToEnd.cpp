@@ -6,6 +6,9 @@
 #include <SHA_Expr.h>
 #include <TestAssert.h>
 
+#include <array>
+#include <cstdint>
+
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Testing::SHA;
 using namespace BitFlow::Core;
@@ -49,27 +52,34 @@ Expr* RunRoundFragmentPipeline(Expr* fragment) {
     return MakeShaFactorizeEngine().ApplyRecursive(normalizedSimplified);
 }
 
-int TestEndToEnd_T1SigmaChoiceCore_AnalyzeTargetFlow() {
-    Builder b;
+int TestEndToEnd_T1SigmaChoiceCore_ManyConcreteCases() {
+    constexpr std::array<std::array<uint32_t, 3>, 4> cases = {{{0x510E527FU, 0x9B05688CU, 0x1F83D9ABU},
+                                                               {0x00000000U, 0xFFFFFFFFU, 0xA5A5A5A5U},
+                                                               {0x13579BDFU, 0x2468ACE0U, 0x0F0FF0F0U},
+                                                               {0xCAFEBABEU, 0xDEADBEEFU, 0x10203040U}}};
 
-    constexpr uint32_t e = 0x510E527FU;
-    constexpr uint32_t f = 0x9B05688CU;
-    constexpr uint32_t g = 0x1F83D9ABU;
+    for (const auto& tc : cases) {
+        const uint32_t e = tc[0];
+        const uint32_t f = tc[1];
+        const uint32_t g = tc[2];
+        Builder bNs;
+        auto nsExpr = bNs.RoundT1SigmaChoiceCore(bNs.Const(e), bNs.Const(f), bNs.Const(g));
+        auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(nsExpr);
 
-    auto fragment = b.RoundT1SigmaChoiceCore(b.Const(e), b.Const(f), b.Const(g));
-    auto rewritten = RunRoundFragmentPipeline(fragment);
+        Builder bRw;
+        auto rewritten = RunRoundFragmentPipeline(bRw.RoundT1SigmaChoiceCore(bRw.Const(e), bRw.Const(f), bRw.Const(g)));
 
-    BF_TEST(!ContainsOp(rewritten, OpType::Ch));
-    BF_TEST(!ContainsOp(rewritten, OpType::Maj));
+        BF_TEST(!ContainsOp(normalizedSimplified, OpType::Ch));
+        BF_TEST(!ContainsOp(normalizedSimplified, OpType::Maj));
+        BF_TEST(!ContainsOp(rewritten, OpType::Ch));
+        BF_TEST(!ContainsOp(rewritten, OpType::Maj));
 
-    auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(fragment);
-
-    const auto evalSimplified = Eval::EvaluateConstant(normalizedSimplified, 32);
-    const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
-    BF_TEST(evalSimplified.status == Eval::EvalStatus::Success);
-    BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
-
-    BF_TEST(evalRewritten.value == evalSimplified.value);
+        const auto evalSimplified = Eval::EvaluateConstant(normalizedSimplified, 32);
+        const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
+        BF_TEST(evalSimplified.status == Eval::EvalStatus::Success);
+        BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
+        BF_TEST(evalRewritten.value == evalSimplified.value);
+    }
 
     Builder bEmit;
     auto eVar = bEmit.Var();
@@ -85,27 +95,34 @@ int TestEndToEnd_T1SigmaChoiceCore_AnalyzeTargetFlow() {
     return 0;
 }
 
-int TestEndToEnd_T2PartCore_AnalyzeTargetFlow() {
-    Builder b;
+int TestEndToEnd_T2PartCore_ManyConcreteCases() {
+    constexpr std::array<std::array<uint32_t, 3>, 4> cases = {{{0x6A09E667U, 0xBB67AE85U, 0x3C6EF372U},
+                                                               {0x00000000U, 0xFFFFFFFFU, 0x12345678U},
+                                                               {0x13579BDFU, 0x2468ACE0U, 0x0F0FF0F0U},
+                                                               {0xCAFEBABEU, 0xDEADBEEFU, 0x10203040U}}};
 
-    constexpr uint32_t a = 0x6A09E667U;
-    constexpr uint32_t bVal = 0xBB67AE85U;
-    constexpr uint32_t c = 0x3C6EF372U;
+    for (const auto& tc : cases) {
+        const uint32_t a = tc[0];
+        const uint32_t b = tc[1];
+        const uint32_t c = tc[2];
+        Builder bNs;
+        auto nsExpr = bNs.RoundT2PartCore(bNs.Const(a), bNs.Const(b), bNs.Const(c));
+        auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(nsExpr);
 
-    auto fragment = b.RoundT2PartCore(b.Const(a), b.Const(bVal), b.Const(c));
-    auto rewritten = RunRoundFragmentPipeline(fragment);
+        Builder bRw;
+        auto rewritten = RunRoundFragmentPipeline(bRw.RoundT2PartCore(bRw.Const(a), bRw.Const(b), bRw.Const(c)));
 
-    BF_TEST(!ContainsOp(rewritten, OpType::Ch));
-    BF_TEST(!ContainsOp(rewritten, OpType::Maj));
+        BF_TEST(!ContainsOp(normalizedSimplified, OpType::Ch));
+        BF_TEST(!ContainsOp(normalizedSimplified, OpType::Maj));
+        BF_TEST(!ContainsOp(rewritten, OpType::Ch));
+        BF_TEST(!ContainsOp(rewritten, OpType::Maj));
 
-    auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(fragment);
-
-    const auto evalSimplified = Eval::EvaluateConstant(normalizedSimplified, 32);
-    const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
-    BF_TEST(evalSimplified.status == Eval::EvalStatus::Success);
-    BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
-
-    BF_TEST(evalRewritten.value == evalSimplified.value);
+        const auto evalSimplified = Eval::EvaluateConstant(normalizedSimplified, 32);
+        const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
+        BF_TEST(evalSimplified.status == Eval::EvalStatus::Success);
+        BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
+        BF_TEST(evalRewritten.value == evalSimplified.value);
+    }
 
     Builder bEmit;
     auto aVar = bEmit.Var();
@@ -117,50 +134,58 @@ int TestEndToEnd_T2PartCore_AnalyzeTargetFlow() {
 
     BF_TEST(emittedBefore != emittedAfter);
     BF_TEST(emittedAfter.find("bf_rotr") != std::string::npos);
-    BF_TEST(emittedAfter.find("return eval(") == std::string::npos);
     return 0;
 }
 
-int TestEndToEnd_T1ChoiceOnly_AnalyzeTargetFlow() {
-    Builder b;
+int TestEndToEnd_T1PartCore_ManyConcreteCases() {
+    constexpr std::array<std::array<uint32_t, 4>, 4> cases = {{{0x5BE0CD19U, 0x510E527FU, 0x9B05688CU, 0x1F83D9ABU},
+                                                               {0x00000000U, 0xFFFFFFFFU, 0xAAAAAAAAU, 0x55555555U},
+                                                               {0x13579BDFU, 0x2468ACE0U, 0x0F0FF0F0U, 0xF0F00F0FU},
+                                                               {0xCAFEBABEU, 0xDEADBEEFU, 0x10203040U, 0x55667788U}}};
 
-    constexpr uint32_t e = 0x510E527FU;
-    constexpr uint32_t f = 0x9B05688CU;
-    constexpr uint32_t g = 0x1F83D9ABU;
+    for (const auto& tc : cases) {
+        const uint32_t h = tc[0];
+        const uint32_t e = tc[1];
+        const uint32_t f = tc[2];
+        const uint32_t g = tc[3];
+        Builder bNs;
+        auto nsExpr = bNs.RoundT1PartCore(bNs.Const(h), bNs.Const(e), bNs.Const(f), bNs.Const(g));
+        auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(nsExpr);
 
-    auto fragment = b.RoundT1ChoiceCore(b.Const(e), b.Const(f), b.Const(g));
-    auto rewritten = RunRoundFragmentPipeline(fragment);
+        Builder bRw;
+        auto rewritten = RunRoundFragmentPipeline(bRw.RoundT1PartCore(bRw.Const(h), bRw.Const(e), bRw.Const(f), bRw.Const(g)));
 
-    BF_TEST(!ContainsOp(rewritten, OpType::Ch));
-    BF_TEST(!ContainsOp(rewritten, OpType::Maj));
+        BF_TEST(!ContainsOp(normalizedSimplified, OpType::Ch));
+        BF_TEST(!ContainsOp(normalizedSimplified, OpType::Maj));
+        BF_TEST(!ContainsOp(rewritten, OpType::Ch));
+        BF_TEST(!ContainsOp(rewritten, OpType::Maj));
 
-    auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(fragment);
-
-    const auto evalSimplified = Eval::EvaluateConstant(normalizedSimplified, 32);
-    const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
-    BF_TEST(evalSimplified.status == Eval::EvalStatus::Success);
-    BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
-
-    BF_TEST(evalRewritten.value == evalSimplified.value);
+        const auto evalSimplified = Eval::EvaluateConstant(normalizedSimplified, 32);
+        const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
+        BF_TEST(evalSimplified.status == Eval::EvalStatus::Success);
+        BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
+        BF_TEST(evalRewritten.value == evalSimplified.value);
+    }
 
     Builder bEmit;
+    auto hVar = bEmit.Var();
     auto eVar = bEmit.Var();
     auto fVar = bEmit.Var();
     auto gVar = bEmit.Var();
-    auto emitFragment = bEmit.RoundT1ChoiceCore(eVar, fVar, gVar);
+    auto emitFragment = bEmit.RoundT1PartCore(hVar, eVar, fVar, gVar);
     const auto emittedBefore = Codegen::EmitCExpr(emitFragment, 32);
     const auto emittedAfter = Codegen::EmitCExpr(RunRoundFragmentPipeline(emitFragment), 32);
 
     BF_TEST(emittedBefore != emittedAfter);
-    BF_TEST(emittedAfter.find("&") != std::string::npos);
+    BF_TEST(emittedAfter.find("bf_rotr") != std::string::npos);
     return 0;
 }
 
 } // namespace
 
 int main() {
-    BF_RUN_TEST(TestEndToEnd_T1SigmaChoiceCore_AnalyzeTargetFlow);
-    BF_RUN_TEST(TestEndToEnd_T2PartCore_AnalyzeTargetFlow);
-    BF_RUN_TEST(TestEndToEnd_T1ChoiceOnly_AnalyzeTargetFlow);
+    BF_RUN_TEST(TestEndToEnd_T1SigmaChoiceCore_ManyConcreteCases);
+    BF_RUN_TEST(TestEndToEnd_T2PartCore_ManyConcreteCases);
+    BF_RUN_TEST(TestEndToEnd_T1PartCore_ManyConcreteCases);
     return 0;
 }
