@@ -89,8 +89,10 @@ std::string EmitCRuntimeSupport(uint32_t bitWidth) {
     std::ostringstream ss;
     ss << "#include <cstdint>\n";
 
-    if (bitWidth > 64U)
+    if (bitWidth > 64U) {
         ss << "#include <BitFlow/core/bitvector/BitVector.h>\n";
+        ss << "using bf_uint = BitFlow::Core::BitVector::bf_uint;\n";
+    }
 
     ss << "\n";
     ss << "// BitFlow generated rotate contract:\n";
@@ -130,9 +132,15 @@ std::string EmitCRuntimeSupport(uint32_t bitWidth) {
         ss << "[[maybe_unused]] static inline bf_uint bf_rotl(const bf_uint& value, uint32_t shift) {\n";
         ss << "    return value.RotL(shift);\n";
         ss << "}\n\n";
+        ss << "[[maybe_unused]] static inline bf_uint bf_rotl(const bf_uint& value, const bf_uint& shift) {\n";
+        ss << "    return value.RotL(shift.ToUint32());\n";
+        ss << "}\n\n";
 
         ss << "[[maybe_unused]] static inline bf_uint bf_rotr(const bf_uint& value, uint32_t shift) {\n";
         ss << "    return value.RotR(shift);\n";
+        ss << "}\n\n";
+        ss << "[[maybe_unused]] static inline bf_uint bf_rotr(const bf_uint& value, const bf_uint& shift) {\n";
+        ss << "    return value.RotR(shift.ToUint32());\n";
         ss << "}\n\n";
     }
 

@@ -24,9 +24,14 @@ namespace {
 
 static int CompileCppSource(const std::string& file, const std::string& exe) {
     const std::string strictFlags = " -Wall -Wextra -Wpedantic -Werror";
-    int res = std::system(("g++ -std=c++20" + strictFlags + " " + file + " -o " + exe).c_str());
+    const std::string includeFlags =
+        " -I. -Iengine/core/include -I../engine/core/include -I/workspace/BitFlow/engine/core/include";
+    const std::string runtimeSrc = " /workspace/BitFlow/engine/core/src/bitvector/BitVector.cpp";
+    int res =
+        std::system(("g++ -std=c++20" + strictFlags + includeFlags + " " + file + runtimeSrc + " -o " + exe).c_str());
     if (res != 0)
-        res = std::system(("c++ -std=c++20" + strictFlags + " " + file + " -o " + exe).c_str());
+        res = std::system(("c++ -std=c++20" + strictFlags + includeFlags + " " + file + runtimeSrc + " -o " + exe)
+                              .c_str());
 #if defined(_WIN32)
     if (res != 0)
         res = std::system(("cl /nologo /std:c++20 /O2 /W4 /WX /EHsc " + file + " /Fe:" + exe).c_str());
@@ -217,6 +222,16 @@ int main() {
     const auto support32 = Codegen::EmitCRuntimeSupport(32);
     BF_TEST(CompileAndRunWrapper(multiFn, "f(5u, 7u).out1", support32) == 12ull);
     BF_TEST(CompileAndRunWrapper(multiFn, "f(5u, 7u).out2", support32) == (5ull ^ 7ull));
+
+    // Wide-bitwidth generated function path (bf_uint runtime contract).
+    auto wideVar = MakeVar(50);
+    auto wideExpr = MakeOp(51, OpType::RotL, {wideVar, MakeConst(52, 5)});
+    auto wideFn = Codegen::EmitCFunction(wideExpr, 128);
+    const auto support128 = Codegen::EmitCRuntimeSupport(128);
+    auto wideEvalExpr = MakeOp(53, OpType::RotL, {MakeConst(54, 0x81), MakeConst(55, 5)});
+    auto wideEval = Eval::EvaluateConstant(wideEvalExpr, 128);
+    BF_TEST(wideEval.status == Eval::EvalStatus::Success);
+    BF_TEST(CompileAndRunWrapper(wideFn, "f(bf_uint(0x81ull, 128)).ToUint64()", support128) == wideEval.value);
 
     return 0;
 }

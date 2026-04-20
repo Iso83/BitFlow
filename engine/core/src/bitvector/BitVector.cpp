@@ -30,6 +30,22 @@ uint32_t bf_uint::BitWidth() const noexcept {
     return m_bw;
 }
 
+bool bf_uint::IsZero() const noexcept {
+    for (uint64_t w : m_words) {
+        if (w != 0ULL)
+            return false;
+    }
+    return true;
+}
+
+uint64_t bf_uint::ToUint64() const noexcept {
+    return m_words.empty() ? 0ULL : m_words[0];
+}
+
+uint32_t bf_uint::ToUint32() const noexcept {
+    return static_cast<uint32_t>(ToUint64() & 0xffffffffULL);
+}
+
 void bf_uint::Normalize() {
     if (m_words.empty())
         return;
@@ -80,7 +96,7 @@ bf_uint bf_uint::operator~() const {
 
 bf_uint bf_uint::Shl(uint32_t s) const {
     if (m_bw == 0)
-        return bf_uint(0);
+        return bf_uint(0, 0);
 
     s %= m_bw;
 
@@ -109,7 +125,7 @@ bf_uint bf_uint::Shl(uint32_t s) const {
 
 bf_uint bf_uint::Shr(uint32_t s) const {
     if (m_bw == 0)
-        return bf_uint(0);
+        return bf_uint(0, 0);
 
     s %= m_bw;
 
@@ -138,7 +154,7 @@ bf_uint bf_uint::Shr(uint32_t s) const {
 
 bf_uint bf_uint::RotL(uint32_t s) const {
     if (m_bw == 0)
-        return bf_uint(0);
+        return bf_uint(0, 0);
 
     s %= m_bw;
     return Shl(s) | Shr(m_bw - s);
@@ -146,7 +162,7 @@ bf_uint bf_uint::RotL(uint32_t s) const {
 
 bf_uint bf_uint::RotR(uint32_t s) const {
     if (m_bw == 0)
-        return bf_uint(0);
+        return bf_uint(0, 0);
 
     s %= m_bw;
     return Shr(s) | Shl(m_bw - s);
@@ -196,7 +212,7 @@ bf_uint bf_uint::operator*(const bf_uint& rhs) const {
     EnsureSameBitWidth(*this, rhs);
 
     if (m_bw == 0)
-        return bf_uint(0);
+        return bf_uint(0, 0);
 
     bf_uint r(m_bw);
     for (uint32_t bit = 0; bit < m_bw; ++bit) {
@@ -225,7 +241,7 @@ bf_uint bf_uint::operator/(const bf_uint& rhs) const {
         throw std::domain_error("bf_uint division by zero");
 
     if (m_bw == 0)
-        return bf_uint(0);
+        return bf_uint(0, 0);
 
     bf_uint q(m_bw);
     bf_uint rem(m_bw);
@@ -273,13 +289,38 @@ bf_uint bf_uint::operator%(const bf_uint& rhs) const {
         throw std::domain_error("bf_uint modulo by zero");
 
     if (m_bw == 0)
-        return bf_uint(0);
+        return bf_uint(0, 0);
 
     bf_uint q = (*this) / rhs;
     bf_uint prod = q * rhs;
     bf_uint rem = (*this) - prod;
     rem.Normalize();
     return rem;
+}
+
+bf_uint bf_uint::operator<<(uint32_t s) const {
+    return Shl(s);
+}
+
+bf_uint bf_uint::operator>>(uint32_t s) const {
+    return Shr(s);
+}
+
+bf_uint bf_uint::operator<<(const bf_uint& rhs) const {
+    EnsureSameBitWidth(*this, rhs);
+    return Shl(rhs.ToUint32());
+}
+
+bf_uint bf_uint::operator>>(const bf_uint& rhs) const {
+    EnsureSameBitWidth(*this, rhs);
+    return Shr(rhs.ToUint32());
+}
+
+bf_uint bf_uint::operator-() const {
+    if (m_bw == 0)
+        return bf_uint(0, 0);
+    bf_uint zero(m_bw);
+    return zero - *this;
 }
 
 } // namespace BitFlow::Core::BitVector

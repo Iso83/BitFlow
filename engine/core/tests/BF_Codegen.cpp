@@ -60,6 +60,7 @@ int main() {
 
     const auto support128 = Codegen::EmitCRuntimeSupport(128);
     BF_TEST(support128.find("#include <BitFlow/core/bitvector/BitVector.h>") != std::string::npos);
+    BF_TEST(support128.find("using bf_uint = BitFlow::Core::BitVector::bf_uint;") != std::string::npos);
     BF_TEST(support128.find("bf_rotl(const bf_uint&") != std::string::npos);
     BF_TEST(support128.find("bf_rotr(const bf_uint&") != std::string::npos);
 

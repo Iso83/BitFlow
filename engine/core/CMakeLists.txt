@@ -57,6 +57,7 @@ if(BF_BUILD_TESTS)
 
     bf_add_module_test(BitFlowCore core BF_CodegenMulti)
     bf_add_module_test(BitFlowCore core BF_CodegenStructuralCSE)
+    bf_add_module_test(BitFlowCore core BF_BitVector)
 
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order) 
