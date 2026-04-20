@@ -89,7 +89,10 @@ int TestEndToEnd_T1SigmaChoiceCore_ManyConcreteCases() {
     const auto emittedBefore = Codegen::EmitCExpr(emitFragment, 32);
     const auto emittedAfter = Codegen::EmitCExpr(RunRoundFragmentPipeline(emitFragment), 32);
 
+    const auto emittedAfterAgain = Codegen::EmitCExpr(RunRoundFragmentPipeline(emitFragment), 32);
+
     BF_TEST(emittedBefore != emittedAfter);
+    BF_TEST(emittedAfter == emittedAfterAgain);
     BF_TEST(emittedAfter.find("bf_rotr") != std::string::npos);
     BF_TEST(emittedAfter.find("0xffffffffu") != std::string::npos);
     return 0;
@@ -132,7 +135,10 @@ int TestEndToEnd_T2PartCore_ManyConcreteCases() {
     const auto emittedBefore = Codegen::EmitCExpr(emitFragment, 32);
     const auto emittedAfter = Codegen::EmitCExpr(RunRoundFragmentPipeline(emitFragment), 32);
 
+    const auto emittedAfterAgain = Codegen::EmitCExpr(RunRoundFragmentPipeline(emitFragment), 32);
+
     BF_TEST(emittedBefore != emittedAfter);
+    BF_TEST(emittedAfter == emittedAfterAgain);
     BF_TEST(emittedAfter.find("bf_rotr") != std::string::npos);
     return 0;
 }
@@ -176,8 +182,17 @@ int TestEndToEnd_T1PartCore_ManyConcreteCases() {
     const auto emittedBefore = Codegen::EmitCExpr(emitFragment, 32);
     const auto emittedAfter = Codegen::EmitCExpr(RunRoundFragmentPipeline(emitFragment), 32);
 
+    const auto emittedAfterAgain = Codegen::EmitCExpr(RunRoundFragmentPipeline(emitFragment), 32);
+
     BF_TEST(emittedBefore != emittedAfter);
+    BF_TEST(emittedAfter == emittedAfterAgain);
     BF_TEST(emittedAfter.find("bf_rotr") != std::string::npos);
+
+    Builder bCompact;
+    auto compactExpr = bCompact.RoundT1PartCore(bCompact.Const(0U), bCompact.Var(), bCompact.Var(), bCompact.Var());
+    const auto compactBefore = Codegen::EmitCExpr(compactExpr, 32);
+    const auto compactAfter = Codegen::EmitCExpr(RunRoundFragmentPipeline(compactExpr), 32);
+    BF_TEST(compactAfter.find("0x00000000u") == std::string::npos);
     return 0;
 }
 
