@@ -66,9 +66,9 @@ if(BF_BUILD_TESTS)
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order)
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Flatten)
-    bf_add_module_test(BitFlowCore core/rules BF_Rules_Isolated)
-    bf_add_module_test(BitFlowCore core/rules BF_Rules_Dependencies)
-    bf_add_module_test(BitFlowCore core/rules BF_Pipeline_Profiles)
+    bf_add_module_test(BitFlowCore core/rules BF_Rules_Isolated SOURCE tests/rules/Rule_Isolated.cpp)
+    bf_add_module_test(BitFlowCore core/rules BF_Rules_Dependencies SOURCE tests/rules/Rule_Dependencies.cpp)
+    bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_Profiles SOURCE tests/pipeline/Pipeline_Profiles.cpp)
 
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Fold)
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Cancel)

@@ -1,10 +1,16 @@
 function(bf_add_module_test target folder name)
     set(options)
-    set(oneValueArgs)
+    set(oneValueArgs SOURCE)
     set(multiValueArgs LABELS)
     cmake_parse_arguments(BF_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    add_executable(${name} tests/${name}.cpp)
+    if(BF_TEST_SOURCE)
+        set(test_source ${BF_TEST_SOURCE})
+    else()
+        set(test_source tests/${name}.cpp)
+    endif()
+
+    add_executable(${name} ${test_source})
 
     target_link_libraries(${name} PRIVATE ${target})
     target_include_directories(${name} PRIVATE
