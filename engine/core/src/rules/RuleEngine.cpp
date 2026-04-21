@@ -50,11 +50,33 @@ void RuleEngine::AddRule(const Rule& rule) {
 }
 
 void RuleEngine::AddRule(Stage& stage, Rule rule) {
-    if (stage.ruleIds.find(rule.Id) != stage.ruleIds.end())
+    if (!stage.ruleIds.insert(rule.Id).second)
         throw std::runtime_error("Duplicate rule in stage");
 
+    bool hasExpand = false;
+    bool hasFactor = false;
+
+    for (const auto& stageRule : stage.rules) {
+        if (stageRule.Flags & Expanding)
+            hasExpand = true;
+
+        if (stageRule.Flags & Factorizing)
+            hasFactor = true;
+    }
+
+    if (rule.Flags & Expanding)
+        hasExpand = true;
+
+    if (rule.Flags & Factorizing)
+        hasFactor = true;
+
+    if (hasExpand && hasFactor)
+    {
+        stage.ruleIds.erase(rule.Id);
+        throw std::runtime_error("Invalid stage: expand + factorize");
+    }
+
     stage.rules.push_back(std::move(rule));
-    stage.ruleIds.insert(stage.rules.back().Id);
 }
 
 Expr* RuleEngine::ApplyOnce(Expr* expr) const {
