@@ -11,23 +11,6 @@ using namespace BitFlow::Core::Rules;
 
 namespace {
 
-RuleEngine BuildProfile(const std::string& name) {
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-
-    if (name == "sha_safe") {
-        Add_Simplify_SHA_Rules(engine);
-        return engine;
-    }
-
-    if (name == "factorize") {
-        engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
-        return engine;
-    }
-
-    throw std::runtime_error("Unknown profile");
-}
-
 bool IsStable(RuleEngine& engine, Expr* expr) {
     Expr* next = engine.ApplyOnce(expr);
     return BitFlow::Core::AST::StructEqual(expr, next);
