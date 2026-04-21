@@ -66,6 +66,7 @@ if(BF_BUILD_TESTS)
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order)
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Flatten)
+    bf_add_module_test(BitFlowCore core/rules BF_Rules_Isolated)
 
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Fold)
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Cancel)
