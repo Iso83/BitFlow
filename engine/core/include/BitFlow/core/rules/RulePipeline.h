@@ -2,8 +2,12 @@
 
 #include <BitFlow/core/rules/Rule.h>
 #include <BitFlow/core/rules/RuleEngine.h>
+#include <stdexcept>
+#include <string_view>
 
 namespace BitFlow::Core::Rules {
+
+enum class RuleProfile { normalize, simplify_bitwise, simplify_arithmetic, sha_safe, factorize, explore };
 
 // =========================================================
 // Normalize (global)
@@ -100,6 +104,61 @@ inline void Add_Factorize_Arithmetic_Rules(RuleEngine& engine) {
 inline void Add_Simplify_SHA_Rules(RuleEngine& engine) {
     engine.AddRule(Simplify::Get_CH_Simplify_Rule());
     engine.AddRule(Simplify::Get_MAJ_Simplify_Rule());
+}
+
+inline RuleEngine BuildProfile(RuleProfile profile) {
+    RuleEngine engine;
+
+    switch (profile) {
+    case RuleProfile::normalize:
+        Add_Normalize_Rules(engine);
+        break;
+    case RuleProfile::simplify_bitwise:
+        Add_Normalize_Rules(engine);
+        Add_Simplify_Bitwise_Rules(engine);
+        break;
+    case RuleProfile::simplify_arithmetic:
+        Add_Normalize_Rules(engine);
+        Add_Simplify_Arithmetic_Rules(engine);
+        break;
+    case RuleProfile::sha_safe:
+        Add_Normalize_Rules(engine);
+        Add_Simplify_Bitwise_Rules(engine);
+        Add_Simplify_Arithmetic_Rules(engine);
+        Add_Simplify_SHA_Rules(engine);
+        break;
+    case RuleProfile::factorize:
+        Add_Normalize_Rules(engine);
+        engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+        break;
+    case RuleProfile::explore:
+        Add_Normalize_Rules(engine);
+        Add_Simplify_Bitwise_Rules(engine);
+        Add_Simplify_Arithmetic_Rules(engine);
+        Add_Simplify_SHA_Rules(engine);
+        Add_Factorize_Bitwise_Rules(engine);
+        Add_Factorize_Arithmetic_Rules(engine);
+        break;
+    }
+
+    return engine;
+}
+
+inline RuleEngine BuildProfile(std::string_view profileName) {
+    if (profileName == "normalize")
+        return BuildProfile(RuleProfile::normalize);
+    if (profileName == "simplify_bitwise")
+        return BuildProfile(RuleProfile::simplify_bitwise);
+    if (profileName == "simplify_arithmetic")
+        return BuildProfile(RuleProfile::simplify_arithmetic);
+    if (profileName == "sha_safe")
+        return BuildProfile(RuleProfile::sha_safe);
+    if (profileName == "factorize")
+        return BuildProfile(RuleProfile::factorize);
+    if (profileName == "explore")
+        return BuildProfile(RuleProfile::explore);
+
+    throw std::runtime_error("Unknown rule profile");
 }
 
 } // namespace BitFlow::Core::Rules
