@@ -67,7 +67,11 @@ struct StepArtifacts {
 
 struct DemoOptions {
     unsigned steps = 4;
-    std::string profile = "sha_safe";
+    bool shaRules = true;
+    bool factorize = false;
+    bool explore = false;
+    bool normalizeOnly = false;
+    bool buildSchedule = true;
     bool emitC = false;
     bool ssa = false;
     bool writeFiles = true;
@@ -144,17 +148,19 @@ inline std::vector<uint32_t> BuildScheduleReference(const std::array<uint8_t, 64
     return w;
 }
 
-inline RewriteProfile ParseRewriteProfile(const std::string& s) {
-    if (s == "normalize")
-        return RewriteProfile::NormalizeOnly;
-    if (s == "sha_safe")
-        return RewriteProfile::ShaSafe;
-    if (s == "sha_factorize")
-        return RewriteProfile::ShaFactorize;
-    if (s == "explore")
-        return RewriteProfile::ExploreAggressive;
+inline const char* RewriteProfileName(RewriteProfile profile) {
+    switch (profile) {
+    case RewriteProfile::NormalizeOnly:
+        return "normalize";
+    case RewriteProfile::ShaSafe:
+        return "sha_safe";
+    case RewriteProfile::ShaFactorize:
+        return "sha_factorize";
+    case RewriteProfile::ExploreAggressive:
+        return "explore";
+    }
 
-    throw std::runtime_error("Unknown profile: " + s);
+    return "unknown";
 }
 
 inline std::string Truncate(const std::string& s, std::size_t maxLen) {

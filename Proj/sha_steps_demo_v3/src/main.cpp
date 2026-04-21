@@ -12,38 +12,56 @@ namespace {
 
 using namespace ShaDemo;
 
+RewriteProfile ResolveProfile(const DemoOptions& opt) {
+    if (opt.explore)
+        return RewriteProfile::ExploreAggressive;
+    if (opt.factorize)
+        return RewriteProfile::ShaFactorize;
+    if (opt.normalizeOnly)
+        return RewriteProfile::NormalizeOnly;
+    if (!opt.shaRules)
+        return RewriteProfile::NormalizeOnly;
+    return RewriteProfile::ShaSafe;
+}
+
 DemoOptions ParseArgs(int argc, char** argv) {
     DemoOptions opt{};
 
 #if defined(SHA_DEMO_HAS_CLI11)
     CLI::App app{"SHA symbolic step explorer"};
     app.add_option("--steps", opt.steps, "Number of SHA-256 steps to build")->check(CLI::Range(1, 64));
-    app.add_option("--profile", opt.profile, "normalize | sha_safe | sha_factorize | explore");
     app.add_option("--console-max", opt.consoleMax, "Max chars per console expression line");
     app.add_option("--out", opt.outDir, "Output directory");
+
     app.add_flag("--emit-c", opt.emitC, "Write C emitter output");
     app.add_flag("--ssa", opt.ssa, "Write SSA output");
+    app.add_flag("--trace", opt.trace, "Enable verbose rewrite trace");
+
+    app.add_flag("--factorize", opt.factorize, "Enable safe factorize rewrite pass");
+    app.add_flag("--explore", opt.explore, "Enable aggressive exploratory factorize/distribute pass");
+    app.add_flag("--normalize-only", opt.normalizeOnly, "Only normalize expressions");
+
+    app.add_flag("--no-sha-rules", opt.shaRules, "Disable SHA-specific simplify rules")
+        ->default_val(true)
+        ->disable_flag_override();
+    app.add_flag("--no-schedule", opt.buildSchedule, "Keep only initial W[0..15] constants")
+        ->default_val(true)
+        ->disable_flag_override();
     app.add_flag("--no-files", opt.writeFiles, "Disable file output")->default_val(true)->disable_flag_override();
     app.add_flag("--no-verify", opt.verify, "Disable concrete verification")
         ->default_val(true)
         ->disable_flag_override();
-    app.add_flag("--trace", opt.trace, "Enable verbose rewrite trace");
 
     try {
         app.parse(argc, argv);
     } catch (const CLI::ParseError& e) {
         std::exit(app.exit(e));
     }
-    // CLI11_PARSE(app, argc, argv);
 #else
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "--steps" && i + 1 < argc) {
             opt.steps = static_cast<unsigned>(std::strtoul(argv[++i], nullptr, 10));
-            continue;
-        }
-        if (arg == "--profile" && i + 1 < argc) {
-            opt.profile = argv[++i];
             continue;
         }
         if (arg == "--console-max" && i + 1 < argc) {
@@ -62,6 +80,30 @@ DemoOptions ParseArgs(int argc, char** argv) {
             opt.ssa = true;
             continue;
         }
+        if (arg == "--trace") {
+            opt.trace = true;
+            continue;
+        }
+        if (arg == "--factorize") {
+            opt.factorize = true;
+            continue;
+        }
+        if (arg == "--explore") {
+            opt.explore = true;
+            continue;
+        }
+        if (arg == "--normalize-only") {
+            opt.normalizeOnly = true;
+            continue;
+        }
+        if (arg == "--no-sha-rules") {
+            opt.shaRules = false;
+            continue;
+        }
+        if (arg == "--no-schedule") {
+            opt.buildSchedule = false;
+            continue;
+        }
         if (arg == "--no-files") {
             opt.writeFiles = false;
             continue;
@@ -70,16 +112,18 @@ DemoOptions ParseArgs(int argc, char** argv) {
             opt.verify = false;
             continue;
         }
-        if (arg == "--trace") {
-            opt.trace = true;
-            continue;
-        }
         throw std::runtime_error("Unknown argument: " + arg);
     }
 #endif
 
     if (opt.steps == 0 || opt.steps > 64)
         throw std::runtime_error("--steps must be in range 1..64");
+
+    if (!opt.buildSchedule && opt.steps > 16)
+        throw std::runtime_error("--no-schedule only supports --steps <= 16");
+
+    if (opt.explore && opt.factorize)
+        std::cout << "warning: --explore overrides --factorize.\n";
 
     return opt;
 }
@@ -95,11 +139,11 @@ void PrintCompact(const char* name, const Expr* expr, const std::unordered_map<u
 int main(int argc, char** argv) {
     try {
         DemoOptions opt = ParseArgs(argc, argv);
-        const RewriteProfile profile = ParseRewriteProfile(opt.profile);
+        const RewriteProfile profile = ResolveProfile(opt);
 
         if ((profile == RewriteProfile::ShaFactorize || profile == RewriteProfile::ExploreAggressive) && opt.verify) {
-            std::cout << "warning: verification auto-disabled for profile '" << opt.profile
-                      << "' because current BitFlow factorize rules can still change semantics in this snapshot.\n\n";
+            std::cout << "warning: verification auto-disabled for chosen factorize mode because current BitFlow "
+                         "factorize rules can still change semantics in this snapshot.\n\n";
             opt.verify = false;
         }
 
@@ -132,7 +176,9 @@ int main(int argc, char** argv) {
 
         std::cout << "SHA symbolic step explorer\n";
         std::cout << "steps       : " << opt.steps << "\n";
-        std::cout << "profile     : " << opt.profile << "\n";
+        std::cout << "mode        : " << RewriteProfileName(profile) << "\n";
+        std::cout << "sha rules   : " << (opt.shaRules ? "on" : "off") << "\n";
+        std::cout << "schedule    : " << (opt.buildSchedule ? "full until step" : "W[0..15] only") << "\n";
         std::cout << "trace       : " << (opt.trace ? "on" : "off") << "\n";
         std::cout << "write files : " << (opt.writeFiles ? "on" : "off") << "\n";
         std::cout << "verify      : " << (opt.verify ? "on" : "off") << "\n";
@@ -148,7 +194,7 @@ int main(int argc, char** argv) {
             std::cout << "    k = " << Hex32(kSha256[step]) << "\n";
 
             Expr* wExpr = nullptr;
-            if (step < scheduleExprs.size()) {
+            if (step < 16 || !opt.buildSchedule) {
                 wExpr = scheduleExprs[step];
             } else {
                 wExpr = BuildScheduleExprAt(b, scheduleExprs, step, b.Names(), profile, opt.trace);
