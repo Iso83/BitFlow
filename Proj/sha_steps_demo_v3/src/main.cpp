@@ -19,8 +19,6 @@ RewriteProfile ResolveProfile(const DemoOptions& opt) {
         return RewriteProfile::ShaFactorize;
     if (opt.normalizeOnly)
         return RewriteProfile::NormalizeOnly;
-    if (!opt.shaRules)
-        return RewriteProfile::NormalizeOnly;
     return RewriteProfile::ShaSafe;
 }
 
@@ -41,9 +39,7 @@ DemoOptions ParseArgs(int argc, char** argv) {
     app.add_flag("--explore", opt.explore, "Enable aggressive exploratory factorize/distribute pass");
     app.add_flag("--normalize-only", opt.normalizeOnly, "Only normalize expressions");
 
-    app.add_flag("--no-sha-rules", opt.shaRules, "Disable SHA-specific simplify rules")
-        ->default_val(true)
-        ->disable_flag_override();
+    app.add_flag("--sha-rules", opt.shaRules, "Enable SHA-specific simplify rules (can be unstable)");
     app.add_flag("--no-schedule", opt.buildSchedule, "Keep only initial W[0..15] constants")
         ->default_val(true)
         ->disable_flag_override();
@@ -94,6 +90,10 @@ DemoOptions ParseArgs(int argc, char** argv) {
         }
         if (arg == "--normalize-only") {
             opt.normalizeOnly = true;
+            continue;
+        }
+        if (arg == "--sha-rules") {
+            opt.shaRules = true;
             continue;
         }
         if (arg == "--no-sha-rules") {
@@ -147,6 +147,12 @@ int main(int argc, char** argv) {
             opt.verify = false;
         }
 
+        if (opt.shaRules && opt.verify) {
+            std::cout << "warning: verification auto-disabled when --sha-rules is enabled because current SHA rewrite "
+                         "rules are unstable in this BitFlow snapshot.\n\n";
+            opt.verify = false;
+        }
+
         ExprBuilder b;
 
         StateExpr symbolic{};
@@ -197,13 +203,13 @@ int main(int argc, char** argv) {
             if (step < 16 || !opt.buildSchedule) {
                 wExpr = scheduleExprs[step];
             } else {
-                wExpr = BuildScheduleExprAt(b, scheduleExprs, step, b.Names(), profile, opt.trace);
+                wExpr = BuildScheduleExprAt(b, scheduleExprs, step, b.Names(), profile, opt.trace, opt.shaRules);
             }
 
             const auto raw = BuildStep(b, symbolic, wExpr, kSha256[step]);
-            const auto t1rw = RewriteExpr(raw.t1, b.Names(), profile, false);
-            const auto t2rw = RewriteExpr(raw.t2, b.Names(), profile, false);
-            const auto rewritten = RewriteStepOutputs(raw, b.Names(), profile, opt.trace);
+            const auto t1rw = RewriteExpr(raw.t1, b.Names(), profile, false, opt.shaRules);
+            const auto t2rw = RewriteExpr(raw.t2, b.Names(), profile, false, opt.shaRules);
+            const auto rewritten = RewriteStepOutputs(raw, b.Names(), profile, opt.trace, opt.shaRules);
 
             PrintCompact(("w" + std::to_string(step)).c_str(), wExpr, b.Names(), opt.consoleMax);
             PrintCompact("t1", t1rw, b.Names(), opt.consoleMax);
@@ -223,7 +229,8 @@ int main(int argc, char** argv) {
 
             if (opt.verify) {
                 const StateVal refNext = RefStep(concrete, kSha256[step], scheduleValues[step]);
-                const StateVal bfNext = VerifyConcreteStep(concrete, kSha256[step], scheduleValues[step], profile);
+                const StateVal bfNext =
+                    VerifyConcreteStep(concrete, kSha256[step], scheduleValues[step], profile, opt.shaRules);
 
                 std::cout << "    verify a: ref=" << Hex32(refNext.a) << " bitflow=" << Hex32(bfNext.a)
                           << (refNext.a == bfNext.a ? "  OK" : "  FAIL") << "\n";

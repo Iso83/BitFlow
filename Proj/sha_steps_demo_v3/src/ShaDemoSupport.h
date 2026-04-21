@@ -67,7 +67,7 @@ struct StepArtifacts {
 
 struct DemoOptions {
     unsigned steps = 4;
-    bool shaRules = true;
+    bool shaRules = false;
     bool factorize = false;
     bool explore = false;
     bool normalizeOnly = false;
@@ -217,61 +217,48 @@ inline Expr* RunNormalize(Expr* root, const std::unordered_map<uint32_t, std::st
     return engine.ApplyUntilStable(root);
 }
 
-inline void AddArithmeticSimplifyWithShifts(BitFlow::Core::Rules::RuleEngine& engine) {
-    using namespace BitFlow::Core::Rules;
-    engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Sub_Zero_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Mul_Zero_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Mod_Zero_Guard_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Shift_Zero_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Modulo_Bitwidth_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Mul_One_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Div_One_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Neg_Neg_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Add_Fold_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Const_Combine_Rule());
-}
-
-inline Expr* RunSimplifySafe(Expr* root, const std::unordered_map<uint32_t, std::string>& names, bool trace) {
+inline Expr* RunSimplifySafe(Expr* root, const std::unordered_map<uint32_t, std::string>& names, bool trace,
+                            bool enableShaRules) {
     using namespace BitFlow::Core::Rules;
 
     RuleEngine engine;
     Add_Normalize_Rules(engine);
     Add_Simplify_Bitwise_Rules(engine);
-    AddArithmeticSimplifyWithShifts(engine);
-    Add_Simplify_SHA_Rules(engine);
+    Add_Simplify_Arithmetic_Rules(engine);
+    if (enableShaRules)
+        Add_Simplify_SHA_Rules(engine);
 
     AttachTrace(engine, names, "sha_safe", trace);
     return engine.ApplyUntilStable(root);
 }
 
-inline Expr* RunFactorizeSafe(Expr* root, const std::unordered_map<uint32_t, std::string>& names, bool trace) {
+inline Expr* RunFactorizeSafe(Expr* root, const std::unordered_map<uint32_t, std::string>& names, bool trace,
+                             bool enableShaRules) {
     using namespace BitFlow::Core::Rules;
 
     RuleEngine engine;
     Add_Normalize_Rules(engine);
     Add_Simplify_Bitwise_Rules(engine);
-    AddArithmeticSimplifyWithShifts(engine);
-    Add_Simplify_SHA_Rules(engine);
-    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
-    engine.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
-    engine.AddRule(Factorize::Arithmetic::Get_Mul_CombineConstants_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Or_Absorb_Rule());
+    Add_Simplify_Arithmetic_Rules(engine);
+    if (enableShaRules)
+        Add_Simplify_SHA_Rules(engine);
+    Add_Factorize_Bitwise_Rules(engine);
+    Add_Factorize_Arithmetic_Rules(engine);
 
     AttachTrace(engine, names, "factorize_safe", trace);
     return engine.ApplyUntilStable(root);
 }
 
-inline Expr* RunExploreAggressive(Expr* root, const std::unordered_map<uint32_t, std::string>& names, bool trace) {
+inline Expr* RunExploreAggressive(Expr* root, const std::unordered_map<uint32_t, std::string>& names, bool trace,
+                                 bool enableShaRules) {
     using namespace BitFlow::Core::Rules;
 
     RuleEngine engine;
     Add_Normalize_Rules(engine);
     Add_Simplify_Bitwise_Rules(engine);
-    AddArithmeticSimplifyWithShifts(engine);
-    Add_Simplify_SHA_Rules(engine);
+    Add_Simplify_Arithmetic_Rules(engine);
+    if (enableShaRules)
+        Add_Simplify_SHA_Rules(engine);
     Add_Factorize_Bitwise_Rules(engine);
     Add_Factorize_Arithmetic_Rules(engine);
 
@@ -280,19 +267,19 @@ inline Expr* RunExploreAggressive(Expr* root, const std::unordered_map<uint32_t,
 }
 
 inline Expr* RewriteExpr(Expr* root, const std::unordered_map<uint32_t, std::string>& names, RewriteProfile profile,
-                         bool trace) {
+                         bool trace, bool enableShaRules = true) {
     switch (profile) {
     case RewriteProfile::NormalizeOnly:
         return RunNormalize(root, names, trace);
     case RewriteProfile::ShaSafe:
         root = RunNormalize(root, names, trace);
-        return RunSimplifySafe(root, names, trace);
+        return RunSimplifySafe(root, names, trace, enableShaRules);
     case RewriteProfile::ShaFactorize:
         root = RunNormalize(root, names, trace);
-        root = RunSimplifySafe(root, names, trace);
-        return RunFactorizeSafe(root, names, trace);
+        root = RunSimplifySafe(root, names, trace, enableShaRules);
+        return RunFactorizeSafe(root, names, trace, enableShaRules);
     case RewriteProfile::ExploreAggressive:
-        return RunExploreAggressive(root, names, trace);
+        return RunExploreAggressive(root, names, trace, enableShaRules);
     }
 
     return root;
@@ -339,35 +326,36 @@ inline StepArtifacts BuildStep(ExprBuilder& b, const StateExpr& s, Expr* w, uint
 }
 
 inline StateExpr RewriteStepOutputs(const StepArtifacts& art, const std::unordered_map<uint32_t, std::string>& names,
-                                    RewriteProfile profile, bool trace) {
+                                    RewriteProfile profile, bool trace, bool enableShaRules = true) {
     StateExpr out{};
-    out.a = RewriteExpr(art.next.a, names, profile, trace);
-    out.b = RewriteExpr(art.next.b, names, profile, trace);
-    out.c = RewriteExpr(art.next.c, names, profile, trace);
-    out.d = RewriteExpr(art.next.d, names, profile, trace);
-    out.e = RewriteExpr(art.next.e, names, profile, trace);
-    out.f = RewriteExpr(art.next.f, names, profile, trace);
-    out.g = RewriteExpr(art.next.g, names, profile, trace);
-    out.h = RewriteExpr(art.next.h, names, profile, trace);
+    out.a = RewriteExpr(art.next.a, names, profile, trace, enableShaRules);
+    out.b = RewriteExpr(art.next.b, names, profile, trace, enableShaRules);
+    out.c = RewriteExpr(art.next.c, names, profile, trace, enableShaRules);
+    out.d = RewriteExpr(art.next.d, names, profile, trace, enableShaRules);
+    out.e = RewriteExpr(art.next.e, names, profile, trace, enableShaRules);
+    out.f = RewriteExpr(art.next.f, names, profile, trace, enableShaRules);
+    out.g = RewriteExpr(art.next.g, names, profile, trace, enableShaRules);
+    out.h = RewriteExpr(art.next.h, names, profile, trace, enableShaRules);
     return out;
 }
 
 inline Expr* BuildScheduleExprAt(ExprBuilder& b, std::vector<Expr*>& schedule, unsigned index,
                                  const std::unordered_map<uint32_t, std::string>& names, RewriteProfile profile,
-                                 bool trace) {
+                                 bool trace, bool enableShaRules = true) {
     while (schedule.size() <= index) {
         const size_t i = schedule.size();
         Expr* expr =
             b.Add({b.SmallSigma1(schedule[i - 2]), schedule[i - 7], b.SmallSigma0(schedule[i - 15]), schedule[i - 16]});
 
-        expr = RewriteExpr(expr, names, profile, trace);
+        expr = RewriteExpr(expr, names, profile, trace, enableShaRules);
         schedule.push_back(expr);
     }
 
     return schedule[index];
 }
 
-inline StateVal VerifyConcreteStep(const StateVal& current, uint32_t k, uint32_t wValue, RewriteProfile profile) {
+inline StateVal VerifyConcreteStep(const StateVal& current, uint32_t k, uint32_t wValue, RewriteProfile profile,
+                                 bool enableShaRules = true) {
     ExprBuilder b(500000);
 
     StateExpr c{};
@@ -381,7 +369,7 @@ inline StateVal VerifyConcreteStep(const StateVal& current, uint32_t k, uint32_t
     c.h = b.Const(current.h);
 
     auto concrete = BuildStep(b, c, b.Const(wValue), k);
-    const auto rewritten = RewriteStepOutputs(concrete, b.Names(), profile, false);
+    const auto rewritten = RewriteStepOutputs(concrete, b.Names(), profile, false, enableShaRules);
 
     StateVal out{};
     out.a = EvalExprConstant(rewritten.a);
