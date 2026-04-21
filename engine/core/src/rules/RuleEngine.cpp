@@ -147,6 +147,10 @@ Expr* RuleEngine::ApplyRecursive(Expr* expr) const {
 }
 
 Expr* RuleEngine::ApplyUntilStable(Expr* expr) const {
+    return RunWithInfo(expr).result;
+}
+
+RewriteResult RuleEngine::RunWithInfo(Expr* expr) const {
     expr = AST::ExprIntern::Intern(expr);
     std::vector<Expr*> history{};
     history.push_back(AST::Clone(expr));
@@ -158,11 +162,11 @@ Expr* RuleEngine::ApplyUntilStable(Expr* expr) const {
         next = AST::ExprIntern::Intern(next);
 
         if (AST::StructEqual(next, expr))
-            return next;
+            return RewriteResult{next, true, false, static_cast<int>(iterations)};
 
         for (const Expr* prev : history) {
             if (AST::StructEqual(prev, next))
-                return next;
+                return RewriteResult{next, false, true, static_cast<int>(iterations + 1)};
         }
 
         history.push_back(AST::Clone(next));
@@ -170,7 +174,7 @@ Expr* RuleEngine::ApplyUntilStable(Expr* expr) const {
         ++iterations;
     }
 
-    return expr;
+    return RewriteResult{expr, false, false, static_cast<int>(iterations)};
 }
 
 void RuleEngine::SetDebugCallback(DebugCallback cb) {

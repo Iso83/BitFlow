@@ -10,6 +10,14 @@ struct Expr;
 }
 
 namespace BitFlow::Core::Rules {
+
+struct RewriteResult {
+    AST::Expr* result;
+    bool stable;
+    bool oscillationDetected;
+    int iterations;
+};
+
 class RuleEngine {
   public:
     using DebugCallback = std::function<void(const AST::Expr* before, const AST::Expr* after, RuleId)>;
@@ -30,6 +38,7 @@ class RuleEngine {
     AST::Expr* ApplyOnce(AST::Expr* expr) const;
     AST::Expr* ApplyRecursive(AST::Expr* expr) const;
     AST::Expr* ApplyUntilStable(AST::Expr* expr) const;
+    RewriteResult RunWithInfo(AST::Expr* expr) const;
 
     void SetDebugCallback(DebugCallback cb);
 
