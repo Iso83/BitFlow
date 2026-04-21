@@ -31,8 +31,8 @@ void RuleEngine::AddRule(const Rule& rule) {
     if (!ValidateRule(rule))
         throw std::runtime_error("Rule validation failed");
 
-    for (RuleId dep : rule.deps) {
-        if (!HasRule(dep)) {
+    for (uint32_t dep : rule.Dependencies) {
+        if (!HasRule(static_cast<RuleId>(dep))) {
             throw std::runtime_error("Missing rule dependency");
         }
     }

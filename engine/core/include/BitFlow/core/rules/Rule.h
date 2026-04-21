@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 namespace BitFlow::Core::AST {
@@ -7,6 +8,14 @@ struct Expr;
 }
 
 namespace BitFlow::Core::Rules {
+
+enum RuleFlags : uint32_t {
+    None = 0,
+    Expanding = 1u << 0,
+    Factorizing = 1u << 1,
+    Arithmetic = 1u << 2,
+    UnsafeForModulo = 1u << 3
+};
 
 enum class RuleId {
     Normalize_Flatten,
@@ -71,7 +80,20 @@ struct Rule {
     AST::Expr* (*rewrite)(AST::Expr&);
     int stage;
 
-    std::vector<RuleId> deps{};
+    uint32_t Id{0};
+    const char* Name{nullptr};
+    std::vector<uint32_t> Dependencies{};
+    uint32_t Flags{RuleFlags::None};
+
+    Rule(RuleId ruleId, bool (*ruleMatch)(const AST::Expr&), AST::Expr* (*ruleRewrite)(AST::Expr&), int ruleStage,
+         std::vector<RuleId> deps = {}, uint32_t ruleFlags = RuleFlags::None, const char* ruleName = nullptr)
+        : id(ruleId), match(ruleMatch), rewrite(ruleRewrite), stage(ruleStage), Id(static_cast<uint32_t>(ruleId)),
+          Name(ruleName), Flags(ruleFlags) {
+        Dependencies.reserve(deps.size());
+        for (RuleId dep : deps) {
+            Dependencies.push_back(static_cast<uint32_t>(dep));
+        }
+    }
 };
 
 namespace Normalize {
