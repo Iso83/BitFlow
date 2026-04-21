@@ -3,6 +3,7 @@
 #include "expression/ExprClone.h"
 
 #include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/ast/ExprStruct.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <algorithm>
@@ -147,16 +148,29 @@ Expr* RuleEngine::ApplyRecursive(Expr* expr) const {
 
 Expr* RuleEngine::ApplyUntilStable(Expr* expr) const {
     expr = AST::ExprIntern::Intern(expr);
+    std::vector<Expr*> history{};
+    history.push_back(AST::Clone(expr));
+    constexpr size_t maxIterations = 64;
 
-    while (true) {
+    size_t iterations = 0;
+    while (iterations < maxIterations) {
         Expr* next = ApplyRecursive(expr);
         next = AST::ExprIntern::Intern(next);
 
-        if (next == expr)
-            return expr;
+        if (AST::StructEqual(next, expr))
+            return next;
 
+        for (const Expr* prev : history) {
+            if (AST::StructEqual(prev, next))
+                return next;
+        }
+
+        history.push_back(AST::Clone(next));
         expr = next;
+        ++iterations;
     }
+
+    return expr;
 }
 
 void RuleEngine::SetDebugCallback(DebugCallback cb) {
