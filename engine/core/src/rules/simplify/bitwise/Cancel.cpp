@@ -188,16 +188,13 @@ static Expr* Rewrite_XorCancel(Expr& e) {
 #pragma endregion
 
 Rule Get_And_Cancel_Rule() {
-    return Rule{RuleId::Simplify_AndCancel,
-                &Match_And_Cancel,
-                &Rewrite_And_Cancel,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_AndCancel,  &Match_And_Cancel, &Rewrite_And_Cancel, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::None,   "Simplify_AndCancel"};
 }
 
 Rule Get_Or_Cancel_Rule() {
-    return Rule{
-        RuleId::Simplify_OrCancel, &Match_Or_Cancel, &Rewrite_Or_Cancel, Stage_Simplify, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_OrCancel,   &Match_Or_Cancel, &Rewrite_Or_Cancel, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::None,  "Simplify_OrCancel"};
 }
 
 Rule Get_Xor_Cancel_Rule() {
@@ -205,7 +202,9 @@ Rule Get_Xor_Cancel_Rule() {
                 &Match_XorCancel,
                 &Rewrite_XorCancel,
                 Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+                {RuleId::Normalize_Flatten, RuleId::Normalize_Order},
+                RuleFlags::None,
+                "Simplify_XorCancel"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

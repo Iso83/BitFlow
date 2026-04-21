@@ -45,7 +45,8 @@ static Expr* Rewrite_Flatten(Expr& e) {
 }
 
 Rule Get_Flatten_Rule() {
-    return Rule{RuleId::Normalize_Flatten, &Match_Flatten, &Rewrite_Flatten, Stage_Normalize};
+    return Rule{RuleId::Normalize_Flatten, &Match_Flatten,     &Rewrite_Flatten, Stage_Normalize, {},
+                RuleFlags::None,           "Normalize_Flatten"};
 }
 
 } // namespace BitFlow::Core::Rules::Normalize

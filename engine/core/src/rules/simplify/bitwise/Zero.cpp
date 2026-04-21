@@ -33,11 +33,9 @@ static Expr* Rewrite_Remove_Zero(Expr& e) {
 }
 
 Rule Get_Xor_Zero_Rule() {
-    return Rule{RuleId::Simplify_XorZero,
-                &Match_Zero<AST::OpType::Xor>,
-                &Rewrite_Remove_Zero,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_XorZero, &Match_Zero<AST::OpType::Xor>, &Rewrite_Remove_Zero,
+                Stage_Simplify,           {RuleId::Normalize_Flatten},   RuleFlags::None,
+                "Simplify_XorZero"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

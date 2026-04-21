@@ -62,8 +62,8 @@ static Expr* Rewrite_Add_Fold(Expr& e) {
 #pragma endregion
 
 Rule Get_Add_Fold_Rule() {
-    return Rule{
-        RuleId::Simplify_AddFold, &Match_Add_Fold, &Rewrite_Add_Fold, Stage_Simplify, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_AddFold,    &Match_Add_Fold,       &Rewrite_Add_Fold, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_AddFold"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

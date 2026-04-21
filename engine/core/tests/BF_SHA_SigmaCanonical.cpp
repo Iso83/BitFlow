@@ -3,6 +3,7 @@
 #include <BitFlow/core/eval/ConstantEval.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
+#include <ProfileEngines.h>
 #include <SHA_Expr.h>
 #include <TestAssert.h>
 #include <string>
@@ -18,10 +19,7 @@ using Expr = AST::Expr;
 using OpType = AST::OpType;
 
 RuleEngine MakeSigmaNormalizeEngine() {
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
-    return engine;
+    return MakeShaSafeEngine();
 }
 
 std::string ExprSignature(const Expr* root) {

@@ -38,7 +38,8 @@ static Expr* Rewrite_Order(Expr& e) {
 }
 
 Rule Get_Order_Rule() {
-    return Rule{RuleId::Normalize_Order, &Match_Order, &Rewrite_Order, Stage_Normalize};
+    return Rule{RuleId::Normalize_Order, &Match_Order,     &Rewrite_Order, Stage_Normalize, {},
+                RuleFlags::None,         "Normalize_Order"};
 }
 
 } // namespace BitFlow::Core::Rules::Normalize

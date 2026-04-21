@@ -60,7 +60,9 @@ Rule Get_Complement_Rule() {
                 &Match_Complement,
                 &Rewrite_Complement,
                 Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Simplify_Idempotent}};
+                {RuleId::Normalize_Flatten, RuleId::Simplify_Idempotent},
+                RuleFlags::None,
+                "Simplify_Complement"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

@@ -103,16 +103,13 @@ static Expr* Rewrite_Or_Absorb(Expr& e) {
 #pragma endregion
 
 Rule Get_And_Absorb_Rule() {
-    return Rule{RuleId::Factorize_AndAbsorb,
-                &Match_And_Absorb,
-                &Rewrite_And_Absorb,
-                Stage_Factorize,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Factorize_AndAbsorb, &Match_And_Absorb,      &Rewrite_And_Absorb,  Stage_Factorize,
+                {RuleId::Normalize_Flatten}, RuleFlags::Factorizing, "Factorize_AndAbsorb"};
 }
 
 Rule Get_Or_Absorb_Rule() {
-    return Rule{
-        RuleId::Factorize_OrAbsorb, &Match_Or_Absorb, &Rewrite_Or_Absorb, Stage_Factorize, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Factorize_OrAbsorb,  &Match_Or_Absorb,       &Rewrite_Or_Absorb,  Stage_Factorize,
+                {RuleId::Normalize_Flatten}, RuleFlags::Factorizing, "Factorize_OrAbsorb"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

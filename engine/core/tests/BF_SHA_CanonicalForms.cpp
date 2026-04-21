@@ -1,6 +1,7 @@
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
+#include <ProfileEngines.h>
 #include <SHA_Expr.h>
 #include <TestAssert.h>
 #include <string>
@@ -29,18 +30,8 @@ bool ContainsOp(const Expr* root, OpType op) {
     return false;
 }
 
-RuleEngine MakeShaRewriteEngine() {
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_SHA_Rules(engine);
-    return engine;
-}
-
 RuleEngine MakeSigmaNormalizeEngine() {
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
-    return engine;
+    return MakeShaSafeEngine();
 }
 
 std::string ExprSignature(const Expr* root) {
@@ -148,8 +139,8 @@ int TestCH_HighLevelAndEquivalentForms_ConvergeToCanonical() {
     auto highLevel = b.Ch(x, y, z);
     auto lowLevelEquivalent = b.Xor({z, b.And(x, b.Xor({y, z}))});
 
-    auto rewrittenHighLevel = MakeShaRewriteEngine().ApplyUntilStable(highLevel);
-    auto rewrittenEquivalent = MakeShaRewriteEngine().ApplyUntilStable(lowLevelEquivalent);
+    auto rewrittenHighLevel = MakeShaSafeEngine().ApplyUntilStable(highLevel);
+    auto rewrittenEquivalent = MakeShaSafeEngine().ApplyUntilStable(lowLevelEquivalent);
 
     BF_TEST(!ContainsOp(rewrittenHighLevel, OpType::Ch));
     BF_TEST(IsCanonicalCH(rewrittenHighLevel, x, y, z));
@@ -166,8 +157,8 @@ int TestMAJ_HighLevelAndEquivalentForms_ConvergeToCanonical() {
     auto highLevel = b.Maj(x, y, z);
     auto lowLevelEquivalent = MakeOp(9001, OpType::Or, {b.And(x, y), b.And(z, b.Xor({x, y}))});
 
-    auto rewrittenHighLevel = MakeShaRewriteEngine().ApplyUntilStable(highLevel);
-    auto rewrittenEquivalent = MakeShaRewriteEngine().ApplyUntilStable(lowLevelEquivalent);
+    auto rewrittenHighLevel = MakeShaSafeEngine().ApplyUntilStable(highLevel);
+    auto rewrittenEquivalent = MakeShaSafeEngine().ApplyUntilStable(lowLevelEquivalent);
 
     BF_TEST(!ContainsOp(rewrittenHighLevel, OpType::Maj));
     BF_TEST(IsCanonicalMAJ(rewrittenHighLevel, x, y, z));
@@ -183,7 +174,7 @@ int TestRoundFragments_EmbedCanonicalCHAndMAJSubforms() {
     auto g = b.Var();
     auto h = b.Var();
     auto chFragment = b.Add({h, b.BigSigma1(e), b.Ch(e, f, g)});
-    auto rewrittenCH = MakeShaRewriteEngine().ApplyUntilStable(chFragment);
+    auto rewrittenCH = MakeShaSafeEngine().ApplyUntilStable(chFragment);
 
     BF_TEST(rewrittenCH->op == OpType::Add);
     BF_TEST(!ContainsOp(rewrittenCH, OpType::Ch));
@@ -194,7 +185,7 @@ int TestRoundFragments_EmbedCanonicalCHAndMAJSubforms() {
     auto c = b.Var();
     auto d = b.Var();
     auto majFragment = b.Add({d, b.BigSigma0(a), b.Maj(a, bVar, c)});
-    auto rewrittenMAJ = MakeShaRewriteEngine().ApplyUntilStable(majFragment);
+    auto rewrittenMAJ = MakeShaSafeEngine().ApplyUntilStable(majFragment);
 
     BF_TEST(rewrittenMAJ->op == OpType::Add);
     BF_TEST(!ContainsOp(rewrittenMAJ, OpType::Maj));

@@ -59,7 +59,9 @@ Rule Get_Const_Combine_Rule() {
                 &Match_Const_Combine,
                 &Rewrite_Const_Combine,
                 Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+                {RuleId::Normalize_Flatten},
+                RuleFlags::Arithmetic,
+                "Simplify_ArithmeticConstCombine"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

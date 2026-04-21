@@ -124,48 +124,35 @@ static Expr* Rewrite_Rotate_Modulo_Bitwidth(Expr& e) {
 }
 
 Rule Get_Add_Zero_Rule() {
-    return Rule{RuleId::Simplify_AddZero,
-                &Match_Zero<AST::OpType::Add>,
-                &Rewrite_Add_Zero,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_AddZero,    &Match_Zero<AST::OpType::Add>, &Rewrite_Add_Zero, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic,         "Simplify_AddZero"};
 }
 
 Rule Get_Mul_Zero_Rule() {
-    return Rule{RuleId::Simplify_MulZero,
-                &Match_Zero<AST::OpType::Mul>,
-                &Rewrite_Mul_Zero,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_MulZero,    &Match_Zero<AST::OpType::Mul>, &Rewrite_Mul_Zero, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic,         "Simplify_MulZero"};
 }
 
 Rule Get_Sub_Zero_Rule() {
-    return Rule{
-        RuleId::Simplify_SubZero, &Match_Sub_Zero, &Rewrite_Sub_Zero, Stage_Simplify, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_SubZero,    &Match_Sub_Zero,       &Rewrite_Sub_Zero, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_SubZero"};
 }
 
 Rule Get_Mod_Zero_Guard_Rule() {
-    return Rule{RuleId::Simplify_ModZeroGuard,
-                &Match_Mod_Zero,
-                &Rewrite_Mod_Zero_Guard,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_ModZeroGuard, &Match_Mod_Zero,       &Rewrite_Mod_Zero_Guard, Stage_Simplify,
+                {RuleId::Normalize_Flatten},   RuleFlags::Arithmetic, "Simplify_ModZeroGuard"};
 }
 
 Rule Get_Shift_Zero_Rule() {
-    return Rule{RuleId::Simplify_ShiftZero,
-                &Match_Shift_Zero,
-                &Rewrite_Shift_Zero,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_ShiftZero,  &Match_Shift_Zero,     &Rewrite_Shift_Zero, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_ShiftZero"};
 }
 
 Rule Get_Rotate_Modulo_Bitwidth_Rule() {
-    return Rule{RuleId::Simplify_RotateModuloBitwidth,
-                &Match_Rotate_Modulo_Bitwidth,
-                &Rewrite_Rotate_Modulo_Bitwidth,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_RotateModuloBitwidth, &Match_Rotate_Modulo_Bitwidth,
+                &Rewrite_Rotate_Modulo_Bitwidth,       Stage_Simplify,
+                {RuleId::Normalize_Flatten},           RuleFlags::Arithmetic,
+                "Simplify_RotateModuloBitwidth"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

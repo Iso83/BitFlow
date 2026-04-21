@@ -4,6 +4,7 @@
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
+#include <ProfileEngines.h>
 #include <SHA_Expr.h>
 #include <TestAssert.h>
 #include <atomic>
@@ -320,15 +321,8 @@ int main() {
     // SHA fragment end-to-end runtime path: build -> rewrite -> emit -> compile/run.
     {
         using namespace BitFlow::Core::Testing::SHA;
-        Rules::RuleEngine simplifyEngine;
-        Rules::Add_Normalize_Rules(simplifyEngine);
-        Rules::Add_Simplify_Bitwise_Rules(simplifyEngine);
-        Rules::Add_Simplify_SHA_Rules(simplifyEngine);
-
-        Rules::RuleEngine factorizeEngine;
-        Rules::Add_Normalize_Rules(factorizeEngine);
-        Rules::Add_Simplify_Bitwise_Rules(factorizeEngine);
-        Rules::Add_Factorize_Bitwise_Rules(factorizeEngine);
+        Rules::RuleEngine simplifyEngine = MakeShaSafeEngine();
+        Rules::RuleEngine factorizeEngine = Rules::BuildProfile("factorize_bitwise_safe");
 
         Builder sb;
         auto aSha = sb.Var();

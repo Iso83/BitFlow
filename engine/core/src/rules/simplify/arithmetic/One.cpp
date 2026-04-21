@@ -59,11 +59,13 @@ static Expr* Rewrite_Div_One(Expr& e) {
 }
 
 Rule Get_Mul_One_Rule() {
-    return Rule{RuleId::Simplify_MulOne, &Match_Mul_One, &Rewrite_Mul_One, Stage_Simplify, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_MulOne,     &Match_Mul_One,        &Rewrite_Mul_One, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_MulOne"};
 }
 
 Rule Get_Div_One_Rule() {
-    return Rule{RuleId::Simplify_DivOne, &Match_Div_One, &Rewrite_Div_One, Stage_Simplify, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_DivOne,     &Match_Div_One,        &Rewrite_Div_One, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_DivOne"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

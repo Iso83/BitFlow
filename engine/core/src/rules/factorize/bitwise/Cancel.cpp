@@ -164,7 +164,9 @@ Rule Get_Xor_Pair_Cancel_Rule() {
                 &Match_Xor_Xor_CancelPair,
                 &Rewrite_Xor_Xor_CancelPair,
                 Stage_Factorize,
-                {RuleId::Normalize_Flatten, RuleId::Simplify_XorCancel}};
+                {RuleId::Normalize_Flatten, RuleId::Simplify_XorCancel},
+                RuleFlags::Factorizing,
+                "Factorize_XorPairCancel"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

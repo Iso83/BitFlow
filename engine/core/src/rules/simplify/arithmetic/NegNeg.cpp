@@ -21,7 +21,8 @@ static Expr* Rewrite_Neg_Neg(Expr& e) {
 }
 
 Rule Get_Neg_Neg_Rule() {
-    return Rule{RuleId::Simplify_NegNeg, &Match_Neg_Neg, &Rewrite_Neg_Neg, Stage_Simplify, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_NegNeg,     &Match_Neg_Neg,        &Rewrite_Neg_Neg, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_NegNeg"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

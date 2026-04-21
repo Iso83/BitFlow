@@ -3,6 +3,7 @@
 #include <BitFlow/core/eval/ConstantEval.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
+#include <ProfileEngines.h>
 #include <SHA_Expr.h>
 #include <TestAssert.h>
 #include <array>
@@ -30,24 +31,12 @@ bool ContainsOp(const Expr* root, OpType op) {
     return false;
 }
 
-RuleEngine MakeShaNormalizeSimplifyEngine() {
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
-    Add_Simplify_SHA_Rules(engine);
-    return engine;
-}
-
 RuleEngine MakeShaFactorizeEngine() {
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
-    Add_Factorize_Bitwise_Rules(engine);
-    return engine;
+    return BuildProfile("factorize_bitwise_safe");
 }
 
 Expr* RunRoundFragmentPipeline(Expr* fragment) {
-    auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(fragment);
+    auto normalizedSimplified = MakeShaSafeEngine().ApplyUntilStable(fragment);
     return MakeShaFactorizeEngine().ApplyRecursive(normalizedSimplified);
 }
 
@@ -63,7 +52,7 @@ int TestRoundFragments_T1SigmaChoiceCore_ManyConcreteCases() {
         const uint32_t g = tc[2];
         Builder bNs;
         auto nsExpr = bNs.RoundT1SigmaChoiceCore(bNs.Const(e), bNs.Const(f), bNs.Const(g));
-        auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(nsExpr);
+        auto normalizedSimplified = MakeShaSafeEngine().ApplyUntilStable(nsExpr);
 
         Builder bRw;
         auto rewritten = RunRoundFragmentPipeline(bRw.RoundT1SigmaChoiceCore(bRw.Const(e), bRw.Const(f), bRw.Const(g)));
@@ -109,7 +98,7 @@ int TestRoundFragments_T2PartCore_ManyConcreteCases() {
         const uint32_t c = tc[2];
         Builder bNs;
         auto nsExpr = bNs.RoundT2PartCore(bNs.Const(a), bNs.Const(b), bNs.Const(c));
-        auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(nsExpr);
+        auto normalizedSimplified = MakeShaSafeEngine().ApplyUntilStable(nsExpr);
 
         Builder bRw;
         auto rewritten = RunRoundFragmentPipeline(bRw.RoundT2PartCore(bRw.Const(a), bRw.Const(b), bRw.Const(c)));
@@ -155,7 +144,7 @@ int TestRoundFragments_T1PartCore_ManyConcreteCases() {
         const uint32_t g = tc[3];
         Builder bNs;
         auto nsExpr = bNs.RoundT1PartCore(bNs.Const(h), bNs.Const(e), bNs.Const(f), bNs.Const(g));
-        auto normalizedSimplified = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(nsExpr);
+        auto normalizedSimplified = MakeShaSafeEngine().ApplyUntilStable(nsExpr);
 
         Builder bRw;
         auto rewritten =

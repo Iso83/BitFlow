@@ -2,6 +2,7 @@
 #include <BitFlow/core/eval/ConstantEval.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
+#include <ProfileEngines.h>
 #include <SHA_Expr.h>
 #include <TestAssert.h>
 
@@ -27,21 +28,6 @@ bool ContainsOp(const Expr* root, OpType op) {
     return false;
 }
 
-RuleEngine MakeShaNormalizeSimplifyEngine() {
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
-    Add_Simplify_SHA_Rules(engine);
-    return engine;
-}
-
-RuleEngine MakeShaCanonicalEngine() {
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_SHA_Rules(engine);
-    return engine;
-}
-
 uint32_t RotR32(uint32_t x, uint32_t amount) {
     const uint32_t s = amount & 31U;
     if (s == 0U)
@@ -51,20 +37,18 @@ uint32_t RotR32(uint32_t x, uint32_t amount) {
 
 int TestFragment_CH_RewriteAndConstantEval() {
     Builder b;
-    constexpr uint32_t x = 0x12345678U;
-    constexpr uint32_t y = 0xF0F0F0F0U;
-    constexpr uint32_t z = 0x00FF00FFU;
+    constexpr uint32_t x = 0xA5A5A5A5U;
+    constexpr uint32_t y = 50U;
+    constexpr uint32_t z = 30U;
 
     auto ch = b.Ch(b.Const(x), b.Const(y), b.Const(z));
-    auto rewritten = MakeShaCanonicalEngine().ApplyUntilStable(ch);
+    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(ch);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
 
-    const auto evalOriginal = Eval::EvaluateConstant(ch, 32);
     const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
-    BF_TEST(evalOriginal.status == Eval::EvalStatus::Success);
     BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
-    BF_TEST(evalRewritten.value == evalOriginal.value);
+    BF_TEST(static_cast<uint32_t>(evalRewritten.value) == ((x & y) ^ ((~x) & z)));
     return 0;
 }
 
@@ -75,7 +59,7 @@ int TestFragment_MAJ_RewriteAndConstantEval() {
     constexpr uint32_t z = 0x0F0FF0F0U;
 
     auto maj = b.Maj(b.Const(x), b.Const(y), b.Const(z));
-    auto rewritten = MakeShaCanonicalEngine().ApplyUntilStable(maj);
+    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(maj);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Maj));
 
@@ -90,7 +74,7 @@ int TestFragment_SmallSigma0_RewriteEmitEvalConsistency() {
     constexpr uint32_t x = 0x12345678U;
 
     auto sigma0 = b.SmallSigma0(b.Const(x));
-    auto rewritten = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(sigma0);
+    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(sigma0);
 
     const auto evalOriginal = Eval::EvaluateConstant(sigma0, 32);
     const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
@@ -104,7 +88,7 @@ int TestFragment_SmallSigma0_RewriteEmitEvalConsistency() {
 
     auto v = b.Var();
     auto sigma0Var = b.SmallSigma0(v);
-    const auto emitted = Codegen::EmitCExpr(MakeShaNormalizeSimplifyEngine().ApplyUntilStable(sigma0Var), 32);
+    const auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().ApplyUntilStable(sigma0Var), 32);
     BF_TEST(emitted.find("bf_rotr") != std::string::npos);
     BF_TEST(emitted.find(">>") != std::string::npos);
 
@@ -116,7 +100,7 @@ int TestFragment_SmallSigma1_RewriteEmitEvalConsistency() {
     constexpr uint32_t x = 0x89ABCDEFU;
 
     auto sigma1 = b.SmallSigma1(b.Const(x));
-    auto rewritten = MakeShaNormalizeSimplifyEngine().ApplyUntilStable(sigma1);
+    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(sigma1);
 
     const auto evalOriginal = Eval::EvaluateConstant(sigma1, 32);
     const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
@@ -130,7 +114,7 @@ int TestFragment_SmallSigma1_RewriteEmitEvalConsistency() {
 
     auto v = b.Var();
     auto sigma1Var = b.SmallSigma1(v);
-    const auto emitted = Codegen::EmitCExpr(MakeShaNormalizeSimplifyEngine().ApplyUntilStable(sigma1Var), 32);
+    const auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().ApplyUntilStable(sigma1Var), 32);
     BF_TEST(emitted.find("bf_rotr") != std::string::npos);
     BF_TEST(emitted.find(">>") != std::string::npos);
 

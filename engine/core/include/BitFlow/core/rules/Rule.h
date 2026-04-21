@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace BitFlow::Core::AST {
@@ -7,6 +10,14 @@ struct Expr;
 }
 
 namespace BitFlow::Core::Rules {
+
+enum RuleFlags : uint32_t {
+    None = 0,
+    Expanding = 1u << 0,
+    Factorizing = 1u << 1,
+    Arithmetic = 1u << 2,
+    UnsafeForModulo = 1u << 3
+};
 
 enum class RuleId {
     Normalize_Flatten,
@@ -58,6 +69,7 @@ enum class RuleId {
 
     Factorize_XorAnd,
     Factorize_XorPairCancel,
+    Factorize_AddLinearMultiplicity,
     Factorize_AddCommonFactor,
     Factorize_MulCombineConstants,
     Factorize_AndAbsorb,
@@ -71,7 +83,42 @@ struct Rule {
     AST::Expr* (*rewrite)(AST::Expr&);
     int stage;
 
-    std::vector<RuleId> deps{};
+    uint32_t Id{0};
+    const char* Name{nullptr};
+    std::vector<uint32_t> Dependencies{};
+    uint32_t Flags{RuleFlags::None};
+
+    Rule(RuleId ruleId, bool (*ruleMatch)(const AST::Expr&), AST::Expr* (*ruleRewrite)(AST::Expr&), int ruleStage,
+         std::vector<RuleId> deps, uint32_t ruleFlags, const char* ruleName)
+        : id(ruleId), match(ruleMatch), rewrite(ruleRewrite), stage(ruleStage), Id(static_cast<uint32_t>(ruleId)),
+          Name(ruleName), Flags(ruleFlags) {
+        Dependencies.reserve(deps.size());
+        for (RuleId dep : deps) {
+            Dependencies.push_back(static_cast<uint32_t>(dep));
+        }
+    }
+
+    bool HasFlag(RuleFlags flag) const {
+        return (Flags & flag) != 0;
+    }
+
+    bool IsExpanding() const {
+        return HasFlag(RuleFlags::Expanding);
+    }
+
+    bool IsFactorizing() const {
+        return HasFlag(RuleFlags::Factorizing);
+    }
+
+    bool IsArithmetic() const {
+        return HasFlag(RuleFlags::Arithmetic);
+    }
+};
+
+struct Stage {
+    std::string Name;
+    std::vector<Rule> rules;
+    std::unordered_set<uint32_t> ruleIds;
 };
 
 namespace Normalize {
@@ -123,6 +170,7 @@ Rule Get_Or_ZeroIdentity_Rule();
 } // namespace Simplify::Bitwise
 
 namespace Factorize::Arithmetic {
+Rule Get_Add_LinearMultiplicity_Rule();
 Rule Get_Add_CommonFactor_Rule();
 Rule Get_Mul_CombineConstants_Rule();
 } // namespace Factorize::Arithmetic

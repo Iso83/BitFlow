@@ -91,7 +91,9 @@ Rule Get_MAJ_Simplify_Rule() {
                 &Match_MAJ,
                 &Rewrite_MAJ,
                 Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+                {RuleId::Normalize_Flatten, RuleId::Normalize_Order},
+                RuleFlags::None,
+                "Simplify_MAJ"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify

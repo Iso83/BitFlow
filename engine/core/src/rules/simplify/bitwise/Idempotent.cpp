@@ -96,19 +96,13 @@ static Expr* Rewrite_And_Idempotent(Expr& e) {
 #pragma endregion
 
 Rule Get_Idempotent_Rule() {
-    return Rule{RuleId::Simplify_Idempotent,
-                &Match_Idempotent,
-                &Rewrite_Idempotent,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_Idempotent, &Match_Idempotent, &Rewrite_Idempotent,  Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::None,   "Simplify_Idempotent"};
 }
 
 Rule Get_And_Idempotent_Rule() {
-    return Rule{RuleId::Simplify_And_Idempotent,
-                &Match_And_Idempotent,
-                &Rewrite_And_Idempotent,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_And_Idempotent, &Match_And_Idempotent, &Rewrite_And_Idempotent,  Stage_Simplify,
+                {RuleId::Normalize_Flatten},     RuleFlags::None,       "Simplify_And_Idempotent"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

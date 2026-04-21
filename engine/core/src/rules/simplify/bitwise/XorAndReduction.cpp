@@ -109,7 +109,9 @@ Rule Get_Xor_And_Reduction_Rule() {
                 &Match_Xor_And_Reduction,
                 &Rewrite_Xor_And_Reduction,
                 Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order, RuleId::Simplify_AndXorReduction}};
+                {RuleId::Normalize_Flatten, RuleId::Normalize_Order, RuleId::Simplify_AndXorReduction},
+                RuleFlags::None,
+                "Simplify_XorAndReduction"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

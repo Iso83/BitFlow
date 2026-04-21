@@ -50,9 +50,9 @@ static Expr* Rewrite_Mul_CombineConstants(Expr& e) {
 
     std::vector<Expr*> merged;
     merged.reserve(nonConst.size() + 1);
-    merged.push_back(ConstPool::Get(static_cast<uint32_t>(product)));
     for (Expr* in : nonConst)
         merged.push_back(in);
+    merged.push_back(ConstPool::Get(static_cast<uint32_t>(product)));
 
     return MakeOpInterned(OpType::Mul, merged);
 }
@@ -62,7 +62,10 @@ Rule Get_Mul_CombineConstants_Rule() {
                 &Match_Mul_CombineConstants,
                 &Rewrite_Mul_CombineConstants,
                 Stage_Factorize,
-                {RuleId::Factorize_AddCommonFactor, RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+                {RuleId::Factorize_AddLinearMultiplicity, RuleId::Factorize_AddCommonFactor, RuleId::Normalize_Flatten,
+                 RuleId::Normalize_Order},
+                RuleFlags::Factorizing | RuleFlags::Arithmetic,
+                "Factorize_MulCombineConstants"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic
