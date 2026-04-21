@@ -17,10 +17,8 @@ RuleEngine::RuleEngine() {
 
 void RuleEngine::AddRule(const Rule& rule) {
 #ifndef NDEBUG
-    if (!m_rules.empty()) {
-        const Rule& last = m_rules.back();
-
-        if (rule.stage < last.stage)
+    if (!m_stageOrder.empty()) {
+        if (rule.stage < m_stageOrder.back())
             throw RuleOrderException("Rule stage regression");
     }
 #endif
@@ -37,8 +35,26 @@ void RuleEngine::AddRule(const Rule& rule) {
         }
     }
 
-    m_rules.push_back(rule);
+    auto stageIt = std::find(m_stageOrder.begin(), m_stageOrder.end(), rule.stage);
+    if (stageIt == m_stageOrder.end()) {
+        Stage stage{};
+        stage.Name = "Stage " + std::to_string(rule.stage);
+        m_stages.push_back(std::move(stage));
+        m_stageOrder.push_back(rule.stage);
+        stageIt = std::prev(m_stageOrder.end());
+    }
+
+    const auto stageIndex = static_cast<size_t>(std::distance(m_stageOrder.begin(), stageIt));
+    AddRule(m_stages[stageIndex], rule);
     m_present.insert(rule.id);
+}
+
+void RuleEngine::AddRule(Stage& stage, Rule rule) {
+    if (stage.ruleIds.find(rule.Id) != stage.ruleIds.end())
+        throw std::runtime_error("Duplicate rule in stage");
+
+    stage.rules.push_back(std::move(rule));
+    stage.ruleIds.insert(stage.rules.back().Id);
 }
 
 Expr* RuleEngine::ApplyOnce(Expr* expr) const {
@@ -47,27 +63,32 @@ Expr* RuleEngine::ApplyOnce(Expr* expr) const {
     while (changed) {
         changed = false;
 
-        for (const auto& r : m_rules) {
-            if (r.match(*expr)) {
-                Expr* before = expr;
-                Expr* mutableInput = Expression::CloneExpr(expr);
-                Expr* next = r.rewrite(*mutableInput);
+        for (const auto& stage : m_stages) {
+            for (const auto& r : stage.rules) {
+                if (r.match(*expr)) {
+                    Expr* before = expr;
+                    Expr* mutableInput = Expression::CloneExpr(expr);
+                    Expr* next = r.rewrite(*mutableInput);
 
-                if (!next)
-                    continue;
+                    if (!next)
+                        continue;
 
-                next = AST::ExprIntern::Intern(next);
+                    next = AST::ExprIntern::Intern(next);
 
-                if (next != expr) {
-                    if (m_debugCallback) {
-                        m_debugCallback(before, next, r.id);
+                    if (next != expr) {
+                        if (m_debugCallback) {
+                            m_debugCallback(before, next, r.id);
+                        }
+
+                        expr = next;
+                        changed = true;
+                        break;
                     }
-
-                    expr = next;
-                    changed = true;
-                    break;
                 }
             }
+
+            if (changed)
+                break;
         }
     }
 

@@ -18,7 +18,8 @@ class RuleEngine {
     DebugCallback m_debugCallback;
 
   protected:
-    std::vector<Rule> m_rules;
+    std::vector<Stage> m_stages;
+    std::vector<int> m_stageOrder;
     std::unordered_set<RuleId> m_present;
 
   public:
@@ -33,6 +34,8 @@ class RuleEngine {
     void SetDebugCallback(DebugCallback cb);
 
   protected:
+    virtual void AddRule(Stage& stage, Rule rule);
+
     bool HasRule(RuleId id) const {
         return m_present.find(id) != m_present.end();
     }

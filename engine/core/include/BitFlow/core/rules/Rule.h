@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace BitFlow::Core::AST {
@@ -94,6 +96,12 @@ struct Rule {
             Dependencies.push_back(static_cast<uint32_t>(dep));
         }
     }
+};
+
+struct Stage {
+    std::string Name;
+    std::vector<Rule> rules;
+    std::unordered_set<uint32_t> ruleIds;
 };
 
 namespace Normalize {
