@@ -34,7 +34,7 @@ struct GraphStats {
 };
 
 struct ExplorerState {
-    std::array<char, 8192> input{};
+    std::array<char, 65536> input{};
     std::string error;
     std::unordered_map<uint32_t, std::string> names;
     Expr* root = nullptr;
@@ -437,6 +437,7 @@ void DrawExpressionTree(ExplorerState& state) {
     ImGui::Separator();
 
     ImGui::TextUnformatted("Expression (parsed view):");
+    ImGui::TextDisabled("Input limit: %zu chars", state.input.size() - 1);
     if (state.expressionEditMode) {
         ImGui::InputTextMultiline("##expr_input", state.input.data(), state.input.size(), ImVec2(-FLT_MIN, 140));
         if (ImGui::Button("Done"))
@@ -499,14 +500,6 @@ void DrawNodeDetails(const ExplorerState& state) {
     ImGui::Text("Label    : %s", NodeLabel(state.selected, state.names).c_str());
     ImGui::Text("Children : %zu", DisplayChildren(state.selected).size());
     ImGui::Text("Depth    : %d", state.selectedDepth);
-
-    ImGui::Spacing();
-    ImGui::Text("Preview");
-    ImGui::Separator();
-    const auto text = BitFlow::IO::ToString(state.selected, state.names);
-    ImGui::PushStyleColor(ImGuiCol_Text, OpColor(state.selected->op));
-    ImGui::TextWrapped("%s", text.c_str());
-    ImGui::PopStyleColor();
 
     ImGui::Spacing();
     ImGui::Text("Node Legend");
