@@ -192,6 +192,42 @@ int RuntimeId(const ExplorerState& state, const Expr* node) {
     return it->second;
 }
 
+bool IsFlattenableOp(OpType op) {
+    switch (op) {
+    case OpType::Add:
+    case OpType::Xor:
+    case OpType::And:
+    case OpType::Or:
+    case OpType::Mul:
+        return true;
+    default:
+        return false;
+    }
+}
+
+void CollectDisplayChildren(const Expr* node, OpType flattenOp, std::vector<const Expr*>& out) {
+    for (const Expr* child : node->inputs) {
+        if (child != nullptr && child->op == flattenOp) {
+            CollectDisplayChildren(child, flattenOp, out);
+        } else if (child != nullptr) {
+            out.push_back(child);
+        }
+    }
+}
+
+std::vector<const Expr*> DisplayChildren(const Expr* node) {
+    std::vector<const Expr*> children;
+    if (node == nullptr)
+        return children;
+
+    if (IsFlattenableOp(node->op))
+        CollectDisplayChildren(node, node->op, children);
+    else
+        children.assign(node->inputs.begin(), node->inputs.end());
+
+    return children;
+}
+
 void CollectStats(const Expr* node, std::unordered_set<uint32_t>& seen, GraphStats& stats, int depth) {
     if (node == nullptr)
         return;
@@ -313,8 +349,10 @@ void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uin
 
     const bool isSharedRef = !seenAny.insert(node->id.value()).second;
     state.visibleNodes.push_back(node);
+    const auto children = DisplayChildren(node);
+
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
-    if (node->inputs.empty())
+    if (children.empty())
         flags |= ImGuiTreeNodeFlags_Leaf;
     if (state.selected == node)
         flags |= ImGuiTreeNodeFlags_Selected;
@@ -341,7 +379,7 @@ void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uin
     }
 
     if (open) {
-        for (const Expr* child : node->inputs)
+        for (const Expr* child : children)
             DrawTreeNode(child, state, seenAny, depth + 1);
         ImGui::TreePop();
     }
@@ -416,7 +454,7 @@ void DrawNodeDetails(const ExplorerState& state) {
     ImGui::Text("ID       : n%d", RuntimeId(state, state.selected));
     ImGui::Text("Type     : %s", OpName(state.selected->op));
     ImGui::Text("Label    : %s", NodeLabel(state.selected, state.names).c_str());
-    ImGui::Text("Children : %zu", state.selected->inputs.size());
+    ImGui::Text("Children : %zu", DisplayChildren(state.selected).size());
     ImGui::Text("Depth    : %d", state.selectedDepth);
 
     ImGui::Spacing();
