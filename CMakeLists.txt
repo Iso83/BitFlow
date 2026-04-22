@@ -66,3 +66,8 @@ if(BF_BUILD_TOOLS)
         set_tests_properties(BF_ExprWorkbench_StageProfiles PROPERTIES LABELS "unit;tool")
     endif()
 endif()
+
+option(BF_BUILD_PROJ_SHA_DEMO "Build Proj SHA demo sandbox target" ON)
+if(BF_BUILD_PROJ_SHA_DEMO)
+    add_subdirectory(Proj)
+endif()
