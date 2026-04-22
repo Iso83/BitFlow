@@ -48,6 +48,7 @@ struct ExplorerState {
     float uiScale = 1.0f;
     bool dockLayoutBuilt = false;
     GraphStats stats{};
+    int frameNodeSerial = 0;
 };
 
 const char* OpName(OpType op) {
@@ -121,27 +122,27 @@ ImVec4 OpColor(OpType op) {
 const char* OpIcon(OpType op) {
     switch (op) {
     case OpType::Var:
-        return "●";
+        return "[V]";
     case OpType::Const:
-        return "■";
+        return "[C]";
     case OpType::Add:
     case OpType::Sub:
     case OpType::Mul:
     case OpType::Div:
     case OpType::Mod:
-        return "⊕";
+        return "[A]";
     case OpType::Xor:
     case OpType::And:
     case OpType::Or:
-        return "◇";
+        return "[B]";
     case OpType::RotR:
     case OpType::RotL:
-        return "↻";
+        return "[R]";
     case OpType::Ch:
     case OpType::Maj:
-        return "◆";
+        return "[S]";
     default:
-        return "•";
+        return "[?]";
     }
 }
 
@@ -159,6 +160,14 @@ std::string NodeLabel(const Expr* node, const std::unordered_map<uint32_t, std::
         return std::to_string(node->constValue);
 
     return OpName(node->op);
+}
+
+std::string TruncateNodeText(const std::string& text, std::size_t maxLen = 50) {
+    if (text.size() <= maxLen)
+        return text;
+    if (maxLen <= 3)
+        return text.substr(0, maxLen);
+    return text.substr(0, maxLen - 3) + "...";
 }
 
 void CollectStats(const Expr* node, std::unordered_set<uint32_t>& seen, GraphStats& stats, int depth) {
@@ -233,13 +242,13 @@ void BuildInitialDockLayout(const ImGuiID dockspaceId) {
 }
 
 void DrawToolbar(ExplorerState& state) {
-    if (ImGui::Button("📄 Parse"))
+    if (ImGui::Button("Parse"))
         ParseExpression(state);
     ImGui::SameLine();
-    if (ImGui::Button("➕ Expand All"))
+    if (ImGui::Button("Expand All"))
         state.requestExpandAll = true;
     ImGui::SameLine();
-    if (ImGui::Button("➖ Collapse All"))
+    if (ImGui::Button("Collapse All"))
         state.requestCollapseAll = true;
     ImGui::SameLine();
     ImGui::TextDisabled("DPI x%.2f", state.uiScale);
@@ -264,13 +273,12 @@ void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uin
     else if (state.requestCollapseAll)
         ImGui::SetNextItemOpen(false, ImGuiCond_Always);
 
-    const std::string label = NodeLabel(node, state.names);
-    std::ostringstream itemId;
-    itemId << "##node_" << node->id.value() << "_d" << depth << "_p" << path.size();
+    const std::string label = TruncateNodeText(NodeLabel(node, state.names));
 
     const ImVec4 c = OpColor(node->op);
+    ImGui::PushID(state.frameNodeSerial++);
     ImGui::PushStyleColor(ImGuiCol_Text, c);
-    const bool open = ImGui::TreeNodeEx(reinterpret_cast<const void*>(itemId.str().c_str()), flags, "%s %s%s%s",
+    const bool open = ImGui::TreeNodeEx("node", flags, "%s %s%s%s",
                                         OpIcon(node->op), label.c_str(),
                                         isSharedRef ? " (ref)" : "", isCycle ? " (cycle)" : "");
     ImGui::PopStyleColor();
@@ -289,6 +297,8 @@ void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uin
         }
         ImGui::TreePop();
     }
+
+    ImGui::PopID();
 }
 
 void DrawExpressionTree(ExplorerState& state) {
@@ -300,6 +310,13 @@ void DrawExpressionTree(ExplorerState& state) {
     ImGui::TextUnformatted("Expression:");
     ImGui::InputTextMultiline("##expr_input", state.input.data(), state.input.size(), ImVec2(-FLT_MIN, 120));
 
+    ImGui::TextUnformatted("Wrapped preview:");
+    ImGui::BeginChild("expr_preview", ImVec2(-FLT_MIN, 90), true, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::PushTextWrapPos();
+    ImGui::TextUnformatted(state.input.data());
+    ImGui::PopTextWrapPos();
+    ImGui::EndChild();
+
     if (!state.error.empty()) {
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 110, 110, 255));
         ImGui::TextWrapped("Parse error: %s", state.error.c_str());
@@ -310,6 +327,7 @@ void DrawExpressionTree(ExplorerState& state) {
     if (state.root == nullptr) {
         ImGui::TextDisabled("No expression loaded.");
     } else {
+        state.frameNodeSerial = 0;
         std::unordered_set<uint32_t> seenAny;
         std::vector<uint32_t> path;
         DrawTreeNode(state.root, state, seenAny, path, 0);
