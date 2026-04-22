@@ -49,9 +49,10 @@ struct ExplorerState {
     bool dockLayoutBuilt = false;
     GraphStats stats{};
     int frameNodeSerial = 0;
-    bool expressionEditMode = true;
+    bool expressionEditMode = false;
     std::vector<const Expr*> visibleNodes{};
     std::unordered_map<const Expr*, int> runtimeIds{};
+    std::string parsedExpression;
 };
 
 const char* OpName(OpType op) {
@@ -218,16 +219,20 @@ void ParseExpression(ExplorerState& state) {
         state.selectedDepth = 0;
 
         state.stats = {};
+        state.parsedExpression.clear();
         std::unordered_set<uint32_t> seen;
         CollectStats(state.root, seen, state.stats, 0);
 
         state.runtimeIds.clear();
         int nextRuntimeId = 0;
         AssignRuntimeIds(state.root, state.runtimeIds, nextRuntimeId);
+
+        state.parsedExpression = BitFlow::IO::ToString(state.root, state.names);
     } catch (const std::exception& ex) {
         state.root = nullptr;
         state.error = ex.what();
         state.stats = {};
+        state.parsedExpression.clear();
     }
 }
 
@@ -279,6 +284,29 @@ void DrawToolbar(ExplorerState& state) {
     ImGui::TextDisabled("DPI x%.2f", state.uiScale);
 }
 
+
+void DrawParsedExpressionView(const ExplorerState& state) {
+    const std::string& full = state.parsedExpression.empty() ? std::string(state.input.data()) : state.parsedExpression;
+
+    ImGui::BeginChild("expr_wrapped", ImVec2(-FLT_MIN, 140), true, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::PushTextWrapPos();
+    ImGui::TextUnformatted(full.c_str());
+    ImGui::PopTextWrapPos();
+    ImGui::EndChild();
+
+    if (state.selected != nullptr) {
+        const std::string selectedText = BitFlow::IO::ToString(state.selected, state.names);
+        ImGui::TextUnformatted("Selected subtree (tree node):");
+        ImGui::PushStyleColor(ImGuiCol_Text, OpColor(state.selected->op));
+        ImGui::BeginChild("expr_selected", ImVec2(-FLT_MIN, 70), true, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::PushTextWrapPos();
+        ImGui::TextUnformatted(selectedText.c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::EndChild();
+        ImGui::PopStyleColor();
+    }
+}
+
 void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uint32_t>& seenAny, int depth) {
     if (node == nullptr)
         return;
@@ -327,17 +355,13 @@ void DrawExpressionTree(ExplorerState& state) {
     DrawToolbar(state);
     ImGui::Separator();
 
-    ImGui::TextUnformatted("Expression:");
+    ImGui::TextUnformatted("Expression (parsed view):");
     if (state.expressionEditMode) {
         ImGui::InputTextMultiline("##expr_input", state.input.data(), state.input.size(), ImVec2(-FLT_MIN, 140));
         if (ImGui::Button("Done"))
             state.expressionEditMode = false;
     } else {
-        ImGui::BeginChild("expr_wrapped", ImVec2(-FLT_MIN, 140), true, ImGuiWindowFlags_HorizontalScrollbar);
-        ImGui::PushTextWrapPos();
-        ImGui::TextUnformatted(state.input.data());
-        ImGui::PopTextWrapPos();
-        ImGui::EndChild();
+        DrawParsedExpressionView(state);
         if (ImGui::Button("Edit Expression"))
             state.expressionEditMode = true;
     }
