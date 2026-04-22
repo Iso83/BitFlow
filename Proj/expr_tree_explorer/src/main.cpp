@@ -51,7 +51,9 @@ struct ExplorerState {
     int frameNodeSerial = 0;
     bool expressionEditMode = false;
     std::vector<const Expr*> visibleNodes{};
-    std::unordered_map<const Expr*, int> runtimeIds{};
+    std::unordered_map<const Expr*, int> semanticIds{};
+    std::unordered_map<const Expr*, std::string> canonicalKeys{};
+    std::unordered_map<std::string, int> semanticKeyToId{};
     std::string parsedExpression;
 };
 
@@ -174,23 +176,67 @@ std::string TruncateNodeText(const std::string& text, std::size_t maxLen = 50) {
     return text.substr(0, maxLen - 3) + "...";
 }
 
-void AssignRuntimeIds(const Expr* node, std::unordered_map<const Expr*, int>& ids, int& nextId) {
+std::string CanonicalKeyFor(const Expr* node, const ExplorerState& state, std::unordered_map<const Expr*, std::string>& memo) {
     if (node == nullptr)
-        return;
-    if (ids.find(node) != ids.end())
-        return;
+        return "<null>";
 
-    ids[node] = nextId++;
+    const auto itMemo = memo.find(node);
+    if (itMemo != memo.end())
+        return itMemo->second;
+
+    if (node->op == OpType::Var) {
+        auto it = state.names.find(node->id.value());
+        std::string key = "V:" + std::string(it != state.names.end() ? it->second : ("var_" + std::to_string(node->id.value())));
+        memo[node] = key;
+        return key;
+    }
+
+    if (node->op == OpType::Const) {
+        std::string key = "C:" + std::to_string(node->constValue);
+        memo[node] = key;
+        return key;
+    }
+
+    std::vector<std::string> childKeys;
+    childKeys.reserve(node->inputs.size());
     for (const Expr* child : node->inputs)
-        AssignRuntimeIds(child, ids, nextId);
+        childKeys.push_back(CanonicalKeyFor(child, state, memo));
+
+    if (BitFlow::Core::AST::IsCommutative(node->op))
+        std::sort(childKeys.begin(), childKeys.end());
+
+    std::ostringstream oss;
+    oss << static_cast<int>(node->op) << "(";
+    for (size_t i = 0; i < childKeys.size(); ++i) {
+        if (i != 0)
+            oss << ",";
+        oss << childKeys[i];
+    }
+    oss << ")";
+
+    memo[node] = oss.str();
+    return memo[node];
 }
 
-int RuntimeId(const ExplorerState& state, const Expr* node) {
-    const auto it = state.runtimeIds.find(node);
-    if (it == state.runtimeIds.end())
-        return -1;
-    return it->second;
+void AssignSemanticIds(const Expr* node, ExplorerState& state, int& nextId) {
+    if (node == nullptr || state.semanticIds.find(node) != state.semanticIds.end())
+        return;
+
+    const std::string key = CanonicalKeyFor(node, state, state.canonicalKeys);
+    auto [it, inserted] = state.semanticKeyToId.emplace(key, nextId);
+    if (inserted)
+        ++nextId;
+
+    state.semanticIds[node] = it->second;
+    for (const Expr* child : node->inputs)
+        AssignSemanticIds(child, state, nextId);
 }
+
+int SemanticId(const ExplorerState& state, const Expr* node) {
+    auto it = state.semanticIds.find(node);
+    return it == state.semanticIds.end() ? -1 : it->second;
+}
+
 
 bool IsFlattenableOp(OpType op) {
     switch (op) {
@@ -255,19 +301,27 @@ void ParseExpression(ExplorerState& state) {
         state.selectedDepth = 0;
 
         state.stats = {};
+        state.semanticIds.clear();
+        state.canonicalKeys.clear();
+        state.semanticKeyToId.clear();
         state.parsedExpression.clear();
         std::unordered_set<uint32_t> seen;
         CollectStats(state.root, seen, state.stats, 0);
 
-        state.runtimeIds.clear();
-        int nextRuntimeId = 0;
-        AssignRuntimeIds(state.root, state.runtimeIds, nextRuntimeId);
+        state.semanticIds.clear();
+        state.canonicalKeys.clear();
+        state.semanticKeyToId.clear();
+        int nextSemanticId = 0;
+        AssignSemanticIds(state.root, state, nextSemanticId);
 
         state.parsedExpression = BitFlow::IO::ToString(state.root, state.names);
     } catch (const std::exception& ex) {
         state.root = nullptr;
         state.error = ex.what();
         state.stats = {};
+        state.semanticIds.clear();
+        state.canonicalKeys.clear();
+        state.semanticKeyToId.clear();
         state.parsedExpression.clear();
     }
 }
@@ -299,10 +353,12 @@ void BuildInitialDockLayout(const ImGuiID dockspaceId) {
 
     ImGuiID dockLeft = dockspaceId;
     ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockLeft, ImGuiDir_Right, 0.33f, nullptr, &dockLeft);
-    ImGuiID dockRightBottom = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.35f, nullptr, &dockRight);
+    ImGuiID dockRightBottom = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.30f, nullptr, &dockRight);
+    ImGuiID dockRightMiddle = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.45f, nullptr, &dockRight);
 
     ImGui::DockBuilderDockWindow("Expression Tree", dockLeft);
     ImGui::DockBuilderDockWindow("Node Details", dockRight);
+    ImGui::DockBuilderDockWindow("Selected Subtree", dockRightMiddle);
     ImGui::DockBuilderDockWindow("Graph Stats", dockRightBottom);
     ImGui::DockBuilderFinish(dockspaceId);
 }
@@ -330,24 +386,13 @@ void DrawParsedExpressionView(const ExplorerState& state) {
     ImGui::PopTextWrapPos();
     ImGui::EndChild();
 
-    if (state.selected != nullptr) {
-        const std::string selectedText = BitFlow::IO::ToString(state.selected, state.names);
-        ImGui::TextUnformatted("Selected subtree (tree node):");
-        ImGui::PushStyleColor(ImGuiCol_Text, OpColor(state.selected->op));
-        ImGui::BeginChild("expr_selected", ImVec2(-FLT_MIN, 70), true, ImGuiWindowFlags_HorizontalScrollbar);
-        ImGui::PushTextWrapPos();
-        ImGui::TextUnformatted(selectedText.c_str());
-        ImGui::PopTextWrapPos();
-        ImGui::EndChild();
-        ImGui::PopStyleColor();
-    }
 }
 
 void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uint32_t>& seenAny, int depth) {
     if (node == nullptr)
         return;
 
-    const bool isSharedRef = !seenAny.insert(node->id.value()).second;
+    seenAny.insert(node->id.value());
     state.visibleNodes.push_back(node);
     const auto children = DisplayChildren(node);
 
@@ -367,10 +412,8 @@ void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uin
     const ImVec4 c = OpColor(node->op);
     ImGui::PushID(state.frameNodeSerial++);
     ImGui::PushStyleColor(ImGuiCol_Text, c);
-    const int rid = RuntimeId(state, node);
-    const bool open = ImGui::TreeNodeEx("node", flags, "%s %s #%d%s",
-                                        OpIcon(node->op), label.c_str(), rid,
-                                        isSharedRef ? " (ref)" : "");
+    const bool open = ImGui::TreeNodeEx("node", flags, "%s %s",
+                                        OpIcon(node->op), label.c_str());
     ImGui::PopStyleColor();
 
     if (ImGui::IsItemClicked()) {
@@ -451,7 +494,7 @@ void DrawNodeDetails(const ExplorerState& state) {
 
     ImGui::Text("General");
     ImGui::Separator();
-    ImGui::Text("ID       : n%d", RuntimeId(state, state.selected));
+    ImGui::Text("ID       : n%d", SemanticId(state, state.selected));
     ImGui::Text("Type     : %s", OpName(state.selected->op));
     ImGui::Text("Label    : %s", NodeLabel(state.selected, state.names).c_str());
     ImGui::Text("Children : %zu", DisplayChildren(state.selected).size());
@@ -475,6 +518,32 @@ void DrawNodeDetails(const ExplorerState& state) {
         ImGui::Text("%s %s", OpIcon(op), OpName(op));
         ImGui::PopStyleColor();
     }
+
+    ImGui::End();
+}
+
+
+void DrawSelectedSubtree(const ExplorerState& state) {
+    ImGui::Begin("Selected Subtree");
+
+    if (state.selected == nullptr) {
+        ImGui::TextDisabled("Select a node from the tree.");
+        ImGui::End();
+        return;
+    }
+
+    const std::string selectedText = BitFlow::IO::ToString(state.selected, state.names);
+    if (ImGui::Button("Copy to Clipboard"))
+        ImGui::SetClipboardText(selectedText.c_str());
+
+    ImGui::Separator();
+    ImGui::PushStyleColor(ImGuiCol_Text, OpColor(state.selected->op));
+    ImGui::BeginChild("selected_subtree_scroller", ImVec2(-FLT_MIN, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::PushTextWrapPos();
+    ImGui::TextUnformatted(selectedText.c_str());
+    ImGui::PopTextWrapPos();
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
 
     ImGui::End();
 }
@@ -562,6 +631,7 @@ int main() {
 
         DrawExpressionTree(state);
         DrawNodeDetails(state);
+        DrawSelectedSubtree(state);
         DrawStats(state);
 
         ImGui::End();
