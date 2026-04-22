@@ -254,16 +254,13 @@ void DrawToolbar(ExplorerState& state) {
     ImGui::TextDisabled("DPI x%.2f", state.uiScale);
 }
 
-void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uint32_t>& seenAny,
-                  std::vector<uint32_t>& path, int depth) {
+void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uint32_t>& seenAny, int depth) {
     if (node == nullptr)
         return;
 
     const bool isSharedRef = !seenAny.insert(node->id.value()).second;
-    const bool isCycle = std::find(path.begin(), path.end(), node->id.value()) != path.end();
-
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-    if (node->inputs.empty() || isCycle)
+    if (node->inputs.empty())
         flags |= ImGuiTreeNodeFlags_Leaf;
     if (state.selected == node)
         flags |= ImGuiTreeNodeFlags_Selected;
@@ -280,7 +277,7 @@ void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uin
     ImGui::PushStyleColor(ImGuiCol_Text, c);
     const bool open = ImGui::TreeNodeEx("node", flags, "%s %s%s%s",
                                         OpIcon(node->op), label.c_str(),
-                                        isSharedRef ? " (ref)" : "", isCycle ? " (cycle)" : "");
+                                        isSharedRef ? " (ref)" : "", "");
     ImGui::PopStyleColor();
 
     if (ImGui::IsItemClicked()) {
@@ -289,12 +286,8 @@ void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uin
     }
 
     if (open) {
-        if (!isCycle) {
-            path.push_back(node->id.value());
-            for (const Expr* child : node->inputs)
-                DrawTreeNode(child, state, seenAny, path, depth + 1);
-            path.pop_back();
-        }
+        for (const Expr* child : node->inputs)
+            DrawTreeNode(child, state, seenAny, depth + 1);
         ImGui::TreePop();
     }
 
@@ -308,14 +301,7 @@ void DrawExpressionTree(ExplorerState& state) {
     ImGui::Separator();
 
     ImGui::TextUnformatted("Expression:");
-    ImGui::InputTextMultiline("##expr_input", state.input.data(), state.input.size(), ImVec2(-FLT_MIN, 120));
-
-    ImGui::TextUnformatted("Wrapped preview:");
-    ImGui::BeginChild("expr_preview", ImVec2(-FLT_MIN, 90), true, ImGuiWindowFlags_HorizontalScrollbar);
-    ImGui::PushTextWrapPos();
-    ImGui::TextUnformatted(state.input.data());
-    ImGui::PopTextWrapPos();
-    ImGui::EndChild();
+    ImGui::InputTextMultiline("##expr_input", state.input.data(), state.input.size(), ImVec2(-FLT_MIN, 140));
 
     if (!state.error.empty()) {
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 110, 110, 255));
@@ -324,14 +310,15 @@ void DrawExpressionTree(ExplorerState& state) {
     }
 
     ImGui::Separator();
+    ImGui::BeginChild("tree_scroller", ImVec2(-FLT_MIN, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
     if (state.root == nullptr) {
         ImGui::TextDisabled("No expression loaded.");
     } else {
         state.frameNodeSerial = 0;
         std::unordered_set<uint32_t> seenAny;
-        std::vector<uint32_t> path;
-        DrawTreeNode(state.root, state, seenAny, path, 0);
+        DrawTreeNode(state.root, state, seenAny, 0);
     }
+    ImGui::EndChild();
 
     state.requestExpandAll = false;
     state.requestCollapseAll = false;
