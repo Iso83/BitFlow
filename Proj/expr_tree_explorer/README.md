@@ -12,17 +12,20 @@ Enable it explicitly:
 
 ```bash
 cmake -S . -B build \
-  -DBF_ENABLE_FETCH=FALSE \
+  -DBF_ENABLE_FETCH=TRUE \
   -DBF_BUILD_EXPR_TREE_EXPLORER=ON
 ```
 
 ## Dependencies (when enabled)
 
-The CMake project expects:
+The explorer CMake fetches these dependencies automatically via `FetchContent`:
 
-- `imgui` (with GLFW + OpenGL backends available)
-- `glfw3`
-- `OpenGL`
+- GLFW `3.3.9`
+- ImGui docking snapshot `60d7fb207eeb46d6363dd4bde10b35991bae0ce7`
+
+System dependency still required:
+
+- OpenGL development/runtime
 
 ## Features
 
