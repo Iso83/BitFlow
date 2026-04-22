@@ -49,6 +49,9 @@ struct ExplorerState {
     bool dockLayoutBuilt = false;
     GraphStats stats{};
     int frameNodeSerial = 0;
+    bool expressionEditMode = true;
+    std::vector<const Expr*> visibleNodes{};
+    std::unordered_map<const Expr*, int> runtimeIds{};
 };
 
 const char* OpName(OpType op) {
@@ -170,6 +173,24 @@ std::string TruncateNodeText(const std::string& text, std::size_t maxLen = 50) {
     return text.substr(0, maxLen - 3) + "...";
 }
 
+void AssignRuntimeIds(const Expr* node, std::unordered_map<const Expr*, int>& ids, int& nextId) {
+    if (node == nullptr)
+        return;
+    if (ids.find(node) != ids.end())
+        return;
+
+    ids[node] = nextId++;
+    for (const Expr* child : node->inputs)
+        AssignRuntimeIds(child, ids, nextId);
+}
+
+int RuntimeId(const ExplorerState& state, const Expr* node) {
+    const auto it = state.runtimeIds.find(node);
+    if (it == state.runtimeIds.end())
+        return -1;
+    return it->second;
+}
+
 void CollectStats(const Expr* node, std::unordered_set<uint32_t>& seen, GraphStats& stats, int depth) {
     if (node == nullptr)
         return;
@@ -199,6 +220,10 @@ void ParseExpression(ExplorerState& state) {
         state.stats = {};
         std::unordered_set<uint32_t> seen;
         CollectStats(state.root, seen, state.stats, 0);
+
+        state.runtimeIds.clear();
+        int nextRuntimeId = 0;
+        AssignRuntimeIds(state.root, state.runtimeIds, nextRuntimeId);
     } catch (const std::exception& ex) {
         state.root = nullptr;
         state.error = ex.what();
@@ -259,7 +284,8 @@ void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uin
         return;
 
     const bool isSharedRef = !seenAny.insert(node->id.value()).second;
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+    state.visibleNodes.push_back(node);
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (node->inputs.empty())
         flags |= ImGuiTreeNodeFlags_Leaf;
     if (state.selected == node)
@@ -275,9 +301,10 @@ void DrawTreeNode(const Expr* node, ExplorerState& state, std::unordered_set<uin
     const ImVec4 c = OpColor(node->op);
     ImGui::PushID(state.frameNodeSerial++);
     ImGui::PushStyleColor(ImGuiCol_Text, c);
-    const bool open = ImGui::TreeNodeEx("node", flags, "%s %s%s%s",
-                                        OpIcon(node->op), label.c_str(),
-                                        isSharedRef ? " (ref)" : "", "");
+    const int rid = RuntimeId(state, node);
+    const bool open = ImGui::TreeNodeEx("node", flags, "%s %s #%d%s",
+                                        OpIcon(node->op), label.c_str(), rid,
+                                        isSharedRef ? " (ref)" : "");
     ImGui::PopStyleColor();
 
     if (ImGui::IsItemClicked()) {
@@ -301,7 +328,19 @@ void DrawExpressionTree(ExplorerState& state) {
     ImGui::Separator();
 
     ImGui::TextUnformatted("Expression:");
-    ImGui::InputTextMultiline("##expr_input", state.input.data(), state.input.size(), ImVec2(-FLT_MIN, 140));
+    if (state.expressionEditMode) {
+        ImGui::InputTextMultiline("##expr_input", state.input.data(), state.input.size(), ImVec2(-FLT_MIN, 140));
+        if (ImGui::Button("Done"))
+            state.expressionEditMode = false;
+    } else {
+        ImGui::BeginChild("expr_wrapped", ImVec2(-FLT_MIN, 140), true, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::PushTextWrapPos();
+        ImGui::TextUnformatted(state.input.data());
+        ImGui::PopTextWrapPos();
+        ImGui::EndChild();
+        if (ImGui::Button("Edit Expression"))
+            state.expressionEditMode = true;
+    }
 
     if (!state.error.empty()) {
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 110, 110, 255));
@@ -315,10 +354,23 @@ void DrawExpressionTree(ExplorerState& state) {
         ImGui::TextDisabled("No expression loaded.");
     } else {
         state.frameNodeSerial = 0;
+        state.visibleNodes.clear();
         std::unordered_set<uint32_t> seenAny;
         DrawTreeNode(state.root, state, seenAny, 0);
     }
     ImGui::EndChild();
+
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && !state.visibleNodes.empty()) {
+        auto it = std::find(state.visibleNodes.begin(), state.visibleNodes.end(), state.selected);
+        int idx = (it == state.visibleNodes.end()) ? 0 : static_cast<int>(std::distance(state.visibleNodes.begin(), it));
+
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+            idx = std::min(idx + 1, static_cast<int>(state.visibleNodes.size()) - 1);
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+            idx = std::max(idx - 1, 0);
+
+        state.selected = state.visibleNodes[static_cast<std::size_t>(idx)];
+    }
 
     state.requestExpandAll = false;
     state.requestCollapseAll = false;
@@ -337,7 +389,7 @@ void DrawNodeDetails(const ExplorerState& state) {
 
     ImGui::Text("General");
     ImGui::Separator();
-    ImGui::Text("ID       : n%u", state.selected->id.value());
+    ImGui::Text("ID       : n%d", RuntimeId(state, state.selected));
     ImGui::Text("Type     : %s", OpName(state.selected->op));
     ImGui::Text("Label    : %s", NodeLabel(state.selected, state.names).c_str());
     ImGui::Text("Children : %zu", state.selected->inputs.size());
