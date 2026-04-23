@@ -5,6 +5,7 @@
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/core/rules/RewriteCost.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
@@ -114,6 +115,8 @@ static Expr* Rewrite_Distribute_And_Over_Xor(Expr& e) {
         return distributed[0];
 
     auto* n = Expression::MakeOpInterned(OpType::Xor, std::move(distributed));
+    if (!IsRewritePreferred(n, &e, RewriteCostPolicy::ExpandDistribute))
+        return nullptr;
     return n;
 }
 

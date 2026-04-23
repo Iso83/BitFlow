@@ -5,6 +5,7 @@
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/core/rules/RewriteCost.h>
 #include <unordered_map>
 #include <vector>
 
@@ -14,13 +15,6 @@ using Expr = AST::Expr;
 using OpType = AST::OpType;
 using ConstPool = Expression::ConstPool;
 using namespace BitFlow::Core::Expression;
-
-static size_t CountExprTreeNodes(const Expr* e) {
-    size_t nodes = 1;
-    for (const Expr* in : e->inputs)
-        nodes += CountExprTreeNodes(in);
-    return nodes;
-}
 
 struct LinearTerm {
     const Expr* base = nullptr;
@@ -167,7 +161,7 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
 
     if (!common || bestFrequency < 2) {
         Expr* candidate = MakeOpInterned(OpType::Add, normalizedAddTerms);
-        if (!mergedLinearTerms && CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
+        if (!mergedLinearTerms && !IsRewritePreferred(candidate, &e, RewriteCostPolicy::FactorizeSafe))
             return nullptr;
         return candidate;
     }
@@ -193,7 +187,7 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
 
     if (sharedInnerTerms.size() < 2) {
         Expr* candidate = MakeOpInterned(OpType::Add, normalizedAddTerms);
-        if (!mergedLinearTerms && CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
+        if (!mergedLinearTerms && !IsRewritePreferred(candidate, &e, RewriteCostPolicy::FactorizeSafe))
             return nullptr;
         return candidate;
     }
@@ -209,7 +203,7 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
 
     Expr* candidate = (finalAddTerms.size() == 1) ? finalAddTerms[0] : MakeOpInterned(OpType::Add, finalAddTerms);
 
-    if (CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
+    if (!IsRewritePreferred(candidate, &e, RewriteCostPolicy::FactorizeSafe))
         return nullptr;
 
     return candidate;
