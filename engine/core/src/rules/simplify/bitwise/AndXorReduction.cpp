@@ -80,11 +80,7 @@ static Expr* Rewrite_And_Xor_Reduction(Expr& e) {
 }
 
 Rule Get_And_Xor_Reduction_Rule() {
-    return Rule{RuleId::Simplify_AndXorReduction,
-                &Match_And_Xor_Reduction,
-                &Rewrite_And_Xor_Reduction,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+    return Rule{RuleId::Simplify_AndXorReduction, &Match_And_Xor_Reduction, &Rewrite_And_Xor_Reduction, Stage_Simplify, {RuleId::Normalize_Flatten, RuleId::Normalize_Order}, RuleFlags::None, "Simplify_AndXorReduction"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

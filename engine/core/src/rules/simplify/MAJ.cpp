@@ -87,11 +87,7 @@ static Expr* Rewrite_MAJ(Expr& e) {
 }
 
 Rule Get_MAJ_Simplify_Rule() {
-    return Rule{RuleId::Simplify_MAJ,
-                &Match_MAJ,
-                &Rewrite_MAJ,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+    return Rule{RuleId::Simplify_MAJ, &Match_MAJ, &Rewrite_MAJ, Stage_Simplify, {RuleId::Normalize_Flatten, RuleId::Normalize_Order}, RuleFlags::None, "Simplify_MAJ"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify
