@@ -160,11 +160,7 @@ static Expr* Rewrite_Xor_Xor_CancelPair(Expr& e) {
 #pragma endregion
 
 Rule Get_Xor_Pair_Cancel_Rule() {
-    return Rule{RuleId::Factorize_XorPairCancel,
-                &Match_Xor_Xor_CancelPair,
-                &Rewrite_Xor_Xor_CancelPair,
-                Stage_Factorize,
-                {RuleId::Normalize_Flatten, RuleId::Simplify_XorCancel}};
+    return Rule{RuleId::Factorize_XorPairCancel, &Match_Xor_Xor_CancelPair, &Rewrite_Xor_Xor_CancelPair, Stage_Factorize, {RuleId::Normalize_Flatten, RuleId::Simplify_XorCancel}, RuleFlags::Factorizing, "Factorize_XorPairCancel"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

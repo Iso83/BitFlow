@@ -73,6 +73,13 @@ inline void Add_Factorize_Bitwise_Rules(RuleEngine& engine) {
     engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 }
 
+inline void Add_Factorize_Bitwise_Stable_Rules(RuleEngine& engine) {
+    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_Or_Absorb_Rule());
+}
+
 // =========================================================
 // Simplify (Arithmetic)
 // =========================================================
@@ -129,7 +136,9 @@ inline RuleEngine BuildProfile(RuleProfile profile) {
         break;
     case RuleProfile::factorize:
         Add_Normalize_Rules(engine);
-        engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+        engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+        Add_Factorize_Bitwise_Stable_Rules(engine);
+        Add_Factorize_Arithmetic_Rules(engine);
         break;
     case RuleProfile::explore:
         Add_Normalize_Rules(engine);

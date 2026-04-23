@@ -50,7 +50,7 @@ class RuleEngine {
     }
 
     virtual bool ValidateRule(const Rule& rule) const {
-        return true;
+        return rule.Name != nullptr && rule.Name[0] != '\0';
     }
 };
 

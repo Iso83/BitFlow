@@ -55,11 +55,7 @@ static Expr* Rewrite_Const_Combine(Expr& e) {
 }
 
 Rule Get_Const_Combine_Rule() {
-    return Rule{RuleId::Simplify_ArithmeticConstCombine,
-                &Match_Const_Combine,
-                &Rewrite_Const_Combine,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_ArithmeticConstCombine, &Match_Const_Combine, &Rewrite_Const_Combine, Stage_Simplify, {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_ArithmeticConstCombine"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

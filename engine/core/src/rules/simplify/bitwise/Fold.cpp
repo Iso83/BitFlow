@@ -127,17 +127,15 @@ static Expr* Rewrite_Xor_Fold(Expr& e) {
 #pragma endregion
 
 Rule Get_And_Fold_Rule() {
-    return Rule{
-        RuleId::Simplify_AndFold, &Match_And_Fold, &Rewrite_And_Fold, Stage_Simplify, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_AndFold, &Match_And_Fold, &Rewrite_And_Fold, Stage_Simplify, {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_AndFold"};
 }
 
 Rule Get_Or_Fold_Rule() {
-    return Rule{RuleId::Simplify_OrFold, &Match_Or_Fold, &Rewrite_Or_Fold, Stage_Simplify, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_OrFold, &Match_Or_Fold, &Rewrite_Or_Fold, Stage_Simplify, {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_OrFold"};
 }
 
 Rule Get_Xor_Fold_Rule() {
-    return Rule{
-        RuleId::Simplify_XorFold, &Match_Xor_Fold, &Rewrite_Xor_Fold, Stage_Simplify, {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_XorFold, &Match_Xor_Fold, &Rewrite_Xor_Fold, Stage_Simplify, {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_XorFold"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

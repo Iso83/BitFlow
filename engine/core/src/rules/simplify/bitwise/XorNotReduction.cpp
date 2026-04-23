@@ -112,11 +112,7 @@ static Expr* Rewrite_Xor_Not_Reduction(Expr& e) {
 }
 
 Rule Get_Xor_Not_Reduction_Rule() {
-    return Rule{RuleId::Simplify_XorNotReduction,
-                &Match_Xor_Not_Reduction,
-                &Rewrite_Xor_Not_Reduction,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order, RuleId::Simplify_AndXorReduction}};
+    return Rule{RuleId::Simplify_XorNotReduction, &Match_Xor_Not_Reduction, &Rewrite_Xor_Not_Reduction, Stage_Simplify, {RuleId::Normalize_Flatten, RuleId::Normalize_Order, RuleId::Simplify_AndXorReduction}, RuleFlags::None, "Simplify_XorNotReduction"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise
