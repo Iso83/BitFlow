@@ -7,7 +7,16 @@
 
 namespace BitFlow::Core::Rules {
 
-enum class RuleProfile { normalize, simplify_bitwise, simplify_arithmetic, sha_safe, factorize, explore };
+enum class RuleProfile {
+    normalize,
+    simplify_bitwise,
+    simplify_arithmetic,
+    simplify_full_safe,
+    factorize_bitwise_safe,
+    factorize_arithmetic_safe,
+    factorize_full_safe,
+    explore
+};
 
 // =========================================================
 // Normalize (global)
@@ -73,7 +82,7 @@ inline void Add_Factorize_Bitwise_Rules(RuleEngine& engine) {
     engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 }
 
-inline void Add_Factorize_Bitwise_Stable_Rules(RuleEngine& engine) {
+inline void Add_Factorize_Bitwise_Safe_Rules(RuleEngine& engine) {
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
     engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
@@ -100,9 +109,13 @@ inline void Add_Simplify_Arithmetic_Rules(RuleEngine& engine) {
 // =========================================================
 // Factorize (Arithmetic)
 // =========================================================
-inline void Add_Factorize_Arithmetic_Rules(RuleEngine& engine) {
+inline void Add_Factorize_Arithmetic_Safe_Rules(RuleEngine& engine) {
     engine.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
     engine.AddRule(Factorize::Arithmetic::Get_Mul_CombineConstants_Rule());
+}
+
+inline void Add_Factorize_Arithmetic_Rules(RuleEngine& engine) {
+    Add_Factorize_Arithmetic_Safe_Rules(engine);
 }
 
 // =========================================================
@@ -128,17 +141,26 @@ inline RuleEngine BuildProfile(RuleProfile profile) {
         Add_Normalize_Rules(engine);
         Add_Simplify_Arithmetic_Rules(engine);
         break;
-    case RuleProfile::sha_safe:
+    case RuleProfile::simplify_full_safe:
         Add_Normalize_Rules(engine);
         Add_Simplify_Bitwise_Rules(engine);
         Add_Simplify_Arithmetic_Rules(engine);
         Add_Simplify_SHA_Rules(engine);
         break;
-    case RuleProfile::factorize:
+    case RuleProfile::factorize_bitwise_safe:
         Add_Normalize_Rules(engine);
         engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
-        Add_Factorize_Bitwise_Stable_Rules(engine);
-        Add_Factorize_Arithmetic_Rules(engine);
+        Add_Factorize_Bitwise_Safe_Rules(engine);
+        break;
+    case RuleProfile::factorize_arithmetic_safe:
+        Add_Normalize_Rules(engine);
+        Add_Factorize_Arithmetic_Safe_Rules(engine);
+        break;
+    case RuleProfile::factorize_full_safe:
+        Add_Normalize_Rules(engine);
+        engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+        Add_Factorize_Bitwise_Safe_Rules(engine);
+        Add_Factorize_Arithmetic_Safe_Rules(engine);
         break;
     case RuleProfile::explore:
         Add_Normalize_Rules(engine);
@@ -146,7 +168,7 @@ inline RuleEngine BuildProfile(RuleProfile profile) {
         Add_Simplify_Arithmetic_Rules(engine);
         Add_Simplify_SHA_Rules(engine);
         Add_Factorize_Bitwise_Rules(engine);
-        Add_Factorize_Arithmetic_Rules(engine);
+        Add_Factorize_Arithmetic_Safe_Rules(engine);
         break;
     }
 
@@ -160,12 +182,22 @@ inline RuleEngine BuildProfile(std::string_view profileName) {
         return BuildProfile(RuleProfile::simplify_bitwise);
     if (profileName == "simplify_arithmetic")
         return BuildProfile(RuleProfile::simplify_arithmetic);
-    if (profileName == "sha_safe")
-        return BuildProfile(RuleProfile::sha_safe);
-    if (profileName == "factorize")
-        return BuildProfile(RuleProfile::factorize);
+    if (profileName == "simplify_full_safe")
+        return BuildProfile(RuleProfile::simplify_full_safe);
+    if (profileName == "factorize_bitwise_safe")
+        return BuildProfile(RuleProfile::factorize_bitwise_safe);
+    if (profileName == "factorize_arithmetic_safe")
+        return BuildProfile(RuleProfile::factorize_arithmetic_safe);
+    if (profileName == "factorize_full_safe")
+        return BuildProfile(RuleProfile::factorize_full_safe);
     if (profileName == "explore")
         return BuildProfile(RuleProfile::explore);
+
+    // Backward-compatible aliases.
+    if (profileName == "sha_safe")
+        return BuildProfile(RuleProfile::simplify_full_safe);
+    if (profileName == "factorize")
+        return BuildProfile(RuleProfile::factorize_full_safe);
 
     throw std::runtime_error("Unknown rule profile");
 }
