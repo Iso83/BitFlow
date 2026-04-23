@@ -16,6 +16,18 @@ struct RewriteResult {
     bool stable;
     bool oscillationDetected;
     int iterations;
+
+    bool cycleDetected() const {
+        return oscillationDetected;
+    }
+
+    bool StableWithoutCycle() const {
+        return stable && !cycleDetected();
+    }
+
+    bool IterationsWithin(int limit) const {
+        return iterations <= limit;
+    }
 };
 
 class RuleEngine {
