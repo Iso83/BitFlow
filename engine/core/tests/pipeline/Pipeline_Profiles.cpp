@@ -27,7 +27,7 @@ int Test_Pipeline_SHA_Safe() {
     auto maj = MakeOp(1101, OpType::Maj, {a, d, e});
     auto expr = MakeOp(1102, OpType::Xor, {ch, maj});
 
-    RuleEngine engine = BuildProfile("sha_safe");
+    RuleEngine engine = BuildProfile("simplify_full_safe");
     Expr* out = engine.ApplyOnce(expr);
 
     BF_TEST(IsStable(engine, out));
@@ -43,7 +43,7 @@ int Test_Pipeline_NoOscillation_Factorize() {
     auto andAC = MakeOp(1204, OpType::And, {a, c});
     auto expr = MakeOp(1205, OpType::Xor, {andAB, andAC});
 
-    RuleEngine engine = BuildProfile("factorize");
+    RuleEngine engine = BuildProfile("factorize_full_safe");
     Expr* out = engine.ApplyOnce(expr);
 
     BF_TEST(IsStable(engine, out));

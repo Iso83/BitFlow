@@ -42,6 +42,14 @@ class RuleEngine {
 
     void SetDebugCallback(DebugCallback cb);
 
+    const std::vector<Stage>& Stages() const {
+        return m_stages;
+    }
+
+    const std::vector<int>& StageOrder() const {
+        return m_stageOrder;
+    }
+
   protected:
     virtual void AddRule(Stage& stage, Rule rule);
 
@@ -50,7 +58,7 @@ class RuleEngine {
     }
 
     virtual bool ValidateRule(const Rule& rule) const {
-        return true;
+        return rule.Name != nullptr && rule.Name[0] != '\0';
     }
 };
 

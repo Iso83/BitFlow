@@ -120,11 +120,7 @@ static Expr* Rewrite_Distribute_And_Over_Xor(Expr& e) {
 #pragma endregion
 
 Rule Get_Distribute_Rule() {
-    return Rule{RuleId::Factorize_Distribute,
-                &Match_Distribute_And_Over_Xor,
-                &Rewrite_Distribute_And_Over_Xor,
-                Stage_Factorize,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Factorize_Distribute, &Match_Distribute_And_Over_Xor, &Rewrite_Distribute_And_Over_Xor, Stage_Factorize, {RuleId::Normalize_Flatten}, RuleFlags::Factorizing | RuleFlags::Expanding, "Factorize_Distribute"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

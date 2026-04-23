@@ -188,11 +188,7 @@ static Expr* Rewrite_Xor_And(Expr& e) {
 }
 
 Rule Get_Xor_And_Rule() {
-    return Rule{RuleId::Factorize_XorAnd,
-                &Match_Xor_And,
-                &Rewrite_Xor_And,
-                Stage_Factorize,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+    return Rule{RuleId::Factorize_XorAnd, &Match_Xor_And, &Rewrite_Xor_And, Stage_Factorize, {RuleId::Normalize_Flatten, RuleId::Normalize_Order}, RuleFlags::Factorizing, "Factorize_XorAnd"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

@@ -216,11 +216,7 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
 }
 
 Rule Get_Add_CommonFactor_Rule() {
-    return Rule{RuleId::Factorize_AddCommonFactor,
-                &Match_Add_CommonFactor,
-                &Rewrite_Add_CommonFactor,
-                Stage_Factorize,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+    return Rule{RuleId::Factorize_AddCommonFactor, &Match_Add_CommonFactor, &Rewrite_Add_CommonFactor, Stage_Factorize, {RuleId::Normalize_Flatten, RuleId::Normalize_Order}, RuleFlags::Factorizing | RuleFlags::Arithmetic, "Factorize_AddCommonFactor"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic

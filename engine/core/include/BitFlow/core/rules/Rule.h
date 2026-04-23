@@ -88,13 +88,29 @@ struct Rule {
     uint32_t Flags{RuleFlags::None};
 
     Rule(RuleId ruleId, bool (*ruleMatch)(const AST::Expr&), AST::Expr* (*ruleRewrite)(AST::Expr&), int ruleStage,
-         std::vector<RuleId> deps = {}, uint32_t ruleFlags = RuleFlags::None, const char* ruleName = nullptr)
+         std::vector<RuleId> deps, uint32_t ruleFlags, const char* ruleName)
         : id(ruleId), match(ruleMatch), rewrite(ruleRewrite), stage(ruleStage), Id(static_cast<uint32_t>(ruleId)),
           Name(ruleName), Flags(ruleFlags) {
         Dependencies.reserve(deps.size());
         for (RuleId dep : deps) {
             Dependencies.push_back(static_cast<uint32_t>(dep));
         }
+    }
+
+    bool HasFlag(RuleFlags flag) const {
+        return (Flags & flag) != 0;
+    }
+
+    bool IsExpanding() const {
+        return HasFlag(RuleFlags::Expanding);
+    }
+
+    bool IsFactorizing() const {
+        return HasFlag(RuleFlags::Factorizing);
+    }
+
+    bool IsArithmetic() const {
+        return HasFlag(RuleFlags::Arithmetic);
     }
 };
 
