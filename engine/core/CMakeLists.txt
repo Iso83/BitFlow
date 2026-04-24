@@ -78,6 +78,7 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_ProfileDependencies SOURCE tests/pipeline/Pipeline_ProfileDependencies.cpp)
     bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_NoOscillation SOURCE tests/pipeline/Pipeline_NoOscillation.cpp)
     bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_Validation SOURCE tests/pipeline/Pipeline_Validation.cpp)
+    bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_ManualVsProfile SOURCE tests/pipeline/Pipeline_ManualVsProfile.cpp)
 
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Fold)
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Cancel)
