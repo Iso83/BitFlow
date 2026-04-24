@@ -58,7 +58,11 @@ static Expr* Rewrite_Mul_CombineConstants(Expr& e) {
 }
 
 Rule Get_Mul_CombineConstants_Rule() {
-    return Rule{RuleId::Factorize_MulCombineConstants, &Match_Mul_CombineConstants, &Rewrite_Mul_CombineConstants, Stage_Factorize, {RuleId::Factorize_AddCommonFactor, RuleId::Normalize_Flatten, RuleId::Normalize_Order}, RuleFlags::Factorizing | RuleFlags::Arithmetic, "Factorize_MulCombineConstants"};
+    return Rule{RuleId::Factorize_MulCombineConstants, &Match_Mul_CombineConstants, &Rewrite_Mul_CombineConstants,
+                Stage_Factorize,
+                {RuleId::Factorize_AddLinearMultiplicity, RuleId::Factorize_AddCommonFactor, RuleId::Normalize_Flatten,
+                 RuleId::Normalize_Order},
+                RuleFlags::Factorizing | RuleFlags::Arithmetic, "Factorize_MulCombineConstants"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic

@@ -50,6 +50,7 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_PerfPass)
     bf_add_module_test(BitFlowCore core BF_Arithmetic_Integration)
     bf_add_module_test(BitFlowCore core BF_ArithmeticFactorizeMultiplicity)
+    bf_add_module_test(BitFlowCore core BF_Factorize_Arithmetic_Split)
 
     # Optional runtime/compiler-invoking tests (slow + toolchain dependent).
     if(BF_ENABLE_RUNTIME_COMPILE_TESTS)

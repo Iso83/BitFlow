@@ -88,6 +88,8 @@ Rule GetRuleById(RuleId id) {
         return Factorize::Bitwise::Get_Xor_And_Rule();
     case RuleId::Factorize_XorPairCancel:
         return Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule();
+    case RuleId::Factorize_AddLinearMultiplicity:
+        return Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule();
     case RuleId::Factorize_AddCommonFactor:
         return Factorize::Arithmetic::Get_Add_CommonFactor_Rule();
     case RuleId::Factorize_MulCombineConstants:
@@ -142,6 +144,7 @@ std::vector<Getter> AllRuleGetters() {
         Simplify::Get_MAJ_Simplify_Rule,
         Factorize::Bitwise::Get_Xor_And_Rule,
         Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule,
+        Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule,
         Factorize::Arithmetic::Get_Add_CommonFactor_Rule,
         Factorize::Arithmetic::Get_Mul_CombineConstants_Rule,
         Factorize::Bitwise::Get_And_Absorb_Rule,

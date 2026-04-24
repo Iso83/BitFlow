@@ -118,6 +118,7 @@ inline void Add_Simplify_Arithmetic_Rules(RuleEngine& engine) {
 // Factorize (Arithmetic)
 // =========================================================
 inline void Add_Factorize_Arithmetic_Safe_Rules(RuleEngine& engine) {
+    engine.AddRule(Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule());
     engine.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
     engine.AddRule(Factorize::Arithmetic::Get_Mul_CombineConstants_Rule());
 }
