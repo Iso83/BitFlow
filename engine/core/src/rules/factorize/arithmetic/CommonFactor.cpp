@@ -4,6 +4,7 @@
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/rules/RewriteCost.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
 #include <vector>
@@ -14,13 +15,6 @@ using Expr = AST::Expr;
 using OpType = AST::OpType;
 using ConstPool = Expression::ConstPool;
 using namespace BitFlow::Core::Expression;
-
-static size_t CountExprTreeNodes(const Expr* e) {
-    size_t nodes = 1;
-    for (const Expr* in : e->inputs)
-        nodes += CountExprTreeNodes(in);
-    return nodes;
-}
 
 struct LinearTerm {
     const Expr* base = nullptr;
@@ -60,44 +54,24 @@ static bool DecomposeLinearTerm(const Expr* term, LinearTerm& out) {
     return true;
 }
 
-static bool Match_Add_CommonFactor(const Expr& e) {
+static bool Match_Add_LinearMultiplicity(const Expr& e) {
     if (e.op != OpType::Add || e.inputs.size() < 2)
         return false;
 
-    // linear multiplicity by base: x + x, x + x*k, x*m + x*n
     std::unordered_map<uint32_t, int> baseTermCounts;
     for (const Expr* input : e.inputs) {
         LinearTerm linear{};
-        if (DecomposeLinearTerm(input, linear)) {
-            if (++baseTermCounts[linear.base->id.value()] >= 2)
-                return true;
-        }
-    }
-
-    // common multiplicative factor: x*y + x*z
-    for (size_t i = 0; i < e.inputs.size(); ++i) {
-        const Expr* lhs = e.inputs[i];
-        if (lhs->op != OpType::Mul || lhs->inputs.size() != 2)
+        if (!DecomposeLinearTerm(input, linear))
             continue;
 
-        for (size_t j = i + 1; j < e.inputs.size(); ++j) {
-            const Expr* rhs = e.inputs[j];
-            if (rhs->op != OpType::Mul || rhs->inputs.size() != 2)
-                continue;
-
-            for (const Expr* l : lhs->inputs) {
-                for (const Expr* r : rhs->inputs) {
-                    if (l->id == r->id)
-                        return true;
-                }
-            }
-        }
+        if (++baseTermCounts[linear.base->id.value()] >= 2)
+            return true;
     }
 
     return false;
 }
 
-static Expr* Rewrite_Add_CommonFactor(Expr& e) {
+static Expr* Rewrite_Add_LinearMultiplicity(Expr& e) {
     std::unordered_map<uint32_t, uint32_t> coeffByBaseId;
     std::unordered_map<uint32_t, Expr*> baseExprById;
     std::vector<uint32_t> baseOrder;
@@ -138,13 +112,46 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
 
     if (normalizedAddTerms.empty())
         return nullptr;
-    if (normalizedAddTerms.size() == 1)
-        return normalizedAddTerms[0];
-    const bool mergedLinearTerms = normalizedAddTerms.size() < e.inputs.size();
 
-    // try common-factor extraction across binary multiplications
+    const bool mergedLinearTerms = normalizedAddTerms.size() < e.inputs.size();
+    if (!mergedLinearTerms)
+        return nullptr;
+
+    Expr* candidate = (normalizedAddTerms.size() == 1) ? normalizedAddTerms[0] : MakeOpInterned(OpType::Add, normalizedAddTerms);
+    return candidate;
+}
+
+static bool Match_Add_CommonFactor(const Expr& e) {
+    if (e.op != OpType::Add || e.inputs.size() < 2)
+        return false;
+
+    for (size_t i = 0; i < e.inputs.size(); ++i) {
+        const Expr* lhs = e.inputs[i];
+        if (lhs->op != OpType::Mul || lhs->inputs.size() != 2)
+            continue;
+
+        for (size_t j = i + 1; j < e.inputs.size(); ++j) {
+            const Expr* rhs = e.inputs[j];
+            if (rhs->op != OpType::Mul || rhs->inputs.size() != 2)
+                continue;
+
+            for (const Expr* l : lhs->inputs) {
+                for (const Expr* r : rhs->inputs) {
+                    if (l->id == r->id)
+                        return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+static Expr* Rewrite_Add_CommonFactor(Expr& e) {
+    std::vector<Expr*> addTerms = e.inputs;
+
     std::unordered_map<Expr*, int> factorFrequency;
-    for (Expr* term : normalizedAddTerms) {
+    for (Expr* term : addTerms) {
         if (term->op != OpType::Mul || term->inputs.size() != 2)
             continue;
         factorFrequency[term->inputs[0]]++;
@@ -153,7 +160,7 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
 
     Expr* common = nullptr;
     int bestFrequency = 0;
-    for (Expr* term : normalizedAddTerms) {
+    for (Expr* term : addTerms) {
         if (term->op != OpType::Mul || term->inputs.size() != 2)
             continue;
         for (Expr* factor : term->inputs) {
@@ -165,19 +172,15 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
         }
     }
 
-    if (!common || bestFrequency < 2) {
-        Expr* candidate = MakeOpInterned(OpType::Add, normalizedAddTerms);
-        if (!mergedLinearTerms && CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
-            return nullptr;
-        return candidate;
-    }
+    if (!common || bestFrequency < 2)
+        return nullptr;
 
     std::vector<Expr*> sharedInnerTerms;
     std::vector<Expr*> untouchedTerms;
-    sharedInnerTerms.reserve(normalizedAddTerms.size());
-    untouchedTerms.reserve(normalizedAddTerms.size());
+    sharedInnerTerms.reserve(addTerms.size());
+    untouchedTerms.reserve(addTerms.size());
 
-    for (Expr* term : normalizedAddTerms) {
+    for (Expr* term : addTerms) {
         if (term->op == OpType::Mul && term->inputs.size() == 2) {
             if (term->inputs[0]->id == common->id) {
                 sharedInnerTerms.push_back(term->inputs[1]);
@@ -191,12 +194,8 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
         untouchedTerms.push_back(term);
     }
 
-    if (sharedInnerTerms.size() < 2) {
-        Expr* candidate = MakeOpInterned(OpType::Add, normalizedAddTerms);
-        if (!mergedLinearTerms && CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
-            return nullptr;
-        return candidate;
-    }
+    if (sharedInnerTerms.size() < 2)
+        return nullptr;
 
     Expr* innerAdd = MakeOpInterned(OpType::Add, sharedInnerTerms);
     Expr* factored = MakeOpInterned(OpType::Mul, {common, innerAdd});
@@ -208,19 +207,22 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
     finalAddTerms.push_back(factored);
 
     Expr* candidate = (finalAddTerms.size() == 1) ? finalAddTerms[0] : MakeOpInterned(OpType::Add, finalAddTerms);
-
-    if (CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
+    if (!IsRewritePreferred(candidate, &e, RewriteCostPolicy::FactorizeSafe))
         return nullptr;
 
     return candidate;
 }
 
+Rule Get_Add_LinearMultiplicity_Rule() {
+    return Rule{RuleId::Factorize_AddLinearMultiplicity, &Match_Add_LinearMultiplicity, &Rewrite_Add_LinearMultiplicity,
+                Stage_Factorize, {RuleId::Normalize_Flatten, RuleId::Normalize_Order},
+                RuleFlags::Factorizing | RuleFlags::Arithmetic, "Factorize_AddLinearMultiplicity"};
+}
+
 Rule Get_Add_CommonFactor_Rule() {
-    return Rule{RuleId::Factorize_AddCommonFactor,
-                &Match_Add_CommonFactor,
-                &Rewrite_Add_CommonFactor,
-                Stage_Factorize,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+    return Rule{RuleId::Factorize_AddCommonFactor, &Match_Add_CommonFactor, &Rewrite_Add_CommonFactor, Stage_Factorize,
+                {RuleId::Normalize_Flatten, RuleId::Normalize_Order, RuleId::Factorize_AddLinearMultiplicity},
+                RuleFlags::Factorizing | RuleFlags::Arithmetic, "Factorize_AddCommonFactor"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic

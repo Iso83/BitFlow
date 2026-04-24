@@ -87,6 +87,8 @@ Rule GetRuleById(RuleId id) {
         return Factorize::Bitwise::Get_Xor_And_Rule();
     case RuleId::Factorize_XorPairCancel:
         return Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule();
+    case RuleId::Factorize_AddLinearMultiplicity:
+        return Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule();
     case RuleId::Factorize_AddCommonFactor:
         return Factorize::Arithmetic::Get_Add_CommonFactor_Rule();
     case RuleId::Factorize_MulCombineConstants:
@@ -166,6 +168,7 @@ int RunRuleBasic(Getter getter, uint32_t seed) {
     X(Rule_Simplify_MAJ_Basic, Simplify::Get_MAJ_Simplify_Rule)                                                        \
     X(Rule_Factorize_XorAnd_Basic, Factorize::Bitwise::Get_Xor_And_Rule)                                               \
     X(Rule_Factorize_XorPairCancel_Basic, Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule)                                \
+    X(Rule_Factorize_AddLinearMultiplicity_Basic, Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule)              \
     X(Rule_Factorize_AddCommonFactor_Basic, Factorize::Arithmetic::Get_Add_CommonFactor_Rule)                          \
     X(Rule_Factorize_MulCombineConstants_Basic, Factorize::Arithmetic::Get_Mul_CombineConstants_Rule)                  \
     X(Rule_Factorize_AndAbsorb_Basic, Factorize::Bitwise::Get_And_Absorb_Rule)                                         \

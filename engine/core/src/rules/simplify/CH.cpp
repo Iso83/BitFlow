@@ -83,11 +83,7 @@ static Expr* Rewrite_CH(Expr& e) {
 }
 
 Rule Get_CH_Simplify_Rule() {
-    return Rule{RuleId::Simplify_CH,
-                &Match_CH,
-                &Rewrite_CH,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+    return Rule{RuleId::Simplify_CH, &Match_CH, &Rewrite_CH, Stage_Simplify, {RuleId::Normalize_Flatten, RuleId::Normalize_Order}, RuleFlags::None, "Simplify_CH"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify

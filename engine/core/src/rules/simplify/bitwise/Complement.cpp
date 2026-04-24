@@ -56,11 +56,7 @@ static Expr* Rewrite_Complement(Expr& e) {
 #pragma endregion
 
 Rule Get_Complement_Rule() {
-    return Rule{RuleId::Simplify_Complement,
-                &Match_Complement,
-                &Rewrite_Complement,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Simplify_Idempotent}};
+    return Rule{RuleId::Simplify_Complement, &Match_Complement, &Rewrite_Complement, Stage_Simplify, {RuleId::Normalize_Flatten, RuleId::Simplify_Idempotent}, RuleFlags::None, "Simplify_Complement"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

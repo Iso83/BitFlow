@@ -16,6 +16,18 @@ struct RewriteResult {
     bool stable;
     bool oscillationDetected;
     int iterations;
+
+    bool cycleDetected() const {
+        return oscillationDetected;
+    }
+
+    bool StableWithoutCycle() const {
+        return stable && !cycleDetected();
+    }
+
+    bool IterationsWithin(int limit) const {
+        return iterations <= limit;
+    }
 };
 
 class RuleEngine {
@@ -42,6 +54,14 @@ class RuleEngine {
 
     void SetDebugCallback(DebugCallback cb);
 
+    const std::vector<Stage>& Stages() const {
+        return m_stages;
+    }
+
+    const std::vector<int>& StageOrder() const {
+        return m_stageOrder;
+    }
+
   protected:
     virtual void AddRule(Stage& stage, Rule rule);
 
@@ -50,7 +70,7 @@ class RuleEngine {
     }
 
     virtual bool ValidateRule(const Rule& rule) const {
-        return true;
+        return rule.Name != nullptr && rule.Name[0] != '\0';
     }
 };
 

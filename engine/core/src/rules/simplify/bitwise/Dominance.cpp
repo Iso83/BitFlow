@@ -118,35 +118,19 @@ static Expr* Rewrite_Or_ZeroIdentity(Expr& e) {
 #pragma endregion
 
 Rule Get_And_ZeroDominance_Rule() {
-    return Rule{RuleId::Simplify_AndZeroDominance,
-                &Match_And_ZeroDominance,
-                &Rewrite_And_ZeroDominance,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_AndZeroDominance, &Match_And_ZeroDominance, &Rewrite_And_ZeroDominance, Stage_Simplify, {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_AndZeroDominance"};
 }
 
 Rule Get_And_OneIdentity_Rule() {
-    return Rule{RuleId::Simplify_AndOneIdentity,
-                &Match_And_OneIdentity,
-                &Rewrite_And_OneIdentity,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_AndOneIdentity, &Match_And_OneIdentity, &Rewrite_And_OneIdentity, Stage_Simplify, {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_AndOneIdentity"};
 }
 
 Rule Get_Or_OneDominance_Rule() {
-    return Rule{RuleId::Simplify_OrOneDominance,
-                &Match_Or_OneDominance,
-                &Rewrite_Or_OneDominance,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_OrOneDominance, &Match_Or_OneDominance, &Rewrite_Or_OneDominance, Stage_Simplify, {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_OrOneDominance"};
 }
 
 Rule Get_Or_ZeroIdentity_Rule() {
-    return Rule{RuleId::Simplify_OrZeroIdentity,
-                &Match_Or_ZeroIdentity,
-                &Rewrite_Or_ZeroIdentity,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten}};
+    return Rule{RuleId::Simplify_OrZeroIdentity, &Match_Or_ZeroIdentity, &Rewrite_Or_ZeroIdentity, Stage_Simplify, {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_OrZeroIdentity"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise
