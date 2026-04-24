@@ -27,7 +27,7 @@ int Test_Pipeline_SHA_Safe() {
     auto maj = MakeOp(1101, OpType::Maj, {a, d, e});
     auto expr = MakeOp(1102, OpType::Xor, {ch, maj});
 
-    RuleEngine engine = BuildProfile("sha_safe");
+    RuleEngine engine = BuildProfile("simplify_full_safe");
     Expr* out = engine.ApplyOnce(expr);
 
     BF_TEST(IsStable(engine, out));
@@ -43,7 +43,21 @@ int Test_Pipeline_NoOscillation_Factorize() {
     auto andAC = MakeOp(1204, OpType::And, {a, c});
     auto expr = MakeOp(1205, OpType::Xor, {andAB, andAC});
 
-    RuleEngine engine = BuildProfile("factorize");
+    RuleEngine engine = BuildProfile("factorize_full_safe");
+    Expr* out = engine.ApplyOnce(expr);
+
+    BF_TEST(IsStable(engine, out));
+    return 0;
+}
+
+int Test_Pipeline_NoOscillation_ExpandBitwise() {
+    auto a = MakeVar(1300);
+    auto b = MakeVar(1301);
+    auto c = MakeVar(1302);
+
+    auto expr = MakeOp(1303, OpType::And, {a, MakeOp(1304, OpType::Xor, {b, c})});
+
+    RuleEngine engine = BuildProfile("expand_bitwise");
     Expr* out = engine.ApplyOnce(expr);
 
     BF_TEST(IsStable(engine, out));
@@ -55,5 +69,6 @@ int Test_Pipeline_NoOscillation_Factorize() {
 int main() {
     BF_RUN_TEST(Test_Pipeline_SHA_Safe);
     BF_RUN_TEST(Test_Pipeline_NoOscillation_Factorize);
+    BF_RUN_TEST(Test_Pipeline_NoOscillation_ExpandBitwise);
     return 0;
 }

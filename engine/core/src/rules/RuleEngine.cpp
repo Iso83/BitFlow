@@ -54,24 +54,30 @@ void RuleEngine::AddRule(Stage& stage, Rule rule) {
     if (!stage.ruleIds.insert(rule.Id).second)
         throw std::runtime_error("Duplicate rule in stage");
 
-    bool hasExpand = false;
-    bool hasFactor = false;
+    bool hasExpandOnly = false;
+    bool hasFactorOnly = false;
 
     for (const auto& stageRule : stage.rules) {
-        if (stageRule.Flags & Expanding)
-            hasExpand = true;
+        const bool isExpand = stageRule.IsExpanding();
+        const bool isFactor = stageRule.IsFactorizing();
 
-        if (stageRule.Flags & Factorizing)
-            hasFactor = true;
+        if (isExpand && !isFactor)
+            hasExpandOnly = true;
+
+        if (isFactor && !isExpand)
+            hasFactorOnly = true;
     }
 
-    if (rule.Flags & Expanding)
-        hasExpand = true;
+    const bool ruleIsExpand = rule.IsExpanding();
+    const bool ruleIsFactor = rule.IsFactorizing();
 
-    if (rule.Flags & Factorizing)
-        hasFactor = true;
+    if (ruleIsExpand && !ruleIsFactor)
+        hasExpandOnly = true;
 
-    if (hasExpand && hasFactor) {
+    if (ruleIsFactor && !ruleIsExpand)
+        hasFactorOnly = true;
+
+    if (hasExpandOnly && hasFactorOnly) {
         stage.ruleIds.erase(rule.Id);
         throw std::runtime_error("Invalid stage: expand + factorize");
     }

@@ -5,6 +5,7 @@
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/core/rules/RewriteCost.h>
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
@@ -41,14 +42,6 @@ static Expr* BuildXorNode(const std::vector<Expr*>& terms) {
         return terms[0];
 
     return MakeOpInterned(OpType::Xor, terms);
-}
-
-static size_t CountExprTreeNodes(const Expr* e) {
-    size_t nodes = 1;
-    for (const Expr* in : e->inputs)
-        nodes += CountExprTreeNodes(in);
-
-    return nodes;
 }
 
 static uint32_t FindBestCommonFactorId(const Expr& e) {
@@ -181,18 +174,14 @@ static Expr* Rewrite_Xor_And(Expr& e) {
     }
 
     Expr* candidate = BuildXorNode(finalInputs);
-    if (CountExprTreeNodes(candidate) > CountExprTreeNodes(&e))
+    if (!IsRewritePreferred(candidate, &e, RewriteCostPolicy::FactorizeSafe))
         return nullptr;
 
     return candidate;
 }
 
 Rule Get_Xor_And_Rule() {
-    return Rule{RuleId::Factorize_XorAnd,
-                &Match_Xor_And,
-                &Rewrite_Xor_And,
-                Stage_Factorize,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order}};
+    return Rule{RuleId::Factorize_XorAnd, &Match_Xor_And, &Rewrite_Xor_And, Stage_Factorize, {RuleId::Normalize_Flatten, RuleId::Normalize_Order}, RuleFlags::Factorizing, "Factorize_XorAnd"};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

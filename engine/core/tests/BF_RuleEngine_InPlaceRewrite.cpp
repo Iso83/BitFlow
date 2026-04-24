@@ -31,7 +31,8 @@ int TestEngineHandlesInPlaceRewriteSafely() {
     auto e2 = MakeOp(101, OpType::Xor, {y, x});
 
     RuleEngine engine;
-    engine.AddRule(Rule{RuleId::Normalize_Order, &Match_Xor_Unsorted, &Rewrite_Xor_InPlaceSort, 0});
+    engine.AddRule(Rule{
+        RuleId::Normalize_Order, &Match_Xor_Unsorted, &Rewrite_Xor_InPlaceSort, 0, {}, RuleFlags::None, "Normalize_Order"});
 
     Expr* r1 = engine.ApplyUntilStable(e1);
     Expr* r2 = engine.ApplyUntilStable(e2);
