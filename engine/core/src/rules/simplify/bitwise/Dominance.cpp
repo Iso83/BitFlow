@@ -18,7 +18,7 @@ static bool Match_And_ZeroDominance(const Expr& e) {
         return false;
 
     for (const Expr* in : e.inputs) {
-        if (in->isConst() && in->constValue == 0)
+        if (in->op == AST::OpType::Const && in->constValue == 0)
             return true;
     }
 
@@ -31,7 +31,7 @@ static bool Match_And_OneIdentity(const Expr& e) {
         return false;
 
     for (const Expr* in : e.inputs) {
-        if (in->isConst() && in->constValue == 1)
+        if (in->op == AST::OpType::Const && in->constValue == 1)
             return true;
     }
 
@@ -44,7 +44,7 @@ static bool Match_Or_OneDominance(const Expr& e) {
         return false;
 
     for (const Expr* in : e.inputs) {
-        if (in->isConst() && in->constValue == 1)
+        if (in->op == AST::OpType::Const && in->constValue == 1)
             return true;
     }
 
@@ -57,7 +57,7 @@ static bool Match_Or_ZeroIdentity(const Expr& e) {
         return false;
 
     for (const Expr* in : e.inputs) {
-        if (in->isConst() && in->constValue == 0)
+        if (in->op == AST::OpType::Const && in->constValue == 0)
             return true;
     }
 
@@ -76,7 +76,7 @@ static Expr* Rewrite_And_OneIdentity(Expr& e) {
     newInputs.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (!(in->isConst() && in->constValue == 1))
+        if (!(in->op == AST::OpType::Const && in->constValue == 1))
             newInputs.push_back(in);
     }
 
@@ -100,7 +100,7 @@ static Expr* Rewrite_Or_ZeroIdentity(Expr& e) {
     newInputs.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (!(in->isConst() && in->constValue == 0))
+        if (!(in->op == AST::OpType::Const && in->constValue == 0))
             newInputs.push_back(in);
     }
 

@@ -25,12 +25,12 @@ int TestAddFold() {
     Expr* a = result->inputs[0];
     Expr* b = result->inputs[1];
 
-    if (a->isConst()) {
+    if (a->op == OpType::Const) {
         BF_TEST(a->constValue == 30);
         BF_TEST(b->id == x->id);
     } else {
         BF_TEST(a->id == x->id);
-        BF_TEST(b->isConst());
+        BF_TEST(b->op == OpType::Const);
         BF_TEST(b->constValue == 30);
     }
 

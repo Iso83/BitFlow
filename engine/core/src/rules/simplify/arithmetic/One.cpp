@@ -16,7 +16,7 @@ static bool Match_Mul_One(const Expr& e) {
         return false;
 
     for (const Expr* in : e.inputs) {
-        if (in->isConst() && in->constValue == 1)
+        if (in->op == AST::OpType::Const && in->constValue == 1)
             return true;
     }
 
@@ -28,7 +28,7 @@ static Expr* Rewrite_Mul_One(Expr& e) {
     newInputs.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (!(in->isConst() && in->constValue == 1))
+        if (!(in->op == AST::OpType::Const && in->constValue == 1))
             newInputs.push_back(in);
     }
 
@@ -51,7 +51,7 @@ static bool Match_Div_One(const Expr& e) {
         return false;
 
     const Expr* rhs = e.inputs[1];
-    return rhs->isConst() && rhs->constValue == 1;
+    return rhs->op == AST::OpType::Const && rhs->constValue == 1;
 }
 
 static Expr* Rewrite_Div_One(Expr& e) {

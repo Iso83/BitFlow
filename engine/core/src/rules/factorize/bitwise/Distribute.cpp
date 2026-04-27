@@ -16,16 +16,16 @@ using OpType = AST::OpType;
 #pragma region Helpers
 
 static Expr* BuildAnd(Expr* a, Expr* b) {
-    if (a->isConst() && a->constValue == 0)
+    if (a->op == OpType::Const && a->constValue == 0)
         return a;
 
-    if (b->isConst() && b->constValue == 0)
+    if (b->op == OpType::Const && b->constValue == 0)
         return b;
 
-    if (a->isConst() && a->constValue == 1)
+    if (a->op == OpType::Const && a->constValue == 1)
         return b;
 
-    if (b->isConst() && b->constValue == 1)
+    if (b->op == OpType::Const && b->constValue == 1)
         return a;
 
     auto* n = Expression::MakeOpInterned(OpType::And, {a, b});

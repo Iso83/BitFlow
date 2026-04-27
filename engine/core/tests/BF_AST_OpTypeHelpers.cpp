@@ -1,3 +1,5 @@
+#include "ast/OpTraits.h"
+
 #include <BitFlow/core/ast/OpType.h>
 #include <TestAssert.h>
 

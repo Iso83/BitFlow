@@ -50,7 +50,7 @@ int TestModZero_Guard_Preserved() {
     BF_TEST(result->op == OpType::Mod);
     BF_TEST(result->inputs.size() == 2);
     BF_TEST(result->inputs[0]->id == x->id);
-    BF_TEST(result->inputs[1]->isConst() && result->inputs[1]->constValue == 0u);
+    BF_TEST(result->inputs[1]->op == OpType::Const && result->inputs[1]->constValue == 0u);
     return 0;
 }
 
@@ -102,7 +102,7 @@ int TestFactorize_AddRepeatedTermCount() {
     bool hasSix = false;
     bool hasA = false;
     for (auto* in : result->inputs) {
-        if (in->isConst() && in->constValue == 6u)
+        if (in->op == OpType::Const && in->constValue == 6u)
             hasSix = true;
         if (in->id == a->id)
             hasA = true;
@@ -124,7 +124,7 @@ int TestFactorize_CombineNestedMulConstants() {
     bool hasSix = false;
     bool hasA = false;
     for (auto* in : result->inputs) {
-        if (in->isConst() && in->constValue == 6u)
+        if (in->op == OpType::Const && in->constValue == 6u)
             hasSix = true;
         if (in->id == a->id)
             hasA = true;
@@ -153,7 +153,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
         bool hasThree = false;
         bool hasA = false;
         for (auto* in : result->inputs) {
-            if (in->isConst() && in->constValue == 3u)
+            if (in->op == OpType::Const && in->constValue == 3u)
                 hasThree = true;
             if (in->id == a->id)
                 hasA = true;
@@ -169,7 +169,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
         bool hasThree = false;
         bool hasA = false;
         for (auto* in : result->inputs) {
-            if (in->isConst() && in->constValue == 3u)
+            if (in->op == OpType::Const && in->constValue == 3u)
                 hasThree = true;
             if (in->id == a->id)
                 hasA = true;
@@ -185,7 +185,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
         bool hasThree = false;
         bool hasA = false;
         for (auto* in : result->inputs) {
-            if (in->isConst() && in->constValue == 3u)
+            if (in->op == OpType::Const && in->constValue == 3u)
                 hasThree = true;
             if (in->id == a->id)
                 hasA = true;
@@ -203,7 +203,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
         bool hasFive = false;
         bool hasA = false;
         for (auto* in : result->inputs) {
-            if (in->isConst() && in->constValue == 5u)
+            if (in->op == OpType::Const && in->constValue == 5u)
                 hasFive = true;
             if (in->id == a->id)
                 hasA = true;
@@ -227,7 +227,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
                 for (auto* factor : in->inputs) {
                     if (factor->id == a->id)
                         hasA = true;
-                    if (factor->isConst() && factor->constValue == 2u)
+                    if (factor->op == OpType::Const && factor->constValue == 2u)
                         hasTwo = true;
                 }
                 hasA2 = hasA && hasTwo;
@@ -252,7 +252,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
         bool hasThree = false;
         bool hasA = false;
         for (auto* in : result->inputs) {
-            if (in->isConst() && in->constValue == 3u)
+            if (in->op == OpType::Const && in->constValue == 3u)
                 hasThree = true;
             if (in->id == a->id)
                 hasA = true;

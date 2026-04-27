@@ -23,7 +23,7 @@ int TestCanonical_MulCoeffOrder_2a_plus_a() {
     BF_TEST(out->op == OpType::Mul);
     BF_TEST(out->inputs.size() == 2);
     BF_TEST(out->inputs[0]->id == a->id);
-    BF_TEST(out->inputs[1]->isConst());
+    BF_TEST(out->inputs[1]->op == OpType::Const);
     BF_TEST(out->inputs[1]->constValue == 3u);
     return 0;
 }
@@ -40,7 +40,7 @@ int TestCanonical_a_b_plus_b_a() {
     BF_TEST(out->inputs.size() == 3);
     BF_TEST(out->inputs[0]->id == a->id);
     BF_TEST(out->inputs[1]->id == b->id);
-    BF_TEST(out->inputs[2]->isConst());
+    BF_TEST(out->inputs[2]->op == OpType::Const);
     BF_TEST(out->inputs[2]->constValue == 2u);
     return 0;
 }
@@ -66,7 +66,7 @@ int TestCanonical_combineMulConstants_Order() {
     BF_TEST(out->op == OpType::Mul);
     BF_TEST(out->inputs.size() == 2);
     BF_TEST(out->inputs[0]->id == a->id);
-    BF_TEST(out->inputs[1]->isConst());
+    BF_TEST(out->inputs[1]->op == OpType::Const);
     BF_TEST(out->inputs[1]->constValue == 6u);
     return 0;
 }

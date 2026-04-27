@@ -22,7 +22,7 @@ static bool Match_Add_Fold(const Expr& e) {
     int constCount = 0;
 
     for (const Expr* in : e.inputs) {
-        if (in->isConst())
+        if (in->op == AST::OpType::Const)
             constCount++;
     }
 
@@ -37,7 +37,7 @@ static Expr* Rewrite_Add_Fold(Expr& e) {
     std::vector<Expr*> nonConst;
 
     for (Expr* in : e.inputs) {
-        if (in->isConst())
+        if (in->op == AST::OpType::Const)
             acc += in->constValue;
         else
             nonConst.push_back(in);

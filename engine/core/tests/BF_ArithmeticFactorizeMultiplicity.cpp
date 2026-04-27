@@ -23,7 +23,7 @@ static bool HasCoeffBaseMul(Expr* expr, Expr* base, uint32_t coeff) {
     for (Expr* in : expr->inputs) {
         if (in->id == base->id)
             hasBase = true;
-        if (in->isConst() && in->constValue == coeff)
+        if (in->op == OpType::Const && in->constValue == coeff)
             hasCoeff = true;
     }
 

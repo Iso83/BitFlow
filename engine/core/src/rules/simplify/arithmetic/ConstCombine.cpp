@@ -27,7 +27,7 @@ static bool Match_Const_Combine(const Expr& e) {
     if (!IsSupportedOp(e.op) || e.inputs.size() != 2)
         return false;
 
-    return e.inputs[0]->isConst() && e.inputs[1]->isConst();
+    return e.inputs[0]->op == OpType::Const && e.inputs[1]->op == OpType::Const;
 }
 
 static Expr* Rewrite_Const_Combine(Expr& e) {

@@ -79,7 +79,7 @@ int TestXorFoldAllConstZero() {
 
     Expr* result = engine.ApplyUntilStable(expr);
 
-    BF_TEST(result->isConst());
+    BF_TEST(result->op == OpType::Const);
     BF_TEST(result->constValue == 0);
     return 0;
 }

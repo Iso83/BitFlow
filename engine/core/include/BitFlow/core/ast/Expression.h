@@ -11,12 +11,12 @@ struct Expr {
     Ids::ExprId id{};
     OpType op{};
     std::vector<Expr*> inputs{};
-    uint32_t constValue{0};
-    bool frozen = false;
 
-    bool isConst() const {
-        return op == OpType::Const;
-    }
+    // TODO: not here!
+    uint32_t constValue{0};
+
+    // TODO: not here!
+    bool frozen = false;
 };
 
 } // namespace BitFlow::Core::AST

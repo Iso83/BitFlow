@@ -49,7 +49,7 @@ int TestSimplifyBitwiseXorCancel_PositiveAndNegative() {
     BF_TEST(rule.match(*duplicate));
     Expr* rewritten = rule.rewrite(*duplicate);
     BF_TEST(rewritten != nullptr);
-    BF_TEST(rewritten->isConst());
+    BF_TEST(rewritten->op == OpType::Const);
     BF_TEST(rewritten->constValue == 0U);
 
     Expr* distinct = MakeOp(32, OpType::Xor, {a, MakeVar(33)});

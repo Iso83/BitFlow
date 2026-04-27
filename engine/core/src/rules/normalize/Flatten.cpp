@@ -1,3 +1,4 @@
+#include "ast/OpTraits.h"
 #include "expression/ExprClone.h"
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
@@ -17,7 +18,7 @@ static bool Match_Flatten(const Expr& e) {
         return false;
 
     for (const Expr* in : e.inputs) {
-        if (IsNestedSameOp(e, *in))
+        if (IsNestedSame(e.op, in->op))
             return true;
     }
 
@@ -32,7 +33,7 @@ static Expr* Rewrite_Flatten(Expr& e) {
     newInputs.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (IsNestedSameOp(e, *in)) {
+        if (IsNestedSame(e.op, in->op)) {
             for (Expr* sub : in->inputs)
                 newInputs.push_back(sub);
         } else

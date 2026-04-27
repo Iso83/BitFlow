@@ -16,7 +16,7 @@ static Expr* Rewrite_Add_Zero(Expr& e) {
     std::vector<Expr*> newInputs;
 
     for (Expr* in : e.inputs) {
-        if (!(in->isConst() && in->constValue == 0))
+        if (!(in->op == AST::OpType::Const && in->constValue == 0))
             newInputs.push_back(in);
     }
 
@@ -44,7 +44,7 @@ static bool Match_Sub_Zero(const Expr& e) {
         return false;
 
     const Expr* rhs = e.inputs[1];
-    return rhs->isConst() && rhs->constValue == 0;
+    return rhs->op == AST::OpType::Const && rhs->constValue == 0;
 }
 
 static Expr* Rewrite_Sub_Zero(Expr& e) {
@@ -59,7 +59,7 @@ static bool Match_Mod_Zero(const Expr& e) {
         return false;
 
     const Expr* rhs = e.inputs[1];
-    return rhs->isConst() && rhs->constValue == 0;
+    return rhs->op == AST::OpType::Const && rhs->constValue == 0;
 }
 
 static Expr* Rewrite_Mod_Zero_Guard(Expr&) {
@@ -82,7 +82,7 @@ static bool Match_Shift_Zero(const Expr& e) {
         return false;
 
     const Expr* rhs = e.inputs[1];
-    return rhs->isConst() && rhs->constValue == 0;
+    return rhs->op == AST::OpType::Const && rhs->constValue == 0;
 }
 
 static Expr* Rewrite_Shift_Zero(Expr& e) {
@@ -102,7 +102,7 @@ static bool Match_Rotate_Modulo_Bitwidth(const Expr& e) {
         return false;
 
     const Expr* rhs = e.inputs[1];
-    if (!rhs->isConst())
+    if (rhs->op != AST::OpType::Const)
         return false;
 
     constexpr uint32_t kBitWidth = 32;

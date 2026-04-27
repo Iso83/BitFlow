@@ -118,7 +118,7 @@ int TestAddZero_Property_ZeroAtAnyPosition() {
         BF_TEST(result->op == OpType::Add);
         BF_TEST(result->inputs.size() == 3);
         for (Expr* in : result->inputs)
-            BF_TEST(!(in->isConst() && in->constValue == 0));
+            BF_TEST(!(in->op == OpType::Const && in->constValue == 0));
     }
 
     return 0;
@@ -292,7 +292,7 @@ int TestRotateModuloBitwidth_ReducesConstantAmount() {
     BF_TEST(result->op == OpType::RotL);
     BF_TEST(result->inputs.size() == 2);
     BF_TEST(result->inputs[0]->id == x->id);
-    BF_TEST(result->inputs[1]->isConst());
+    BF_TEST(result->inputs[1]->op == OpType::Const);
     BF_TEST(result->inputs[1]->constValue == 3);
     return 0;
 }
@@ -345,7 +345,7 @@ int TestRotateModuloBitwidth_Property_ConstantAmounts() {
             BF_TEST(result->op == OpType::RotR);
             BF_TEST(result->inputs.size() == 2);
             BF_TEST(result->inputs[0]->id == x->id);
-            BF_TEST(result->inputs[1]->isConst());
+            BF_TEST(result->inputs[1]->op == OpType::Const);
             BF_TEST(result->inputs[1]->constValue == reduced);
         }
     }

@@ -81,7 +81,7 @@ int TestMulOne_Property_OneAtAnyPosition() {
         BF_TEST(result->op == OpType::Mul);
         BF_TEST(result->inputs.size() == 3);
         for (Expr* in : result->inputs)
-            BF_TEST(!(in->isConst() && in->constValue == 1));
+            BF_TEST(!(in->op == OpType::Const && in->constValue == 1));
     }
 
     return 0;

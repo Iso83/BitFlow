@@ -22,7 +22,7 @@ struct LinearTerm {
 };
 
 static bool DecomposeLinearTerm(const Expr* term, LinearTerm& out) {
-    if (term->isConst())
+    if (term->op == OpType::Const)
         return false;
 
     if (term->op != OpType::Mul) {
@@ -35,7 +35,7 @@ static bool DecomposeLinearTerm(const Expr* term, LinearTerm& out) {
     const Expr* base = nullptr;
     bool sawConst = false;
     for (Expr* factor : term->inputs) {
-        if (factor->isConst()) {
+        if (factor->op == OpType::Const) {
             coeff *= factor->constValue;
             sawConst = true;
             continue;

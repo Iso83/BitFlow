@@ -5,14 +5,6 @@
 
 namespace BitFlow::Core::Rules {
 
-inline bool IsLeaf(const AST::Expr& e) {
-    return AST::IsLeaf(e.op);
-}
-
-inline bool IsNestedSameOp(const AST::Expr& parent, const AST::Expr& child) {
-    return !IsLeaf(child) && child.op == parent.op;
-}
-
 inline int CompareExprCanonical(const AST::Expr* a, const AST::Expr* b) {
     if (a == b)
         return 0;
@@ -59,7 +51,7 @@ template <AST::OpType Op> inline bool Match_Zero(const AST::Expr& e) {
         return false;
 
     for (const AST::Expr* in : e.inputs) {
-        if (in->isConst() && in->constValue == 0)
+        if (in->op == AST::OpType::Const && in->constValue == 0)
             return true;
     }
 

@@ -1,3 +1,5 @@
+#include "ast/OpTraits.h"
+
 #include <BitFlow/core/ast/Expression.h>
 #include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/rules/RewriteCost.h>

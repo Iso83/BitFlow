@@ -1,3 +1,4 @@
+#include "ast/OpTraits.h"
 #include "expression/ExprClone.h"
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"

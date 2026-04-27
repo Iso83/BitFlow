@@ -9,7 +9,7 @@ int TestExprParser_Precedence_MulBeforeAdd() {
     Expr* root = parsed.root;
 
     BF_TEST(root->op == OpType::Add);
-    BF_TEST(root->inputs[0]->isConst());
+    BF_TEST(root->inputs[0]->op == OpType::Const);
     BF_TEST(root->inputs[1]->op == OpType::Mul);
     return 0;
 }
@@ -19,7 +19,7 @@ int TestExprParser_Precedence_AddBeforeShift() {
     Expr* root = parsed.root;
 
     BF_TEST(root->op == OpType::Shl);
-    BF_TEST(root->inputs[0]->isConst());
+    BF_TEST(root->inputs[0]->op == OpType::Const);
     BF_TEST(root->inputs[1]->op == OpType::Add);
     return 0;
 }
@@ -30,7 +30,7 @@ int TestExprParser_Associativity_SubIsLeft() {
 
     BF_TEST(root->op == OpType::Sub);
     BF_TEST(root->inputs[0]->op == OpType::Sub);
-    BF_TEST(root->inputs[1]->isConst());
+    BF_TEST(root->inputs[1]->op == OpType::Const);
     return 0;
 }
 
@@ -51,7 +51,7 @@ int TestExprParser_ParsesRotrCall() {
     BF_TEST(root->op == OpType::RotR);
     BF_TEST(root->inputs.size() == 2);
     BF_TEST(root->inputs[0]->op == OpType::Var);
-    BF_TEST(root->inputs[1]->isConst());
+    BF_TEST(root->inputs[1]->op == OpType::Const);
     return 0;
 }
 
@@ -62,7 +62,7 @@ int TestExprParser_ParsesRotlCall() {
     BF_TEST(root->op == OpType::RotL);
     BF_TEST(root->inputs.size() == 2);
     BF_TEST(root->inputs[0]->op == OpType::Add);
-    BF_TEST(root->inputs[1]->isConst());
+    BF_TEST(root->inputs[1]->op == OpType::Const);
     return 0;
 }
 

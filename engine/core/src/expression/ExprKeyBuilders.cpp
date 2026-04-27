@@ -1,5 +1,7 @@
 #include "expression/ExprKeyBuilders.h"
 
+#include "ast/OpTraits.h"
+
 #include <algorithm>
 
 namespace BitFlow::Core::Expression {

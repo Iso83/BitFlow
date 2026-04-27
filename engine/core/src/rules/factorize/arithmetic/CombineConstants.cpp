@@ -20,7 +20,7 @@ static bool Match_Mul_CombineConstants(const Expr& e) {
 
     int constCount = 0;
     for (const Expr* in : e.inputs) {
-        if (in->isConst())
+        if (in->op == OpType::Const)
             ++constCount;
         if (constCount >= 2)
             return true;
@@ -36,7 +36,7 @@ static Expr* Rewrite_Mul_CombineConstants(Expr& e) {
     nonConst.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (in->isConst()) {
+        if (in->op == OpType::Const) {
             ++constCount;
             product *= static_cast<uint64_t>(in->constValue);
             continue;

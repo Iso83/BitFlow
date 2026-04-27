@@ -139,7 +139,7 @@ static Expr* Rewrite_Xor_Xor_CancelPair(Expr& e) {
 
             Expr* reduced = BuildXorResidual(residual);
 
-            if (!(reduced->isConst() && reduced->constValue == 0))
+            if (!(reduced->op == OpType::Const && reduced->constValue == 0))
                 newInputs.push_back(reduced);
         } else
             newInputs.push_back(in);

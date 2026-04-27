@@ -54,8 +54,8 @@ static bool TryGetInfixInfo(OpType op, InfixInfo& info) {
 }
 
 static int PrecedenceOf(const Expr* e) {
-    if (e->isConst() || e->op == OpType::Var || e->op == OpType::RotL || e->op == OpType::RotR || e->op == OpType::Ch ||
-        e->op == OpType::Maj)
+    if (e->op == OpType::Const || e->op == OpType::Var || e->op == OpType::RotL || e->op == OpType::RotR ||
+        e->op == OpType::Ch || e->op == OpType::Maj)
         return 80;
 
     if (e->op == OpType::Not || e->op == OpType::Neg)
@@ -83,7 +83,7 @@ static bool NeedsParensForRightChild(OpType parentOp, OpType childOp) {
 
 static void Print(const Expr* e, std::ostringstream& out, const std::unordered_map<uint32_t, std::string>& names,
                   const PrintOptions& options, int parentPrecedence, bool isRightChild, OpType parentOp) {
-    if (e->isConst()) {
+    if (e->op == OpType::Const) {
         out << e->constValue;
         return;
     }

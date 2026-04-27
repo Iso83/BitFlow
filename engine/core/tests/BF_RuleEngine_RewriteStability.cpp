@@ -17,7 +17,7 @@ int TestSimplifyProfileRunWithInfoIsStable() {
     BF_TEST(RewriteStable(info));
     BF_TEST(RewriteHasNoCycle(info));
     BF_TEST(RewriteWithinIterationLimit(info, 8));
-    BF_TEST(info.result->isConst());
+    BF_TEST(info.result->op == OpType::Const);
     BF_TEST(info.result->constValue == 0U);
     return 0;
 }

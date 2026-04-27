@@ -103,7 +103,7 @@ int TestDuplicatePairCancelsToZero() {
                {MakeOp(21, OpType::RotR, {x, MakeConst(22, 2)}), MakeOp(23, OpType::RotR, {x, MakeConst(24, 2)})});
 
     Expr* r = MakeSigmaNormalizeEngine().ApplyUntilStable(expr);
-    BF_TEST(r->isConst());
+    BF_TEST(r->op == OpType::Const);
     BF_TEST(r->constValue == 0);
     return 0;
 }

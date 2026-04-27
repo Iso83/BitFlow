@@ -18,7 +18,7 @@ int Test_And_ZeroDominance() {
 
     Expr* res = eng.ApplyUntilStable(expr);
 
-    BF_TEST(res->isConst() && res->constValue == 0);
+    BF_TEST(res->op == OpType::Const && res->constValue == 0);
     return 0;
 }
 
@@ -52,7 +52,7 @@ int Test_Or_OneDominance() {
 
     Expr* res = eng.ApplyUntilStable(expr);
 
-    BF_TEST(res->isConst() && res->constValue == 1);
+    BF_TEST(res->op == OpType::Const && res->constValue == 1);
     return 0;
 }
 
