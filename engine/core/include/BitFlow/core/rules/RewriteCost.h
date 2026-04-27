@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace BitFlow::Core::AST {
+namespace BitFlow::Core::Expression {
 struct Expr;
 }
 
@@ -21,7 +21,7 @@ enum class RewriteCostPolicy {
     ExpandDistribute,
 };
 
-RewriteCost ComputeRewriteCost(const AST::Expr* expr);
-bool IsRewritePreferred(const AST::Expr* candidate, const AST::Expr* current, RewriteCostPolicy policy);
+RewriteCost ComputeRewriteCost(const Expression::Expr* expr);
+bool IsRewritePreferred(const Expression::Expr* candidate, const Expression::Expr* current, RewriteCostPolicy policy);
 
 } // namespace BitFlow::Core::Rules

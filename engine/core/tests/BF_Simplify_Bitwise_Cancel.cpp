@@ -4,6 +4,7 @@
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 int TestAndCancelPair() {
@@ -186,7 +187,6 @@ int TestXorParityCancel_Frozen() {
     auto b = MakeVar(2);
 
     auto expr = MakeOp(10, OpType::Xor, {a, b, a});
-    expr->frozen = true;
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());

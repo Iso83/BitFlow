@@ -1,9 +1,10 @@
-#include <BitFlow/core/ast/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStruct.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 namespace {
@@ -19,7 +20,7 @@ int TestNormalizeOrder_PositiveAndNegative() {
     Expr* rewritten = rule.rewrite(*unsorted);
     Expr* expected = MakeOp(11, OpType::Xor, {a, b});
     BF_TEST(rewritten != nullptr);
-    BF_TEST(BitFlow::Core::AST::StructEqual(rewritten, expected));
+    BF_TEST(BitFlow::Core::Expression::StructEqual(rewritten, expected));
 
     Expr* sorted = MakeOp(12, OpType::Xor, {a, b});
     BF_TEST(!rule.match(*sorted));
@@ -66,7 +67,7 @@ int TestFactorizeArithmeticLinearMultiplicity_PositiveAndNegative() {
     Expr* rewritten = rule.rewrite(*linear);
     Expr* expected = MakeOp(44, OpType::Mul, {a, MakeConst(45, 3)});
     BF_TEST(rewritten != nullptr);
-    BF_TEST(BitFlow::Core::AST::StructEqual(rewritten, expected));
+    BF_TEST(BitFlow::Core::Expression::StructEqual(rewritten, expected));
 
     Expr* outOfScope = MakeOp(46, OpType::Add, {a, MakeOp(47, OpType::Mul, {a, MakeVar(48)})});
     BF_TEST(!rule.match(*outOfScope));
@@ -84,7 +85,7 @@ int TestFactorizeBitwiseXorAnd_PositiveAndNegative() {
     Expr* rewritten = rule.rewrite(*factorable);
     Expr* expected = MakeOp(56, OpType::And, {a, MakeOp(57, OpType::Xor, {b, c})});
     BF_TEST(rewritten != nullptr);
-    BF_TEST(BitFlow::Core::AST::StructEqual(rewritten, expected));
+    BF_TEST(BitFlow::Core::Expression::StructEqual(rewritten, expected));
 
     Expr* outOfScope = MakeOp(58, OpType::Xor, {a, b});
     BF_TEST(!rule.match(*outOfScope));

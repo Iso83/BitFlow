@@ -1,4 +1,4 @@
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ProfileEngines.h>
@@ -8,12 +8,10 @@
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Testing::SHA;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 namespace {
-
-using Expr = BitFlow::Core::AST::Expr;
-using OpType = BitFlow::Core::AST::OpType;
 
 bool ContainsOp(const Expr* root, OpType op) {
     if (root == nullptr)

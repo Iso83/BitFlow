@@ -1,12 +1,13 @@
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
-using Expr = AST::Expr;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 
 static bool ContainsExpr(const Expr* e, const Expr* target) {
     if (e == target)
@@ -22,7 +23,7 @@ static bool ContainsExpr(const Expr* e, const Expr* target) {
 
 #pragma region Match
 static bool Match_And_Absorb(const Expr& e) {
-    if (e.op != AST::OpType::And)
+    if (e.op != OpType::And)
         return false;
 
     if (e.inputs.size() < 2)
@@ -30,7 +31,7 @@ static bool Match_And_Absorb(const Expr& e) {
 
     for (Expr* a : e.inputs) {
         for (Expr* b : e.inputs) {
-            if (b->op != AST::OpType::Or)
+            if (b->op != OpType::Or)
                 continue;
 
             for (Expr* inner : b->inputs) {
@@ -44,7 +45,7 @@ static bool Match_And_Absorb(const Expr& e) {
 }
 
 static bool Match_Or_Absorb(const Expr& e) {
-    if (e.op != AST::OpType::Or)
+    if (e.op != OpType::Or)
         return false;
 
     if (e.inputs.size() < 2)
@@ -52,7 +53,7 @@ static bool Match_Or_Absorb(const Expr& e) {
 
     for (Expr* a : e.inputs) {
         for (Expr* b : e.inputs) {
-            if (b->op != AST::OpType::And)
+            if (b->op != OpType::And)
                 continue;
 
             for (Expr* inner : b->inputs) {
@@ -68,7 +69,7 @@ static bool Match_Or_Absorb(const Expr& e) {
 
 #pragma region Rewrite
 static Expr* Rewrite_And_Absorb(Expr& e) {
-    if (e.op != AST::OpType::And)
+    if (e.op != OpType::And)
         return nullptr;
 
     for (auto* a : e.inputs) {
@@ -76,7 +77,7 @@ static Expr* Rewrite_And_Absorb(Expr& e) {
             if (a == b)
                 continue;
 
-            if (b->op == AST::OpType::Or && ContainsExpr(b, a))
+            if (b->op == OpType::Or && ContainsExpr(b, a))
                 return a;
         }
     }
@@ -85,7 +86,7 @@ static Expr* Rewrite_And_Absorb(Expr& e) {
 }
 
 static Expr* Rewrite_Or_Absorb(Expr& e) {
-    if (e.op != AST::OpType::Or)
+    if (e.op != OpType::Or)
         return nullptr;
 
     for (auto* a : e.inputs) {
@@ -93,7 +94,7 @@ static Expr* Rewrite_Or_Absorb(Expr& e) {
             if (a == b)
                 continue;
 
-            if (b->op == AST::OpType::And && ContainsExpr(b, a))
+            if (b->op == OpType::And && ContainsExpr(b, a))
                 return a;
         }
     }

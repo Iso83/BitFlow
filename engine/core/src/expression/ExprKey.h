@@ -1,13 +1,13 @@
 #pragma once
 
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <cstdint>
 #include <vector>
 
 namespace BitFlow::Core::Expression {
 
 struct ExprKey {
-    AST::OpType op{};
+    OpType op{};
     std::vector<uint32_t> inputs;
     uint32_t constValue{0};
 

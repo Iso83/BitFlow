@@ -1,9 +1,9 @@
-#include "ast/OpTraits.h"
+#include "expression/OpTraits.h"
 
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <TestAssert.h>
 
-using namespace BitFlow::Core::AST;
+using namespace BitFlow::Core::Expression;
 
 int TestLeafAndArity() {
     BF_TEST(IsLeaf(OpType::Var));

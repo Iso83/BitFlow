@@ -1,19 +1,20 @@
 #include "expression/ExprClone.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
-using Expr = AST::Expr;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 
 #pragma region Match
 static bool Match_Add_Fold(const Expr& e) {
-    if (e.op != AST::OpType::Add)
+    if (e.op != OpType::Add)
         return false;
 
     if (e.inputs.size() < 2)
@@ -22,7 +23,7 @@ static bool Match_Add_Fold(const Expr& e) {
     int constCount = 0;
 
     for (const Expr* in : e.inputs) {
-        if (in->op == AST::OpType::Const)
+        if (in->op == OpType::Const)
             constCount++;
     }
 
@@ -37,7 +38,7 @@ static Expr* Rewrite_Add_Fold(Expr& e) {
     std::vector<Expr*> nonConst;
 
     for (Expr* in : e.inputs) {
-        if (in->op == AST::OpType::Const)
+        if (in->op == OpType::Const)
             acc += in->constValue;
         else
             nonConst.push_back(in);

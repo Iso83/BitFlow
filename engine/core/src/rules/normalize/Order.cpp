@@ -1,19 +1,19 @@
-#include "ast/OpTraits.h"
 #include "expression/ExprClone.h"
+#include "expression/OpTraits.h"
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <algorithm>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Normalize {
 
-using Expr = AST::Expr;
+using Expr = Expression::Expr;
 
 static bool Match_Order(const Expr& e) {
-    if (!AST::IsCommutative(e.op))
+    if (!Expression::IsCommutative(e.op))
         return false;
 
     if (e.inputs.size() < 2)

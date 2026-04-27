@@ -1,11 +1,10 @@
-#include "ast/ExprIntern.h"
+#include "expression/ExprIntern.h"
 #include "expression/ExprKeyBuilders.h"
 
 #include <Core_Expr.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
-using namespace BitFlow::Core::AST;
 using namespace BitFlow::Core::Expression;
 
 int TestStructuralKeyDifferentOrder() {

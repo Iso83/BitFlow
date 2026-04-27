@@ -1,9 +1,9 @@
 #include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/RewriteCost.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <algorithm>
@@ -12,8 +12,8 @@
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
-using Expr = AST::Expr;
-using OpType = AST::OpType;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 using namespace BitFlow::Core::Expression;
 
 static void CollectFactors(Expr* e, std::vector<Expr*>& out) {

@@ -1,8 +1,7 @@
 #include <BitFlow/io/ExprParser.h>
 #include <TestAssert.h>
 
-using Expr = BitFlow::Core::AST::Expr;
-using OpType = BitFlow::Core::AST::OpType;
+using namespace BitFlow::Core::Expression;
 
 int TestExprParser_Precedence_MulBeforeAdd() {
     auto parsed = BitFlow::IO::Parse("1 + 2 * 3");

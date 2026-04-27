@@ -5,14 +5,14 @@
 #include <unordered_set>
 #include <vector>
 
-namespace BitFlow::Core::AST {
+namespace BitFlow::Core::Expression {
 struct Expr;
 }
 
 namespace BitFlow::Core::Rules {
 
 struct RewriteResult {
-    AST::Expr* result;
+    Expression::Expr* result;
     bool stable;
     bool oscillationDetected;
     int iterations;
@@ -32,7 +32,7 @@ struct RewriteResult {
 
 class RuleEngine {
   public:
-    using DebugCallback = std::function<void(const AST::Expr* before, const AST::Expr* after, RuleId)>;
+    using DebugCallback = std::function<void(const Expression::Expr* before, const Expression::Expr* after, RuleId)>;
 
   private:
     DebugCallback m_debugCallback;
@@ -47,10 +47,10 @@ class RuleEngine {
     virtual ~RuleEngine() = default;
 
     virtual void AddRule(const Rule& rule);
-    AST::Expr* ApplyOnce(AST::Expr* expr) const;
-    AST::Expr* ApplyRecursive(AST::Expr* expr) const;
-    AST::Expr* ApplyUntilStable(AST::Expr* expr) const;
-    RewriteResult RunWithInfo(AST::Expr* expr) const;
+    Expression::Expr* ApplyOnce(Expression::Expr* expr) const;
+    Expression::Expr* ApplyRecursive(Expression::Expr* expr) const;
+    Expression::Expr* ApplyUntilStable(Expression::Expr* expr) const;
+    RewriteResult RunWithInfo(Expression::Expr* expr) const;
 
     void SetDebugCallback(DebugCallback cb);
 

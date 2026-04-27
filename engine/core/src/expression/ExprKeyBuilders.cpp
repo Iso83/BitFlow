@@ -1,12 +1,10 @@
 #include "expression/ExprKeyBuilders.h"
 
-#include "ast/OpTraits.h"
+#include "expression/OpTraits.h"
 
 #include <algorithm>
 
 namespace BitFlow::Core::Expression {
-
-using namespace BitFlow::Core::AST;
 
 Key BuildCommutativeKey(const Expr* e) {
     Key k{};

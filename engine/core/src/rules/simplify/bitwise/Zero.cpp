@@ -2,21 +2,22 @@
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = AST::Expr;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 
 static Expr* Rewrite_Remove_Zero(Expr& e) {
     std::vector<Expr*> newInputs;
 
     for (Expr* in : e.inputs) {
-        if ((in->op != AST::OpType::Const && in->constValue == 0))
+        if ((in->op != OpType::Const && in->constValue == 0))
             newInputs.push_back(in);
     }
 
@@ -33,9 +34,8 @@ static Expr* Rewrite_Remove_Zero(Expr& e) {
 }
 
 Rule Get_Xor_Zero_Rule() {
-    return Rule{RuleId::Simplify_XorZero, &Match_Zero<AST::OpType::Xor>, &Rewrite_Remove_Zero,
-                Stage_Simplify,           {RuleId::Normalize_Flatten},   RuleFlags::None,
-                "Simplify_XorZero"};
+    return Rule{RuleId::Simplify_XorZero,    &Match_Zero<OpType::Xor>, &Rewrite_Remove_Zero, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::None,          "Simplify_XorZero"};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

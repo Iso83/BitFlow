@@ -4,6 +4,7 @@
 #include <algorithm>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 static bool Match_Xor_Unsorted(const Expr& e) {

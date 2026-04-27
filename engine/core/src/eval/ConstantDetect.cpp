@@ -1,19 +1,22 @@
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/eval/ConstantDetect.h>
+#include <BitFlow/core/expression/OpType.h>
 
 namespace BitFlow::Core::Eval {
 
-bool IsFullyConstant(const AST::Expr* root) {
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
+
+bool IsFullyConstant(const Expr* root) {
     if (root == nullptr)
         return false;
 
-    if (root->op == AST::OpType::Const)
+    if (root->op == OpType::Const)
         return true;
 
-    if (root->op == AST::OpType::Var)
+    if (root->op == OpType::Var)
         return false;
 
-    for (const AST::Expr* in : root->inputs) {
+    for (const Expr* in : root->inputs) {
         if (!IsFullyConstant(in))
             return false;
     }

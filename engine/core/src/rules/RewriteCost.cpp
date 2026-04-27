@@ -1,15 +1,15 @@
-#include "ast/OpTraits.h"
+#include "expression/OpTraits.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/RewriteCost.h>
 #include <tuple>
 
 namespace BitFlow::Core::Rules {
 namespace {
 
-using Expr = AST::Expr;
-using OpType = AST::OpType;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 
 struct CostAccumulator {
     RewriteCost cost{};
@@ -19,7 +19,7 @@ struct CostAccumulator {
             return;
 
         cost.totalNodes += 1U;
-        if (!AST::IsLeaf(expr->op))
+        if (!Expression::IsLeaf(expr->op))
             cost.operatorNodes += 1U;
         if (depth > cost.maxDepth)
             cost.maxDepth = depth;
@@ -34,7 +34,7 @@ struct CostAccumulator {
             }
         }
 
-        if (AST::IsAssociative(expr->op)) {
+        if (Expression::IsAssociative(expr->op)) {
             for (const Expr* in : expr->inputs) {
                 if (in->op == expr->op)
                     cost.nestedAssociativeNodes += 1U;
@@ -48,13 +48,13 @@ struct CostAccumulator {
 
 } // namespace
 
-RewriteCost ComputeRewriteCost(const AST::Expr* expr) {
+RewriteCost ComputeRewriteCost(const Expr* expr) {
     CostAccumulator acc{};
     acc.Visit(expr, 1U);
     return acc.cost;
 }
 
-bool IsRewritePreferred(const AST::Expr* candidate, const AST::Expr* current, RewriteCostPolicy policy) {
+bool IsRewritePreferred(const Expr* candidate, const Expr* current, RewriteCostPolicy policy) {
     if (candidate == nullptr || current == nullptr)
         return false;
 

@@ -1,9 +1,10 @@
-#include <BitFlow/core/ast/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStruct.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 namespace {
@@ -13,7 +14,7 @@ int AssertNoRewrite(RuleEngine& engine, Expr* expr, int maxIterations = 6) {
     BF_TEST(info.stable);
     BF_TEST(!info.cycleDetected());
     BF_TEST(info.iterations <= maxIterations);
-    BF_TEST(BitFlow::Core::AST::StructEqual(info.result, expr));
+    BF_TEST(BitFlow::Core::Expression::StructEqual(info.result, expr));
     return 0;
 }
 

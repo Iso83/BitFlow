@@ -1,8 +1,8 @@
 #pragma once
 
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/OpType.h>
 
-namespace BitFlow::Core::AST {
+namespace BitFlow::Core::Expression {
 
 /*
 Invariant reference per op

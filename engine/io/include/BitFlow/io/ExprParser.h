@@ -1,13 +1,13 @@
 #pragma once
 
-#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/expression/Expression.h>
 #include <string>
 #include <unordered_map>
 
 namespace BitFlow::IO {
 
 struct ParseResult {
-    Core::AST::Expr* root;
+    Core::Expression::Expr* root;
     std::unordered_map<uint32_t, std::string> idToName;
 };
 

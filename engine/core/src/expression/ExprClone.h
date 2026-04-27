@@ -1,11 +1,11 @@
 #pragma once
 
-#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/expression/Expression.h>
 
 namespace BitFlow::Core::Expression {
 
-inline AST::Expr* CloneExpr(const AST::Expr* e) {
-    AST::Expr* n = new AST::Expr{};
+inline Expr* CloneExpr(const Expr* e) {
+    Expr* n = new Expr{};
     n->op = e->op;
     n->constValue = e->constValue;
     n->inputs = e->inputs;

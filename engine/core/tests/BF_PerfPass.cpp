@@ -1,13 +1,14 @@
 #include "codegen/PerfPass.h"
 
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <TestAssert.h>
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
 
 using namespace BitFlow::Core;
+using namespace BitFlow::Core::Expression;
 
 namespace {
 
@@ -26,10 +27,10 @@ const Codegen::Statement* FindById(const std::vector<Codegen::Statement>& stmts,
 
 int main() {
     std::vector<Codegen::Statement> stmts = {
-        {0u, static_cast<uint32_t>(AST::OpType::Xor), {VarId(1), VarId(2)}},
-        {1u, static_cast<uint32_t>(AST::OpType::Xor), {VarId(1), VarId(2)}}, // duplicate subtree
-        {2u, static_cast<uint32_t>(AST::OpType::Add), {0u, 1u}},             // root
-        {3u, static_cast<uint32_t>(AST::OpType::Mul), {VarId(3), VarId(4)}}  // unused
+        {0u, static_cast<uint32_t>(OpType::Xor), {VarId(1), VarId(2)}},
+        {1u, static_cast<uint32_t>(OpType::Xor), {VarId(1), VarId(2)}}, // duplicate subtree
+        {2u, static_cast<uint32_t>(OpType::Add), {0u, 1u}},             // root
+        {3u, static_cast<uint32_t>(OpType::Mul), {VarId(3), VarId(4)}}  // unused
     };
 
     const size_t beforeCount = stmts.size();
@@ -39,7 +40,7 @@ int main() {
     BF_TEST(FindById(stmts, 1u) == nullptr);
     const Codegen::Statement* root = nullptr;
     for (const auto& st : stmts)
-        if (st.op == static_cast<uint32_t>(AST::OpType::Add))
+        if (st.op == static_cast<uint32_t>(OpType::Add))
             root = &st;
 
     BF_TEST(root != nullptr);
@@ -56,10 +57,9 @@ int main() {
 
     // CSE exact match only: (a ^ b) != (b ^ a)
     {
-        std::vector<Codegen::Statement> exactOnly = {
-            {0u, static_cast<uint32_t>(AST::OpType::Xor), {VarId(7), VarId(8)}},
-            {1u, static_cast<uint32_t>(AST::OpType::Xor), {VarId(8), VarId(7)}},
-            {2u, static_cast<uint32_t>(AST::OpType::Add), {0u, 1u}}};
+        std::vector<Codegen::Statement> exactOnly = {{0u, static_cast<uint32_t>(OpType::Xor), {VarId(7), VarId(8)}},
+                                                     {1u, static_cast<uint32_t>(OpType::Xor), {VarId(8), VarId(7)}},
+                                                     {2u, static_cast<uint32_t>(OpType::Add), {0u, 1u}}};
 
         Codegen::ApplyPerfPass(exactOnly, 2u);
         BF_TEST(exactOnly.size() == 3u); // geen CSE op niet-exacte input-volgorde
@@ -75,8 +75,8 @@ int main() {
         };
 
         std::vector<Codegen::Statement> foldable = {
-            {0u, static_cast<uint32_t>(AST::OpType::Add), {kConstTag | 1u, kConstTag | 2u}},
-            {1u, static_cast<uint32_t>(AST::OpType::Xor), {0u, kConstTag | 2u}},
+            {0u, static_cast<uint32_t>(OpType::Add), {kConstTag | 1u, kConstTag | 2u}},
+            {1u, static_cast<uint32_t>(OpType::Xor), {0u, kConstTag | 2u}},
         };
 
         Codegen::ApplyPerfPass(foldable, rootId, constValues, 8u);
@@ -90,7 +90,7 @@ int main() {
     {
         constexpr uint32_t kConstTag = 0x80000000u;
         std::vector<Codegen::Statement> shiftFold = {
-            {0u, static_cast<uint32_t>(AST::OpType::Shl), {kConstTag | 3u, kConstTag | 130u}},
+            {0u, static_cast<uint32_t>(OpType::Shl), {kConstTag | 3u, kConstTag | 130u}},
         };
 
         Codegen::ApplyConstantFolding(shiftFold, 8u);

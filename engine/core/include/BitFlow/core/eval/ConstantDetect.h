@@ -1,9 +1,9 @@
 #pragma once
 
-#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/expression/Expression.h>
 
 namespace BitFlow::Core::Eval {
 
-bool IsFullyConstant(const AST::Expr* root);
+bool IsFullyConstant(const Expression::Expr* root);
 
 } // namespace BitFlow::Core::Eval

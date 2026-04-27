@@ -1,10 +1,11 @@
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 int TestXorXorCancelPair() {

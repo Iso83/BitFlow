@@ -1,19 +1,19 @@
 #include "RuleOrderException.h"
-#include "ast/ExprIntern.h"
 #include "expression/ExprClone.h"
+#include "expression/ExprIntern.h"
 
-#include <BitFlow/core/ast/ExprStruct.h>
-#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/expression/ExprStruct.h>
+#include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <algorithm>
 
 namespace BitFlow::Core::Rules {
 
-using Expr = AST::Expr;
+using Expr = Expression::Expr;
 
 RuleEngine::RuleEngine() {
-    AST::ExprIntern::Reset();
+    Expression::ExprIntern::Reset();
 }
 
 void RuleEngine::AddRule(const Rule& rule) {
@@ -101,7 +101,7 @@ Expr* RuleEngine::ApplyOnce(Expr* expr) const {
                     if (!next)
                         continue;
 
-                    next = AST::ExprIntern::Intern(next);
+                    next = Expression::ExprIntern::Intern(next);
 
                     if (next != expr) {
                         if (m_debugCallback) {
@@ -144,9 +144,9 @@ Expr* RuleEngine::ApplyRecursive(Expr* expr) const {
         n->constValue = expr->constValue;
         n->inputs = std::move(newInputs);
 
-        current = AST::ExprIntern::Intern(n);
+        current = Expression::ExprIntern::Intern(n);
     } else
-        current = AST::ExprIntern::Intern(current);
+        current = Expression::ExprIntern::Intern(current);
 
     return ApplyOnce(current);
 }
@@ -156,25 +156,25 @@ Expr* RuleEngine::ApplyUntilStable(Expr* expr) const {
 }
 
 RewriteResult RuleEngine::RunWithInfo(Expr* expr) const {
-    expr = AST::ExprIntern::Intern(expr);
+    expr = Expression::ExprIntern::Intern(expr);
     std::vector<Expr*> history{};
-    history.push_back(AST::Clone(expr));
+    history.push_back(Expression::Clone(expr));
     constexpr size_t maxIterations = 64;
 
     size_t iterations = 0;
     while (iterations < maxIterations) {
         Expr* next = ApplyRecursive(expr);
-        next = AST::ExprIntern::Intern(next);
+        next = Expression::ExprIntern::Intern(next);
 
-        if (AST::StructEqual(next, expr))
+        if (Expression::StructEqual(next, expr))
             return RewriteResult{next, true, false, static_cast<int>(iterations)};
 
         for (const Expr* prev : history) {
-            if (AST::StructEqual(prev, next))
+            if (Expression::StructEqual(prev, next))
                 return RewriteResult{next, false, true, static_cast<int>(iterations + 1)};
         }
 
-        history.push_back(AST::Clone(next));
+        history.push_back(Expression::Clone(next));
         expr = next;
         ++iterations;
     }

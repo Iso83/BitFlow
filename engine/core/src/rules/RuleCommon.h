@@ -1,11 +1,11 @@
 #pragma once
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 
 namespace BitFlow::Core::Rules {
 
-inline int CompareExprCanonical(const AST::Expr* a, const AST::Expr* b) {
+inline int CompareExprCanonical(const Expression::Expr* a, const Expression::Expr* b) {
     if (a == b)
         return 0;
 
@@ -30,7 +30,7 @@ inline int CompareExprCanonical(const AST::Expr* a, const AST::Expr* b) {
             return inputCmp;
     }
 
-    if (a->op == AST::OpType::Var) {
+    if (a->op == Expression::OpType::Var) {
         if (a->id.value() == b->id.value())
             return 0;
         return a->id.value() < b->id.value() ? -1 : 1;
@@ -39,19 +39,19 @@ inline int CompareExprCanonical(const AST::Expr* a, const AST::Expr* b) {
     return 0;
 }
 
-inline bool CanonicalExprLess(const AST::Expr* a, const AST::Expr* b) {
+inline bool CanonicalExprLess(const Expression::Expr* a, const Expression::Expr* b) {
     return CompareExprCanonical(a, b) < 0;
 }
 
-template <AST::OpType Op> inline bool Match_Zero(const AST::Expr& e) {
+template <Expression::OpType Op> inline bool Match_Zero(const Expression::Expr& e) {
     if (e.op != Op)
         return false;
 
     if (e.inputs.empty())
         return false;
 
-    for (const AST::Expr* in : e.inputs) {
-        if (in->op == AST::OpType::Const && in->constValue == 0)
+    for (const Expression::Expr* in : e.inputs) {
+        if (in->op == Expression::OpType::Const && in->constValue == 0)
             return true;
     }
 

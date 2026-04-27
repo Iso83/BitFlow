@@ -1,8 +1,8 @@
 #include "codegen/PerfPass.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <algorithm>
 #include <cstdint>
 #include <iomanip>
@@ -14,7 +14,7 @@
 
 namespace BitFlow::Core::Codegen {
 
-using namespace AST;
+using namespace Expression;
 
 namespace {
 

@@ -1,22 +1,23 @@
 #include "expression/ExprClone.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
-using Expr = AST::Expr;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 
 static bool Match_Mul_One(const Expr& e) {
-    if (e.op != AST::OpType::Mul)
+    if (e.op != OpType::Mul)
         return false;
 
     for (const Expr* in : e.inputs) {
-        if (in->op == AST::OpType::Const && in->constValue == 1)
+        if (in->op == OpType::Const && in->constValue == 1)
             return true;
     }
 
@@ -28,7 +29,7 @@ static Expr* Rewrite_Mul_One(Expr& e) {
     newInputs.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (!(in->op == AST::OpType::Const && in->constValue == 1))
+        if (!(in->op == OpType::Const && in->constValue == 1))
             newInputs.push_back(in);
     }
 
@@ -44,14 +45,14 @@ static Expr* Rewrite_Mul_One(Expr& e) {
 }
 
 static bool Match_Div_One(const Expr& e) {
-    if (e.op != AST::OpType::Div)
+    if (e.op != OpType::Div)
         return false;
 
     if (e.inputs.size() != 2)
         return false;
 
     const Expr* rhs = e.inputs[1];
-    return rhs->op == AST::OpType::Const && rhs->constValue == 1;
+    return rhs->op == OpType::Const && rhs->constValue == 1;
 }
 
 static Expr* Rewrite_Div_One(Expr& e) {

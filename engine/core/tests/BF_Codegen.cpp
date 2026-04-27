@@ -4,6 +4,7 @@
 #include <TestAssert.h>
 
 using namespace BitFlow::Core;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Testing;
 
 int main() {

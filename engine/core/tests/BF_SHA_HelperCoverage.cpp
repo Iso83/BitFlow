@@ -1,6 +1,6 @@
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen/Emitter.h>
 #include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ProfileEngines.h>
@@ -9,12 +9,11 @@
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Rules;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Testing::SHA;
 
 namespace {
-
-using OpType = AST::OpType;
 
 uint32_t RotR32(uint32_t x, uint32_t amount) {
     const uint32_t s = amount & 31U;

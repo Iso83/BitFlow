@@ -1,11 +1,11 @@
-#include <BitFlow/core/ast/ExprStruct.h>
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/ExprStruct.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <Core_Expr.h>
 #include <ProfileEngines.h>
 #include <SHA_Expr.h>
 #include <TestAssert.h>
 
-using namespace BitFlow::Core::AST;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Testing::SHA;
 

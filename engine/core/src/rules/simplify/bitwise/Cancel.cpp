@@ -3,9 +3,9 @@
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <algorithm>
 #include <unordered_map>
@@ -13,8 +13,6 @@
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = AST::Expr;
-using OpType = AST::OpType;
 using namespace BitFlow::Core::Expression;
 
 static Expr* BuildXorParityResult(const std::vector<Expr*>& terms) {
@@ -29,7 +27,7 @@ static Expr* BuildXorParityResult(const std::vector<Expr*>& terms) {
 
 #pragma region Match
 static bool Match_And_Cancel(const Expr& e) {
-    if (e.op != AST::OpType::And)
+    if (e.op != OpType::And)
         return false;
 
     if (e.inputs.size() < 2)
@@ -50,7 +48,7 @@ static bool Match_And_Cancel(const Expr& e) {
 }
 
 static bool Match_Or_Cancel(const Expr& e) {
-    if (e.op != AST::OpType::Or)
+    if (e.op != OpType::Or)
         return false;
 
     if (e.inputs.size() < 2)

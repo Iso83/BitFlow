@@ -1,6 +1,6 @@
 #pragma once
 
-namespace BitFlow::Core::AST {
+namespace BitFlow::Core::Expression {
 
 enum class OpType {
     // --- Leaf ---
@@ -37,4 +37,4 @@ enum class OpType {
     Maj,
 };
 
-} // namespace BitFlow::Core::AST
+}

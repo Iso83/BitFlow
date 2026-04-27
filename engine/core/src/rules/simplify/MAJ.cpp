@@ -1,14 +1,14 @@
 #include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Simplify {
 
-using Expr = AST::Expr;
-using OpType = AST::OpType;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 
 static bool SameExpr(const Expr* a, const Expr* b) {
     return a && b && a->id.value() == b->id.value();

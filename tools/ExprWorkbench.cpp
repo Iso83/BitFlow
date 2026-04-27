@@ -1,10 +1,10 @@
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen/Emitter.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 #include <BitFlow/core/eval/ConstantDetect.h>
 #include <BitFlow/core/eval/ConstantEval.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/ids/ExprId.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
@@ -25,8 +25,8 @@
 namespace {
 
 using namespace BitFlow;
-using Expr = Core::AST::Expr;
-using OpType = Core::AST::OpType;
+using Expr = Core::Expression::Expr;
+using OpType = Core::Expression::OpType;
 
 struct CliOptions {
     std::string expr;

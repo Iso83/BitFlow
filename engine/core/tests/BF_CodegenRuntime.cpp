@@ -16,6 +16,7 @@
 #include <vector>
 
 using namespace BitFlow::Core;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Testing;
 
 namespace {
@@ -273,7 +274,7 @@ int main() {
     auto mB = MakeVar(41);
     auto out1 = MakeOp(42, OpType::Add, {mA, mB});
     auto out2 = MakeOp(43, OpType::Xor, {mA, mB});
-    std::vector<const AST::Expr*> outputs = {out1, out2};
+    std::vector<const Expr*> outputs = {out1, out2};
     auto multiFn = Codegen::EmitCFunctionMulti(outputs, 32);
     const auto support32 = Codegen::EmitCRuntimeSupport(32);
     BF_TEST(CompileAndRunWrapper(multiFn, "f(5u, 7u).out1", support32) == 12ull);
@@ -310,7 +311,7 @@ int main() {
     auto wB = MakeVar(171);
     auto wOut1 = MakeOp(172, OpType::Add, {wA, wB});
     auto wOut2 = MakeOp(173, OpType::RotL, {MakeOp(174, OpType::Xor, {wA, wB}), MakeConst(175, 17)});
-    std::vector<const AST::Expr*> wideOutputs = {wOut1, wOut2};
+    std::vector<const Expr*> wideOutputs = {wOut1, wOut2};
     auto wideMultiFn = Codegen::EmitCFunctionMulti(wideOutputs, 128);
     BF_TEST(CompileWrapperOnly(wideMultiFn, support128,
                                "auto r = f(bf_uint(0x1020304050607080ull, 128), "

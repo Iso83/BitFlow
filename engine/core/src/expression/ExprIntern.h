@@ -3,10 +3,10 @@
 #include "expression/ExprKey.h"
 #include "expression/ExprKeyHash.h"
 
-#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/expression/Expression.h>
 #include <unordered_map>
 
-namespace BitFlow::Core::AST {
+namespace BitFlow::Core::Expression {
 
 class ExprIntern {
   public:

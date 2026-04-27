@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 
 int TestExprPrinter_WithCustomNames() {
     auto a = MakeVar(1);

@@ -1,6 +1,6 @@
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/ids/ExprId.h>
 #include <BitFlow/io/ExprParser.h>
 #include <BitFlow/io/lexer/Lexer.h>
@@ -15,8 +15,8 @@
 
 namespace BitFlow::IO {
 
-using Expr = BitFlow::Core::AST::Expr;
-using OpType = BitFlow::Core::AST::OpType;
+using Expr = BitFlow::Core::Expression::Expr;
+using OpType = BitFlow::Core::Expression::OpType;
 using Token = BitFlow::IO::Lexer::Token;
 using TokenKind = BitFlow::IO::Lexer::TokenKind;
 

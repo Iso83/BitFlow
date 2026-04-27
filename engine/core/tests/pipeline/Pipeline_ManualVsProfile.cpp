@@ -1,9 +1,10 @@
-#include <BitFlow/core/ast/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStruct.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 namespace {
@@ -16,7 +17,7 @@ int AssertSameCanonicalOutput(RuleEngine& a, Expr* inputA, RuleEngine& b, Expr* 
     BF_TEST(!outA.cycleDetected());
     BF_TEST(outB.stable);
     BF_TEST(!outB.cycleDetected());
-    BF_TEST(BitFlow::Core::AST::StructEqual(outA.result, outB.result));
+    BF_TEST(BitFlow::Core::Expression::StructEqual(outA.result, outB.result));
     return 0;
 }
 

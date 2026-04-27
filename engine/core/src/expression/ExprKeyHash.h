@@ -2,7 +2,7 @@
 
 #include <vector>
 
-namespace BitFlow::Core ::Expression {
+namespace BitFlow::Core::Expression {
 
 struct ExprKey;
 

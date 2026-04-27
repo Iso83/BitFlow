@@ -1,8 +1,8 @@
 #include "expression/ExprClone.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
 #include <unordered_set>
@@ -10,8 +10,8 @@
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = AST::Expr;
-using OpType = AST::OpType;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 
 #pragma region Match
 static bool Match_Idempotent(const Expr& e) {
@@ -36,7 +36,7 @@ static bool Match_Idempotent(const Expr& e) {
 }
 
 static bool Match_And_Idempotent(const Expr& e) {
-    if (e.op != AST::OpType::And || e.inputs.size() < 2)
+    if (e.op != OpType::And || e.inputs.size() < 2)
         return false;
 
     std::unordered_set<const Expr*> seen;

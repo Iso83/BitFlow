@@ -1,11 +1,11 @@
 #pragma once
 
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/ids/ExprId.h>
 #include <cstdint>
 #include <vector>
 
-namespace BitFlow::Core::AST {
+namespace BitFlow::Core::Expression {
 
 struct Expr {
     Ids::ExprId id{};
@@ -14,9 +14,6 @@ struct Expr {
 
     // TODO: not here!
     uint32_t constValue{0};
-
-    // TODO: not here!
-    bool frozen = false;
 };
 
 } // namespace BitFlow::Core::AST

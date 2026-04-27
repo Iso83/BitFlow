@@ -1,8 +1,8 @@
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/codegen/Emitter.h>
 #include <BitFlow/core/codegen/TypeMap.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <set>
 #include <sstream>
 #include <string>
@@ -11,7 +11,7 @@
 
 namespace BitFlow::Core::Codegen {
 
-using namespace AST;
+using namespace Expression;
 
 namespace {
 

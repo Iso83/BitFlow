@@ -5,7 +5,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace BitFlow::Core::AST {
+namespace BitFlow::Core::Expression {
 struct Expr;
 }
 
@@ -79,8 +79,8 @@ enum class RuleId {
 
 struct Rule {
     RuleId id;
-    bool (*match)(const AST::Expr&);
-    AST::Expr* (*rewrite)(AST::Expr&);
+    bool (*match)(const Expression::Expr&);
+    Expression::Expr* (*rewrite)(Expression::Expr&);
     int stage;
 
     uint32_t Id{0};
@@ -88,8 +88,8 @@ struct Rule {
     std::vector<uint32_t> Dependencies{};
     uint32_t Flags{RuleFlags::None};
 
-    Rule(RuleId ruleId, bool (*ruleMatch)(const AST::Expr&), AST::Expr* (*ruleRewrite)(AST::Expr&), int ruleStage,
-         std::vector<RuleId> deps, uint32_t ruleFlags, const char* ruleName)
+    Rule(RuleId ruleId, bool (*ruleMatch)(const Expression::Expr&), Expression::Expr* (*ruleRewrite)(Expression::Expr&),
+         int ruleStage, std::vector<RuleId> deps, uint32_t ruleFlags, const char* ruleName)
         : id(ruleId), match(ruleMatch), rewrite(ruleRewrite), stage(ruleStage), Id(static_cast<uint32_t>(ruleId)),
           Name(ruleName), Flags(ruleFlags) {
         Dependencies.reserve(deps.size());

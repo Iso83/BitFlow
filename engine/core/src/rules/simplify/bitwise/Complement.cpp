@@ -1,14 +1,14 @@
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = AST::Expr;
-using OpType = AST::OpType;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 using ConstPool = Expression::ConstPool;
 
 static bool IsNotOf(Expr* a, Expr* b) {

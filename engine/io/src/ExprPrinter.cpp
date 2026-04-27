@@ -1,12 +1,12 @@
-#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/io/ExprPrinter.h>
 #include <cstddef>
 #include <sstream>
 
 namespace BitFlow::IO {
 
-using Expr = Core::AST::Expr;
-using OpType = Core::AST::OpType;
+using Expr = Core::Expression::Expr;
+using OpType = Core::Expression::OpType;
 
 struct InfixInfo {
     int precedence = 0;

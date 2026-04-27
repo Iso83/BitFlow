@@ -1,4 +1,4 @@
-#include <BitFlow/core/ast/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStruct.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
@@ -7,13 +7,14 @@
 #include <string>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 namespace {
 
 bool IsStable(RuleEngine& engine, Expr* expr) {
     Expr* next = engine.ApplyOnce(expr);
-    return BitFlow::Core::AST::StructEqual(expr, next);
+    return BitFlow::Core::Expression::StructEqual(expr, next);
 }
 
 int Test_Pipeline_SHA_Safe() {

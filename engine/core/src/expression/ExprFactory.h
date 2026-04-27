@@ -1,16 +1,16 @@
 #pragma once
 
-#include "ast/ExprIntern.h"
+#include "expression/ExprIntern.h"
 
-#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/expression/Expression.h>
 
 namespace BitFlow::Core::Expression {
 
-inline AST::Expr* MakeOpInterned(AST::OpType op, std::vector<AST::Expr*> inputs) {
-    auto* e = new AST::Expr{};
+inline Expr* MakeOpInterned(OpType op, std::vector<Expr*> inputs) {
+    auto* e = new Expr{};
     e->op = op;
     e->inputs = std::move(inputs);
-    return AST::ExprIntern::Intern(e);
+    return ExprIntern::Intern(e);
 }
 
 } // namespace BitFlow::Core::Expression

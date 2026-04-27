@@ -1,9 +1,9 @@
 #include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/RewriteCost.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
@@ -11,9 +11,6 @@
 
 namespace BitFlow::Core::Rules::Factorize::Arithmetic {
 
-using Expr = AST::Expr;
-using OpType = AST::OpType;
-using ConstPool = Expression::ConstPool;
 using namespace BitFlow::Core::Expression;
 
 struct LinearTerm {

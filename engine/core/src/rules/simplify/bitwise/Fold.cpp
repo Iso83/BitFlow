@@ -1,19 +1,20 @@
 #include "expression/ExprClone.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = AST::Expr;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 
 #pragma region Match
 static bool Match_And_Fold(const Expr& e) {
-    if (e.op != AST::OpType::And)
+    if (e.op != OpType::And)
         return false;
 
     if (e.inputs.size() < 2)
@@ -23,7 +24,7 @@ static bool Match_And_Fold(const Expr& e) {
 }
 
 static bool Match_Or_Fold(const Expr& e) {
-    if (e.op != AST::OpType::Or)
+    if (e.op != OpType::Or)
         return false;
 
     if (e.inputs.size() < 2)
@@ -33,7 +34,7 @@ static bool Match_Or_Fold(const Expr& e) {
 }
 
 static bool Match_Xor_Fold(const Expr& e) {
-    if (e.op != AST::OpType::Xor)
+    if (e.op != OpType::Xor)
         return false;
 
     if (e.inputs.size() < 2)
@@ -42,7 +43,7 @@ static bool Match_Xor_Fold(const Expr& e) {
     int constCount = 0;
 
     for (const Expr* in : e.inputs) {
-        if (in->op == AST::OpType::Const)
+        if (in->op == OpType::Const)
             constCount++;
     }
 
@@ -55,10 +56,10 @@ static Expr* Rewrite_And_Fold(Expr& e) {
     std::vector<Expr*> newInputs;
 
     for (Expr* in : e.inputs) {
-        if (in->op == AST::OpType::Const && in->constValue == 0)
+        if (in->op == OpType::Const && in->constValue == 0)
             return Expression::ConstPool::Get(0);
 
-        if (in->op == AST::OpType::Const && in->constValue == 1)
+        if (in->op == OpType::Const && in->constValue == 1)
             continue;
 
         newInputs.push_back(in);
@@ -79,10 +80,10 @@ static Expr* Rewrite_Or_Fold(Expr& e) {
     std::vector<Expr*> newInputs;
 
     for (Expr* in : e.inputs) {
-        if (in->op == AST::OpType::Const && in->constValue == 1)
+        if (in->op == OpType::Const && in->constValue == 1)
             return Expression::ConstPool::Get(1);
 
-        if (in->op == AST::OpType::Const && in->constValue == 0)
+        if (in->op == OpType::Const && in->constValue == 0)
             continue;
 
         newInputs.push_back(in);
@@ -105,7 +106,7 @@ static Expr* Rewrite_Xor_Fold(Expr& e) {
     nonConst.reserve(e.inputs.size());
 
     for (Expr* in : e.inputs) {
-        if (in->op == AST::OpType::Const)
+        if (in->op == OpType::Const)
             acc ^= in->constValue;
         else
             nonConst.push_back(in);

@@ -2,21 +2,22 @@
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/ast/Expression.h>
-#include <BitFlow/core/ast/OpType.h>
 #include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
-using Expr = AST::Expr;
+using Expr = Expression::Expr;
+using OpType = Expression::OpType;
 
 static Expr* Rewrite_Add_Zero(Expr& e) {
     std::vector<Expr*> newInputs;
 
     for (Expr* in : e.inputs) {
-        if (!(in->op == AST::OpType::Const && in->constValue == 0))
+        if (!(in->op == OpType::Const && in->constValue == 0))
             newInputs.push_back(in);
     }
 
@@ -37,14 +38,14 @@ static Expr* Rewrite_Mul_Zero(Expr&) {
 }
 
 static bool Match_Sub_Zero(const Expr& e) {
-    if (e.op != AST::OpType::Sub)
+    if (e.op != OpType::Sub)
         return false;
 
     if (e.inputs.size() != 2)
         return false;
 
     const Expr* rhs = e.inputs[1];
-    return rhs->op == AST::OpType::Const && rhs->constValue == 0;
+    return rhs->op == OpType::Const && rhs->constValue == 0;
 }
 
 static Expr* Rewrite_Sub_Zero(Expr& e) {
@@ -52,14 +53,14 @@ static Expr* Rewrite_Sub_Zero(Expr& e) {
 }
 
 static bool Match_Mod_Zero(const Expr& e) {
-    if (e.op != AST::OpType::Mod)
+    if (e.op != OpType::Mod)
         return false;
 
     if (e.inputs.size() != 2)
         return false;
 
     const Expr* rhs = e.inputs[1];
-    return rhs->op == AST::OpType::Const && rhs->constValue == 0;
+    return rhs->op == OpType::Const && rhs->constValue == 0;
 }
 
 static Expr* Rewrite_Mod_Zero_Guard(Expr&) {
@@ -70,9 +71,9 @@ static Expr* Rewrite_Mod_Zero_Guard(Expr&) {
 
 static bool Match_Shift_Zero(const Expr& e) {
     switch (e.op) {
-    case AST::OpType::Shl:
-    case AST::OpType::Shr:
-    case AST::OpType::UShr:
+    case OpType::Shl:
+    case OpType::Shr:
+    case OpType::UShr:
         break;
     default:
         return false;
@@ -82,7 +83,7 @@ static bool Match_Shift_Zero(const Expr& e) {
         return false;
 
     const Expr* rhs = e.inputs[1];
-    return rhs->op == AST::OpType::Const && rhs->constValue == 0;
+    return rhs->op == OpType::Const && rhs->constValue == 0;
 }
 
 static Expr* Rewrite_Shift_Zero(Expr& e) {
@@ -91,8 +92,8 @@ static Expr* Rewrite_Shift_Zero(Expr& e) {
 
 static bool Match_Rotate_Modulo_Bitwidth(const Expr& e) {
     switch (e.op) {
-    case AST::OpType::RotL:
-    case AST::OpType::RotR:
+    case OpType::RotL:
+    case OpType::RotR:
         break;
     default:
         return false;
@@ -102,7 +103,7 @@ static bool Match_Rotate_Modulo_Bitwidth(const Expr& e) {
         return false;
 
     const Expr* rhs = e.inputs[1];
-    if (rhs->op != AST::OpType::Const)
+    if (rhs->op != OpType::Const)
         return false;
 
     constexpr uint32_t kBitWidth = 32;
@@ -124,13 +125,13 @@ static Expr* Rewrite_Rotate_Modulo_Bitwidth(Expr& e) {
 }
 
 Rule Get_Add_Zero_Rule() {
-    return Rule{RuleId::Simplify_AddZero,    &Match_Zero<AST::OpType::Add>, &Rewrite_Add_Zero, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic,         "Simplify_AddZero"};
+    return Rule{RuleId::Simplify_AddZero,    &Match_Zero<OpType::Add>, &Rewrite_Add_Zero, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic,    "Simplify_AddZero"};
 }
 
 Rule Get_Mul_Zero_Rule() {
-    return Rule{RuleId::Simplify_MulZero,    &Match_Zero<AST::OpType::Mul>, &Rewrite_Mul_Zero, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic,         "Simplify_MulZero"};
+    return Rule{RuleId::Simplify_MulZero,    &Match_Zero<OpType::Mul>, &Rewrite_Mul_Zero, Stage_Simplify,
+                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic,    "Simplify_MulZero"};
 }
 
 Rule Get_Sub_Zero_Rule() {

@@ -4,7 +4,7 @@
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Rules;
-using BitFlow::Core::AST::OpType;
+using namespace BitFlow::Core::Expression;
 
 int TestRewriteCostCapturesCoreShapeSignals() {
     Expr* a = MakeVar(1);

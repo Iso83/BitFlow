@@ -4,6 +4,7 @@
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 int TestAndIdempotent() {
@@ -79,7 +80,6 @@ int TestAndIdempotentFrozen() {
     auto b = MakeVar(2);
 
     auto expr = MakeOp(30, OpType::And, {a, b, a});
-    expr->frozen = true;
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());

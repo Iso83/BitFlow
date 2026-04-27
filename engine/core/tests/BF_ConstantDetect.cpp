@@ -4,6 +4,7 @@
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Eval;
+using namespace BitFlow::Core::Expression;
 
 int TestDetect_NullIsFalse() {
     BF_TEST(!IsFullyConstant(nullptr));

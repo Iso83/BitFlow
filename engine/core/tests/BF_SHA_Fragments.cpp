@@ -8,13 +8,11 @@
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Rules;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Testing::SHA;
 
 namespace {
-
-using Expr = AST::Expr;
-using OpType = AST::OpType;
 
 bool ContainsOp(const Expr* root, OpType op) {
     if (root == nullptr)

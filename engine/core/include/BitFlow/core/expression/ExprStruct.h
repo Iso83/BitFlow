@@ -1,10 +1,10 @@
 #pragma once
 
-#include <BitFlow/core/ast/Expression.h>
+#include <BitFlow/core/expression/Expression.h>
 #include <cstddef>
 #include <unordered_map>
 
-namespace BitFlow::Core::AST {
+namespace BitFlow::Core::Expression {
 
 inline Expr* Clone(const Expr* expr) {
     std::unordered_map<const Expr*, Expr*> cloned{};
@@ -18,7 +18,6 @@ inline Expr* Clone(const Expr* expr) {
         out->id = node->id;
         out->op = node->op;
         out->constValue = node->constValue;
-        out->frozen = node->frozen;
         cloned.emplace(node, out);
 
         out->inputs.reserve(node->inputs.size());
@@ -59,5 +58,4 @@ inline bool StructEqual(const Expr* a, const Expr* b) {
 
     return eqNode(eqNode, a, b);
 }
-
-} // namespace BitFlow::Core::AST
+} // namespace BitFlow::Core::Expression

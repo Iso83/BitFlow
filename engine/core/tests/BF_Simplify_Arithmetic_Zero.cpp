@@ -5,6 +5,7 @@
 #include <vector>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 static RuleEngine MakeEngine_Add() {

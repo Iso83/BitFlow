@@ -1,6 +1,6 @@
 #include "PerfPass.h"
 
-#include <BitFlow/core/ast/OpType.h>
+#include <BitFlow/core/expression/OpType.h>
 #include <functional>
 #include <queue>
 #include <unordered_map>
@@ -8,6 +8,9 @@
 
 namespace BitFlow::Core::Codegen {
 namespace {
+
+using OpType = Expression::OpType;
+
 constexpr uint32_t kVarTag = 0x40000000u;
 constexpr uint32_t kConstTag = 0x80000000u;
 
@@ -29,42 +32,42 @@ uint32_t NormalizeShift(uint64_t amount, uint32_t bitWidth) {
 
 bool TryFoldPureOp(uint32_t op, const std::vector<uint64_t>& in, uint32_t bitWidth, uint64_t& outValue) {
     const uint64_t mask = MaskFor(bitWidth);
-    const AST::OpType opType = static_cast<AST::OpType>(op);
+    const OpType opType = static_cast<OpType>(op);
 
     switch (opType) {
-    case AST::OpType::Not:
+    case OpType::Not:
         if (in.size() != 1)
             return false;
         outValue = (~in[0]) & mask;
         return true;
-    case AST::OpType::Neg:
+    case OpType::Neg:
         if (in.size() != 1)
             return false;
         outValue = (~in[0] + 1ULL) & mask;
         return true;
-    case AST::OpType::And:
-    case AST::OpType::Or:
-    case AST::OpType::Xor:
-    case AST::OpType::Add:
-    case AST::OpType::Mul:
+    case OpType::And:
+    case OpType::Or:
+    case OpType::Xor:
+    case OpType::Add:
+    case OpType::Mul:
         if (in.empty())
             return false;
         outValue = in[0] & mask;
         for (size_t i = 1; i < in.size(); ++i) {
             switch (opType) {
-            case AST::OpType::And:
+            case OpType::And:
                 outValue &= in[i];
                 break;
-            case AST::OpType::Or:
+            case OpType::Or:
                 outValue |= in[i];
                 break;
-            case AST::OpType::Xor:
+            case OpType::Xor:
                 outValue ^= in[i];
                 break;
-            case AST::OpType::Add:
+            case OpType::Add:
                 outValue += in[i];
                 break;
-            case AST::OpType::Mul:
+            case OpType::Mul:
                 outValue *= in[i];
                 break;
             default:
@@ -73,38 +76,38 @@ bool TryFoldPureOp(uint32_t op, const std::vector<uint64_t>& in, uint32_t bitWid
             outValue &= mask;
         }
         return true;
-    case AST::OpType::Sub:
-    case AST::OpType::Div:
-    case AST::OpType::Mod:
-    case AST::OpType::Shl:
-    case AST::OpType::Shr:
-    case AST::OpType::UShr:
-    case AST::OpType::RotL:
-    case AST::OpType::RotR:
+    case OpType::Sub:
+    case OpType::Div:
+    case OpType::Mod:
+    case OpType::Shl:
+    case OpType::Shr:
+    case OpType::UShr:
+    case OpType::RotL:
+    case OpType::RotR:
         if (in.size() != 2)
             return false;
         switch (opType) {
-        case AST::OpType::Sub:
+        case OpType::Sub:
             outValue = (in[0] - in[1]) & mask;
             return true;
-        case AST::OpType::Div:
+        case OpType::Div:
             if (in[1] == 0)
                 return false;
             outValue = (in[0] / in[1]) & mask;
             return true;
-        case AST::OpType::Mod:
+        case OpType::Mod:
             if (in[1] == 0)
                 return false;
             outValue = (in[0] % in[1]) & mask;
             return true;
-        case AST::OpType::Shl:
+        case OpType::Shl:
             outValue = (in[0] << NormalizeShift(in[1], bitWidth)) & mask;
             return true;
-        case AST::OpType::Shr:
-        case AST::OpType::UShr:
+        case OpType::Shr:
+        case OpType::UShr:
             outValue = (in[0] >> NormalizeShift(in[1], bitWidth)) & mask;
             return true;
-        case AST::OpType::RotL: {
+        case OpType::RotL: {
             const uint32_t shift = NormalizeShift(in[1], bitWidth);
             if (shift == 0) {
                 outValue = in[0] & mask;
@@ -113,7 +116,7 @@ bool TryFoldPureOp(uint32_t op, const std::vector<uint64_t>& in, uint32_t bitWid
             outValue = ((in[0] << shift) | (in[0] >> (bitWidth - shift))) & mask;
             return true;
         }
-        case AST::OpType::RotR: {
+        case OpType::RotR: {
             const uint32_t shift = NormalizeShift(in[1], bitWidth);
             if (shift == 0) {
                 outValue = in[0] & mask;
@@ -125,18 +128,18 @@ bool TryFoldPureOp(uint32_t op, const std::vector<uint64_t>& in, uint32_t bitWid
         default:
             return false;
         }
-    case AST::OpType::Ch:
-    case AST::OpType::Maj:
+    case OpType::Ch:
+    case OpType::Maj:
         if (in.size() != 3)
             return false;
-        if (opType == AST::OpType::Ch) {
+        if (opType == OpType::Ch) {
             outValue = ((in[0] & in[1]) ^ ((~in[0]) & in[2])) & mask;
             return true;
         }
         outValue = ((in[0] & in[1]) ^ (in[0] & in[2]) ^ (in[1] & in[2])) & mask;
         return true;
-    case AST::OpType::Var:
-    case AST::OpType::Const:
+    case OpType::Var:
+    case OpType::Const:
     default:
         return false;
     }
@@ -153,32 +156,32 @@ bool EvalOp(uint32_t op, const std::vector<uint64_t>& in, uint64_t& out, uint32_
     const uint32_t shift = static_cast<uint32_t>(in[1] % static_cast<uint64_t>(bw));
 
     switch (op) {
-    case (uint32_t)AST::OpType::Add:
+    case (uint32_t)OpType::Add:
         out = Mask(a + in[1], bw);
         return true;
-    case (uint32_t)AST::OpType::Sub:
+    case (uint32_t)OpType::Sub:
         out = Mask(a - in[1], bw);
         return true;
-    case (uint32_t)AST::OpType::Mul:
+    case (uint32_t)OpType::Mul:
         out = Mask(a * in[1], bw);
         return true;
-    case (uint32_t)AST::OpType::And:
+    case (uint32_t)OpType::And:
         out = Mask(a & in[1], bw);
         return true;
-    case (uint32_t)AST::OpType::Or:
+    case (uint32_t)OpType::Or:
         out = Mask(a | in[1], bw);
         return true;
-    case (uint32_t)AST::OpType::Xor:
+    case (uint32_t)OpType::Xor:
         out = Mask(a ^ in[1], bw);
         return true;
-    case (uint32_t)AST::OpType::Shl:
+    case (uint32_t)OpType::Shl:
         out = Mask(a << shift, bw);
         return true;
-    case (uint32_t)AST::OpType::Shr:
-    case (uint32_t)AST::OpType::UShr:
+    case (uint32_t)OpType::Shr:
+    case (uint32_t)OpType::UShr:
         out = Mask(a >> shift, bw);
         return true;
-    case (uint32_t)AST::OpType::RotL: {
+    case (uint32_t)OpType::RotL: {
         if (shift == 0) {
             out = a;
             return true;
@@ -186,7 +189,7 @@ bool EvalOp(uint32_t op, const std::vector<uint64_t>& in, uint64_t& out, uint32_
         out = Mask((a << shift) | (a >> (bw - shift)), bw);
         return true;
     }
-    case (uint32_t)AST::OpType::RotR: {
+    case (uint32_t)OpType::RotR: {
         if (shift == 0) {
             out = a;
             return true;
