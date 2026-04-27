@@ -40,8 +40,8 @@ int TestBigSigma0_PermutationCanonicalizes() {
     auto a = b.Xor({b.RotR(x, 2), b.RotR(x, 13), b.RotR(x, 22)});
     auto c = b.Xor({b.RotR(x, 22), b.RotR(x, 2), b.RotR(x, 13)});
 
-    auto ra = MakeSigmaNormalizeEngine().ApplyUntilStable(a);
-    auto rc = MakeSigmaNormalizeEngine().ApplyUntilStable(c);
+    auto ra = MakeSigmaNormalizeEngine().Rewrite(a);
+    auto rc = MakeSigmaNormalizeEngine().Rewrite(c);
 
     BF_TEST(ExprSignature(ra) == ExprSignature(rc));
     BF_TEST(Codegen::EmitCExpr(ra, 32).find("bf_rotr") != std::string::npos);
@@ -54,8 +54,8 @@ int TestBigSigma1_PermutationCanonicalizes() {
     auto a = b.Xor({b.RotR(x, 6), b.RotR(x, 11), b.RotR(x, 25)});
     auto c = b.Xor({b.RotR(x, 25), b.RotR(x, 6), b.RotR(x, 11)});
 
-    auto ra = MakeSigmaNormalizeEngine().ApplyUntilStable(a);
-    auto rc = MakeSigmaNormalizeEngine().ApplyUntilStable(c);
+    auto ra = MakeSigmaNormalizeEngine().Rewrite(a);
+    auto rc = MakeSigmaNormalizeEngine().Rewrite(c);
 
     BF_TEST(ExprSignature(ra) == ExprSignature(rc));
     BF_TEST(Codegen::EmitCExpr(ra, 32).find("bf_rotr") != std::string::npos);
@@ -68,8 +68,8 @@ int TestSmallSigma0_PermutationCanonicalizes() {
     auto a = b.Xor({b.RotR(x, 7), b.RotR(x, 18), MakeOp(17000, OpType::Shr, {x, b.Const(3)})});
     auto c = b.Xor({MakeOp(17001, OpType::Shr, {x, b.Const(3)}), b.RotR(x, 18), b.RotR(x, 7)});
 
-    auto ra = MakeSigmaNormalizeEngine().ApplyUntilStable(a);
-    auto rc = MakeSigmaNormalizeEngine().ApplyUntilStable(c);
+    auto ra = MakeSigmaNormalizeEngine().Rewrite(a);
+    auto rc = MakeSigmaNormalizeEngine().Rewrite(c);
 
     BF_TEST(ExprSignature(ra) == ExprSignature(rc));
     const auto emitted = Codegen::EmitCExpr(ra, 32);
@@ -84,8 +84,8 @@ int TestSmallSigma1_PermutationCanonicalizes() {
     auto a = b.Xor({b.RotR(x, 17), b.RotR(x, 19), MakeOp(17002, OpType::Shr, {x, b.Const(10)})});
     auto c = b.Xor({b.RotR(x, 19), MakeOp(17003, OpType::Shr, {x, b.Const(10)}), b.RotR(x, 17)});
 
-    auto ra = MakeSigmaNormalizeEngine().ApplyUntilStable(a);
-    auto rc = MakeSigmaNormalizeEngine().ApplyUntilStable(c);
+    auto ra = MakeSigmaNormalizeEngine().Rewrite(a);
+    auto rc = MakeSigmaNormalizeEngine().Rewrite(c);
 
     BF_TEST(ExprSignature(ra) == ExprSignature(rc));
     const auto emitted = Codegen::EmitCExpr(ra, 32);
@@ -100,7 +100,7 @@ int TestDuplicatePairCancelsToZero() {
         MakeOp(20, OpType::Xor,
                {MakeOp(21, OpType::RotR, {x, MakeConst(22, 2)}), MakeOp(23, OpType::RotR, {x, MakeConst(24, 2)})});
 
-    Expr* r = MakeSigmaNormalizeEngine().ApplyUntilStable(expr);
+    Expr* r = MakeSigmaNormalizeEngine().Rewrite(expr);
     BF_TEST(r->op == OpType::Const);
     BF_TEST(r->constValue == 0);
     return 0;
@@ -113,7 +113,7 @@ int TestDuplicateWithMiddleTermLeavesSingle() {
         30, OpType::Xor,
         {MakeOp(33, OpType::RotR, {x, MakeConst(34, 2)}), keep, MakeOp(35, OpType::RotR, {x, MakeConst(36, 2)})});
 
-    Expr* r = MakeSigmaNormalizeEngine().ApplyUntilStable(expr);
+    Expr* r = MakeSigmaNormalizeEngine().Rewrite(expr);
     BF_TEST(r == keep);
     return 0;
 }

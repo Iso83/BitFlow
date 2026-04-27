@@ -29,7 +29,7 @@ bool ContainsOp(const Expr* root, OpType op) {
 int TestSimplify_CH_EliminatedAndEquivalent() {
     Builder b;
     auto expr = b.Ch(b.Var(), b.Const(50U), b.Const(30U));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
 
@@ -41,7 +41,7 @@ int TestSimplify_CH_EliminatedAndEquivalent() {
 int TestSimplify_MAJ_EliminatedAndEquivalent() {
     Builder b;
     auto expr = b.Maj(b.Var(), b.Const(50U), b.Const(30U));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Maj));
 
@@ -57,7 +57,7 @@ int TestSimplify_CH_ConstantSemantics() {
     constexpr uint32_t z = 30U;
 
     auto expr = b.Ch(b.Const(x), b.Const(y), b.Const(z));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     const auto eval = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
@@ -72,7 +72,7 @@ int TestSimplify_MAJ_ConstantSemantics() {
     constexpr uint32_t z = 30U;
 
     auto expr = b.Maj(b.Const(x), b.Const(y), b.Const(z));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     const auto eval = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);

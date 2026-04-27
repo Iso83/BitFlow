@@ -35,7 +35,7 @@ int TestAndXorReduction_RightXor() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
@@ -55,7 +55,7 @@ int TestAndXorReduction_LeftXor() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
@@ -78,7 +78,7 @@ int TestAndXorReduction_MultiArgAnd() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(HasInput(r, c));

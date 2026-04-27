@@ -1,4 +1,4 @@
-#include <BitFlow/core/expression/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
@@ -10,7 +10,7 @@ using namespace BitFlow::Core::Rules;
 namespace {
 
 int AssertNoRewrite(RuleEngine& engine, Expr* expr, int maxIterations = 6) {
-    const RewriteResult info = engine.RunWithInfo(expr);
+    const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(info.stable);
     BF_TEST(!info.cycleDetected());
     BF_TEST(info.iterations <= maxIterations);

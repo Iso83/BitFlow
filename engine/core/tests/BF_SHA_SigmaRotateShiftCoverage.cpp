@@ -1,4 +1,4 @@
-#include <BitFlow/core/expression/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/OpType.h>
 #include <Core_Expr.h>
 #include <ProfileEngines.h>
@@ -26,8 +26,8 @@ int TestShaSafe_SmallSigmaCoverage_PreservesRotateShiftStructure() {
     auto x0 = b.Var();
     auto x1 = b.Var();
 
-    const Expr* sigma0 = MakeShaSafeEngine().ApplyUntilStable(b.SmallSigma0(x0));
-    const Expr* sigma1 = MakeShaSafeEngine().ApplyUntilStable(b.SmallSigma1(x1));
+    const Expr* sigma0 = MakeShaSafeEngine().Rewrite(b.SmallSigma0(x0));
+    const Expr* sigma1 = MakeShaSafeEngine().Rewrite(b.SmallSigma1(x1));
 
     BF_TEST(CountOps(sigma0, OpType::RotR) == 2);
     BF_TEST(CountOps(sigma0, OpType::Shr) == 1);
@@ -42,8 +42,8 @@ int TestShaSafe_RotateModuloBitwidth_AndShiftZero_SimplifyToInput() {
     auto rotrMod = MakeOp(1002, OpType::RotR, {x, MakeConst(1003, 32)}); // 32-bit rotate modulo bitwidth
     auto shrZero = MakeOp(1004, OpType::Shr, {x, MakeConst(1005, 0)});   // shift by zero
 
-    const Expr* rewrittenRot = MakeShaSafeEngine().ApplyUntilStable(rotrMod);
-    const Expr* rewrittenShr = MakeShaSafeEngine().ApplyUntilStable(shrZero);
+    const Expr* rewrittenRot = MakeShaSafeEngine().Rewrite(rotrMod);
+    const Expr* rewrittenShr = MakeShaSafeEngine().Rewrite(shrZero);
 
     BF_TEST(StructEqual(rewrittenRot, x));
     BF_TEST(StructEqual(rewrittenShr, x));

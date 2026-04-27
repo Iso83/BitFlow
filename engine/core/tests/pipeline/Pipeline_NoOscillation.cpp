@@ -11,7 +11,7 @@ using namespace BitFlow::Tests;
 namespace {
 
 int AssertStableNoCycle(RuleEngine& engine, Expr* expr, int maxIterations) {
-    const RewriteResult info = engine.RunWithInfo(expr);
+    const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(RewriteStable(info));
     BF_TEST(RewriteHasNoCycle(info));
     BF_TEST(RewriteWithinIterationLimit(info, maxIterations));
@@ -90,7 +90,7 @@ int Test_NoOscillation_FactorizeThenExpand_PipelineCombo() {
     Expr* distributed = MakeOp(700, OpType::Xor, {MakeOp(701, OpType::And, {a, b}), MakeOp(702, OpType::And, {a, c})});
 
     RuleEngine factorizeEngine = BuildProfile("factorize_bitwise_safe");
-    const RewriteResult factorized = factorizeEngine.RunWithInfo(distributed);
+    const RewriteResult factorized = factorizeEngine.RewriteToFixedPoint(distributed);
     BF_TEST(RewriteStableWithoutCycleWithin(factorized, 8));
 
     RuleEngine expandEngine = BuildProfile("expand_bitwise");

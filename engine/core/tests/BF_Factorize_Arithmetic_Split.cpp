@@ -18,7 +18,7 @@ int TestLinearMultiplicityRuleOnly() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule());
 
-    Expr* out = engine.ApplyUntilStable(expr);
+    Expr* out = engine.Rewrite(expr);
     BF_TEST(out->op == OpType::Mul);
     return 0;
 }
@@ -35,7 +35,7 @@ int TestCommonFactorRuleOnly() {
     engine.AddRule(Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule());
     engine.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
 
-    Expr* out = engine.ApplyUntilStable(expr);
+    Expr* out = engine.Rewrite(expr);
     BF_TEST(out->op == OpType::Mul);
     return 0;
 }

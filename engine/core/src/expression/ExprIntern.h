@@ -92,4 +92,4 @@ class ExprIntern {
     }
 };
 
-} // namespace BitFlow::Core::AST
+} // namespace BitFlow::Core::Expression

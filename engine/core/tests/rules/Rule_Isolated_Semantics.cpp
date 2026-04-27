@@ -1,4 +1,4 @@
-#include <BitFlow/core/expression/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>

@@ -1,4 +1,4 @@
-#include <BitFlow/core/expression/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>

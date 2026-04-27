@@ -16,7 +16,7 @@ int TestNotDoubleNegation() {
     RuleEngine engine;
     engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
-    Expr* r = engine.ApplyUntilStable(n2);
+    Expr* r = engine.Rewrite(n2);
 
     BF_TEST(r->id == x->id);
     return 0;
@@ -30,7 +30,7 @@ int TestNotConst() {
     RuleEngine engine;
     engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Const);
     BF_TEST(r->constValue == ~0b1010);
@@ -48,7 +48,7 @@ int TestNotPushdown_And() {
     engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Or);
     BF_TEST(r->inputs.size() == 2);
@@ -66,7 +66,7 @@ int TestNotPushdown_Or() {
     engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
@@ -84,7 +84,7 @@ int TestNotXor() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Not_Xor_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Xor);
     BF_TEST(r->inputs.size() == 3);

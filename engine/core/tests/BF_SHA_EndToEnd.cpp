@@ -34,7 +34,7 @@ RuleEngine MakeShaFactorizeEngine() {
 }
 
 Expr* RunRoundFragmentPipeline(Expr* fragment) {
-    auto normalizedSimplified = MakeShaSafeEngine().ApplyUntilStable(fragment);
+    auto normalizedSimplified = MakeShaSafeEngine().Rewrite(fragment);
     return MakeShaFactorizeEngine().ApplyRecursive(normalizedSimplified);
 }
 
@@ -50,7 +50,7 @@ int TestEndToEnd_T1SigmaChoiceCore_ManyConcreteCases() {
         const uint32_t g = tc[2];
         Builder bNs;
         auto nsExpr = bNs.RoundT1SigmaChoiceCore(bNs.Const(e), bNs.Const(f), bNs.Const(g));
-        auto normalizedSimplified = MakeShaSafeEngine().ApplyUntilStable(nsExpr);
+        auto normalizedSimplified = MakeShaSafeEngine().Rewrite(nsExpr);
 
         Builder bRw;
         auto rewritten = RunRoundFragmentPipeline(bRw.RoundT1SigmaChoiceCore(bRw.Const(e), bRw.Const(f), bRw.Const(g)));
@@ -96,7 +96,7 @@ int TestEndToEnd_T2PartCore_ManyConcreteCases() {
         const uint32_t c = tc[2];
         Builder bNs;
         auto nsExpr = bNs.RoundT2PartCore(bNs.Const(a), bNs.Const(b), bNs.Const(c));
-        auto normalizedSimplified = MakeShaSafeEngine().ApplyUntilStable(nsExpr);
+        auto normalizedSimplified = MakeShaSafeEngine().Rewrite(nsExpr);
 
         Builder bRw;
         auto rewritten = RunRoundFragmentPipeline(bRw.RoundT2PartCore(bRw.Const(a), bRw.Const(b), bRw.Const(c)));
@@ -142,7 +142,7 @@ int TestEndToEnd_T1PartCore_ManyConcreteCases() {
         const uint32_t g = tc[3];
         Builder bNs;
         auto nsExpr = bNs.RoundT1PartCore(bNs.Const(h), bNs.Const(e), bNs.Const(f), bNs.Const(g));
-        auto normalizedSimplified = MakeShaSafeEngine().ApplyUntilStable(nsExpr);
+        auto normalizedSimplified = MakeShaSafeEngine().Rewrite(nsExpr);
 
         Builder bRw;
         auto rewritten =

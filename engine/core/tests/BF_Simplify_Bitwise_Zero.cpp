@@ -18,7 +18,7 @@ int TestAndZero() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_ZeroDominance_Rule());
 
-    Expr* result = engine.ApplyUntilStable(and2);
+    Expr* result = engine.Rewrite(and2);
 
     BF_TEST(result->id == zero->id);
     return 0;
@@ -35,7 +35,7 @@ int TestXorZero() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
 
-    Expr* result = engine.ApplyUntilStable(xor2);
+    Expr* result = engine.Rewrite(xor2);
 
     BF_TEST(result->id == x->id);
     return 0;

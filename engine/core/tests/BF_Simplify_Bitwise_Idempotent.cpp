@@ -16,7 +16,7 @@ int TestAndIdempotent() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->id == a->id);
     return 0;
@@ -32,7 +32,7 @@ int TestAndIdempotentMixed() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
@@ -50,7 +50,7 @@ int TestOrIdempotent() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->id == a->id);
     return 0;
@@ -66,7 +66,7 @@ int TestOrIdempotentMixed() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Or);
     BF_TEST(r->inputs.size() == 2);
@@ -85,7 +85,7 @@ int TestAndIdempotentFrozen() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r != expr);
     BF_TEST(r->op == OpType::And);

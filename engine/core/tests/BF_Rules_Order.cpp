@@ -17,7 +17,7 @@ int TestXorOrdering() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Order_Rule());
 
-    Expr* result = engine.ApplyUntilStable(expr);
+    Expr* result = engine.Rewrite(expr);
 
     // verwacht: [x, x, y, y]
     BF_TEST(result->inputs[0]->id == x->id);

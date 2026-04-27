@@ -1,4 +1,4 @@
-#include <BitFlow/core/expression/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
@@ -10,8 +10,8 @@ using namespace BitFlow::Core::Rules;
 namespace {
 
 int AssertSameCanonicalOutput(RuleEngine& a, Expr* inputA, RuleEngine& b, Expr* inputB) {
-    const RewriteResult outA = a.RunWithInfo(inputA);
-    const RewriteResult outB = b.RunWithInfo(inputB);
+    const RewriteResult outA = a.RewriteToFixedPoint(inputA);
+    const RewriteResult outB = b.RewriteToFixedPoint(inputB);
 
     BF_TEST(outA.stable);
     BF_TEST(!outA.cycleDetected());

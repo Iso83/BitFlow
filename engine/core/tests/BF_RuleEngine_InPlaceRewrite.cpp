@@ -40,8 +40,8 @@ int TestEngineHandlesInPlaceRewriteSafely() {
                         RuleFlags::None,
                         "Normalize_Order"});
 
-    Expr* r1 = engine.ApplyUntilStable(e1);
-    Expr* r2 = engine.ApplyUntilStable(e2);
+    Expr* r1 = engine.Rewrite(e1);
+    Expr* r2 = engine.Rewrite(e2);
 
     BF_TEST(r1->op == OpType::Xor);
     BF_TEST(r1->inputs.size() == 2);

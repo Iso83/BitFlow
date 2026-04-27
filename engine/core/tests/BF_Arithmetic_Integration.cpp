@@ -20,7 +20,7 @@ int TestSimplify_NegNeg() {
     auto expr = MakeOp(2, OpType::Neg, {MakeOp(3, OpType::Neg, {x})});
 
     RuleEngine engine = MakeArithmeticEngine();
-    Expr* result = engine.ApplyUntilStable(expr);
+    Expr* result = engine.Rewrite(expr);
 
     BF_TEST(result->id == x->id);
     return 0;
@@ -34,10 +34,10 @@ int TestSimplify_ConstCombine_Basic() {
     auto mul = MakeOp(16, OpType::Mul, {MakeConst(17, 3), MakeConst(18, 6)});
     auto div = MakeOp(19, OpType::Div, {MakeConst(20, 8), MakeConst(21, 2)});
 
-    BF_TEST(engine.ApplyUntilStable(add)->constValue == 12u);
-    BF_TEST(engine.ApplyUntilStable(sub)->constValue == 5u);
-    BF_TEST(engine.ApplyUntilStable(mul)->constValue == 18u);
-    BF_TEST(engine.ApplyUntilStable(div)->constValue == 4u);
+    BF_TEST(engine.Rewrite(add)->constValue == 12u);
+    BF_TEST(engine.Rewrite(sub)->constValue == 5u);
+    BF_TEST(engine.Rewrite(mul)->constValue == 18u);
+    BF_TEST(engine.Rewrite(div)->constValue == 4u);
     return 0;
 }
 
@@ -46,7 +46,7 @@ int TestModZero_Guard_Preserved() {
     auto mod = MakeOp(31, OpType::Mod, {x, MakeConst(32, 0)});
 
     RuleEngine engine = MakeArithmeticEngine();
-    Expr* result = engine.ApplyUntilStable(mod);
+    Expr* result = engine.Rewrite(mod);
 
     BF_TEST(result->op == OpType::Mod);
     BF_TEST(result->inputs.size() == 2);
@@ -63,7 +63,7 @@ int TestFactorize_AddCommonFactor() {
     auto expr = MakeOp(43, OpType::Add, {MakeOp(44, OpType::Mul, {a, b}), MakeOp(45, OpType::Mul, {a, c})});
 
     RuleEngine engine = MakeArithmeticEngine();
-    Expr* result = engine.ApplyUntilStable(expr);
+    Expr* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Mul);
     BF_TEST(result->inputs.size() == 2);
@@ -81,7 +81,7 @@ int TestFactorize_Canonical_a_b_plus_b_a() {
     auto expr = MakeOp(54, OpType::Add, {lhs, rhs});
 
     RuleEngine engine = MakeArithmeticEngine();
-    Expr* result = engine.ApplyUntilStable(expr);
+    Expr* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Mul);
     BF_TEST(result->inputs.size() >= 2);
@@ -96,7 +96,7 @@ int TestFactorize_AddRepeatedTermCount() {
     auto expr = MakeOp(63, OpType::Add, {term, term, term});
 
     RuleEngine engine = MakeArithmeticEngine();
-    Expr* result = engine.ApplyUntilStable(expr);
+    Expr* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Mul);
     BF_TEST(result->inputs.size() == 2);
@@ -118,7 +118,7 @@ int TestFactorize_CombineNestedMulConstants() {
     auto expr = MakeOp(71, OpType::Mul, {MakeConst(72, 3), MakeOp(73, OpType::Mul, {a, MakeConst(74, 2)})});
 
     RuleEngine engine = MakeArithmeticEngine();
-    Expr* result = engine.ApplyUntilStable(expr);
+    Expr* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Mul);
     BF_TEST(result->inputs.size() == 2);
@@ -142,14 +142,14 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto expr = MakeOp(82, OpType::Add, {a, a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Mul);
         BF_TEST(result->inputs.size() == 2);
     }
 
     {
         auto expr = MakeOp(83, OpType::Add, {a, a, a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Mul);
         bool hasThree = false;
         bool hasA = false;
@@ -165,7 +165,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto expr = MakeOp(84, OpType::Add, {a, MakeOp(85, OpType::Mul, {a, MakeConst(86, 2)})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Mul);
         bool hasThree = false;
         bool hasA = false;
@@ -181,7 +181,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto expr = MakeOp(87, OpType::Add, {MakeOp(88, OpType::Mul, {a, MakeConst(89, 2)}), a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Mul);
         bool hasThree = false;
         bool hasA = false;
@@ -199,7 +199,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
         auto expr =
             MakeOp(90, OpType::Add,
                    {MakeOp(91, OpType::Mul, {a, MakeConst(92, 2)}), MakeOp(93, OpType::Mul, {a, MakeConst(94, 3)})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Mul);
         bool hasFive = false;
         bool hasA = false;
@@ -215,7 +215,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto expr = MakeOp(95, OpType::Add, {b, a, a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Add);
         bool hasB = false;
         bool hasA2 = false;
@@ -240,7 +240,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto expr = MakeOp(96, OpType::Add, {MakeOp(97, OpType::Mul, {a, MakeConst(98, 0)}), a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->id == a->id);
     }
 
@@ -248,7 +248,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
         auto expr = MakeOp(
             99, OpType::Add,
             {MakeOp(100, OpType::Mul, {a, MakeConst(101, 1)}), MakeOp(102, OpType::Mul, {a, MakeConst(103, 2)})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Mul);
         bool hasThree = false;
         bool hasA = false;
@@ -274,7 +274,7 @@ int TestFactorize_AddLinearMultiplicity_Guards() {
     {
         // out of linear-multiplicity scope: a + a*b
         auto expr = MakeOp(113, OpType::Add, {a, MakeOp(114, OpType::Mul, {a, b})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Add);
         BF_TEST(result->inputs.size() == 2);
     }
@@ -282,7 +282,7 @@ int TestFactorize_AddLinearMultiplicity_Guards() {
     {
         // out of linear-multiplicity scope: a<<1 + a
         auto expr = MakeOp(115, OpType::Add, {MakeOp(116, OpType::Shl, {a, MakeConst(117, 1)}), a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Add);
         BF_TEST(result->inputs.size() == 2);
     }
@@ -290,7 +290,7 @@ int TestFactorize_AddLinearMultiplicity_Guards() {
     {
         // a*(b+c) is not a linear-multiplicity term and should stay unchanged when standalone.
         auto expr = MakeOp(118, OpType::Mul, {a, MakeOp(119, OpType::Add, {b, c})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Mul);
         BF_TEST(result->inputs.size() == 2);
     }

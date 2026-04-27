@@ -37,7 +37,7 @@ int TestXorNotReduction_Basic() {
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Not_Reduction_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
@@ -60,7 +60,7 @@ int TestXorNotReduction_MultiXorArgs() {
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Not_Reduction_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(HasNotOf(r, a));
@@ -92,7 +92,7 @@ int TestXorNotReduction_IntegrationScenario() {
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Not_Reduction_Rule());
 
-    Expr* r = engine.ApplyUntilStable(expr);
+    Expr* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(HasInput(r, c));

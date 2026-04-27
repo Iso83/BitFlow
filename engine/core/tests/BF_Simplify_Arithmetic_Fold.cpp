@@ -18,7 +18,7 @@ int TestAddFold() {
     engine.AddRule(Simplify::Arithmetic::Get_Add_Fold_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
 
-    Expr* result = engine.ApplyUntilStable(expr);
+    Expr* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Add);
     BF_TEST(result->inputs.size() == 2);

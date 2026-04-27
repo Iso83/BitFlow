@@ -113,7 +113,7 @@ int TestRewriteTarget_CH_ExpandsAwayHighLevelOp() {
     auto z = b.Var();
 
     auto expr = b.Ch(x, y, z);
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
     BF_TEST(IsCanonicalCH(rewritten, x, y, z));
@@ -127,7 +127,7 @@ int TestRewriteTarget_MAJ_ExpandsAwayHighLevelOp() {
     auto z = b.Var();
 
     auto expr = b.Maj(x, y, z);
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Maj));
     BF_TEST(IsCanonicalMAJ(rewritten, x, y, z));
@@ -142,7 +142,7 @@ int TestRewriteTarget_CH_EquivalentForm_ConvergesToCanonical() {
 
     // Equivalent CH vorm: z ^ (x & (y ^ z))
     auto expr = b.Xor({z, b.And(x, b.Xor({y, z}))});
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     BF_TEST(IsCanonicalCH(rewritten, x, y, z));
     return 0;
@@ -156,7 +156,7 @@ int TestRewriteTarget_MAJ_EquivalentOrForm_ConvergesToCanonical() {
 
     // Equivalent MAJ vorm: (x & y) | (z & (x ^ y))
     auto expr = MakeOp(9999, OpType::Or, {b.And(x, y), b.And(z, b.Xor({x, y}))});
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     BF_TEST(IsCanonicalMAJ(rewritten, x, y, z));
     return 0;
@@ -170,7 +170,7 @@ int TestRewriteTarget_RoundT1Core_HasNoCHOrMAJ() {
 
     // Kleine round-fragment target: Sigma1(e) + Ch(e,f,g)
     auto fragment = b.Add({b.BigSigma1(e), b.Ch(e, f, g)});
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(fragment);
+    auto rewritten = MakeShaSafeEngine().Rewrite(fragment);
 
     BF_TEST(rewritten->op == OpType::Add);
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
@@ -187,7 +187,7 @@ int TestRewriteTarget_RoundT2Core_HasNoCHOrMAJ() {
 
     // Kleine round-fragment target: Sigma0(a) + Maj(a,b,c)
     auto fragment = b.Add({b.BigSigma0(a), b.Maj(a, bVar, c)});
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(fragment);
+    auto rewritten = MakeShaSafeEngine().Rewrite(fragment);
 
     BF_TEST(rewritten->op == OpType::Add);
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
@@ -205,7 +205,7 @@ int TestRewriteTarget_RoundFragment_CH_InLargerExpr_UsesCanonicalSubform() {
 
     // Mini-fragment: een grotere expressie waarin CH als subexpressie zit.
     auto fragment = b.Add({h, b.BigSigma1(e), b.Ch(e, f, g)});
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(fragment);
+    auto rewritten = MakeShaSafeEngine().Rewrite(fragment);
 
     BF_TEST(rewritten->op == OpType::Add);
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
@@ -222,7 +222,7 @@ int TestRewriteTarget_RoundFragment_MAJ_InLargerExpr_UsesCanonicalSubform() {
 
     // Mini-fragment: een grotere expressie waarin MAJ als subexpressie zit.
     auto fragment = b.Add({d, b.BigSigma0(a), b.Maj(a, bVar, c)});
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(fragment);
+    auto rewritten = MakeShaSafeEngine().Rewrite(fragment);
 
     BF_TEST(rewritten->op == OpType::Add);
     BF_TEST(!ContainsOp(rewritten, OpType::Maj));

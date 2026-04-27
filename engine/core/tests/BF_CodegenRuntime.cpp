@@ -330,7 +330,7 @@ int main() {
         auto bSha = sb.Var();
         auto cSha = sb.Var();
         auto t2Core = sb.Add({sb.BigSigma0(aSha), sb.Maj(aSha, bSha, cSha)});
-        auto normalizedSimplified = simplifyEngine.ApplyUntilStable(t2Core);
+        auto normalizedSimplified = simplifyEngine.Rewrite(t2Core);
         auto rewritten = factorizeEngine.ApplyRecursive(normalizedSimplified);
 
         const auto support = Codegen::EmitCRuntimeSupport(32);

@@ -28,7 +28,7 @@ int TestShaSafe_RewritesCh_AndRemovesHighLevelNode() {
     Builder b;
     auto expr = b.Ch(b.Var(), b.Var(), b.Var());
 
-    const RewriteResult out = MakeShaSafeEngine().RunWithInfo(expr);
+    const RewriteResult out = MakeShaSafeEngine().RewriteToFixedPoint(expr);
     BF_TEST(out.StableWithoutCycle());
     BF_TEST(!ContainsOp(out.result, OpType::Ch));
     return 0;
@@ -38,7 +38,7 @@ int TestShaSafe_RewritesMaj_AndRemovesHighLevelNode() {
     Builder b;
     auto expr = b.Maj(b.Var(), b.Var(), b.Var());
 
-    const RewriteResult out = MakeShaSafeEngine().RunWithInfo(expr);
+    const RewriteResult out = MakeShaSafeEngine().RewriteToFixedPoint(expr);
     BF_TEST(out.StableWithoutCycle());
     BF_TEST(!ContainsOp(out.result, OpType::Maj));
     return 0;
@@ -52,7 +52,7 @@ int TestShaSafe_RewritesRoundT1Fragment_WithoutResidualChMaj() {
     auto h = b.Var();
     auto t1 = b.Add({h, b.BigSigma1(e), b.Ch(e, f, g)});
 
-    const RewriteResult out = MakeShaSafeEngine().RunWithInfo(t1);
+    const RewriteResult out = MakeShaSafeEngine().RewriteToFixedPoint(t1);
     BF_TEST(out.StableWithoutCycle());
     BF_TEST(!ContainsOp(out.result, OpType::Ch));
     BF_TEST(!ContainsOp(out.result, OpType::Maj));
@@ -67,7 +67,7 @@ int TestShaSafe_RewritesRoundT2Fragment_WithoutResidualChMaj() {
     auto d = b.Var();
     auto t2 = b.Add({d, b.BigSigma0(a), b.Maj(a, bVar, c)});
 
-    const RewriteResult out = MakeShaSafeEngine().RunWithInfo(t2);
+    const RewriteResult out = MakeShaSafeEngine().RewriteToFixedPoint(t2);
     BF_TEST(out.StableWithoutCycle());
     BF_TEST(!ContainsOp(out.result, OpType::Ch));
     BF_TEST(!ContainsOp(out.result, OpType::Maj));

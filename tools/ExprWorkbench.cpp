@@ -2,7 +2,7 @@
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 #include <BitFlow/core/eval/ConstantDetect.h>
 #include <BitFlow/core/eval/ConstantEval.h>
-#include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/ids/ExprId.h>
@@ -588,7 +588,7 @@ int main(int argc, char** argv) {
         auto engine = BuildRuleEngine(opt, names);
 
         for (auto& out : outputs)
-            out.expr = engine.ApplyUntilStable(out.expr);
+            out.expr = engine.Rewrite(out.expr);
 
         PrintSectionHeader("rewritten");
         for (const auto& out : outputs) {

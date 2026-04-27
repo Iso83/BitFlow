@@ -1,8 +1,7 @@
 #include "RuleOrderException.h"
-#include "expression/ExprClone.h"
 #include "expression/ExprIntern.h"
 
-#include <BitFlow/core/expression/ExprStruct.h>
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <BitFlow/core/rules/RuleEngine.h>
@@ -151,11 +150,7 @@ Expr* RuleEngine::ApplyRecursive(Expr* expr) const {
     return ApplyOnce(current);
 }
 
-Expr* RuleEngine::ApplyUntilStable(Expr* expr) const {
-    return RunWithInfo(expr).result;
-}
-
-RewriteResult RuleEngine::RunWithInfo(Expr* expr) const {
+RewriteResult RuleEngine::RewriteToFixedPoint(Expr* expr) const {
     expr = Expression::ExprIntern::Intern(expr);
     std::vector<Expr*> history{};
     history.push_back(Expression::Clone(expr));

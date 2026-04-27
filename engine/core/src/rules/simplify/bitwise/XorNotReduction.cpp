@@ -1,7 +1,7 @@
 #include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ConstPool.h>
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>

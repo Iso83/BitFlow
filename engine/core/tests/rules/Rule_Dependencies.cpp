@@ -204,7 +204,7 @@ int Test_RuleDeps_WithDeps_Works() {
         AddRuleAndDeps(engine, rule.id, added);
 
         auto x = MakeVar(seed++);
-        Expr* result = engine.ApplyUntilStable(x);
+        Expr* result = engine.Rewrite(x);
         BF_TEST(result->id == x->id);
     }
 

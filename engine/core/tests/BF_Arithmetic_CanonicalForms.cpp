@@ -19,7 +19,7 @@ int TestCanonical_MulCoeffOrder_2a_plus_a() {
     Expr* expr = MakeOp(10, OpType::Add, {MakeOp(11, OpType::Mul, {MakeConst(12, 2), a}), a});
 
     RuleEngine engine = MakeArithmeticCanonicalEngine();
-    Expr* out = engine.ApplyUntilStable(expr);
+    Expr* out = engine.Rewrite(expr);
 
     BF_TEST(out->op == OpType::Mul);
     BF_TEST(out->inputs.size() == 2);
@@ -35,7 +35,7 @@ int TestCanonical_a_b_plus_b_a() {
     Expr* expr = MakeOp(22, OpType::Add, {MakeOp(23, OpType::Mul, {a, b}), MakeOp(24, OpType::Mul, {b, a})});
 
     RuleEngine engine = MakeArithmeticCanonicalEngine();
-    Expr* out = engine.ApplyUntilStable(expr);
+    Expr* out = engine.Rewrite(expr);
 
     BF_TEST(out->op == OpType::Mul);
     BF_TEST(out->inputs.size() == 3);
@@ -51,7 +51,7 @@ int TestCanonical_zero_mul_plus_a() {
     Expr* expr = MakeOp(31, OpType::Add, {MakeOp(32, OpType::Mul, {MakeConst(33, 0), a}), a});
 
     RuleEngine engine = MakeArithmeticCanonicalEngine();
-    Expr* out = engine.ApplyUntilStable(expr);
+    Expr* out = engine.Rewrite(expr);
 
     BF_TEST(out->id == a->id);
     return 0;
@@ -62,7 +62,7 @@ int TestCanonical_combineMulConstants_Order() {
     Expr* expr = MakeOp(41, OpType::Mul, {MakeConst(42, 2), a, MakeConst(43, 3)});
 
     RuleEngine engine = MakeArithmeticCanonicalEngine();
-    Expr* out = engine.ApplyUntilStable(expr);
+    Expr* out = engine.Rewrite(expr);
 
     BF_TEST(out->op == OpType::Mul);
     BF_TEST(out->inputs.size() == 2);

@@ -14,7 +14,7 @@ int TestSimplifyProfileRunWithInfoIsStable() {
     Expr* x = MakeVar(1);
     Expr* expr = MakeOp(100, OpType::Xor, {x, x});
 
-    const RewriteResult info = engine.RunWithInfo(expr);
+    const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(RewriteStable(info));
     BF_TEST(RewriteHasNoCycle(info));
     BF_TEST(RewriteWithinIterationLimit(info, 8));
@@ -31,7 +31,7 @@ int TestFactorizeProfileRunWithInfoIsStable() {
     Expr* c = MakeVar(3);
     Expr* expr = MakeOp(200, OpType::Add, {MakeOp(201, OpType::Mul, {a, b}), MakeOp(202, OpType::Mul, {a, c})});
 
-    const RewriteResult info = engine.RunWithInfo(expr);
+    const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(RewriteStableWithoutCycleWithin(info, 8));
     BF_TEST(info.result->op == OpType::Mul);
     return 0;
@@ -45,7 +45,7 @@ int TestExploreProfileRunWithInfoIsStable() {
     Expr* c = MakeVar(13);
     Expr* expr = MakeOp(300, OpType::Xor, {MakeOp(301, OpType::And, {a, b}), MakeOp(302, OpType::And, {a, c})});
 
-    const RewriteResult info = engine.RunWithInfo(expr);
+    const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(RewriteStable(info));
     BF_TEST(RewriteHasNoCycle(info));
     BF_TEST(RewriteWithinIterationLimit(info, 8));
@@ -61,7 +61,7 @@ int TestExpandBitwiseProfileRunWithInfoIsStable() {
     Expr* c = MakeVar(23);
     Expr* expr = MakeOp(400, OpType::And, {a, MakeOp(401, OpType::Xor, {b, c})});
 
-    const RewriteResult info = engine.RunWithInfo(expr);
+    const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(RewriteStable(info));
     BF_TEST(RewriteHasNoCycle(info));
     BF_TEST(RewriteWithinIterationLimit(info, 8));

@@ -40,7 +40,7 @@ int TestFragment_CH_RewriteAndConstantEval() {
     constexpr uint32_t z = 30U;
 
     auto ch = b.Ch(b.Const(x), b.Const(y), b.Const(z));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(ch);
+    auto rewritten = MakeShaSafeEngine().Rewrite(ch);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Ch));
 
@@ -57,7 +57,7 @@ int TestFragment_MAJ_RewriteAndConstantEval() {
     constexpr uint32_t z = 0x0F0FF0F0U;
 
     auto maj = b.Maj(b.Const(x), b.Const(y), b.Const(z));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(maj);
+    auto rewritten = MakeShaSafeEngine().Rewrite(maj);
 
     BF_TEST(!ContainsOp(rewritten, OpType::Maj));
 
@@ -72,7 +72,7 @@ int TestFragment_SmallSigma0_RewriteEmitEvalConsistency() {
     constexpr uint32_t x = 0x12345678U;
 
     auto sigma0 = b.SmallSigma0(b.Const(x));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(sigma0);
+    auto rewritten = MakeShaSafeEngine().Rewrite(sigma0);
 
     const auto evalOriginal = Eval::EvaluateConstant(sigma0, 32);
     const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
@@ -86,7 +86,7 @@ int TestFragment_SmallSigma0_RewriteEmitEvalConsistency() {
 
     auto v = b.Var();
     auto sigma0Var = b.SmallSigma0(v);
-    const auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().ApplyUntilStable(sigma0Var), 32);
+    const auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().Rewrite(sigma0Var), 32);
     BF_TEST(emitted.find("bf_rotr") != std::string::npos);
     BF_TEST(emitted.find(">>") != std::string::npos);
 
@@ -98,7 +98,7 @@ int TestFragment_SmallSigma1_RewriteEmitEvalConsistency() {
     constexpr uint32_t x = 0x89ABCDEFU;
 
     auto sigma1 = b.SmallSigma1(b.Const(x));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(sigma1);
+    auto rewritten = MakeShaSafeEngine().Rewrite(sigma1);
 
     const auto evalOriginal = Eval::EvaluateConstant(sigma1, 32);
     const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
@@ -112,7 +112,7 @@ int TestFragment_SmallSigma1_RewriteEmitEvalConsistency() {
 
     auto v = b.Var();
     auto sigma1Var = b.SmallSigma1(v);
-    const auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().ApplyUntilStable(sigma1Var), 32);
+    const auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().Rewrite(sigma1Var), 32);
     BF_TEST(emitted.find("bf_rotr") != std::string::npos);
     BF_TEST(emitted.find(">>") != std::string::npos);
 

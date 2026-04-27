@@ -31,7 +31,7 @@ int TestMulOne_Nested() {
     auto mul2 = MakeOp(4, OpType::Mul, {mul1, one});
 
     RuleEngine engine = MakeEngine_Mult();
-    Expr* result = engine.ApplyUntilStable(mul2);
+    Expr* result = engine.Rewrite(mul2);
 
     BF_TEST(result->id == x->id);
     return 0;
@@ -42,7 +42,7 @@ int TestMulOne_AllOnesBecomeConstOne() {
     auto mul = MakeOp(10, OpType::Mul, {one, one, one});
 
     RuleEngine engine = MakeEngine_Mult();
-    Expr* result = engine.ApplyUntilStable(mul);
+    Expr* result = engine.Rewrite(mul);
 
     BF_TEST(result->id == one->id);
     return 0;
@@ -55,7 +55,7 @@ int TestMulOne_CanonicalOrderRegression() {
     auto mul = MakeOp(22, OpType::Mul, {y, one, x});
 
     RuleEngine engine = MakeEngine_Mult();
-    Expr* result = engine.ApplyUntilStable(mul);
+    Expr* result = engine.Rewrite(mul);
 
     BF_TEST(result->op == OpType::Mul);
     BF_TEST(result->inputs.size() == 2);
@@ -77,7 +77,7 @@ int TestMulOne_Property_OneAtAnyPosition() {
             MakeOp(100 + static_cast<uint32_t>(onePos), OpType::Mul, {inputs[0], inputs[1], inputs[2], inputs[3]});
 
         RuleEngine engine = MakeEngine_Mult();
-        Expr* result = engine.ApplyUntilStable(mul);
+        Expr* result = engine.Rewrite(mul);
 
         BF_TEST(result->op == OpType::Mul);
         BF_TEST(result->inputs.size() == 3);
@@ -94,7 +94,7 @@ int TestDivOne_Basic() {
     auto div = MakeOp(201, OpType::Div, {x, one});
 
     RuleEngine engine = MakeEngine_Div();
-    Expr* result = engine.ApplyUntilStable(div);
+    Expr* result = engine.Rewrite(div);
 
     BF_TEST(result->id == x->id);
     return 0;
@@ -106,7 +106,7 @@ int TestDivOne_GuardLeftOneStaysDiv() {
     auto div = MakeOp(211, OpType::Div, {one, x});
 
     RuleEngine engine = MakeEngine_Div();
-    Expr* result = engine.ApplyUntilStable(div);
+    Expr* result = engine.Rewrite(div);
 
     BF_TEST(result->op == OpType::Div);
     BF_TEST(result->inputs.size() == 2);
@@ -123,7 +123,7 @@ int TestDivOne_Property_RightOperandOne() {
         auto div = MakeOp(300 + static_cast<uint32_t>(i), OpType::Div, {vars[i], one});
 
         RuleEngine engine = MakeEngine_Div();
-        Expr* result = engine.ApplyUntilStable(div);
+        Expr* result = engine.Rewrite(div);
 
         BF_TEST(result->id == vars[i]->id);
     }

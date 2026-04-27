@@ -37,25 +37,25 @@ int TestLinearMultiplicity_BasicAndMixed() {
 
     {
         auto expr = MakeOp(1001, OpType::Add, {a, a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(HasCoeffBaseMul(result, a, 2u));
     }
 
     {
         auto expr = MakeOp(1002, OpType::Add, {a, a, a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(HasCoeffBaseMul(result, a, 3u));
     }
 
     {
         auto expr = MakeOp(1003, OpType::Add, {a, MakeOp(1004, OpType::Mul, {a, MakeConst(1005, 2)})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(HasCoeffBaseMul(result, a, 3u));
     }
 
     {
         auto expr = MakeOp(1006, OpType::Add, {MakeOp(1007, OpType::Mul, {a, MakeConst(1008, 2)}), a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(HasCoeffBaseMul(result, a, 3u));
     }
 
@@ -63,13 +63,13 @@ int TestLinearMultiplicity_BasicAndMixed() {
         auto expr = MakeOp(
             1009, OpType::Add,
             {MakeOp(1010, OpType::Mul, {a, MakeConst(1011, 2)}), MakeOp(1012, OpType::Mul, {a, MakeConst(1013, 3)})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(HasCoeffBaseMul(result, a, 5u));
     }
 
     {
         auto expr = MakeOp(1014, OpType::Add, {MakeOp(1015, OpType::Mul, {a, MakeConst(1016, 0)}), a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->id == a->id);
     }
 
@@ -77,7 +77,7 @@ int TestLinearMultiplicity_BasicAndMixed() {
         auto expr = MakeOp(
             1017, OpType::Add,
             {MakeOp(1018, OpType::Mul, {a, MakeConst(1019, 1)}), MakeOp(1020, OpType::Mul, {a, MakeConst(1021, 2)})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(HasCoeffBaseMul(result, a, 3u));
     }
 
@@ -92,21 +92,21 @@ int TestLinearMultiplicity_Guards() {
 
     {
         auto expr = MakeOp(1033, OpType::Add, {a, MakeOp(1034, OpType::Mul, {a, b})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Add);
         BF_TEST(result->inputs.size() == 2);
     }
 
     {
         auto expr = MakeOp(1035, OpType::Add, {MakeOp(1036, OpType::Shl, {a, MakeConst(1037, 1)}), a});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Add);
         BF_TEST(result->inputs.size() == 2);
     }
 
     {
         auto expr = MakeOp(1038, OpType::Add, {MakeOp(1039, OpType::Mul, {a, b}), MakeOp(1040, OpType::Mul, {a, c})});
-        Expr* result = engine.ApplyUntilStable(expr);
+        Expr* result = engine.Rewrite(expr);
         BF_TEST(result->op == OpType::Mul);
         BF_TEST(result->inputs.size() == 2);
     }

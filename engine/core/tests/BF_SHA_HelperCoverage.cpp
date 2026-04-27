@@ -59,14 +59,14 @@ int TestSmallSigma0_RewriteEmitEvalConsistency() {
     constexpr uint32_t x = 0x12345678U;
 
     auto expr = b.SmallSigma0(b.Const(x));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     const auto eval = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
     BF_TEST(static_cast<uint32_t>(eval.value) == (RotR32(x, 7) ^ RotR32(x, 18) ^ (x >> 3)));
 
     auto sigmaVar = b.SmallSigma0(b.Var());
-    auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().ApplyUntilStable(sigmaVar), 32);
+    auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().Rewrite(sigmaVar), 32);
     BF_TEST(emitted.find("bf_rotr") != std::string::npos);
     BF_TEST(emitted.find(">>") != std::string::npos);
     return 0;
@@ -77,14 +77,14 @@ int TestSmallSigma1_RewriteEmitEvalConsistency() {
     constexpr uint32_t x = 0x89ABCDEFU;
 
     auto expr = b.SmallSigma1(b.Const(x));
-    auto rewritten = MakeShaSafeEngine().ApplyUntilStable(expr);
+    auto rewritten = MakeShaSafeEngine().Rewrite(expr);
 
     const auto eval = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
     BF_TEST(static_cast<uint32_t>(eval.value) == (RotR32(x, 17) ^ RotR32(x, 19) ^ (x >> 10)));
 
     auto sigmaVar = b.SmallSigma1(b.Var());
-    auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().ApplyUntilStable(sigmaVar), 32);
+    auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().Rewrite(sigmaVar), 32);
     BF_TEST(emitted.find("bf_rotr") != std::string::npos);
     BF_TEST(emitted.find(">>") != std::string::npos);
     return 0;

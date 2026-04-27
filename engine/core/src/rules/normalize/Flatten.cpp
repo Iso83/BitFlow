@@ -1,8 +1,8 @@
-#include "expression/ExprClone.h"
 #include "expression/OpTraits.h"
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 

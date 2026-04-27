@@ -137,8 +137,8 @@ int TestCH_HighLevelAndEquivalentForms_ConvergeToCanonical() {
     auto highLevel = b.Ch(x, y, z);
     auto lowLevelEquivalent = b.Xor({z, b.And(x, b.Xor({y, z}))});
 
-    auto rewrittenHighLevel = MakeShaSafeEngine().ApplyUntilStable(highLevel);
-    auto rewrittenEquivalent = MakeShaSafeEngine().ApplyUntilStable(lowLevelEquivalent);
+    auto rewrittenHighLevel = MakeShaSafeEngine().Rewrite(highLevel);
+    auto rewrittenEquivalent = MakeShaSafeEngine().Rewrite(lowLevelEquivalent);
 
     BF_TEST(!ContainsOp(rewrittenHighLevel, OpType::Ch));
     BF_TEST(IsCanonicalCH(rewrittenHighLevel, x, y, z));
@@ -155,8 +155,8 @@ int TestMAJ_HighLevelAndEquivalentForms_ConvergeToCanonical() {
     auto highLevel = b.Maj(x, y, z);
     auto lowLevelEquivalent = MakeOp(9001, OpType::Or, {b.And(x, y), b.And(z, b.Xor({x, y}))});
 
-    auto rewrittenHighLevel = MakeShaSafeEngine().ApplyUntilStable(highLevel);
-    auto rewrittenEquivalent = MakeShaSafeEngine().ApplyUntilStable(lowLevelEquivalent);
+    auto rewrittenHighLevel = MakeShaSafeEngine().Rewrite(highLevel);
+    auto rewrittenEquivalent = MakeShaSafeEngine().Rewrite(lowLevelEquivalent);
 
     BF_TEST(!ContainsOp(rewrittenHighLevel, OpType::Maj));
     BF_TEST(IsCanonicalMAJ(rewrittenHighLevel, x, y, z));
@@ -172,7 +172,7 @@ int TestRoundFragments_EmbedCanonicalCHAndMAJSubforms() {
     auto g = b.Var();
     auto h = b.Var();
     auto chFragment = b.Add({h, b.BigSigma1(e), b.Ch(e, f, g)});
-    auto rewrittenCH = MakeShaSafeEngine().ApplyUntilStable(chFragment);
+    auto rewrittenCH = MakeShaSafeEngine().Rewrite(chFragment);
 
     BF_TEST(rewrittenCH->op == OpType::Add);
     BF_TEST(!ContainsOp(rewrittenCH, OpType::Ch));
@@ -183,7 +183,7 @@ int TestRoundFragments_EmbedCanonicalCHAndMAJSubforms() {
     auto c = b.Var();
     auto d = b.Var();
     auto majFragment = b.Add({d, b.BigSigma0(a), b.Maj(a, bVar, c)});
-    auto rewrittenMAJ = MakeShaSafeEngine().ApplyUntilStable(majFragment);
+    auto rewrittenMAJ = MakeShaSafeEngine().Rewrite(majFragment);
 
     BF_TEST(rewrittenMAJ->op == OpType::Add);
     BF_TEST(!ContainsOp(rewrittenMAJ, OpType::Maj));
@@ -207,14 +207,14 @@ int TestSigmaFragments_XorPermutationsConvergeToSameCanonicalForm() {
     auto small1A = b.Xor({b.RotR(x, 17), b.RotR(x, 19), MakeOp(17002, OpType::Shr, {x, b.Const(10)})});
     auto small1B = b.Xor({b.RotR(x, 19), MakeOp(17003, OpType::Shr, {x, b.Const(10)}), b.RotR(x, 17)});
 
-    auto rSigma0A = MakeSigmaNormalizeEngine().ApplyUntilStable(sigma0A);
-    auto rSigma0B = MakeSigmaNormalizeEngine().ApplyUntilStable(sigma0B);
-    auto rSigma1A = MakeSigmaNormalizeEngine().ApplyUntilStable(sigma1A);
-    auto rSigma1B = MakeSigmaNormalizeEngine().ApplyUntilStable(sigma1B);
-    auto rSmall0A = MakeSigmaNormalizeEngine().ApplyUntilStable(small0A);
-    auto rSmall0B = MakeSigmaNormalizeEngine().ApplyUntilStable(small0B);
-    auto rSmall1A = MakeSigmaNormalizeEngine().ApplyUntilStable(small1A);
-    auto rSmall1B = MakeSigmaNormalizeEngine().ApplyUntilStable(small1B);
+    auto rSigma0A = MakeSigmaNormalizeEngine().Rewrite(sigma0A);
+    auto rSigma0B = MakeSigmaNormalizeEngine().Rewrite(sigma0B);
+    auto rSigma1A = MakeSigmaNormalizeEngine().Rewrite(sigma1A);
+    auto rSigma1B = MakeSigmaNormalizeEngine().Rewrite(sigma1B);
+    auto rSmall0A = MakeSigmaNormalizeEngine().Rewrite(small0A);
+    auto rSmall0B = MakeSigmaNormalizeEngine().Rewrite(small0B);
+    auto rSmall1A = MakeSigmaNormalizeEngine().Rewrite(small1A);
+    auto rSmall1B = MakeSigmaNormalizeEngine().Rewrite(small1B);
 
     BF_TEST(ExprSignature(rSigma0A) == ExprSignature(rSigma0B));
     BF_TEST(ExprSignature(rSigma1A) == ExprSignature(rSigma1B));
@@ -231,8 +231,8 @@ int TestSigmaFragments_XorDuplicateTermsAreEliminated() {
     auto smallWithDup =
         b.Xor({b.RotR(x, 17), b.RotR(x, 19), MakeOp(17100, OpType::Shr, {x, b.Const(10)}), b.RotR(x, 19)});
 
-    auto rSigma = MakeSigmaNormalizeEngine().ApplyUntilStable(sigmaWithDup);
-    auto rSmall = MakeSigmaNormalizeEngine().ApplyUntilStable(smallWithDup);
+    auto rSigma = MakeSigmaNormalizeEngine().Rewrite(sigmaWithDup);
+    auto rSmall = MakeSigmaNormalizeEngine().Rewrite(smallWithDup);
 
     BF_TEST(rSigma->op == OpType::Xor);
     BF_TEST(rSigma->inputs.size() == 2);

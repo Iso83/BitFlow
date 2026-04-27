@@ -49,8 +49,10 @@ class RuleEngine {
     virtual void AddRule(const Rule& rule);
     Expression::Expr* ApplyOnce(Expression::Expr* expr) const;
     Expression::Expr* ApplyRecursive(Expression::Expr* expr) const;
-    Expression::Expr* ApplyUntilStable(Expression::Expr* expr) const;
-    RewriteResult RunWithInfo(Expression::Expr* expr) const;
+    Expression::Expr* Rewrite(Expression::Expr* expr) const {
+        return RewriteToFixedPoint(expr).result;
+    }
+    RewriteResult RewriteToFixedPoint(Expression::Expr* expr) const;
 
     void SetDebugCallback(DebugCallback cb);
 
