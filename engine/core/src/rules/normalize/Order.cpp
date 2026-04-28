@@ -10,7 +10,7 @@
 
 namespace BitFlow::Core::Rules::Normalize {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 
 static bool Match_Order(const Expr& e) {
     if (!Expression::IsCommutative(e.op))

@@ -31,7 +31,7 @@ int TestMulOne_Nested() {
     auto mul2 = MakeOp(4, OpType::Mul, {mul1, one});
 
     RuleEngine engine = MakeEngine_Mult();
-    Expr* result = engine.Rewrite(mul2);
+    ExprOld* result = engine.Rewrite(mul2);
 
     BF_TEST(result->id == x->id);
     return 0;
@@ -42,7 +42,7 @@ int TestMulOne_AllOnesBecomeConstOne() {
     auto mul = MakeOp(10, OpType::Mul, {one, one, one});
 
     RuleEngine engine = MakeEngine_Mult();
-    Expr* result = engine.Rewrite(mul);
+    ExprOld* result = engine.Rewrite(mul);
 
     BF_TEST(result->id == one->id);
     return 0;
@@ -55,7 +55,7 @@ int TestMulOne_CanonicalOrderRegression() {
     auto mul = MakeOp(22, OpType::Mul, {y, one, x});
 
     RuleEngine engine = MakeEngine_Mult();
-    Expr* result = engine.Rewrite(mul);
+    ExprOld* result = engine.Rewrite(mul);
 
     BF_TEST(result->op == OpType::Mul);
     BF_TEST(result->inputs.size() == 2);
@@ -71,17 +71,17 @@ int TestMulOne_Property_OneAtAnyPosition() {
     auto one = ConstPool::Get(1);
 
     for (int onePos = 0; onePos < 4; ++onePos) {
-        std::vector<Expr*> inputs = {x, y, z, x};
+        std::vector<ExprOld*> inputs = {x, y, z, x};
         inputs[onePos] = one;
         auto mul =
             MakeOp(100 + static_cast<uint32_t>(onePos), OpType::Mul, {inputs[0], inputs[1], inputs[2], inputs[3]});
 
         RuleEngine engine = MakeEngine_Mult();
-        Expr* result = engine.Rewrite(mul);
+        ExprOld* result = engine.Rewrite(mul);
 
         BF_TEST(result->op == OpType::Mul);
         BF_TEST(result->inputs.size() == 3);
-        for (Expr* in : result->inputs)
+        for (ExprOld* in : result->inputs)
             BF_TEST(!(in->op == OpType::Const && in->constValue == 1));
     }
 
@@ -94,7 +94,7 @@ int TestDivOne_Basic() {
     auto div = MakeOp(201, OpType::Div, {x, one});
 
     RuleEngine engine = MakeEngine_Div();
-    Expr* result = engine.Rewrite(div);
+    ExprOld* result = engine.Rewrite(div);
 
     BF_TEST(result->id == x->id);
     return 0;
@@ -106,7 +106,7 @@ int TestDivOne_GuardLeftOneStaysDiv() {
     auto div = MakeOp(211, OpType::Div, {one, x});
 
     RuleEngine engine = MakeEngine_Div();
-    Expr* result = engine.Rewrite(div);
+    ExprOld* result = engine.Rewrite(div);
 
     BF_TEST(result->op == OpType::Div);
     BF_TEST(result->inputs.size() == 2);
@@ -117,13 +117,13 @@ int TestDivOne_GuardLeftOneStaysDiv() {
 
 int TestDivOne_Property_RightOperandOne() {
     auto one = ConstPool::Get(1);
-    std::vector<Expr*> vars = {MakeVar(220), MakeVar(221), MakeVar(222), MakeVar(223)};
+    std::vector<ExprOld*> vars = {MakeVar(220), MakeVar(221), MakeVar(222), MakeVar(223)};
 
     for (size_t i = 0; i < vars.size(); ++i) {
         auto div = MakeOp(300 + static_cast<uint32_t>(i), OpType::Div, {vars[i], one});
 
         RuleEngine engine = MakeEngine_Div();
-        Expr* result = engine.Rewrite(div);
+        ExprOld* result = engine.Rewrite(div);
 
         BF_TEST(result->id == vars[i]->id);
     }

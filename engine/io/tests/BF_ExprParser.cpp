@@ -5,7 +5,7 @@ using namespace BitFlow::Core::Expression;
 
 int TestExprParser_Precedence_MulBeforeAdd() {
     auto parsed = BitFlow::IO::Parse("1 + 2 * 3");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::Add);
     BF_TEST(root->inputs[0]->op == OpType::Const);
@@ -15,7 +15,7 @@ int TestExprParser_Precedence_MulBeforeAdd() {
 
 int TestExprParser_Precedence_AddBeforeShift() {
     auto parsed = BitFlow::IO::Parse("1 << 2 + 3");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::Shl);
     BF_TEST(root->inputs[0]->op == OpType::Const);
@@ -25,7 +25,7 @@ int TestExprParser_Precedence_AddBeforeShift() {
 
 int TestExprParser_Associativity_SubIsLeft() {
     auto parsed = BitFlow::IO::Parse("1 - 2 - 3");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::Sub);
     BF_TEST(root->inputs[0]->op == OpType::Sub);
@@ -35,7 +35,7 @@ int TestExprParser_Associativity_SubIsLeft() {
 
 int TestExprParser_ParsesUnaryAndBinaryMinus() {
     auto parsed = BitFlow::IO::Parse("-a - b");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::Sub);
     BF_TEST(root->inputs[0]->op == OpType::Neg);
@@ -45,7 +45,7 @@ int TestExprParser_ParsesUnaryAndBinaryMinus() {
 
 int TestExprParser_ParsesRotrCall() {
     auto parsed = BitFlow::IO::Parse("rotr(a, 3)");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::RotR);
     BF_TEST(root->inputs.size() == 2);
@@ -56,7 +56,7 @@ int TestExprParser_ParsesRotrCall() {
 
 int TestExprParser_ParsesRotlCall() {
     auto parsed = BitFlow::IO::Parse("rotl(x + y, 5)");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::RotL);
     BF_TEST(root->inputs.size() == 2);
@@ -67,7 +67,7 @@ int TestExprParser_ParsesRotlCall() {
 
 int TestExprParser_ParsesChCall() {
     auto parsed = BitFlow::IO::Parse("ch(a, b, c)");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::Ch);
     BF_TEST(root->inputs.size() == 3);
@@ -79,7 +79,7 @@ int TestExprParser_ParsesChCall() {
 
 int TestExprParser_ParsesMajCall() {
     auto parsed = BitFlow::IO::Parse("maj(x, y, z)");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::Maj);
     BF_TEST(root->inputs.size() == 3);
@@ -91,7 +91,7 @@ int TestExprParser_ParsesMajCall() {
 
 int TestExprParser_MixedExpressionShape() {
     auto parsed = BitFlow::IO::Parse("~a ^ b & (c + 3) << 2");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::Xor);
     BF_TEST(root->inputs[0]->op == OpType::Not);
@@ -103,7 +103,7 @@ int TestExprParser_MixedExpressionShape() {
 
 int TestExprParser_ShiftOperators() {
     auto parsed = BitFlow::IO::Parse("a << b >> c >>> d");
-    Expr* root = parsed.root;
+    ExprOld* root = parsed.root;
 
     BF_TEST(root->op == OpType::UShr);
     BF_TEST(root->inputs[0]->op == OpType::Shr);

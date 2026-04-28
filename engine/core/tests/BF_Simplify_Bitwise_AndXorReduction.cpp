@@ -6,8 +6,8 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static bool HasInput(Expr* andExpr, Expr* needle) {
-    for (Expr* in : andExpr->inputs) {
+static bool HasInput(ExprOld* andExpr, ExprOld* needle) {
+    for (ExprOld* in : andExpr->inputs) {
         if (in == needle)
             return true;
     }
@@ -15,8 +15,8 @@ static bool HasInput(Expr* andExpr, Expr* needle) {
     return false;
 }
 
-static bool HasNotOf(Expr* andExpr, Expr* child) {
-    for (Expr* in : andExpr->inputs) {
+static bool HasNotOf(ExprOld* andExpr, ExprOld* child) {
+    for (ExprOld* in : andExpr->inputs) {
         if (in->op == OpType::Not && in->inputs.size() == 1 && in->inputs[0] == child)
             return true;
     }
@@ -35,7 +35,7 @@ int TestAndXorReduction_RightXor() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
@@ -55,7 +55,7 @@ int TestAndXorReduction_LeftXor() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
@@ -78,14 +78,14 @@ int TestAndXorReduction_MultiArgAnd() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(HasInput(r, c));
     BF_TEST(HasNotOf(r, a));
     BF_TEST(HasNotOf(r, b));
 
-    for (Expr* in : r->inputs)
+    for (ExprOld* in : r->inputs)
         BF_TEST(in->op != OpType::Xor);
 
     return 0;

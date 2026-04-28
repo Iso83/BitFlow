@@ -8,7 +8,7 @@
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 
 #pragma region Match

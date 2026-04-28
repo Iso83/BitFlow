@@ -9,7 +9,7 @@
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 
 static Expr* Rewrite_Remove_Zero(Expr& e) {

@@ -68,7 +68,7 @@ int TestAddZero_Nested() {
     auto add2 = MakeOp(4, OpType::Add, {add1, zero});
 
     RuleEngine engine = MakeEngine_Add();
-    Expr* result = engine.Rewrite(add2);
+    ExprOld* result = engine.Rewrite(add2);
 
     BF_TEST(result->id == x->id);
     return 0;
@@ -79,7 +79,7 @@ int TestAddZero_AllZerosBecomeConstZero() {
     auto add = MakeOp(11, OpType::Add, {zero, zero, zero});
 
     RuleEngine engine = MakeEngine_Add();
-    Expr* result = engine.Rewrite(add);
+    ExprOld* result = engine.Rewrite(add);
 
     BF_TEST(result->id == zero->id);
     return 0;
@@ -92,7 +92,7 @@ int TestAddZero_CanonicalOrderRegression() {
     auto add = MakeOp(22, OpType::Add, {y, zero, x});
 
     RuleEngine engine = MakeEngine_Add();
-    Expr* result = engine.Rewrite(add);
+    ExprOld* result = engine.Rewrite(add);
 
     BF_TEST(result->op == OpType::Add);
     BF_TEST(result->inputs.size() == 2);
@@ -108,17 +108,17 @@ int TestAddZero_Property_ZeroAtAnyPosition() {
     auto zero = ConstPool::Get(0);
 
     for (int zeroPos = 0; zeroPos < 4; ++zeroPos) {
-        std::vector<Expr*> inputs = {x, y, z, x};
+        std::vector<ExprOld*> inputs = {x, y, z, x};
         inputs[zeroPos] = zero;
         auto add =
             MakeOp(100 + static_cast<uint32_t>(zeroPos), OpType::Add, {inputs[0], inputs[1], inputs[2], inputs[3]});
 
         RuleEngine engine = MakeEngine_Add();
-        Expr* result = engine.Rewrite(add);
+        ExprOld* result = engine.Rewrite(add);
 
         BF_TEST(result->op == OpType::Add);
         BF_TEST(result->inputs.size() == 3);
-        for (Expr* in : result->inputs)
+        for (ExprOld* in : result->inputs)
             BF_TEST(!(in->op == OpType::Const && in->constValue == 0));
     }
 
@@ -133,7 +133,7 @@ int TestMulZero_Nested() {
     auto mul2 = MakeOp(204, OpType::Mul, {mul1, x});
 
     RuleEngine engine = MakeEngine_Mult();
-    Expr* result = engine.Rewrite(mul2);
+    ExprOld* result = engine.Rewrite(mul2);
 
     BF_TEST(result->id == zero->id);
     return 0;
@@ -146,7 +146,7 @@ int TestMulZero_DominanceWithMixedInputs() {
     auto mul = MakeOp(212, OpType::Mul, {x, y, zero});
 
     RuleEngine engine = MakeEngine_Mult();
-    Expr* result = engine.Rewrite(mul);
+    ExprOld* result = engine.Rewrite(mul);
 
     BF_TEST(result->id == zero->id);
     return 0;
@@ -159,13 +159,13 @@ int TestMulZero_Property_ZeroAtAnyPosition() {
     auto zero = ConstPool::Get(0);
 
     for (int zeroPos = 0; zeroPos < 4; ++zeroPos) {
-        std::vector<Expr*> inputs = {x, y, z, x};
+        std::vector<ExprOld*> inputs = {x, y, z, x};
         inputs[zeroPos] = zero;
         auto mul =
             MakeOp(300 + static_cast<uint32_t>(zeroPos), OpType::Mul, {inputs[0], inputs[1], inputs[2], inputs[3]});
 
         RuleEngine engine = MakeEngine_Mult();
-        Expr* result = engine.Rewrite(mul);
+        ExprOld* result = engine.Rewrite(mul);
 
         BF_TEST(result->id == zero->id);
     }
@@ -179,7 +179,7 @@ int TestSubZero_Basic() {
     auto sub = MakeOp(401, OpType::Sub, {x, zero});
 
     RuleEngine engine = MakeEngine_Sub();
-    Expr* result = engine.Rewrite(sub);
+    ExprOld* result = engine.Rewrite(sub);
 
     BF_TEST(result->id == x->id);
     return 0;
@@ -191,7 +191,7 @@ int TestSubZero_GuardLeftZeroStaysSub() {
     auto sub = MakeOp(411, OpType::Sub, {zero, x});
 
     RuleEngine engine = MakeEngine_Sub();
-    Expr* result = engine.Rewrite(sub);
+    ExprOld* result = engine.Rewrite(sub);
 
     BF_TEST(result->op == OpType::Sub);
     BF_TEST(result->inputs.size() == 2);
@@ -202,13 +202,13 @@ int TestSubZero_GuardLeftZeroStaysSub() {
 
 int TestSubZero_Property_RightOperandZero() {
     auto zero = ConstPool::Get(0);
-    std::vector<Expr*> vars = {MakeVar(420), MakeVar(421), MakeVar(422), MakeVar(423)};
+    std::vector<ExprOld*> vars = {MakeVar(420), MakeVar(421), MakeVar(422), MakeVar(423)};
 
     for (size_t i = 0; i < vars.size(); ++i) {
         auto sub = MakeOp(500 + static_cast<uint32_t>(i), OpType::Sub, {vars[i], zero});
 
         RuleEngine engine = MakeEngine_Sub();
-        Expr* result = engine.Rewrite(sub);
+        ExprOld* result = engine.Rewrite(sub);
 
         BF_TEST(result->id == vars[i]->id);
     }
@@ -222,7 +222,7 @@ int TestModZero_GuardKeepsNode() {
     auto mod = MakeOp(601, OpType::Mod, {x, zero});
 
     RuleEngine engine = MakeEngine_ModGuard();
-    Expr* result = engine.Rewrite(mod);
+    ExprOld* result = engine.Rewrite(mod);
 
     BF_TEST(result->op == OpType::Mod);
     BF_TEST(result->inputs.size() == 2);
@@ -237,7 +237,7 @@ int TestModZero_GuardLeftZeroStaysMod() {
     auto mod = MakeOp(611, OpType::Mod, {zero, x});
 
     RuleEngine engine = MakeEngine_ModGuard();
-    Expr* result = engine.Rewrite(mod);
+    ExprOld* result = engine.Rewrite(mod);
 
     BF_TEST(result->op == OpType::Mod);
     BF_TEST(result->inputs.size() == 2);
@@ -254,7 +254,7 @@ int TestShiftZero_Basic() {
         auto shift = MakeOp(701 + static_cast<uint32_t>(op), op, {x, zero});
 
         RuleEngine engine = MakeEngine_ShiftZero();
-        Expr* result = engine.Rewrite(shift);
+        ExprOld* result = engine.Rewrite(shift);
 
         BF_TEST(result->id == x->id);
     }
@@ -270,7 +270,7 @@ int TestShiftZero_GuardLeftZeroStaysShift() {
         auto shift = MakeOp(711 + static_cast<uint32_t>(op), op, {zero, x});
 
         RuleEngine engine = MakeEngine_ShiftZero();
-        Expr* result = engine.Rewrite(shift);
+        ExprOld* result = engine.Rewrite(shift);
 
         BF_TEST(result->op == op);
         BF_TEST(result->inputs.size() == 2);
@@ -288,7 +288,7 @@ int TestRotateModuloBitwidth_ReducesConstantAmount() {
     auto rot = MakeOp(801, OpType::RotL, {x, amount});
 
     RuleEngine engine = MakeEngine_RotateModuloBitwidth();
-    Expr* result = engine.Rewrite(rot);
+    ExprOld* result = engine.Rewrite(rot);
 
     BF_TEST(result->op == OpType::RotL);
     BF_TEST(result->inputs.size() == 2);
@@ -306,7 +306,7 @@ int TestRotateModuloBitwidth_FullWidthBecomesIdentity() {
         auto rot = MakeOp(811 + static_cast<uint32_t>(op), op, {x, amount});
 
         RuleEngine engine = MakeEngine_RotateModuloBitwidth();
-        Expr* result = engine.Rewrite(rot);
+        ExprOld* result = engine.Rewrite(rot);
 
         BF_TEST(result->id == x->id);
     }
@@ -320,7 +320,7 @@ int TestRotateModuloBitwidth_GuardNonConstAmount() {
     auto rot = MakeOp(822, OpType::RotR, {x, n});
 
     RuleEngine engine = MakeEngine_RotateModuloBitwidth();
-    Expr* result = engine.Rewrite(rot);
+    ExprOld* result = engine.Rewrite(rot);
 
     BF_TEST(result->op == OpType::RotR);
     BF_TEST(result->inputs.size() == 2);
@@ -337,7 +337,7 @@ int TestRotateModuloBitwidth_Property_ConstantAmounts() {
         auto rot = MakeOp(900 + amount, OpType::RotR, {x, c});
 
         RuleEngine engine = MakeEngine_RotateModuloBitwidth();
-        Expr* result = engine.Rewrite(rot);
+        ExprOld* result = engine.Rewrite(rot);
 
         const uint32_t reduced = amount % 32;
         if (reduced == 0) {
@@ -363,7 +363,7 @@ int TestRotateModuloBitwidth_CanonicalOrderRegression() {
     auto add = MakeOp(843, OpType::Add, {y, rot});
 
     RuleEngine engine = MakeEngine_RotateModuloBitwidth_WithOrder();
-    Expr* result = engine.Rewrite(add);
+    ExprOld* result = engine.Rewrite(add);
 
     BF_TEST(result->op == OpType::Add);
     BF_TEST(result->inputs.size() == 2);

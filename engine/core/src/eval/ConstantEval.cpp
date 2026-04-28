@@ -5,7 +5,7 @@
 namespace BitFlow::Core::Eval {
 namespace {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 
 uint64_t MaskFor(uint32_t bitWidth) {

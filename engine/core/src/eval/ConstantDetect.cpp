@@ -3,7 +3,7 @@
 
 namespace BitFlow::Core::Eval {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 
 bool IsFullyConstant(const Expr* root) {

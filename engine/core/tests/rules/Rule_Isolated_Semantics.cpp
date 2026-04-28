@@ -12,17 +12,17 @@ namespace {
 int TestNormalizeOrder_PositiveAndNegative() {
     const Rule rule = Normalize::Get_Order_Rule();
 
-    Expr* a = MakeVar(1);
-    Expr* b = MakeVar(2);
+    ExprOld* a = MakeVar(1);
+    ExprOld* b = MakeVar(2);
 
-    Expr* unsorted = MakeOp(10, OpType::Xor, {b, a});
+    ExprOld* unsorted = MakeOp(10, OpType::Xor, {b, a});
     BF_TEST(rule.match(*unsorted));
-    Expr* rewritten = rule.rewrite(*unsorted);
-    Expr* expected = MakeOp(11, OpType::Xor, {a, b});
+    ExprOld* rewritten = rule.rewrite(*unsorted);
+    ExprOld* expected = MakeOp(11, OpType::Xor, {a, b});
     BF_TEST(rewritten != nullptr);
     BF_TEST(BitFlow::Core::Expression::StructEqual(rewritten, expected));
 
-    Expr* sorted = MakeOp(12, OpType::Xor, {a, b});
+    ExprOld* sorted = MakeOp(12, OpType::Xor, {a, b});
     BF_TEST(!rule.match(*sorted));
     return 0;
 }
@@ -30,14 +30,14 @@ int TestNormalizeOrder_PositiveAndNegative() {
 int TestSimplifyArithmeticAddZero_PositiveAndNegative() {
     const Rule rule = Simplify::Arithmetic::Get_Add_Zero_Rule();
 
-    Expr* a = MakeVar(20);
-    Expr* withZero = MakeOp(21, OpType::Add, {a, MakeConst(22, 0)});
+    ExprOld* a = MakeVar(20);
+    ExprOld* withZero = MakeOp(21, OpType::Add, {a, MakeConst(22, 0)});
     BF_TEST(rule.match(*withZero));
-    Expr* rewritten = rule.rewrite(*withZero);
+    ExprOld* rewritten = rule.rewrite(*withZero);
     BF_TEST(rewritten != nullptr);
     BF_TEST(rewritten->id == a->id);
 
-    Expr* withoutZero = MakeOp(23, OpType::Add, {a, MakeConst(24, 1)});
+    ExprOld* withoutZero = MakeOp(23, OpType::Add, {a, MakeConst(24, 1)});
     BF_TEST(!rule.match(*withoutZero));
     return 0;
 }
@@ -45,15 +45,15 @@ int TestSimplifyArithmeticAddZero_PositiveAndNegative() {
 int TestSimplifyBitwiseXorCancel_PositiveAndNegative() {
     const Rule rule = Simplify::Bitwise::Get_Xor_Cancel_Rule();
 
-    Expr* a = MakeVar(30);
-    Expr* duplicate = MakeOp(31, OpType::Xor, {a, a});
+    ExprOld* a = MakeVar(30);
+    ExprOld* duplicate = MakeOp(31, OpType::Xor, {a, a});
     BF_TEST(rule.match(*duplicate));
-    Expr* rewritten = rule.rewrite(*duplicate);
+    ExprOld* rewritten = rule.rewrite(*duplicate);
     BF_TEST(rewritten != nullptr);
     BF_TEST(rewritten->op == OpType::Const);
     BF_TEST(rewritten->constValue == 0U);
 
-    Expr* distinct = MakeOp(32, OpType::Xor, {a, MakeVar(33)});
+    ExprOld* distinct = MakeOp(32, OpType::Xor, {a, MakeVar(33)});
     BF_TEST(!rule.match(*distinct));
     return 0;
 }
@@ -61,15 +61,15 @@ int TestSimplifyBitwiseXorCancel_PositiveAndNegative() {
 int TestFactorizeArithmeticLinearMultiplicity_PositiveAndNegative() {
     const Rule rule = Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule();
 
-    Expr* a = MakeVar(40);
-    Expr* linear = MakeOp(41, OpType::Add, {a, MakeOp(42, OpType::Mul, {MakeConst(43, 2), a})});
+    ExprOld* a = MakeVar(40);
+    ExprOld* linear = MakeOp(41, OpType::Add, {a, MakeOp(42, OpType::Mul, {MakeConst(43, 2), a})});
     BF_TEST(rule.match(*linear));
-    Expr* rewritten = rule.rewrite(*linear);
-    Expr* expected = MakeOp(44, OpType::Mul, {a, MakeConst(45, 3)});
+    ExprOld* rewritten = rule.rewrite(*linear);
+    ExprOld* expected = MakeOp(44, OpType::Mul, {a, MakeConst(45, 3)});
     BF_TEST(rewritten != nullptr);
     BF_TEST(BitFlow::Core::Expression::StructEqual(rewritten, expected));
 
-    Expr* outOfScope = MakeOp(46, OpType::Add, {a, MakeOp(47, OpType::Mul, {a, MakeVar(48)})});
+    ExprOld* outOfScope = MakeOp(46, OpType::Add, {a, MakeOp(47, OpType::Mul, {a, MakeVar(48)})});
     BF_TEST(!rule.match(*outOfScope));
     return 0;
 }
@@ -77,17 +77,17 @@ int TestFactorizeArithmeticLinearMultiplicity_PositiveAndNegative() {
 int TestFactorizeBitwiseXorAnd_PositiveAndNegative() {
     const Rule rule = Factorize::Bitwise::Get_Xor_And_Rule();
 
-    Expr* a = MakeVar(50);
-    Expr* b = MakeVar(51);
-    Expr* c = MakeVar(52);
-    Expr* factorable = MakeOp(53, OpType::Xor, {MakeOp(54, OpType::And, {a, b}), MakeOp(55, OpType::And, {a, c})});
+    ExprOld* a = MakeVar(50);
+    ExprOld* b = MakeVar(51);
+    ExprOld* c = MakeVar(52);
+    ExprOld* factorable = MakeOp(53, OpType::Xor, {MakeOp(54, OpType::And, {a, b}), MakeOp(55, OpType::And, {a, c})});
     BF_TEST(rule.match(*factorable));
-    Expr* rewritten = rule.rewrite(*factorable);
-    Expr* expected = MakeOp(56, OpType::And, {a, MakeOp(57, OpType::Xor, {b, c})});
+    ExprOld* rewritten = rule.rewrite(*factorable);
+    ExprOld* expected = MakeOp(56, OpType::And, {a, MakeOp(57, OpType::Xor, {b, c})});
     BF_TEST(rewritten != nullptr);
     BF_TEST(BitFlow::Core::Expression::StructEqual(rewritten, expected));
 
-    Expr* outOfScope = MakeOp(58, OpType::Xor, {a, b});
+    ExprOld* outOfScope = MakeOp(58, OpType::Xor, {a, b});
     BF_TEST(!rule.match(*outOfScope));
     return 0;
 }

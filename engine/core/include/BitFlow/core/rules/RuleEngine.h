@@ -6,13 +6,13 @@
 #include <vector>
 
 namespace BitFlow::Core::Expression {
-struct Expr;
+struct ExprOld;
 }
 
 namespace BitFlow::Core::Rules {
 
 struct RewriteResult {
-    Expression::Expr* result;
+    Expression::ExprOld* result;
     bool stable;
     bool oscillationDetected;
     int iterations;
@@ -32,7 +32,8 @@ struct RewriteResult {
 
 class RuleEngine {
   public:
-    using DebugCallback = std::function<void(const Expression::Expr* before, const Expression::Expr* after, RuleId)>;
+    using DebugCallback =
+        std::function<void(const Expression::ExprOld* before, const Expression::ExprOld* after, RuleId)>;
 
   private:
     DebugCallback m_debugCallback;
@@ -47,12 +48,12 @@ class RuleEngine {
     virtual ~RuleEngine() = default;
 
     virtual void AddRule(const Rule& rule);
-    Expression::Expr* ApplyOnce(Expression::Expr* expr) const;
-    Expression::Expr* ApplyRecursive(Expression::Expr* expr) const;
-    Expression::Expr* Rewrite(Expression::Expr* expr) const {
+    Expression::ExprOld* ApplyOnce(Expression::ExprOld* expr) const;
+    Expression::ExprOld* ApplyRecursive(Expression::ExprOld* expr) const;
+    Expression::ExprOld* Rewrite(Expression::ExprOld* expr) const {
         return RewriteToFixedPoint(expr).result;
     }
-    RewriteResult RewriteToFixedPoint(Expression::Expr* expr) const;
+    RewriteResult RewriteToFixedPoint(Expression::ExprOld* expr) const;
 
     void SetDebugCallback(DebugCallback cb);
 

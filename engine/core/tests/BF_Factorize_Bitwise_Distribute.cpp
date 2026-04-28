@@ -18,7 +18,7 @@ int TestAndOverXor() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Xor);
     BF_TEST(result->inputs.size() == 2);
@@ -39,7 +39,7 @@ int TestAndOverXor_Multi() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Xor);
     BF_TEST(result->inputs.size() == 3);
@@ -60,7 +60,7 @@ int TestAndMultipleOthers() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Xor);
     BF_TEST(result->inputs.size() == 2);

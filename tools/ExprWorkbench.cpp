@@ -25,7 +25,7 @@
 namespace {
 
 using namespace BitFlow;
-using Expr = Core::Expression::Expr;
+using Expr = Core::Expression::ExprOld;
 using OpType = Core::Expression::OpType;
 
 struct CliOptions {

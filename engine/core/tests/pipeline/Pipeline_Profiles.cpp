@@ -12,8 +12,8 @@ using namespace BitFlow::Core::Rules;
 
 namespace {
 
-bool IsStable(RuleEngine& engine, Expr* expr) {
-    Expr* next = engine.ApplyOnce(expr);
+bool IsStable(RuleEngine& engine, ExprOld* expr) {
+    ExprOld* next = engine.ApplyOnce(expr);
     return BitFlow::Core::Expression::StructEqual(expr, next);
 }
 
@@ -29,7 +29,7 @@ int Test_Pipeline_SHA_Safe() {
     auto expr = MakeOp(1102, OpType::Xor, {ch, maj});
 
     RuleEngine engine = BuildProfile("simplify_full_safe");
-    Expr* out = engine.ApplyOnce(expr);
+    ExprOld* out = engine.ApplyOnce(expr);
 
     BF_TEST(IsStable(engine, out));
     return 0;
@@ -45,7 +45,7 @@ int Test_Pipeline_NoOscillation_Factorize() {
     auto expr = MakeOp(1205, OpType::Xor, {andAB, andAC});
 
     RuleEngine engine = BuildProfile("factorize_full_safe");
-    Expr* out = engine.ApplyOnce(expr);
+    ExprOld* out = engine.ApplyOnce(expr);
 
     BF_TEST(IsStable(engine, out));
     return 0;
@@ -59,7 +59,7 @@ int Test_Pipeline_NoOscillation_ExpandBitwise() {
     auto expr = MakeOp(1303, OpType::And, {a, MakeOp(1304, OpType::Xor, {b, c})});
 
     RuleEngine engine = BuildProfile("expand_bitwise");
-    Expr* out = engine.ApplyOnce(expr);
+    ExprOld* out = engine.ApplyOnce(expr);
 
     BF_TEST(IsStable(engine, out));
     return 0;

@@ -20,7 +20,7 @@ RuleEngine MakeSigmaNormalizeEngine() {
     return MakeShaSafeEngine();
 }
 
-std::string ExprSignature(const Expr* root) {
+std::string ExprSignature(const ExprOld* root) {
     if (!root)
         return "null";
 
@@ -100,7 +100,7 @@ int TestDuplicatePairCancelsToZero() {
         MakeOp(20, OpType::Xor,
                {MakeOp(21, OpType::RotR, {x, MakeConst(22, 2)}), MakeOp(23, OpType::RotR, {x, MakeConst(24, 2)})});
 
-    Expr* r = MakeSigmaNormalizeEngine().Rewrite(expr);
+    ExprOld* r = MakeSigmaNormalizeEngine().Rewrite(expr);
     BF_TEST(r->op == OpType::Const);
     BF_TEST(r->constValue == 0);
     return 0;
@@ -113,7 +113,7 @@ int TestDuplicateWithMiddleTermLeavesSingle() {
         30, OpType::Xor,
         {MakeOp(33, OpType::RotR, {x, MakeConst(34, 2)}), keep, MakeOp(35, OpType::RotR, {x, MakeConst(36, 2)})});
 
-    Expr* r = MakeSigmaNormalizeEngine().Rewrite(expr);
+    ExprOld* r = MakeSigmaNormalizeEngine().Rewrite(expr);
     BF_TEST(r == keep);
     return 0;
 }

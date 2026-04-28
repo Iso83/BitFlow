@@ -17,7 +17,7 @@ int TestAndAbsorb() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->id == a->id);
     return 0;
@@ -34,7 +34,7 @@ int TestOrAbsorb() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Or_Absorb_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->id == a->id);
     return 0;

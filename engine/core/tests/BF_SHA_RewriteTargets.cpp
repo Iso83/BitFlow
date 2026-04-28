@@ -12,14 +12,14 @@ using namespace BitFlow::Core::Expression;
 
 namespace {
 
-bool ContainsOp(const Expr* root, OpType op) {
+bool ContainsOp(const ExprOld* root, OpType op) {
     if (root == nullptr)
         return false;
 
     if (root->op == op)
         return true;
 
-    for (const Expr* in : root->inputs) {
+    for (const ExprOld* in : root->inputs) {
         if (ContainsOp(in, op))
             return true;
     }
@@ -27,24 +27,24 @@ bool ContainsOp(const Expr* root, OpType op) {
     return false;
 }
 
-bool IsAndPair(const Expr* e, const Expr* a, const Expr* b) {
+bool IsAndPair(const ExprOld* e, const ExprOld* a, const ExprOld* b) {
     if (!e || e->op != OpType::And || e->inputs.size() != 2)
         return false;
 
-    const Expr* lhs = e->inputs[0];
-    const Expr* rhs = e->inputs[1];
+    const ExprOld* lhs = e->inputs[0];
+    const ExprOld* rhs = e->inputs[1];
     return (lhs->id.value() == a->id.value() && rhs->id.value() == b->id.value()) ||
            (lhs->id.value() == b->id.value() && rhs->id.value() == a->id.value());
 }
 
-bool IsAndNotPair(const Expr* e, const Expr* x, const Expr* z) {
+bool IsAndNotPair(const ExprOld* e, const ExprOld* x, const ExprOld* z) {
     if (!e || e->op != OpType::And || e->inputs.size() != 2)
         return false;
 
-    const Expr* lhs = e->inputs[0];
-    const Expr* rhs = e->inputs[1];
+    const ExprOld* lhs = e->inputs[0];
+    const ExprOld* rhs = e->inputs[1];
 
-    auto isNotOfX = [&](const Expr* candidate) {
+    auto isNotOfX = [&](const ExprOld* candidate) {
         return candidate && candidate->op == OpType::Not && candidate->inputs.size() == 1 &&
                candidate->inputs[0]->id.value() == x->id.value();
     };
@@ -52,7 +52,7 @@ bool IsAndNotPair(const Expr* e, const Expr* x, const Expr* z) {
     return (isNotOfX(lhs) && rhs->id.value() == z->id.value()) || (isNotOfX(rhs) && lhs->id.value() == z->id.value());
 }
 
-bool IsCanonicalCH(const Expr* e, const Expr* x, const Expr* y, const Expr* z) {
+bool IsCanonicalCH(const ExprOld* e, const ExprOld* x, const ExprOld* y, const ExprOld* z) {
     if (!e || e->op != OpType::Xor || e->inputs.size() != 2)
         return false;
 
@@ -60,14 +60,14 @@ bool IsCanonicalCH(const Expr* e, const Expr* x, const Expr* y, const Expr* z) {
            (IsAndPair(e->inputs[1], x, y) && IsAndNotPair(e->inputs[0], x, z));
 }
 
-bool IsCanonicalMAJ(const Expr* e, const Expr* x, const Expr* y, const Expr* z) {
+bool IsCanonicalMAJ(const ExprOld* e, const ExprOld* x, const ExprOld* y, const ExprOld* z) {
     if (!e || e->op != OpType::Xor || e->inputs.size() != 3)
         return false;
 
     bool hasXY = false;
     bool hasXZ = false;
     bool hasYZ = false;
-    for (const Expr* in : e->inputs) {
+    for (const ExprOld* in : e->inputs) {
         hasXY = hasXY || IsAndPair(in, x, y);
         hasXZ = hasXZ || IsAndPair(in, x, z);
         hasYZ = hasYZ || IsAndPair(in, y, z);
@@ -76,14 +76,14 @@ bool IsCanonicalMAJ(const Expr* e, const Expr* x, const Expr* y, const Expr* z) 
     return hasXY && hasXZ && hasYZ;
 }
 
-bool ContainsCanonicalCH(const Expr* root, const Expr* x, const Expr* y, const Expr* z) {
+bool ContainsCanonicalCH(const ExprOld* root, const ExprOld* x, const ExprOld* y, const ExprOld* z) {
     if (root == nullptr)
         return false;
 
     if (IsCanonicalCH(root, x, y, z))
         return true;
 
-    for (const Expr* in : root->inputs) {
+    for (const ExprOld* in : root->inputs) {
         if (ContainsCanonicalCH(in, x, y, z))
             return true;
     }
@@ -91,14 +91,14 @@ bool ContainsCanonicalCH(const Expr* root, const Expr* x, const Expr* y, const E
     return false;
 }
 
-bool ContainsCanonicalMAJ(const Expr* root, const Expr* x, const Expr* y, const Expr* z) {
+bool ContainsCanonicalMAJ(const ExprOld* root, const ExprOld* x, const ExprOld* y, const ExprOld* z) {
     if (root == nullptr)
         return false;
 
     if (IsCanonicalMAJ(root, x, y, z))
         return true;
 
-    for (const Expr* in : root->inputs) {
+    for (const ExprOld* in : root->inputs) {
         if (ContainsCanonicalMAJ(in, x, y, z))
             return true;
     }

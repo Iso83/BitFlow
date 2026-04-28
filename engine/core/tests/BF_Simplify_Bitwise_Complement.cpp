@@ -17,7 +17,7 @@ int TestAndComplement() {
     engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Complement_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Const);
     BF_TEST(r->constValue == 0);
@@ -35,7 +35,7 @@ int TestOrComplement() {
     engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Complement_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Const);
     BF_TEST(r->constValue == 1);

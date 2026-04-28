@@ -116,21 +116,21 @@ static uint32_t Rnd() {
     return seed;
 }
 
-static Expr* GenLeaf() {
+static ExprOld* GenLeaf() {
     if ((Rnd() % 2u) == 0u)
         return MakeConst(Rnd(), Rnd() & 0xFFu);
 
     return MakeVar((Rnd() % 10u) + 1u);
 }
 
-static Expr* GenExpr(int depth) {
+static ExprOld* GenExpr(int depth) {
     if (depth <= 0)
         return GenLeaf();
 
     const uint32_t op = Rnd() % 10u;
 
-    Expr* a = GenExpr(depth - 1);
-    Expr* b = GenExpr(depth - 1);
+    ExprOld* a = GenExpr(depth - 1);
+    ExprOld* b = GenExpr(depth - 1);
 
     switch (op) {
     case 0:
@@ -163,7 +163,7 @@ int TestFuzzEvalVsCodegen_32bit() {
     constexpr int kCases = 1000;
 
     for (int i = 0; i < kCases; ++i) {
-        Expr* root = GenExpr(2);
+        ExprOld* root = GenExpr(2);
 
         uint32_t bwOptions[] = {8, 16, 32, 64};
         uint32_t bw = bwOptions[Rnd() % 4];

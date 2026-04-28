@@ -9,7 +9,7 @@
 
 namespace BitFlow::Core::Rules {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 
 RuleEngine::RuleEngine() {
     Expression::ExprIntern::Reset();

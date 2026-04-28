@@ -1,4 +1,3 @@
-#include "expression/ExprFactory.h"
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
@@ -14,7 +13,7 @@ namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
 using namespace BitFlow::Core::Expression;
 
-static Expr* BuildXorParityResult(const std::vector<Expr*>& terms) {
+static ExprOld* BuildXorParityResult(const std::vector<ExprOld*>& terms) {
     if (terms.empty())
         return ConstPool::Get(0);
 
@@ -25,7 +24,7 @@ static Expr* BuildXorParityResult(const std::vector<Expr*>& terms) {
 }
 
 #pragma region Match
-static bool Match_And_Cancel(const Expr& e) {
+static bool Match_And_Cancel(const ExprOld& e) {
     if (e.op != OpType::And)
         return false;
 
@@ -35,7 +34,7 @@ static bool Match_And_Cancel(const Expr& e) {
     std::unordered_map<uint32_t, int> counts;
     counts.reserve(e.inputs.size());
 
-    for (const Expr* in : e.inputs) {
+    for (const ExprOld* in : e.inputs) {
         const uint32_t key = in->id.value();
         counts[key]++;
 
@@ -46,7 +45,7 @@ static bool Match_And_Cancel(const Expr& e) {
     return false;
 }
 
-static bool Match_Or_Cancel(const Expr& e) {
+static bool Match_Or_Cancel(const ExprOld& e) {
     if (e.op != OpType::Or)
         return false;
 
@@ -56,7 +55,7 @@ static bool Match_Or_Cancel(const Expr& e) {
     std::unordered_map<uint32_t, int> counts;
     counts.reserve(e.inputs.size());
 
-    for (const Expr* in : e.inputs) {
+    for (const ExprOld* in : e.inputs) {
         const uint32_t key = in->id.value();
         counts[key]++;
 
@@ -67,13 +66,13 @@ static bool Match_Or_Cancel(const Expr& e) {
     return false;
 }
 
-static bool Match_XorCancel(const Expr& e) {
+static bool Match_XorCancel(const ExprOld& e) {
     if (e.op != OpType::Xor || e.inputs.size() < 2)
         return false;
 
     uint32_t constParity = 0;
 
-    for (const Expr* in : e.inputs) {
+    for (const ExprOld* in : e.inputs) {
         if (in->op == OpType::Const)
             constParity ^= in->constValue;
     }
@@ -92,14 +91,14 @@ static bool Match_XorCancel(const Expr& e) {
 #pragma endregion
 
 #pragma region Rewrite
-static Expr* Rewrite_And_Cancel(Expr& e) {
-    std::vector<Expr*> newInputs;
+static ExprOld* Rewrite_And_Cancel(ExprOld& e) {
+    std::vector<ExprOld*> newInputs;
     newInputs.reserve(e.inputs.size());
 
     std::unordered_map<uint32_t, bool> seen;
     seen.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
+    for (ExprOld* in : e.inputs) {
         const uint32_t key = in->id.value();
 
         if (seen[key])
@@ -115,19 +114,19 @@ static Expr* Rewrite_And_Cancel(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = CloneExpr(&e);
+    ExprOld* target = CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }
 
-static Expr* Rewrite_Or_Cancel(Expr& e) {
-    std::vector<Expr*> newInputs;
+static ExprOld* Rewrite_Or_Cancel(ExprOld& e) {
+    std::vector<ExprOld*> newInputs;
     newInputs.reserve(e.inputs.size());
 
     std::unordered_map<uint32_t, bool> seen;
     seen.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
+    for (ExprOld* in : e.inputs) {
         const uint32_t key = in->id.value();
 
         if (seen[key])
@@ -143,20 +142,20 @@ static Expr* Rewrite_Or_Cancel(Expr& e) {
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = CloneExpr(&e);
+    ExprOld* target = CloneExpr(&e);
     target->inputs = std::move(newInputs);
     return target;
 }
 
-static Expr* Rewrite_XorCancel(Expr& e) {
-    std::vector<Expr*> oddTerms;
+static ExprOld* Rewrite_XorCancel(ExprOld& e) {
+    std::vector<ExprOld*> oddTerms;
     oddTerms.reserve(e.inputs.size());
 
     uint32_t constParity = 0;
 
     size_t i = 0;
     while (i < e.inputs.size()) {
-        Expr* cur = e.inputs[i];
+        ExprOld* cur = e.inputs[i];
 
         if (cur->op == OpType::Const) {
             constParity ^= cur->constValue;
@@ -178,7 +177,7 @@ static Expr* Rewrite_XorCancel(Expr& e) {
     if (constParity != 0)
         oddTerms.push_back(ConstPool::Get(constParity));
 
-    std::sort(oddTerms.begin(), oddTerms.end(), [](Expr* a, Expr* b) { return CanonicalExprLess(a, b); });
+    std::sort(oddTerms.begin(), oddTerms.end(), [](ExprOld* a, ExprOld* b) { return CanonicalExprLess(a, b); });
 
     return BuildXorParityResult(oddTerms);
 }

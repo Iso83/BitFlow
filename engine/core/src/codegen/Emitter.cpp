@@ -78,14 +78,14 @@ static std::string InlineSsaResult(const SsaProgram& prog, uint32_t bitWidth) {
     return expr;
 }
 
-static void CollectVars(const Expr* e, std::set<uint32_t>& out) {
+static void CollectVars(const ExprOld* e, std::set<uint32_t>& out) {
     if (!e)
         return;
 
     if (e->op == OpType::Var)
         out.insert(e->id.value());
 
-    for (const Expr* in : e->inputs)
+    for (const ExprOld* in : e->inputs)
         CollectVars(in, out);
 }
 
@@ -153,7 +153,7 @@ std::string EmitCRuntimeSupport(uint32_t bitWidth) {
     return ss.str();
 }
 
-std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
+std::string EmitCExpr(const ExprOld* root, uint32_t bitWidth) {
     if (!root || bitWidth == 0U)
         return "0";
 
@@ -162,7 +162,7 @@ std::string EmitCExpr(const Expr* root, uint32_t bitWidth) {
     return InlineSsaResult(prog, bitWidth);
 }
 
-std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
+std::string EmitCFunction(const ExprOld* root, uint32_t bitWidth) {
     if (!root || bitWidth == 0U)
         return GetCType(bitWidth) + " eval() { return 0; }";
 
@@ -227,7 +227,7 @@ std::string EmitCFunction(const Expr* root, uint32_t bitWidth) {
     return ss.str();
 }
 
-std::string EmitCFunctionMulti(const std::vector<const Expr*>& roots, uint32_t bitWidth) {
+std::string EmitCFunctionMulti(const std::vector<const ExprOld*>& roots, uint32_t bitWidth) {
     const std::string ctype = GetCType(bitWidth);
     if (roots.empty() || bitWidth == 0U)
         return "struct EvalResult {\n};\n\nEvalResult eval() {\n    return EvalResult{};\n}\n\nEvalResult f() {\n    "
@@ -236,7 +236,7 @@ std::string EmitCFunctionMulti(const std::vector<const Expr*>& roots, uint32_t b
     const SsaProgram prog = BuildSSA(roots, bitWidth);
 
     std::set<uint32_t> vars;
-    for (const Expr* root : roots)
+    for (const ExprOld* root : roots)
         CollectVars(root, vars);
 
     std::ostringstream ss;

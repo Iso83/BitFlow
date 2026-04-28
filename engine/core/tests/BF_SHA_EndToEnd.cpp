@@ -17,12 +17,12 @@ using namespace BitFlow::Core::Expression;
 
 namespace {
 
-bool ContainsOp(const Expr* root, OpType op) {
+bool ContainsOp(const ExprOld* root, OpType op) {
     if (root == nullptr)
         return false;
     if (root->op == op)
         return true;
-    for (const Expr* in : root->inputs) {
+    for (const ExprOld* in : root->inputs) {
         if (ContainsOp(in, op))
             return true;
     }
@@ -33,7 +33,7 @@ RuleEngine MakeShaFactorizeEngine() {
     return BuildProfile("factorize_bitwise_safe");
 }
 
-Expr* RunRoundFragmentPipeline(Expr* fragment) {
+ExprOld* RunRoundFragmentPipeline(ExprOld* fragment) {
     auto normalizedSimplified = MakeShaSafeEngine().Rewrite(fragment);
     return MakeShaFactorizeEngine().ApplyRecursive(normalizedSimplified);
 }

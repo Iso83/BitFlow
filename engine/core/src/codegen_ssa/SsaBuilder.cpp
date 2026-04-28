@@ -22,7 +22,7 @@ constexpr uint32_t kVarTag = 0x40000000u;
 constexpr uint32_t kConstTag = 0x80000000u;
 
 struct Context {
-    std::unordered_map<const Expr*, uint32_t> cache;
+    std::unordered_map<const ExprOld*, uint32_t> cache;
     std::vector<Statement> statements;
 
     uint32_t nextStmtId = 0;
@@ -73,7 +73,7 @@ std::string FormatUnsignedLiteral(uint64_t value, uint32_t bitWidth) {
     return ss.str();
 }
 
-std::string LeafExpr(const Expr* e, uint32_t bw) {
+std::string LeafExpr(const ExprOld* e, uint32_t bw) {
     if (e->op == OpType::Var)
         return "v" + std::to_string(e->id.value());
 
@@ -145,7 +145,7 @@ std::string ValueExpr(uint32_t valueId, const std::unordered_map<uint32_t, std::
     return "0";
 }
 
-uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
+uint32_t Visit(const ExprOld* e, uint32_t bw, Context& ctx) {
     auto it = ctx.cache.find(e);
     if (it != ctx.cache.end())
         return it->second;
@@ -167,7 +167,7 @@ uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
 
     std::vector<uint32_t> inputs;
     inputs.reserve(e->inputs.size());
-    for (const Expr* in : e->inputs)
+    for (const ExprOld* in : e->inputs)
         inputs.push_back(Visit(in, bw, ctx));
 
     const uint32_t id = ctx.nextStmtId++;
@@ -177,13 +177,13 @@ uint32_t Visit(const Expr* e, uint32_t bw, Context& ctx) {
 }
 
 struct MultiContext {
-    std::unordered_map<const Expr*, std::string> keyMemo;
+    std::unordered_map<const ExprOld*, std::string> keyMemo;
     std::unordered_map<std::string, uint32_t> keyCount;
     std::unordered_map<std::string, std::string> keyToTemp;
     uint32_t nextTempId = 1;
 };
 
-std::string StructuralKey(const Expr* e, uint32_t bitWidth, MultiContext& ctx) {
+std::string StructuralKey(const ExprOld* e, uint32_t bitWidth, MultiContext& ctx) {
     if (!e)
         return "null";
 
@@ -212,15 +212,15 @@ std::string StructuralKey(const Expr* e, uint32_t bitWidth, MultiContext& ctx) {
     return key;
 }
 
-void CountRefs(const Expr* e, uint32_t bitWidth, MultiContext& ctx) {
+void CountRefs(const ExprOld* e, uint32_t bitWidth, MultiContext& ctx) {
     if (!e)
         return;
     ++ctx.keyCount[StructuralKey(e, bitWidth, ctx)];
-    for (const Expr* in : e->inputs)
+    for (const ExprOld* in : e->inputs)
         CountRefs(in, bitWidth, ctx);
 }
 
-std::string ScheduleExpr(const Expr* e, uint32_t bitWidth, MultiContext& ctx, SsaProgram& prog) {
+std::string ScheduleExpr(const ExprOld* e, uint32_t bitWidth, MultiContext& ctx, SsaProgram& prog) {
     if (!e)
         return "0";
     if (e->op == OpType::Var || e->op == OpType::Const)
@@ -228,7 +228,7 @@ std::string ScheduleExpr(const Expr* e, uint32_t bitWidth, MultiContext& ctx, Ss
 
     std::vector<std::string> inputExprs;
     inputExprs.reserve(e->inputs.size());
-    for (const Expr* in : e->inputs)
+    for (const ExprOld* in : e->inputs)
         inputExprs.push_back(ScheduleExpr(in, bitWidth, ctx, prog));
 
     const std::string expr = BuildExpr(e->op, inputExprs);
@@ -249,7 +249,7 @@ std::string ScheduleExpr(const Expr* e, uint32_t bitWidth, MultiContext& ctx, Ss
 
 } // namespace
 
-SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
+SsaProgram BuildSSA(const ExprOld* root, uint32_t bitWidth) {
     SsaProgram prog{};
     if (root == nullptr || bitWidth == 0)
         return prog;
@@ -278,17 +278,17 @@ SsaProgram BuildSSA(const Expr* root, uint32_t bitWidth) {
     return prog;
 }
 
-SsaProgram BuildSSA(const std::vector<const Expr*>& roots, uint32_t bitWidth) {
+SsaProgram BuildSSA(const std::vector<const ExprOld*>& roots, uint32_t bitWidth) {
     SsaProgram prog{};
     if (roots.empty() || bitWidth == 0U)
         return prog;
 
     MultiContext ctx{};
-    for (const Expr* root : roots)
+    for (const ExprOld* root : roots)
         CountRefs(root, bitWidth, ctx);
 
     prog.results.reserve(roots.size());
-    for (const Expr* root : roots)
+    for (const ExprOld* root : roots)
         prog.results.push_back(ScheduleExpr(root, bitWidth, ctx, prog));
 
     if (!prog.results.empty())

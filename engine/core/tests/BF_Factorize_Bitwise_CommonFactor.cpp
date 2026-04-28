@@ -20,16 +20,16 @@ int TestXorAndCommonFactor() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::And);
     BF_TEST(result->inputs.size() == 2);
 
-    Expr* left = result->inputs[0];
-    Expr* right = result->inputs[1];
+    ExprOld* left = result->inputs[0];
+    ExprOld* right = result->inputs[1];
 
-    Expr* common = nullptr;
-    Expr* inner = nullptr;
+    ExprOld* common = nullptr;
+    ExprOld* inner = nullptr;
 
     if (left->id == a->id) {
         common = left;
@@ -67,13 +67,13 @@ int TestXorAndCommonFactor_MultiInput() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::And);
     BF_TEST(result->inputs.size() == 2);
 
-    Expr* common = nullptr;
-    Expr* inner = nullptr;
+    ExprOld* common = nullptr;
+    ExprOld* inner = nullptr;
 
     if (result->inputs[0]->id == a->id) {
         common = result->inputs[0];
@@ -92,7 +92,7 @@ int TestXorAndCommonFactor_MultiInput() {
     bool hasC = false;
     bool hasD = false;
 
-    for (Expr* in : inner->inputs) {
+    for (ExprOld* in : inner->inputs) {
         if (in->id == b->id)
             hasB = true;
         else if (in->id == c->id)
@@ -121,7 +121,7 @@ int TestXorAndFactor_Basic() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
@@ -148,13 +148,13 @@ int TestXorAndFactor_WithUntouchedTerm() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Xor);
     BF_TEST(r->inputs.size() == 2);
 
-    Expr* factored = nullptr;
-    Expr* untouched = nullptr;
+    ExprOld* factored = nullptr;
+    ExprOld* untouched = nullptr;
 
     if (r->inputs[0]->op == OpType::And) {
         factored = r->inputs[0];
@@ -193,7 +193,7 @@ int TestXorAndFactor_NoMatch() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r == expr);
     return 0;
@@ -217,15 +217,15 @@ int TestXorAndFactor_MultiFactorChoice_PicksMostFrequent() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Xor);
     BF_TEST(r->inputs.size() == 2);
 
-    Expr* factored = nullptr;
-    Expr* untouched = nullptr;
+    ExprOld* factored = nullptr;
+    ExprOld* untouched = nullptr;
 
-    for (Expr* in : r->inputs) {
+    for (ExprOld* in : r->inputs) {
         if (in->op == OpType::And && in->inputs.size() == 2 &&
             (in->inputs[0]->op == OpType::Xor || in->inputs[1]->op == OpType::Xor))
             factored = in;
@@ -263,15 +263,15 @@ int TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Xor);
     BF_TEST(r->inputs.size() == 2);
 
-    Expr* factored = nullptr;
-    Expr* untouched = nullptr;
+    ExprOld* factored = nullptr;
+    ExprOld* untouched = nullptr;
 
-    for (Expr* in : r->inputs) {
+    for (ExprOld* in : r->inputs) {
         if (in->op == OpType::And && in->inputs.size() == 2 &&
             (in->inputs[0]->op == OpType::Xor || in->inputs[1]->op == OpType::Xor))
             factored = in;
@@ -313,7 +313,7 @@ int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
     BF_TEST(r->op == OpType::Xor);
     BF_TEST(r->inputs.size() == 3);
     BF_TEST(r->inputs[0] == f);

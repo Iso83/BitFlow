@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace BitFlow::Core::Expression {
-struct Expr;
+struct ExprOld;
 }
 
 namespace BitFlow::Core::Rules {
@@ -21,7 +21,8 @@ enum class RewriteCostPolicy {
     ExpandDistribute,
 };
 
-RewriteCost ComputeRewriteCost(const Expression::Expr* expr);
-bool IsRewritePreferred(const Expression::Expr* candidate, const Expression::Expr* current, RewriteCostPolicy policy);
+RewriteCost ComputeRewriteCost(const Expression::ExprOld* expr);
+bool IsRewritePreferred(const Expression::ExprOld* candidate, const Expression::ExprOld* current,
+                        RewriteCostPolicy policy);
 
 } // namespace BitFlow::Core::Rules

@@ -6,14 +6,14 @@
 
 namespace BitFlow::Core::Expression {
 
-Key BuildCommutativeKey(const Expr* e) {
+Key BuildCommutativeKey(const ExprOld* e) {
     Key k{};
     k.op = e->op;
     k.constValue = e->constValue;
 
     k.inputs.reserve(e->inputs.size());
 
-    for (const Expr* in : e->inputs)
+    for (const ExprOld* in : e->inputs)
         k.inputs.push_back(in->id.value());
 
     if (IsCommutative(k.op))

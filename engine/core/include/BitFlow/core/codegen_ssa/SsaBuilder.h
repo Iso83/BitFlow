@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace BitFlow::Core::Expression {
-struct Expr;
+struct ExprOld;
 }
 
 namespace BitFlow::Core::Codegen {
@@ -24,7 +24,7 @@ struct SsaProgram {
     std::vector<std::string> results;
 };
 
-SsaProgram BuildSSA(const Expression::Expr* root, uint32_t bitWidth);
-SsaProgram BuildSSA(const std::vector<const Expression::Expr*>& roots, uint32_t bitWidth);
+SsaProgram BuildSSA(const Expression::ExprOld* root, uint32_t bitWidth);
+SsaProgram BuildSSA(const std::vector<const Expression::ExprOld*>& roots, uint32_t bitWidth);
 
 } // namespace BitFlow::Core::Codegen

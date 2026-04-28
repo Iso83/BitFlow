@@ -32,13 +32,13 @@ struct WideEvalResult {
 // Contract:
 // - supports all bit widths > 0
 // - for bitWidth > 64, `value` contains only the low 64 bits of the full result.
-EvalResult EvaluateConstant(const Expression::Expr* root, uint32_t bitWidth);
+EvalResult EvaluateConstant(const Expression::ExprOld* root, uint32_t bitWidth);
 
 // Full-width constant evaluation result. This is the explicit wide-bitwidth API.
 // Contract:
 // - supports all bit widths > 0
 // - for bitWidth <= 64 this remains equivalent to EvaluateConstant, but with
 //   result returned in bf_uint form.
-WideEvalResult EvaluateConstantWide(const Expression::Expr* root, uint32_t bitWidth);
+WideEvalResult EvaluateConstantWide(const Expression::ExprOld* root, uint32_t bitWidth);
 
 } // namespace BitFlow::Core::Eval

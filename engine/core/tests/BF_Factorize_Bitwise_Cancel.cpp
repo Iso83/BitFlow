@@ -23,7 +23,7 @@ int TestXorXorCancelPair() {
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Xor);
     BF_TEST(result->inputs.size() == 2);
@@ -52,7 +52,7 @@ int TestXorXorCancelPair_MultiInputOddCommon() {
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Xor);
     BF_TEST(result->inputs.size() == 4);
@@ -62,7 +62,7 @@ int TestXorXorCancelPair_MultiInputOddCommon() {
     bool hasC = false;
     bool hasD = false;
 
-    for (Expr* in : result->inputs) {
+    for (ExprOld* in : result->inputs) {
         if (in->id == a->id)
             hasA = true;
         else if (in->id == b->id)

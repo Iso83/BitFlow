@@ -6,8 +6,8 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static bool HasInput(Expr* expr, Expr* needle) {
-    for (Expr* in : expr->inputs) {
+static bool HasInput(ExprOld* expr, ExprOld* needle) {
+    for (ExprOld* in : expr->inputs) {
         if (in == needle)
             return true;
     }
@@ -15,8 +15,8 @@ static bool HasInput(Expr* expr, Expr* needle) {
     return false;
 }
 
-static bool HasNotOf(Expr* expr, Expr* child) {
-    for (Expr* in : expr->inputs) {
+static bool HasNotOf(ExprOld* expr, ExprOld* child) {
+    for (ExprOld* in : expr->inputs) {
         if (in->op == OpType::Not && in->inputs.size() == 1 && in->inputs[0] == child)
             return true;
     }
@@ -37,7 +37,7 @@ int TestXorNotReduction_Basic() {
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Not_Reduction_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(r->inputs.size() == 2);
@@ -60,13 +60,13 @@ int TestXorNotReduction_MultiXorArgs() {
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Not_Reduction_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(HasNotOf(r, a));
 
     bool hasReducedXor = false;
-    for (Expr* in : r->inputs) {
+    for (ExprOld* in : r->inputs) {
         if (in->op != OpType::Xor)
             continue;
 
@@ -92,14 +92,14 @@ int TestXorNotReduction_IntegrationScenario() {
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Not_Reduction_Rule());
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::And);
     BF_TEST(HasInput(r, c));
     BF_TEST(HasInput(r, b));
     BF_TEST(HasNotOf(r, a));
 
-    for (Expr* in : r->inputs)
+    for (ExprOld* in : r->inputs)
         BF_TEST(in->op != OpType::Xor);
 
     return 0;

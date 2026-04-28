@@ -8,8 +8,8 @@ using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 int TestLinearMultiplicityRuleOnly() {
-    Expr* a = MakeVar(1);
-    Expr* expr =
+    ExprOld* a = MakeVar(1);
+    ExprOld* expr =
         MakeOp(100, OpType::Add,
                {a, MakeOp(101, OpType::Mul, {MakeConst(102, 2), a}), MakeOp(103, OpType::Mul, {MakeConst(104, 3), a})});
 
@@ -18,16 +18,16 @@ int TestLinearMultiplicityRuleOnly() {
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule());
 
-    Expr* out = engine.Rewrite(expr);
+    ExprOld* out = engine.Rewrite(expr);
     BF_TEST(out->op == OpType::Mul);
     return 0;
 }
 
 int TestCommonFactorRuleOnly() {
-    Expr* a = MakeVar(11);
-    Expr* b = MakeVar(12);
-    Expr* c = MakeVar(13);
-    Expr* expr = MakeOp(200, OpType::Add, {MakeOp(201, OpType::Mul, {a, b}), MakeOp(202, OpType::Mul, {a, c})});
+    ExprOld* a = MakeVar(11);
+    ExprOld* b = MakeVar(12);
+    ExprOld* c = MakeVar(13);
+    ExprOld* expr = MakeOp(200, OpType::Add, {MakeOp(201, OpType::Mul, {a, b}), MakeOp(202, OpType::Mul, {a, c})});
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
@@ -35,7 +35,7 @@ int TestCommonFactorRuleOnly() {
     engine.AddRule(Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule());
     engine.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
 
-    Expr* out = engine.Rewrite(expr);
+    ExprOld* out = engine.Rewrite(expr);
     BF_TEST(out->op == OpType::Mul);
     return 0;
 }

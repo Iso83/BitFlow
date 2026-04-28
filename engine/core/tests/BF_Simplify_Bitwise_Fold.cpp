@@ -19,10 +19,10 @@ int TestAndFold() {
     Add_Normalize_Rules(engine);
     Add_Simplify_Bitwise_Rules(engine);
 
-    Expr* r1 = engine.Rewrite(expr);
+    ExprOld* r1 = engine.Rewrite(expr);
     BF_TEST(r1->id == x->id);
 
-    Expr* r2 = engine.Rewrite(expr2);
+    ExprOld* r2 = engine.Rewrite(expr2);
     BF_TEST(r2->id == zero->id);
 
     return 0;
@@ -40,10 +40,10 @@ int TestOrFold() {
     Add_Normalize_Rules(engine);
     Add_Simplify_Bitwise_Rules(engine);
 
-    Expr* r1 = engine.Rewrite(expr);
+    ExprOld* r1 = engine.Rewrite(expr);
     BF_TEST(r1->id == x->id);
 
-    Expr* r2 = engine.Rewrite(expr2);
+    ExprOld* r2 = engine.Rewrite(expr2);
     BF_TEST(r2->id == one->id);
 
     return 0;
@@ -60,7 +60,7 @@ int TestXorFold() {
     Add_Normalize_Rules(engine);
     Add_Simplify_Bitwise_Rules(engine);
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     // 1 ^ 1 = 0 → x ^ 0 → x
     BF_TEST(result->id == x->id);
@@ -78,7 +78,7 @@ int TestXorFoldAllConstZero() {
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Fold_Rule());
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Const);
     BF_TEST(result->constValue == 0);

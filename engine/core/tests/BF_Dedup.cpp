@@ -18,8 +18,8 @@ int TestXorDedup() {
     Add_Normalize_Rules(engine);
     Add_Simplify_Bitwise_Rules(engine);
 
-    Expr* r1 = engine.Rewrite(e1);
-    Expr* r2 = engine.Rewrite(e2);
+    ExprOld* r1 = engine.Rewrite(e1);
+    ExprOld* r2 = engine.Rewrite(e2);
 
     BF_TEST(r1 == r2);
     BF_TEST(r1->id == r2->id);

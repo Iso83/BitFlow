@@ -17,7 +17,7 @@ int Test_And_ZeroDominance() {
     eng.AddRule(Normalize::Get_Flatten_Rule());
     eng.AddRule(Simplify::Bitwise::Get_And_ZeroDominance_Rule());
 
-    Expr* res = eng.Rewrite(expr);
+    ExprOld* res = eng.Rewrite(expr);
 
     BF_TEST(res->op == OpType::Const && res->constValue == 0);
     return 0;
@@ -34,7 +34,7 @@ int Test_And_OneIdentity_Multi() {
     eng.AddRule(Normalize::Get_Flatten_Rule());
     eng.AddRule(Simplify::Bitwise::Get_And_OneIdentity_Rule());
 
-    Expr* res = eng.Rewrite(expr);
+    ExprOld* res = eng.Rewrite(expr);
 
     BF_TEST(res->op == OpType::And);
     BF_TEST(res->inputs.size() == 2);
@@ -51,7 +51,7 @@ int Test_Or_OneDominance() {
     eng.AddRule(Normalize::Get_Flatten_Rule());
     eng.AddRule(Simplify::Bitwise::Get_Or_OneDominance_Rule());
 
-    Expr* res = eng.Rewrite(expr);
+    ExprOld* res = eng.Rewrite(expr);
 
     BF_TEST(res->op == OpType::Const && res->constValue == 1);
     return 0;
@@ -68,7 +68,7 @@ int Test_Or_ZeroIdentity_Multi() {
     eng.AddRule(Normalize::Get_Flatten_Rule());
     eng.AddRule(Simplify::Bitwise::Get_Or_ZeroIdentity_Rule());
 
-    Expr* res = eng.Rewrite(expr);
+    ExprOld* res = eng.Rewrite(expr);
 
     BF_TEST(res->op == OpType::Or);
     BF_TEST(res->inputs.size() == 2);

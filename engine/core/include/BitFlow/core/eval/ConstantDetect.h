@@ -4,6 +4,6 @@
 
 namespace BitFlow::Core::Eval {
 
-bool IsFullyConstant(const Expression::Expr* root);
+bool IsFullyConstant(const Expression::ExprOld* root);
 
 } // namespace BitFlow::Core::Eval

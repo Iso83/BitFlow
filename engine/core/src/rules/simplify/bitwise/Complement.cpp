@@ -7,7 +7,7 @@
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 using ConstPool = Expression::ConstPool;
 

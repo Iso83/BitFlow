@@ -7,7 +7,7 @@
 namespace BitFlow::IO {
 
 struct ParseResult {
-    Core::Expression::Expr* root;
+    Core::Expression::ExprOld* root;
     std::unordered_map<uint32_t, std::string> idToName;
 };
 

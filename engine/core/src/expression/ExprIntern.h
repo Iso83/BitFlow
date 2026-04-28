@@ -12,10 +12,10 @@ class ExprIntern {
   public:
     using Key = Expression::ExprKey;
     using KeyHash = Expression::ExprKeyHash;
-    using KeyBuilderFn = Key (*)(const Expr*);
+    using KeyBuilderFn = Key (*)(const ExprOld*);
 
   public:
-    static Expr* Intern(Expr* e) {
+    static ExprOld* Intern(ExprOld* e) {
         if (e->id.value() == 0)
             e->id = Ids::ExprId{NextId()};
 
@@ -48,8 +48,8 @@ class ExprIntern {
     }
 
   private:
-    static std::unordered_map<Key, Expr*, KeyHash>& Table() {
-        static std::unordered_map<Key, Expr*, KeyHash> table;
+    static std::unordered_map<Key, ExprOld*, KeyHash>& Table() {
+        static std::unordered_map<Key, ExprOld*, KeyHash> table;
         return table;
     }
 
@@ -71,14 +71,14 @@ class ExprIntern {
         NextIdRef() = 1000000;
     }
 
-    static Key BuildStructuralKey(const Expr* e) {
+    static Key BuildStructuralKey(const ExprOld* e) {
         Key k{};
         k.op = e->op;
         k.constValue = e->constValue;
 
         k.inputs.reserve(e->inputs.size());
 
-        for (const Expr* in : e->inputs)
+        for (const ExprOld* in : e->inputs)
             k.inputs.push_back(in->id.value());
 
         if (e->inputs.empty()) {

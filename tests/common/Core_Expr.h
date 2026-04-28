@@ -7,23 +7,23 @@
 
 namespace BitFlow::Core::Testing {
 
-static Expression::Expr* MakeVar(uint32_t id) {
-    Expression::Expr* e = new Expression::Expr{};
+static Expression::ExprOld* MakeVar(uint32_t id) {
+    Expression::ExprOld* e = new Expression::ExprOld{};
     e->id = Ids::ExprId{id};
     e->op = Expression::OpType::Var;
     return e;
 }
 
-static Expression::Expr* MakeOp(uint32_t id, Expression::OpType op, std::initializer_list<Expression::Expr*> in) {
-    Expression::Expr* e = new Expression::Expr{};
+static Expression::ExprOld* MakeOp(uint32_t id, Expression::OpType op, std::initializer_list<Expression::ExprOld*> in) {
+    Expression::ExprOld* e = new Expression::ExprOld{};
     e->id = Ids::ExprId{id};
     e->op = op;
     e->inputs = in;
     return e;
 }
 
-static Expression::Expr* MakeConst(uint32_t id, uint32_t v) {
-    Expression::Expr* e = new Expression::Expr{};
+static Expression::ExprOld* MakeConst(uint32_t id, uint32_t v) {
+    Expression::ExprOld* e = new Expression::ExprOld{};
     e->id = Ids::ExprId{id};
     e->op = Expression::OpType::Const;
     e->constValue = v;

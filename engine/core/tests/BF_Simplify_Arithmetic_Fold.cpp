@@ -18,13 +18,13 @@ int TestAddFold() {
     engine.AddRule(Simplify::Arithmetic::Get_Add_Fold_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
 
-    Expr* result = engine.Rewrite(expr);
+    ExprOld* result = engine.Rewrite(expr);
 
     BF_TEST(result->op == OpType::Add);
     BF_TEST(result->inputs.size() == 2);
 
-    Expr* a = result->inputs[0];
-    Expr* b = result->inputs[1];
+    ExprOld* a = result->inputs[0];
+    ExprOld* b = result->inputs[1];
 
     if (a->op == OpType::Const) {
         BF_TEST(a->constValue == 30);

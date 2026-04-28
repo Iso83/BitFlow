@@ -1,36 +1,39 @@
 #pragma once
 
+#include <BitFlow/core/expression/ExprRef.h>
 #include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/helper/Attributes.h>
 #include <cstddef>
 #include <unordered_map>
 
 namespace BitFlow::Core::Expression {
 
-// fout gebruik bij rewrite --> opruimen als Expr.ID overral gebruikt wordt.
-inline Expr* CloneExpr(const Expr* e) {
-    Expr* n = new Expr{};
+BF_DEPRECATED("Use ExprRef & ExprStore")
+inline ExprOld* CloneExpr(const ExprOld* e) {
+    ExprOld* n = new ExprOld{};
     n->op = e->op;
     n->constValue = e->constValue;
     n->inputs = e->inputs;
     return n;
 }
 
-inline Expr* Clone(const Expr* expr) {
-    std::unordered_map<const Expr*, Expr*> cloned{};
+BF_DEPRECATED("Use ExprRef & ExprStore")
+inline ExprOld* Clone(const ExprOld* expr) {
+    std::unordered_map<const ExprOld*, ExprOld*> cloned{};
 
-    const auto cloneNode = [&](const auto& self, const Expr* node) -> Expr* {
+    const auto cloneNode = [&](const auto& self, const ExprOld* node) -> ExprOld* {
         auto it = cloned.find(node);
         if (it != cloned.end())
             return it->second;
 
-        Expr* out = new Expr{};
+        ExprOld* out = new ExprOld{};
         out->id = node->id;
         out->op = node->op;
         out->constValue = node->constValue;
         cloned.emplace(node, out);
 
         out->inputs.reserve(node->inputs.size());
-        for (const Expr* input : node->inputs) {
+        for (const ExprOld* input : node->inputs) {
             out->inputs.push_back(self(self, input));
         }
 
@@ -40,10 +43,11 @@ inline Expr* Clone(const Expr* expr) {
     return cloneNode(cloneNode, expr);
 }
 
-inline bool StructEqual(const Expr* a, const Expr* b) {
-    std::unordered_map<const Expr*, const Expr*> seen{};
+BF_DEPRECATED("Use ExprRef & ExprStore")
+inline bool StructEqual(const ExprOld* a, const ExprOld* b) {
+    std::unordered_map<const ExprOld*, const ExprOld*> seen{};
 
-    const auto eqNode = [&](const auto& self, const Expr* lhs, const Expr* rhs) -> bool {
+    const auto eqNode = [&](const auto& self, const ExprOld* lhs, const ExprOld* rhs) -> bool {
         if (lhs == rhs)
             return true;
         if (!lhs || !rhs)
@@ -68,14 +72,18 @@ inline bool StructEqual(const Expr* a, const Expr* b) {
     return eqNode(eqNode, a, b);
 }
 
+BF_DEPRECATED("Use ExprRef & ExprStore")
+ExprOld* MakeOpInterned(OpType op, std::vector<ExprOld*> inputs);
+
+BF_DEPRECATED("Use ExprRef & ExprStore")
 class ConstPool {
   public:
-    static Expr* Get(uint32_t value) {
+    static ExprOld* Get(uint32_t value) {
         auto it = pool().find(value);
         if (it != pool().end())
             return it->second;
 
-        Expr* e = new Expr{};
+        ExprOld* e = new ExprOld{};
         e->op = OpType::Const;
         e->constValue = value;
         e->id = Ids::ExprId{NextId()};
@@ -85,8 +93,8 @@ class ConstPool {
     }
 
   private:
-    static std::unordered_map<uint32_t, Expr*>& pool() {
-        static std::unordered_map<uint32_t, Expr*> p;
+    static std::unordered_map<uint32_t, ExprOld*>& pool() {
+        static std::unordered_map<uint32_t, ExprOld*> p;
         return p;
     }
 
@@ -95,4 +103,139 @@ class ConstPool {
         return id++;
     }
 };
+#pragma endregion
+
+class ExprStore {
+  private:
+    using ValueType = Ids::ExprId::ValueType;
+
+    ValueType m_nextId{1};
+    std::vector<ValueType> m_freeIds{};
+
+    std::vector<Expr> m_nodes{};
+    std::vector<uint32_t> m_generations{};
+    std::vector<bool> m_alive{};
+
+  public:
+    ExprStore() = default;
+    ~ExprStore() = default;
+
+    [[nodiscard]] ExprRef create(OpType op, uint16_t bitWidth = 0, uint16_t arity = 0) {
+        const auto id = createId();
+        const auto index = toIndex(id);
+
+        ensureCapacity(index + 1);
+
+        auto& expr = m_nodes[index];
+        expr = Expr{};
+        expr.id = id;
+        expr.op = op;
+        expr.bitWidth = bitWidth;
+        expr.arity = arity;
+        expr.generation = m_generations[index];
+
+        m_alive[index] = true;
+
+        return ExprRef(this, id, expr.generation);
+    }
+
+    [[nodiscard]] ExprRef createConstant(uint64_t value, uint16_t bitWidth = 64) {
+        auto ref = create(OpType::Const, bitWidth, 0);
+
+        auto& expr = get(ref);
+        expr.flags = ExprFlags::IsConstant;
+        expr.constValue = value;
+        expr.valueMask = fullMask(bitWidth);
+        expr.knownValue = value;
+
+        return ref;
+    }
+
+    [[nodiscard]] ExprRef createVariable(uint16_t bitWidth = 0) {
+        return create(OpType::Var, bitWidth, 0);
+    }
+
+    [[nodiscard]] bool remove(ExprRef ref) {
+        if (!contains(ref)) {
+            return false;
+        }
+
+        const auto index = toIndex(ref.id);
+
+        m_alive[index] = false;
+        ++m_generations[index];
+        m_freeIds.push_back(ref.id.value());
+
+        return true;
+    }
+
+    [[nodiscard]] bool contains(ExprRef ref) const {
+        if (ref.store != this || ref.id.value() == 0) {
+            return false;
+        }
+
+        const auto index = toIndex(ref.id);
+
+        if (index >= m_alive.size()) {
+            return false;
+        }
+
+        return m_alive[index] && m_generations[index] == ref.generation;
+    }
+
+    [[nodiscard]] Expr& get(ExprRef ref) {
+        return m_nodes[toIndex(ref.id)];
+    }
+
+    [[nodiscard]] const Expr& get(ExprRef ref) const {
+        return m_nodes[toIndex(ref.id)];
+    }
+
+    [[nodiscard]] Expr& operator[](ExprRef ref) {
+        return get(ref);
+    }
+
+    [[nodiscard]] const Expr& operator[](ExprRef ref) const {
+        return get(ref);
+    }
+
+  private:
+    [[nodiscard]] Ids::ExprId createId() {
+        ValueType value{};
+
+        if (!m_freeIds.empty()) {
+            value = m_freeIds.back();
+            m_freeIds.pop_back();
+        } else {
+            value = m_nextId++;
+        }
+
+        return Ids::ExprId{value};
+    }
+
+    [[nodiscard]] static size_t toIndex(Ids::ExprId id) {
+        return static_cast<size_t>(id.value());
+    }
+
+    void ensureCapacity(size_t size) {
+        if (m_nodes.size() < size) {
+            m_nodes.resize(size);
+            m_generations.resize(size, 0);
+            m_alive.resize(size, false);
+        }
+    }
+
+    [[nodiscard]] static uint64_t fullMask(uint16_t bitWidth) {
+        if (bitWidth == 0) {
+            return 0;
+        }
+
+        if (bitWidth >= 64) {
+            return ~uint64_t{0};
+        }
+
+        return (uint64_t{1} << bitWidth) - 1;
+    }
+};
+
 } // namespace BitFlow::Core::Expression

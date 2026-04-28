@@ -14,12 +14,12 @@ using namespace BitFlow::Core::Testing::SHA;
 
 namespace {
 
-bool ContainsOp(const Expr* root, OpType op) {
+bool ContainsOp(const ExprOld* root, OpType op) {
     if (root == nullptr)
         return false;
     if (root->op == op)
         return true;
-    for (const Expr* in : root->inputs) {
+    for (const ExprOld* in : root->inputs) {
         if (ContainsOp(in, op))
             return true;
     }

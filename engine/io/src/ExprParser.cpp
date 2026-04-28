@@ -15,7 +15,7 @@
 
 namespace BitFlow::IO {
 
-using Expr = BitFlow::Core::Expression::Expr;
+using Expr = BitFlow::Core::Expression::ExprOld;
 using OpType = BitFlow::Core::Expression::OpType;
 using Token = BitFlow::IO::Lexer::Token;
 using TokenKind = BitFlow::IO::Lexer::TokenKind;

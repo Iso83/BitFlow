@@ -8,6 +8,6 @@ namespace BitFlow::Core::Expression {
 
 using Key = ExprKey;
 
-Key BuildCommutativeKey(const Expr* e);
+Key BuildCommutativeKey(const ExprOld* e);
 
 } // namespace BitFlow::Core::Expression

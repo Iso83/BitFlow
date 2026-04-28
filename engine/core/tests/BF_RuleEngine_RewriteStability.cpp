@@ -11,8 +11,8 @@ using namespace BitFlow::Tests;
 int TestSimplifyProfileRunWithInfoIsStable() {
     RuleEngine engine = BuildProfile(RuleProfile::simplify_full_safe);
 
-    Expr* x = MakeVar(1);
-    Expr* expr = MakeOp(100, OpType::Xor, {x, x});
+    ExprOld* x = MakeVar(1);
+    ExprOld* expr = MakeOp(100, OpType::Xor, {x, x});
 
     const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(RewriteStable(info));
@@ -26,10 +26,10 @@ int TestSimplifyProfileRunWithInfoIsStable() {
 int TestFactorizeProfileRunWithInfoIsStable() {
     RuleEngine engine = BuildProfile(RuleProfile::factorize_full_safe);
 
-    Expr* a = MakeVar(1);
-    Expr* b = MakeVar(2);
-    Expr* c = MakeVar(3);
-    Expr* expr = MakeOp(200, OpType::Add, {MakeOp(201, OpType::Mul, {a, b}), MakeOp(202, OpType::Mul, {a, c})});
+    ExprOld* a = MakeVar(1);
+    ExprOld* b = MakeVar(2);
+    ExprOld* c = MakeVar(3);
+    ExprOld* expr = MakeOp(200, OpType::Add, {MakeOp(201, OpType::Mul, {a, b}), MakeOp(202, OpType::Mul, {a, c})});
 
     const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(RewriteStableWithoutCycleWithin(info, 8));
@@ -40,10 +40,10 @@ int TestFactorizeProfileRunWithInfoIsStable() {
 int TestExploreProfileRunWithInfoIsStable() {
     RuleEngine engine = BuildProfile(RuleProfile::explore);
 
-    Expr* a = MakeVar(11);
-    Expr* b = MakeVar(12);
-    Expr* c = MakeVar(13);
-    Expr* expr = MakeOp(300, OpType::Xor, {MakeOp(301, OpType::And, {a, b}), MakeOp(302, OpType::And, {a, c})});
+    ExprOld* a = MakeVar(11);
+    ExprOld* b = MakeVar(12);
+    ExprOld* c = MakeVar(13);
+    ExprOld* expr = MakeOp(300, OpType::Xor, {MakeOp(301, OpType::And, {a, b}), MakeOp(302, OpType::And, {a, c})});
 
     const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(RewriteStable(info));
@@ -56,10 +56,10 @@ int TestExploreProfileRunWithInfoIsStable() {
 int TestExpandBitwiseProfileRunWithInfoIsStable() {
     RuleEngine engine = BuildProfile(RuleProfile::expand_bitwise);
 
-    Expr* a = MakeVar(21);
-    Expr* b = MakeVar(22);
-    Expr* c = MakeVar(23);
-    Expr* expr = MakeOp(400, OpType::And, {a, MakeOp(401, OpType::Xor, {b, c})});
+    ExprOld* a = MakeVar(21);
+    ExprOld* b = MakeVar(22);
+    ExprOld* c = MakeVar(23);
+    ExprOld* expr = MakeOp(400, OpType::And, {a, MakeOp(401, OpType::Xor, {b, c})});
 
     const RewriteResult info = engine.RewriteToFixedPoint(expr);
     BF_TEST(RewriteStable(info));

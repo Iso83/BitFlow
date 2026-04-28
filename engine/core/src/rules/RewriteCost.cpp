@@ -8,7 +8,7 @@
 namespace BitFlow::Core::Rules {
 namespace {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 
 struct CostAccumulator {

@@ -1,6 +1,6 @@
-#include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
+#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
@@ -8,7 +8,7 @@
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 using namespace BitFlow::Core::Expression;
 

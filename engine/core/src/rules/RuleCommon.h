@@ -5,7 +5,7 @@
 
 namespace BitFlow::Core::Rules {
 
-inline int CompareExprCanonical(const Expression::Expr* a, const Expression::Expr* b) {
+inline int CompareExprCanonical(const Expression::ExprOld* a, const Expression::ExprOld* b) {
     if (a == b)
         return 0;
 
@@ -39,18 +39,18 @@ inline int CompareExprCanonical(const Expression::Expr* a, const Expression::Exp
     return 0;
 }
 
-inline bool CanonicalExprLess(const Expression::Expr* a, const Expression::Expr* b) {
+inline bool CanonicalExprLess(const Expression::ExprOld* a, const Expression::ExprOld* b) {
     return CompareExprCanonical(a, b) < 0;
 }
 
-template <Expression::OpType Op> inline bool Match_Zero(const Expression::Expr& e) {
+template <Expression::OpType Op> inline bool Match_Zero(const Expression::ExprOld& e) {
     if (e.op != Op)
         return false;
 
     if (e.inputs.empty())
         return false;
 
-    for (const Expression::Expr* in : e.inputs) {
+    for (const Expression::ExprOld* in : e.inputs) {
         if (in->op == Expression::OpType::Const && in->constValue == 0)
             return true;
     }

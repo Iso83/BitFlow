@@ -18,7 +18,7 @@ int TestXorFlatten() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
 
-    Expr* result = engine.Rewrite(outer);
+    ExprOld* result = engine.Rewrite(outer);
 
     BF_TEST(result != outer);
     BF_TEST(result->inputs.size() == 3);
@@ -37,7 +37,7 @@ int TestNotNotDoesNotFlatten() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
 
-    Expr* result = engine.Rewrite(outer);
+    ExprOld* result = engine.Rewrite(outer);
 
     BF_TEST(result->op == OpType::Not);
     BF_TEST(result->inputs.size() == 1);

@@ -1,4 +1,3 @@
-#include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/expression/ExprStore.h>
@@ -14,11 +13,11 @@ namespace BitFlow::Core::Rules::Factorize::Arithmetic {
 using namespace BitFlow::Core::Expression;
 
 struct LinearTerm {
-    const Expr* base = nullptr;
+    const ExprOld* base = nullptr;
     uint32_t coeff = 0;
 };
 
-static bool DecomposeLinearTerm(const Expr* term, LinearTerm& out) {
+static bool DecomposeLinearTerm(const ExprOld* term, LinearTerm& out) {
     if (term->op == OpType::Const)
         return false;
 
@@ -29,9 +28,9 @@ static bool DecomposeLinearTerm(const Expr* term, LinearTerm& out) {
     }
 
     uint32_t coeff = 1u;
-    const Expr* base = nullptr;
+    const ExprOld* base = nullptr;
     bool sawConst = false;
-    for (Expr* factor : term->inputs) {
+    for (ExprOld* factor : term->inputs) {
         if (factor->op == OpType::Const) {
             coeff *= factor->constValue;
             sawConst = true;
@@ -51,12 +50,12 @@ static bool DecomposeLinearTerm(const Expr* term, LinearTerm& out) {
     return true;
 }
 
-static bool Match_Add_LinearMultiplicity(const Expr& e) {
+static bool Match_Add_LinearMultiplicity(const ExprOld& e) {
     if (e.op != OpType::Add || e.inputs.size() < 2)
         return false;
 
     std::unordered_map<uint32_t, int> baseTermCounts;
-    for (const Expr* input : e.inputs) {
+    for (const ExprOld* input : e.inputs) {
         LinearTerm linear{};
         if (!DecomposeLinearTerm(input, linear))
             continue;
@@ -68,15 +67,15 @@ static bool Match_Add_LinearMultiplicity(const Expr& e) {
     return false;
 }
 
-static Expr* Rewrite_Add_LinearMultiplicity(Expr& e) {
+static ExprOld* Rewrite_Add_LinearMultiplicity(ExprOld& e) {
     std::unordered_map<uint32_t, uint32_t> coeffByBaseId;
-    std::unordered_map<uint32_t, Expr*> baseExprById;
+    std::unordered_map<uint32_t, ExprOld*> baseExprById;
     std::vector<uint32_t> baseOrder;
     baseOrder.reserve(e.inputs.size());
-    std::vector<Expr*> passthroughTerms;
+    std::vector<ExprOld*> passthroughTerms;
     passthroughTerms.reserve(e.inputs.size());
 
-    for (Expr* input : e.inputs) {
+    for (ExprOld* input : e.inputs) {
         LinearTerm linear{};
         if (!DecomposeLinearTerm(input, linear)) {
             passthroughTerms.push_back(input);
@@ -86,15 +85,15 @@ static Expr* Rewrite_Add_LinearMultiplicity(Expr& e) {
         const uint32_t baseId = linear.base->id.value();
         if (coeffByBaseId.emplace(baseId, 0u).second) {
             baseOrder.push_back(baseId);
-            baseExprById[baseId] = const_cast<Expr*>(linear.base);
+            baseExprById[baseId] = const_cast<ExprOld*>(linear.base);
         }
         coeffByBaseId[baseId] += linear.coeff;
     }
 
-    std::vector<Expr*> normalizedAddTerms;
+    std::vector<ExprOld*> normalizedAddTerms;
     normalizedAddTerms.reserve(baseOrder.size() + passthroughTerms.size());
     for (uint32_t baseId : baseOrder) {
-        Expr* base = baseExprById[baseId];
+        ExprOld* base = baseExprById[baseId];
         const uint32_t coeff = coeffByBaseId[baseId];
         if (coeff == 0u)
             continue;
@@ -104,7 +103,7 @@ static Expr* Rewrite_Add_LinearMultiplicity(Expr& e) {
         }
         normalizedAddTerms.push_back(MakeOpInterned(OpType::Mul, {base, ConstPool::Get(coeff)}));
     }
-    for (Expr* term : passthroughTerms)
+    for (ExprOld* term : passthroughTerms)
         normalizedAddTerms.push_back(term);
 
     if (normalizedAddTerms.empty())
@@ -114,27 +113,27 @@ static Expr* Rewrite_Add_LinearMultiplicity(Expr& e) {
     if (!mergedLinearTerms)
         return nullptr;
 
-    Expr* candidate =
+    ExprOld* candidate =
         (normalizedAddTerms.size() == 1) ? normalizedAddTerms[0] : MakeOpInterned(OpType::Add, normalizedAddTerms);
     return candidate;
 }
 
-static bool Match_Add_CommonFactor(const Expr& e) {
+static bool Match_Add_CommonFactor(const ExprOld& e) {
     if (e.op != OpType::Add || e.inputs.size() < 2)
         return false;
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {
-        const Expr* lhs = e.inputs[i];
+        const ExprOld* lhs = e.inputs[i];
         if (lhs->op != OpType::Mul || lhs->inputs.size() != 2)
             continue;
 
         for (size_t j = i + 1; j < e.inputs.size(); ++j) {
-            const Expr* rhs = e.inputs[j];
+            const ExprOld* rhs = e.inputs[j];
             if (rhs->op != OpType::Mul || rhs->inputs.size() != 2)
                 continue;
 
-            for (const Expr* l : lhs->inputs) {
-                for (const Expr* r : rhs->inputs) {
+            for (const ExprOld* l : lhs->inputs) {
+                for (const ExprOld* r : rhs->inputs) {
                     if (l->id == r->id)
                         return true;
                 }
@@ -145,23 +144,23 @@ static bool Match_Add_CommonFactor(const Expr& e) {
     return false;
 }
 
-static Expr* Rewrite_Add_CommonFactor(Expr& e) {
-    std::vector<Expr*> addTerms = e.inputs;
+static ExprOld* Rewrite_Add_CommonFactor(ExprOld& e) {
+    std::vector<ExprOld*> addTerms = e.inputs;
 
-    std::unordered_map<Expr*, int> factorFrequency;
-    for (Expr* term : addTerms) {
+    std::unordered_map<ExprOld*, int> factorFrequency;
+    for (ExprOld* term : addTerms) {
         if (term->op != OpType::Mul || term->inputs.size() != 2)
             continue;
         factorFrequency[term->inputs[0]]++;
         factorFrequency[term->inputs[1]]++;
     }
 
-    Expr* common = nullptr;
+    ExprOld* common = nullptr;
     int bestFrequency = 0;
-    for (Expr* term : addTerms) {
+    for (ExprOld* term : addTerms) {
         if (term->op != OpType::Mul || term->inputs.size() != 2)
             continue;
-        for (Expr* factor : term->inputs) {
+        for (ExprOld* factor : term->inputs) {
             const int frequency = factorFrequency[factor];
             if (frequency > bestFrequency) {
                 bestFrequency = frequency;
@@ -173,12 +172,12 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
     if (!common || bestFrequency < 2)
         return nullptr;
 
-    std::vector<Expr*> sharedInnerTerms;
-    std::vector<Expr*> untouchedTerms;
+    std::vector<ExprOld*> sharedInnerTerms;
+    std::vector<ExprOld*> untouchedTerms;
     sharedInnerTerms.reserve(addTerms.size());
     untouchedTerms.reserve(addTerms.size());
 
-    for (Expr* term : addTerms) {
+    for (ExprOld* term : addTerms) {
         if (term->op == OpType::Mul && term->inputs.size() == 2) {
             if (term->inputs[0]->id == common->id) {
                 sharedInnerTerms.push_back(term->inputs[1]);
@@ -195,16 +194,16 @@ static Expr* Rewrite_Add_CommonFactor(Expr& e) {
     if (sharedInnerTerms.size() < 2)
         return nullptr;
 
-    Expr* innerAdd = MakeOpInterned(OpType::Add, sharedInnerTerms);
-    Expr* factored = MakeOpInterned(OpType::Mul, {common, innerAdd});
+    ExprOld* innerAdd = MakeOpInterned(OpType::Add, sharedInnerTerms);
+    ExprOld* factored = MakeOpInterned(OpType::Mul, {common, innerAdd});
 
-    std::vector<Expr*> finalAddTerms;
+    std::vector<ExprOld*> finalAddTerms;
     finalAddTerms.reserve(untouchedTerms.size() + 1);
-    for (Expr* term : untouchedTerms)
+    for (ExprOld* term : untouchedTerms)
         finalAddTerms.push_back(term);
     finalAddTerms.push_back(factored);
 
-    Expr* candidate = (finalAddTerms.size() == 1) ? finalAddTerms[0] : MakeOpInterned(OpType::Add, finalAddTerms);
+    ExprOld* candidate = (finalAddTerms.size() == 1) ? finalAddTerms[0] : MakeOpInterned(OpType::Add, finalAddTerms);
     if (!IsRewritePreferred(candidate, &e, RewriteCostPolicy::FactorizeSafe))
         return nullptr;
 

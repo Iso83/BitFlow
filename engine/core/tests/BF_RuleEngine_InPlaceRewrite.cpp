@@ -7,7 +7,7 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static bool Match_Xor_Unsorted(const Expr& e) {
+static bool Match_Xor_Unsorted(const ExprOld& e) {
     if (e.op != OpType::Xor || e.inputs.size() < 2)
         return false;
 
@@ -19,8 +19,8 @@ static bool Match_Xor_Unsorted(const Expr& e) {
     return false;
 }
 
-static Expr* Rewrite_Xor_InPlaceSort(Expr& e) {
-    std::sort(e.inputs.begin(), e.inputs.end(), [](Expr* a, Expr* b) { return a->id.value() < b->id.value(); });
+static ExprOld* Rewrite_Xor_InPlaceSort(ExprOld& e) {
+    std::sort(e.inputs.begin(), e.inputs.end(), [](ExprOld* a, ExprOld* b) { return a->id.value() < b->id.value(); });
     return &e;
 }
 
@@ -40,8 +40,8 @@ int TestEngineHandlesInPlaceRewriteSafely() {
                         RuleFlags::None,
                         "Normalize_Order"});
 
-    Expr* r1 = engine.Rewrite(e1);
-    Expr* r2 = engine.Rewrite(e2);
+    ExprOld* r1 = engine.Rewrite(e1);
+    ExprOld* r2 = engine.Rewrite(e2);
 
     BF_TEST(r1->op == OpType::Xor);
     BF_TEST(r1->inputs.size() == 2);

@@ -8,7 +8,7 @@
 
 namespace BitFlow::Core::Rules::Normalize {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 
 static bool Match_Flatten(const Expr& e) {
     if (!Expression::IsCommutative(e.op))

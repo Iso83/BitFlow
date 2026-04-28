@@ -126,7 +126,7 @@ int RunRuleBasic(Getter getter, uint32_t seed) {
     AddRuleWithDeps(engine, rule.id, added);
 
     auto x = MakeVar(seed);
-    Expr* result = engine.Rewrite(x);
+    ExprOld* result = engine.Rewrite(x);
     BF_TEST(result->id == x->id);
     return 0;
 }

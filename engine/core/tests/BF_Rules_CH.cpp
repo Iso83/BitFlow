@@ -18,7 +18,7 @@ int TestCH_ExpandsToBooleanForm() {
     Add_Normalize_Rules(engine);
     Add_Simplify_SHA_Rules(engine);
 
-    Expr* r = engine.Rewrite(expr);
+    ExprOld* r = engine.Rewrite(expr);
 
     BF_TEST(r->op == OpType::Xor);
     BF_TEST(r->inputs.size() == 2);

@@ -1,4 +1,3 @@
-#include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/expression/ExprStore.h>
@@ -12,7 +11,7 @@
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 using namespace BitFlow::Core::Expression;
 

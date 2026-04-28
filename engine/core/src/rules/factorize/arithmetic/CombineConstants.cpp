@@ -1,4 +1,3 @@
-#include "expression/ExprFactory.h"
 #include "rules/RuleStage.h"
 
 #include <BitFlow/core/expression/ExprStore.h>
@@ -9,7 +8,7 @@
 
 namespace BitFlow::Core::Rules::Factorize::Arithmetic {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 using ConstPool = Expression::ConstPool;
 using namespace BitFlow::Core::Expression;

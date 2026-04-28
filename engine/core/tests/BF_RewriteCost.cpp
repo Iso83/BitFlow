@@ -7,14 +7,15 @@ using namespace BitFlow::Core::Rules;
 using namespace BitFlow::Core::Expression;
 
 int TestRewriteCostCapturesCoreShapeSignals() {
-    Expr* a = MakeVar(1);
-    Expr* b = MakeVar(2);
-    Expr* c = MakeVar(3);
-    Expr* d = MakeVar(4);
+    ExprOld* a = MakeVar(1);
+    ExprOld* b = MakeVar(2);
+    ExprOld* c = MakeVar(3);
+    ExprOld* d = MakeVar(4);
 
-    Expr* factored = MakeOp(100, OpType::And, {a, MakeOp(101, OpType::Xor, {b, c})});
-    Expr* distributed = MakeOp(200, OpType::Xor, {MakeOp(201, OpType::And, {a, b}), MakeOp(202, OpType::And, {a, c})});
-    Expr* nestedAssoc = MakeOp(300, OpType::Xor, {a, MakeOp(301, OpType::Xor, {b, c, d})});
+    ExprOld* factored = MakeOp(100, OpType::And, {a, MakeOp(101, OpType::Xor, {b, c})});
+    ExprOld* distributed =
+        MakeOp(200, OpType::Xor, {MakeOp(201, OpType::And, {a, b}), MakeOp(202, OpType::And, {a, c})});
+    ExprOld* nestedAssoc = MakeOp(300, OpType::Xor, {a, MakeOp(301, OpType::Xor, {b, c, d})});
 
     const RewriteCost factoredCost = ComputeRewriteCost(factored);
     const RewriteCost distributedCost = ComputeRewriteCost(distributed);
@@ -29,12 +30,13 @@ int TestRewriteCostCapturesCoreShapeSignals() {
 }
 
 int TestRewriteCostPoliciesAreDeterministic() {
-    Expr* a = MakeVar(10);
-    Expr* b = MakeVar(11);
-    Expr* c = MakeVar(12);
+    ExprOld* a = MakeVar(10);
+    ExprOld* b = MakeVar(11);
+    ExprOld* c = MakeVar(12);
 
-    Expr* factored = MakeOp(400, OpType::And, {a, MakeOp(401, OpType::Xor, {b, c})});
-    Expr* distributed = MakeOp(500, OpType::Xor, {MakeOp(501, OpType::And, {a, b}), MakeOp(502, OpType::And, {a, c})});
+    ExprOld* factored = MakeOp(400, OpType::And, {a, MakeOp(401, OpType::Xor, {b, c})});
+    ExprOld* distributed =
+        MakeOp(500, OpType::Xor, {MakeOp(501, OpType::And, {a, b}), MakeOp(502, OpType::And, {a, c})});
 
     BF_TEST(IsRewritePreferred(factored, distributed, RewriteCostPolicy::FactorizeSafe));
     BF_TEST(IsRewritePreferred(distributed, factored, RewriteCostPolicy::ExpandDistribute));

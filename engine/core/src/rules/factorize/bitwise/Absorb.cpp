@@ -6,7 +6,7 @@
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
-using Expr = Expression::Expr;
+using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 
 static bool ContainsExpr(const Expr* e, const Expr* target) {
