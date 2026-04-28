@@ -24,20 +24,25 @@ struct ExprOld {
 struct Expr {
     Ids::ExprId id{};
     OpType op{};
-    uint32_t generation{0};
+    std::vector<Ids::ExprId> inputs{};
 
     uint16_t bitWidth{0};
-    uint16_t arity{0};
 
-    ExprFlags flags{ExprFlags::None};
-
-    uint64_t valueMask{0};
+    uint64_t knownMask{0};
     uint64_t knownValue{0};
-    uint64_t constValue{0};
 
     uint32_t largeConstIndex{0};
 
-    std::vector<Ids::ExprId> inputs{};
+  public:
+    [[nodiscard]] static uint64_t fullMask(uint16_t bitWidth) {
+        if (bitWidth == 0)
+            return 0;
+
+        if (bitWidth >= 64)
+            return ~uint64_t{0};
+
+        return (uint64_t{1} << bitWidth) - 1;
+    }
 };
 
 } // namespace BitFlow::Core::Expression

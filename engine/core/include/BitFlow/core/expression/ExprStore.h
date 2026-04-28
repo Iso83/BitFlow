@@ -3,7 +3,6 @@
 #include <BitFlow/core/expression/ExprRef.h>
 #include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/helper/Attributes.h>
-#include <cstddef>
 #include <unordered_map>
 
 namespace BitFlow::Core::Expression {
@@ -113,14 +112,15 @@ class ExprStore {
     std::vector<ValueType> m_freeIds{};
 
     std::vector<Expr> m_nodes{};
-    std::vector<uint32_t> m_generations{};
     std::vector<bool> m_alive{};
 
   public:
     ExprStore() = default;
     ~ExprStore() = default;
 
-    [[nodiscard]] ExprRef create(OpType op, uint16_t bitWidth = 0, uint16_t arity = 0) {
+    [[nodiscard]] ExprRef create(OpType op, std::initializer_list<Ids::ExprId> in, uint16_t bitWidth = 64) {
+        _ASSERT(bitWidth > 0);
+
         const auto id = createId();
         const auto index = toIndex(id);
 
@@ -131,28 +131,25 @@ class ExprStore {
         expr.id = id;
         expr.op = op;
         expr.bitWidth = bitWidth;
-        expr.arity = arity;
-        expr.generation = m_generations[index];
+        expr.inputs = in;
 
         m_alive[index] = true;
 
-        return ExprRef(this, id, expr.generation);
+        return ExprRef(this, id);
     }
 
     [[nodiscard]] ExprRef createConstant(uint64_t value, uint16_t bitWidth = 64) {
-        auto ref = create(OpType::Const, bitWidth, 0);
+        auto ref = create(OpType::Const, {}, bitWidth);
 
         auto& expr = get(ref);
-        expr.flags = ExprFlags::IsConstant;
-        expr.constValue = value;
-        expr.valueMask = fullMask(bitWidth);
+        expr.knownMask = Expr::fullMask(bitWidth);
         expr.knownValue = value;
 
         return ref;
     }
 
-    [[nodiscard]] ExprRef createVariable(uint16_t bitWidth = 0) {
-        return create(OpType::Var, bitWidth, 0);
+    [[nodiscard]] ExprRef createVariable(uint16_t bitWidth = 64) {
+        return create(OpType::Var, {}, bitWidth);
     }
 
     [[nodiscard]] bool remove(ExprRef ref) {
@@ -163,7 +160,6 @@ class ExprStore {
         const auto index = toIndex(ref.id);
 
         m_alive[index] = false;
-        ++m_generations[index];
         m_freeIds.push_back(ref.id.value());
 
         return true;
@@ -180,15 +176,23 @@ class ExprStore {
             return false;
         }
 
-        return m_alive[index] && m_generations[index] == ref.generation;
+        return m_alive[index];
     }
 
     [[nodiscard]] Expr& get(ExprRef ref) {
         return m_nodes[toIndex(ref.id)];
     }
 
+    [[nodiscard]] Expr& get(Ids::ExprId id) {
+        return m_nodes[toIndex(id)];
+    }
+
     [[nodiscard]] const Expr& get(ExprRef ref) const {
         return m_nodes[toIndex(ref.id)];
+    }
+
+    [[nodiscard]] const Expr& get(Ids::ExprId id) const {
+        return m_nodes[toIndex(id)];
     }
 
     [[nodiscard]] Expr& operator[](ExprRef ref) {
@@ -220,21 +224,8 @@ class ExprStore {
     void ensureCapacity(size_t size) {
         if (m_nodes.size() < size) {
             m_nodes.resize(size);
-            m_generations.resize(size, 0);
             m_alive.resize(size, false);
         }
-    }
-
-    [[nodiscard]] static uint64_t fullMask(uint16_t bitWidth) {
-        if (bitWidth == 0) {
-            return 0;
-        }
-
-        if (bitWidth >= 64) {
-            return ~uint64_t{0};
-        }
-
-        return (uint64_t{1} << bitWidth) - 1;
     }
 };
 

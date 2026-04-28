@@ -3,7 +3,6 @@
 namespace BitFlow::Core::Expression {
 
 enum class OpType {
-    // --- Leaf ---
     Var,
     Const,
 

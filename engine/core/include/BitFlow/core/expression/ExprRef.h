@@ -10,31 +10,48 @@ class ExprStore;
 struct ExprRef {
     ExprStore* store{};
     Ids::ExprId id{};
-    uint32_t generation{0};
+
+    inline static uint16_t defaultBitWidth{64};
 
     ExprRef() = default;
+    ExprRef(ExprStore* owner, Ids::ExprId exprId);
 
-    ExprRef(ExprStore* owner, Ids::ExprId exprId, uint32_t gen = 0) : store(owner), id(exprId), generation(gen) {}
+    [[nodiscard]] bool IsValid() const noexcept;
+    [[nodiscard]] bool operator==(const ExprRef& other) const noexcept;
+    [[nodiscard]] bool operator!=(const ExprRef& other) const noexcept;
 
-    [[nodiscard]] bool IsValid() const noexcept {
-        return store != nullptr && id.value() != 0;
-    }
+    [[nodiscard]] uint16_t BitWidth() const;
 
-    [[nodiscard]] explicit operator bool() const noexcept {
-        return IsValid();
-    }
+    [[nodiscard]] ExprRef Const(uint64_t value, uint16_t bitWidth = 0) const;
 
-    [[nodiscard]] bool operator==(const ExprRef& other) const noexcept {
-        return store == other.store && id == other.id && generation == other.generation;
-    }
+    [[nodiscard]] ExprRef operator~() const;
+    [[nodiscard]] ExprRef operator-() const;
 
-    [[nodiscard]] bool operator!=(const ExprRef& other) const noexcept {
-        return !(*this == other);
-    }
+    [[nodiscard]] ExprRef operator+(ExprRef rhs) const;
+    [[nodiscard]] ExprRef operator-(ExprRef rhs) const;
+    [[nodiscard]] ExprRef operator*(ExprRef rhs) const;
+    [[nodiscard]] ExprRef operator/(ExprRef rhs) const;
+    [[nodiscard]] ExprRef operator%(ExprRef rhs) const;
 
-    [[nodiscard]] bool SameStore(const ExprRef& other) const noexcept {
-        return store == other.store;
-    }
+    [[nodiscard]] ExprRef operator<<(ExprRef rhs) const;
+    [[nodiscard]] ExprRef operator>>(ExprRef rhs) const;
+
+    [[nodiscard]] ExprRef operator&(ExprRef rhs) const;
+    [[nodiscard]] ExprRef operator^(ExprRef rhs) const;
+    [[nodiscard]] ExprRef operator|(ExprRef rhs) const;
+
+    [[nodiscard]] ExprRef operator+(uint64_t rhs) const;
+    [[nodiscard]] ExprRef operator-(uint64_t rhs) const;
+    [[nodiscard]] ExprRef operator*(uint64_t rhs) const;
+    [[nodiscard]] ExprRef operator/(uint64_t rhs) const;
+    [[nodiscard]] ExprRef operator%(uint64_t rhs) const;
+
+    [[nodiscard]] ExprRef operator<<(uint64_t rhs) const;
+    [[nodiscard]] ExprRef operator>>(uint64_t rhs) const;
+
+    [[nodiscard]] ExprRef operator&(uint64_t rhs) const;
+    [[nodiscard]] ExprRef operator^(uint64_t rhs) const;
+    [[nodiscard]] ExprRef operator|(uint64_t rhs) const;
 };
 
 } // namespace BitFlow::Core::Expression
