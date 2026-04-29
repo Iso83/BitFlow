@@ -1,6 +1,5 @@
 #include <BitFlow/core/bitvector/BitVector.h>
 #include <algorithm>
-#include <cstddef>
 #include <stdexcept>
 
 namespace BitFlow::Core::BitVector {
@@ -26,148 +25,141 @@ bf_uint::bf_uint(uint64_t v, uint32_t bw) : bf_uint(bw) {
     Normalize();
 }
 
-uint32_t bf_uint::BitWidth() const noexcept {
-    return m_bw;
+#pragma region string conversion
+std::string bf_uint::ToString(StringBase base) const {
+    switch (base) {
+    case StringBase::Binary:
+        return ToBinaryString();
+    case StringBase::Decimal:
+        return ToDecimalString();
+    case StringBase::Hex:
+        return ToHexString(false);
+    default:
+        return ToDecimalString();
+    }
 }
 
-bool bf_uint::IsZero() const noexcept {
-    for (uint64_t w : m_words) {
-        if (w != 0ULL)
+std::string bf_uint::ToBinaryString() const {
+    if (m_bw == 0)
+        return "0";
+
+    std::string s;
+    s.reserve(m_bw);
+
+    bool started = false;
+
+    for (uint32_t bit = m_bw; bit-- > 0;) {
+        const size_t wi = bit / 64U;
+        const uint32_t bi = bit % 64U;
+        const bool set = ((m_words[wi] >> bi) & 1ULL) != 0ULL;
+
+        if (set)
+            started = true;
+
+        if (started)
+            s.push_back(set ? '1' : '0');
+    }
+
+    return s.empty() ? "0" : s;
+}
+
+std::string bf_uint::ToHexString(bool upperCase) const {
+    static const char* lower = "0123456789abcdef";
+    static const char* upper = "0123456789ABCDEF";
+    const char* digits = upperCase ? upper : lower;
+
+    if (m_bw == 0)
+        return "0";
+
+    const uint32_t hexDigits = (m_bw + 3) / 4;
+    std::string s;
+    s.reserve(hexDigits);
+
+    bool started = false;
+
+    for (uint32_t nib = hexDigits; nib-- > 0;) {
+        uint32_t value = 0;
+
+        for (uint32_t b = 0; b < 4; ++b) {
+            const uint32_t bit = nib * 4 + b;
+            if (bit >= m_bw)
+                continue;
+
+            const size_t wi = bit / 64U;
+            const uint32_t bi = bit % 64U;
+
+            value |= static_cast<uint32_t>(((m_words[wi] >> bi) & 1ULL) << b);
+        }
+
+        if (value != 0)
+            started = true;
+
+        if (started)
+            s.push_back(digits[value]);
+    }
+
+    return s.empty() ? "0" : s;
+}
+
+std::string bf_uint::ToDecimalString() const {
+    if (IsZero())
+        return "0";
+
+    bf_uint temp = *this;
+    bf_uint ten(10, m_bw);
+
+    std::string s;
+
+    while (!temp.IsZero()) {
+        bf_uint q = temp / ten;
+        bf_uint r = temp % ten;
+
+        s.push_back(static_cast<char>('0' + r.ToUint32()));
+        temp = q;
+    }
+
+    std::reverse(s.begin(), s.end());
+    return s;
+}
+#pragma endregion
+
+#pragma region comparison
+bool bf_uint::operator==(const bf_uint& rhs) const noexcept {
+    return m_bw == rhs.m_bw && m_words == rhs.m_words;
+}
+
+bool bf_uint::operator!=(const bf_uint& rhs) const noexcept {
+    return !(*this == rhs);
+}
+
+bool bf_uint::operator<(const bf_uint& rhs) const noexcept {
+    if (m_bw != rhs.m_bw)
+        return m_bw < rhs.m_bw;
+
+    for (size_t i = m_words.size(); i-- > 0;) {
+        if (m_words[i] < rhs.m_words[i])
+            return true;
+        if (m_words[i] > rhs.m_words[i])
             return false;
     }
-    return true;
+
+    return false;
 }
 
-uint64_t bf_uint::ToUint64() const noexcept {
-    return m_words.empty() ? 0ULL : m_words[0];
+bool bf_uint::operator<=(const bf_uint& rhs) const noexcept {
+    return !(*this > rhs);
 }
 
-uint32_t bf_uint::ToUint32() const noexcept {
-    return static_cast<uint32_t>(ToUint64() & 0xffffffffULL);
+bool bf_uint::operator>(const bf_uint& rhs) const noexcept {
+    return rhs < *this;
 }
 
-void bf_uint::Normalize() {
-    if (m_words.empty())
-        return;
-
-    const uint32_t rem = m_bw % 64;
-    if (rem != 0) {
-        m_words.back() &= Mask64(rem);
-    }
+bool bf_uint::operator>=(const bf_uint& rhs) const noexcept {
+    return !(*this < rhs);
 }
+#pragma endregion
 
-bf_uint bf_uint::operator&(const bf_uint& rhs) const {
-    EnsureSameBitWidth(*this, rhs);
-
-    bf_uint r(m_bw);
-    for (size_t i = 0; i < m_words.size(); ++i)
-        r.m_words[i] = m_words[i] & rhs.m_words[i];
-    r.Normalize();
-    return r;
-}
-
-bf_uint bf_uint::operator|(const bf_uint& rhs) const {
-    EnsureSameBitWidth(*this, rhs);
-
-    bf_uint r(m_bw);
-    for (size_t i = 0; i < m_words.size(); ++i)
-        r.m_words[i] = m_words[i] | rhs.m_words[i];
-    r.Normalize();
-    return r;
-}
-
-bf_uint bf_uint::operator^(const bf_uint& rhs) const {
-    EnsureSameBitWidth(*this, rhs);
-
-    bf_uint r(m_bw);
-    for (size_t i = 0; i < m_words.size(); ++i)
-        r.m_words[i] = m_words[i] ^ rhs.m_words[i];
-    r.Normalize();
-    return r;
-}
-
-bf_uint bf_uint::operator~() const {
-    bf_uint r(m_bw);
-    for (size_t i = 0; i < m_words.size(); ++i)
-        r.m_words[i] = ~m_words[i];
-    r.Normalize();
-    return r;
-}
-
-bf_uint bf_uint::Shl(uint32_t s) const {
-    if (m_bw == 0)
-        return bf_uint(0, 0);
-
-    s %= m_bw;
-
-    bf_uint r(m_bw);
-
-    const uint32_t wordShift = s / 64;
-    const uint32_t bitShift = s % 64;
-
-    for (int i = static_cast<int>(m_words.size()) - 1; i >= 0; --i) {
-        uint64_t val = 0;
-
-        if (i - static_cast<int>(wordShift) >= 0) {
-            val = m_words[static_cast<size_t>(i - static_cast<int>(wordShift))] << bitShift;
-
-            if (bitShift && i - static_cast<int>(wordShift) - 1 >= 0) {
-                val |= m_words[static_cast<size_t>(i - static_cast<int>(wordShift) - 1)] >> (64 - bitShift);
-            }
-        }
-
-        r.m_words[static_cast<size_t>(i)] = val;
-    }
-
-    r.Normalize();
-    return r;
-}
-
-bf_uint bf_uint::Shr(uint32_t s) const {
-    if (m_bw == 0)
-        return bf_uint(0, 0);
-
-    s %= m_bw;
-
-    bf_uint r(m_bw);
-
-    const uint32_t wordShift = s / 64;
-    const uint32_t bitShift = s % 64;
-
-    for (size_t i = 0; i < m_words.size(); ++i) {
-        uint64_t val = 0;
-        const size_t src = i + wordShift;
-
-        if (src < m_words.size()) {
-            val = m_words[src] >> bitShift;
-            if (bitShift && (src + 1) < m_words.size()) {
-                val |= m_words[src + 1] << (64 - bitShift);
-            }
-        }
-
-        r.m_words[i] = val;
-    }
-
-    r.Normalize();
-    return r;
-}
-
-bf_uint bf_uint::RotL(uint32_t s) const {
-    if (m_bw == 0)
-        return bf_uint(0, 0);
-
-    s %= m_bw;
-    return Shl(s) | Shr(m_bw - s);
-}
-
-bf_uint bf_uint::RotR(uint32_t s) const {
-    if (m_bw == 0)
-        return bf_uint(0, 0);
-
-    s %= m_bw;
-    return Shr(s) | Shl(m_bw - s);
-}
-
+#pragma region arithmetic
 bf_uint bf_uint::operator+(const bf_uint& rhs) const {
     EnsureSameBitWidth(*this, rhs);
 
@@ -297,6 +289,148 @@ bf_uint bf_uint::operator%(const bf_uint& rhs) const {
     rem.Normalize();
     return rem;
 }
+#pragma endregion
+
+#pragma region compound arithmetic
+bf_uint& bf_uint::operator+=(const bf_uint& rhs) {
+    *this = *this + rhs;
+    return *this;
+}
+
+bf_uint& bf_uint::operator-=(const bf_uint& rhs) {
+    *this = *this - rhs;
+    return *this;
+}
+
+bf_uint& bf_uint::operator*=(const bf_uint& rhs) {
+    *this = *this * rhs;
+    return *this;
+}
+
+bf_uint& bf_uint::operator/=(const bf_uint& rhs) {
+    *this = *this / rhs;
+    return *this;
+}
+
+bf_uint& bf_uint::operator%=(const bf_uint& rhs) {
+    *this = *this % rhs;
+    return *this;
+}
+#pragma endregion
+
+#pragma region bitwise
+bf_uint bf_uint::operator&(const bf_uint& rhs) const {
+    EnsureSameBitWidth(*this, rhs);
+
+    bf_uint r(m_bw);
+    for (size_t i = 0; i < m_words.size(); ++i)
+        r.m_words[i] = m_words[i] & rhs.m_words[i];
+    r.Normalize();
+    return r;
+}
+
+bf_uint bf_uint::operator|(const bf_uint& rhs) const {
+    EnsureSameBitWidth(*this, rhs);
+
+    bf_uint r(m_bw);
+    for (size_t i = 0; i < m_words.size(); ++i)
+        r.m_words[i] = m_words[i] | rhs.m_words[i];
+    r.Normalize();
+    return r;
+}
+
+bf_uint bf_uint::operator^(const bf_uint& rhs) const {
+    EnsureSameBitWidth(*this, rhs);
+
+    bf_uint r(m_bw);
+    for (size_t i = 0; i < m_words.size(); ++i)
+        r.m_words[i] = m_words[i] ^ rhs.m_words[i];
+    r.Normalize();
+    return r;
+}
+
+bf_uint bf_uint::operator~() const {
+    bf_uint r(m_bw);
+    for (size_t i = 0; i < m_words.size(); ++i)
+        r.m_words[i] = ~m_words[i];
+    r.Normalize();
+    return r;
+}
+#pragma endregion
+
+#pragma region compound bitwise
+bf_uint& bf_uint::operator&=(const bf_uint& rhs) {
+    *this = *this & rhs;
+    return *this;
+}
+
+bf_uint& bf_uint::operator|=(const bf_uint& rhs) {
+    *this = *this | rhs;
+    return *this;
+}
+
+bf_uint& bf_uint::operator^=(const bf_uint& rhs) {
+    *this = *this ^ rhs;
+    return *this;
+}
+#pragma endregion
+
+#pragma region shifts
+bf_uint bf_uint::Shl(uint32_t s) const {
+    if (m_bw == 0)
+        return bf_uint(0, 0);
+
+    s %= m_bw;
+
+    bf_uint r(m_bw);
+
+    const uint32_t wordShift = s / 64;
+    const uint32_t bitShift = s % 64;
+
+    for (int i = static_cast<int>(m_words.size()) - 1; i >= 0; --i) {
+        uint64_t val = 0;
+
+        if (i - static_cast<int>(wordShift) >= 0) {
+            val = m_words[static_cast<size_t>(i - static_cast<int>(wordShift))] << bitShift;
+
+            if (bitShift && i - static_cast<int>(wordShift) - 1 >= 0)
+                val |= m_words[static_cast<size_t>(i - static_cast<int>(wordShift) - 1)] >> (64 - bitShift);
+        }
+
+        r.m_words[static_cast<size_t>(i)] = val;
+    }
+
+    r.Normalize();
+    return r;
+}
+
+bf_uint bf_uint::Shr(uint32_t s) const {
+    if (m_bw == 0)
+        return bf_uint(0, 0);
+
+    s %= m_bw;
+
+    bf_uint r(m_bw);
+
+    const uint32_t wordShift = s / 64;
+    const uint32_t bitShift = s % 64;
+
+    for (size_t i = 0; i < m_words.size(); ++i) {
+        uint64_t val = 0;
+        const size_t src = i + wordShift;
+
+        if (src < m_words.size()) {
+            val = m_words[src] >> bitShift;
+            if (bitShift && (src + 1) < m_words.size())
+                val |= m_words[src + 1] << (64 - bitShift);
+        }
+
+        r.m_words[i] = val;
+    }
+
+    r.Normalize();
+    return r;
+}
 
 bf_uint bf_uint::operator<<(uint32_t s) const {
     return Shl(s);
@@ -315,12 +449,64 @@ bf_uint bf_uint::operator>>(const bf_uint& rhs) const {
     EnsureSameBitWidth(*this, rhs);
     return Shr(rhs.ToUint32());
 }
+#pragma endregion
 
+#pragma region compound shifts
+bf_uint& bf_uint::operator<<=(uint32_t s) {
+    *this = Shl(s);
+    return *this;
+}
+
+bf_uint& bf_uint::operator>>=(uint32_t s) {
+    *this = Shr(s);
+    return *this;
+}
+
+bf_uint& bf_uint::operator<<=(const bf_uint& rhs) {
+    *this = Shl(rhs.ToUint32());
+    return *this;
+}
+
+bf_uint& bf_uint::operator>>=(const bf_uint& rhs) {
+    *this = Shr(rhs.ToUint32());
+    return *this;
+}
+#pragma endregion
+
+#pragma region rotates
+bf_uint bf_uint::RotL(uint32_t s) const {
+    if (m_bw == 0)
+        return bf_uint(0, 0);
+
+    s %= m_bw;
+    return Shl(s) | Shr(m_bw - s);
+}
+
+bf_uint bf_uint::RotR(uint32_t s) const {
+    if (m_bw == 0)
+        return bf_uint(0, 0);
+
+    s %= m_bw;
+    return Shr(s) | Shl(m_bw - s);
+}
+#pragma endregion
+
+#pragma region unary
 bf_uint bf_uint::operator-() const {
     if (m_bw == 0)
         return bf_uint(0, 0);
+
     bf_uint zero(m_bw);
     return zero - *this;
 }
+#pragma endregion
 
+void bf_uint::Normalize() {
+    if (m_words.empty())
+        return;
+
+    const uint32_t rem = m_bw % 64;
+    if (rem != 0)
+        m_words.back() &= Mask64(rem);
+}
 } // namespace BitFlow::Core::BitVector

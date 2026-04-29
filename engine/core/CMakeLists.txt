@@ -40,7 +40,7 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_ExprRef)
 
     # Active always-on core test set.
-    bf_add_module_test(BitFlowCore core BF_AST_OpTypeHelpers)
+    bf_add_module_test(BitFlowCore core BF_OpType)
     bf_add_module_test(BitFlowCore core BF_Dedup)
     bf_add_module_test(BitFlowCore core BF_ExprIntern_KeyBuilder)
     bf_add_module_test(BitFlowCore core BF_RuleEngine_InPlaceRewrite)

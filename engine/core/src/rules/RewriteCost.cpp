@@ -1,5 +1,3 @@
-#include "expression/OpTraits.h"
-
 #include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/RewriteCost.h>
@@ -11,6 +9,10 @@ namespace {
 using Expr = Expression::ExprOld;
 using OpType = Expression::OpType;
 
+constexpr bool IsLeaf(OpType op) {
+    return op == OpType::Var || op == OpType::Const;
+}
+
 struct CostAccumulator {
     RewriteCost cost{};
 
@@ -19,7 +21,7 @@ struct CostAccumulator {
             return;
 
         cost.totalNodes += 1U;
-        if (!Expression::IsLeaf(expr->op))
+        if (!IsLeaf(expr->op))
             cost.operatorNodes += 1U;
         if (depth > cost.maxDepth)
             cost.maxDepth = depth;

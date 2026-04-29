@@ -1,4 +1,3 @@
-#include "expression/OpTraits.h"
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 

@@ -47,9 +47,90 @@ int TestRotateArithmeticAndDivision() {
     return 0;
 }
 
+int TestComparisonAndCompound() {
+    bf_uint a(10ULL, 64);
+    bf_uint b(20ULL, 64);
+
+    BF_TEST(a < b);
+    BF_TEST(b > a);
+    BF_TEST(a != b);
+
+    a += bf_uint(5ULL, 64);
+    BF_TEST(a.ToUint64() == 15ULL);
+
+    a <<= 1;
+    BF_TEST(a.ToUint64() == 30ULL);
+
+    a >>= 2;
+    BF_TEST(a.ToUint64() == 7ULL);
+
+    a |= bf_uint(8ULL, 64);
+    BF_TEST(a.ToUint64() == 15ULL);
+
+    return 0;
+}
+
+int TestWrapAroundModuloWidth() {
+    bf_uint x(0xffULL, 8);
+    bf_uint one(1ULL, 8);
+
+    BF_TEST((x + one).ToUint64() == 0ULL);
+    BF_TEST((-one).ToUint64() == 0xffULL);
+    BF_TEST((x << 1).ToUint64() == 0xfeULL);
+
+    return 0;
+}
+
+int TestStringConversions() {
+    bf_uint x(255ULL, 16);
+
+    BF_TEST(x.ToBinaryString() == "11111111");
+    BF_TEST(x.ToDecimalString() == "255");
+    BF_TEST(x.ToHexString() == "ff");
+
+    return 0;
+}
+
+int TestLargeShiftCounts() {
+    bf_uint x(1ULL, 64);
+
+    BF_TEST((x << 64).ToUint64() == 1ULL); // modulo width
+    BF_TEST((x << 65).ToUint64() == 2ULL);
+    BF_TEST((x >> 129).ToUint64() == 0ULL);
+
+    return 0;
+}
+
+int TestExceptions() {
+    try {
+        bf_uint a(10, 32);
+        bf_uint b(1, 64);
+        auto c = a + b;
+        (void)c;
+        return -1;
+    } catch (...) {
+    }
+
+    try {
+        bf_uint a(10, 32);
+        bf_uint z(0, 32);
+        auto c = a / z;
+        (void)c;
+        return -1;
+    } catch (...) {
+    }
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestNormalizeAndAccessors);
     BF_RUN_TEST(TestBitwiseAndShifts);
     BF_RUN_TEST(TestRotateArithmeticAndDivision);
+    BF_RUN_TEST(TestComparisonAndCompound);
+    BF_RUN_TEST(TestWrapAroundModuloWidth);
+    BF_RUN_TEST(TestStringConversions);
+    BF_RUN_TEST(TestLargeShiftCounts);
+    BF_RUN_TEST(TestExceptions);
     return 0;
 }

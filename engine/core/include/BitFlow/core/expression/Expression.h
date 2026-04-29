@@ -7,18 +7,13 @@
 
 namespace BitFlow::Core::Expression {
 
-// TODO: Cleanup ExprOld
 BF_DEPRECATED("Use Expr")
 struct ExprOld {
     Ids::ExprId id{};
     OpType op{};
     std::vector<ExprOld*> inputs{};
 
-    // TODO: not here!
     uint32_t constValue{0};
-
-    /*private:
-    ExprOld() = default;*/
 };
 
 struct Expr {

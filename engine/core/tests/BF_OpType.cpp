@@ -1,38 +1,7 @@
-#include "expression/OpTraits.h"
-
 #include <BitFlow/core/expression/OpType.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Expression;
-
-int TestLeafAndArity() {
-    BF_TEST(IsLeaf(OpType::Var));
-    BF_TEST(IsLeaf(OpType::Const));
-    BF_TEST(!IsLeaf(OpType::Add));
-
-    BF_TEST(ArityOf(OpType::Var) == 0);
-    BF_TEST(ArityOf(OpType::Const) == 0);
-    BF_TEST(ArityOf(OpType::Neg) == 1);
-    BF_TEST(ArityOf(OpType::Not) == 1);
-    BF_TEST(ArityOf(OpType::Sub) == 2);
-    BF_TEST(ArityOf(OpType::Div) == 2);
-    BF_TEST(ArityOf(OpType::Mod) == 2);
-    BF_TEST(ArityOf(OpType::Shl) == 2);
-    BF_TEST(ArityOf(OpType::Shr) == 2);
-    BF_TEST(ArityOf(OpType::UShr) == 2);
-    BF_TEST(ArityOf(OpType::RotL) == 2);
-    BF_TEST(ArityOf(OpType::RotR) == 2);
-    BF_TEST(ArityOf(OpType::Ch) == 3);
-    BF_TEST(ArityOf(OpType::Maj) == 3);
-    BF_TEST(ArityOf(OpType::Add) == -1);
-    BF_TEST(ArityOf(OpType::Mul) == -1);
-
-    BF_TEST(HasFixedArity(OpType::RotL));
-    BF_TEST(HasFixedArity(OpType::Maj));
-    BF_TEST(!HasFixedArity(OpType::Add));
-    BF_TEST(!HasFixedArity(OpType::Mul));
-    return 0;
-}
 
 int TestCommutativeAssociative() {
     BF_TEST(IsCommutative(OpType::Add));
@@ -66,7 +35,6 @@ int TestCommutativeAssociative() {
 }
 
 int main() {
-    BF_RUN_TEST(TestLeafAndArity);
     BF_RUN_TEST(TestCommutativeAssociative);
     return 0;
 }
