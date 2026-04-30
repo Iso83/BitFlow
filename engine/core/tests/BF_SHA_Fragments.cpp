@@ -46,7 +46,7 @@ int TestFragment_CH_RewriteAndConstantEval() {
 
     const auto evalRewritten = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
-    BF_TEST(static_cast<uint32_t>(evalRewritten.value) == ((x & y) ^ ((~x) & z)));
+    BF_TEST(evalRewritten.value == ((x & y) ^ ((~x) & z)));
     return 0;
 }
 
@@ -63,7 +63,7 @@ int TestFragment_MAJ_RewriteAndConstantEval() {
 
     const auto eval = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
-    BF_TEST(static_cast<uint32_t>(eval.value) == ((x & y) ^ (x & z) ^ (y & z)));
+    BF_TEST(eval.value == ((x & y) ^ (x & z) ^ (y & z)));
     return 0;
 }
 
@@ -81,8 +81,8 @@ int TestFragment_SmallSigma0_RewriteEmitEvalConsistency() {
     BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
 
     const uint32_t expected = RotR32(x, 7) ^ RotR32(x, 18) ^ (x >> 3);
-    BF_TEST(static_cast<uint32_t>(evalOriginal.value) == expected);
-    BF_TEST(static_cast<uint32_t>(evalRewritten.value) == expected);
+    BF_TEST(evalOriginal.value == expected);
+    BF_TEST(evalRewritten.value == expected);
 
     auto v = b.Var();
     auto sigma0Var = b.SmallSigma0(v);
@@ -107,8 +107,8 @@ int TestFragment_SmallSigma1_RewriteEmitEvalConsistency() {
     BF_TEST(evalRewritten.status == Eval::EvalStatus::Success);
 
     const uint32_t expected = RotR32(x, 17) ^ RotR32(x, 19) ^ (x >> 10);
-    BF_TEST(static_cast<uint32_t>(evalOriginal.value) == expected);
-    BF_TEST(static_cast<uint32_t>(evalRewritten.value) == expected);
+    BF_TEST(evalOriginal.value == expected);
+    BF_TEST(evalRewritten.value == expected);
 
     auto v = b.Var();
     auto sigma1Var = b.SmallSigma1(v);
@@ -128,7 +128,7 @@ int TestFragment_Sigma1_EmitUsesRotateRuntimeContract() {
     BF_TEST(eval.status == Eval::EvalStatus::Success);
 
     const uint32_t expected = RotR32(e, 6) ^ RotR32(e, 11) ^ RotR32(e, 25);
-    BF_TEST(static_cast<uint32_t>(eval.value) == expected);
+    BF_TEST(eval.value == expected);
 
     auto v = b.Var();
     auto sigma1Var = b.BigSigma1(v);

@@ -191,7 +191,7 @@ class ExprStore {
         return m_nodes[toIndex(ref.id)];
     }
 
-    [[nodiscard]] const Expr& get(Ids::ExprId id) const {
+    [[nodiscard]] const Expr& get(const Ids::ExprId id) const {
         return m_nodes[toIndex(id)];
     }
 

@@ -1,12 +1,13 @@
 #pragma once
 
-#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/expression/OpType.h>
+#include <BitFlow/core/helper/Attributes.h>
 #include <BitFlow/core/ids/ExprId.h>
 
 namespace BitFlow::Core::Testing {
 
+BF_DEPRECATED("use Expression::ExprStore")
 static Expression::ExprOld* MakeVar(uint32_t id) {
     Expression::ExprOld* e = new Expression::ExprOld{};
     e->id = Ids::ExprId{id};
@@ -14,6 +15,7 @@ static Expression::ExprOld* MakeVar(uint32_t id) {
     return e;
 }
 
+BF_DEPRECATED("use Expression::ExprStore")
 static Expression::ExprOld* MakeOp(uint32_t id, Expression::OpType op, std::initializer_list<Expression::ExprOld*> in) {
     Expression::ExprOld* e = new Expression::ExprOld{};
     e->id = Ids::ExprId{id};
@@ -22,6 +24,7 @@ static Expression::ExprOld* MakeOp(uint32_t id, Expression::OpType op, std::init
     return e;
 }
 
+BF_DEPRECATED("use Expression::ExprStore")
 static Expression::ExprOld* MakeConst(uint32_t id, uint32_t v) {
     Expression::ExprOld* e = new Expression::ExprOld{};
     e->id = Ids::ExprId{id};

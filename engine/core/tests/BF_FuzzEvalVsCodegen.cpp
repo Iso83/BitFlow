@@ -186,7 +186,7 @@ int TestFuzzEvalVsCodegen_32bit() {
 
         if (eval.value != r1) {
             std::cout << "EXPR FAIL\n";
-            std::cout << "eval: " << eval.value << "\n";
+            std::cout << "eval: " << eval.value.ToString() << "\n";
             std::cout << "run : " << r1 << "\n";
             std::cout << "code: " << code << "\n";
         }

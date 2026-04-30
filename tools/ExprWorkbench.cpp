@@ -364,6 +364,129 @@ std::string ReplaceVarTokens(std::string text, const std::unordered_map<uint32_t
     return text;
 }
 
+// Core::Eval::EvalResult EvalWithEnv(const Expr* root, const std::unordered_map<uint32_t, uint64_t>& env,
+//                                    uint32_t bitWidth) {
+//     using namespace Core::Eval;
+//
+//     if (!root)
+//         return {EvalStatus::UnsupportedOp, 0};
+//
+//     if (bitWidth == 0 || bitWidth > 64)
+//         return {EvalStatus::InvalidBitWidth, 0};
+//
+//     if (root->op == OpType::Const)
+//         return {EvalStatus::Success, Mask(root->constValue, bitWidth)};
+//
+//     if (root->op == OpType::Var) {
+//         auto it = env.find(root->id.value());
+//         const uint64_t value = (it == env.end()) ? 0ull : it->second;
+//         return {EvalStatus::Success, Mask(value, bitWidth)};
+//     }
+//
+//     std::vector<uint64_t> in;
+//     in.reserve(root->inputs.size());
+//     for (const Expr* child : root->inputs) {
+//         EvalResult r = EvalWithEnv(child, env, bitWidth);
+//         if (r.status != EvalStatus::Success)
+//             return r;
+//         in.push_back(Mask(r.value, bitWidth));
+//     }
+//
+//     const uint64_t mask = MaskFor(bitWidth);
+//     switch (root->op) {
+//     case OpType::Not:
+//         if (in.size() != 1)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         return {EvalStatus::Success, (~in[0]) & mask};
+//     case OpType::Neg:
+//         if (in.size() != 1)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         return {EvalStatus::Success, ((~in[0]) + 1ull) & mask};
+//     case OpType::And:
+//     case OpType::Or:
+//     case OpType::Xor:
+//     case OpType::Add:
+//     case OpType::Mul: {
+//         if (in.empty())
+//             return {EvalStatus::UnsupportedOp, 0};
+//         uint64_t acc = in[0] & mask;
+//         for (size_t i = 1; i < in.size(); ++i) {
+//             switch (root->op) {
+//             case OpType::And:
+//                 acc &= in[i];
+//                 break;
+//             case OpType::Or:
+//                 acc |= in[i];
+//                 break;
+//             case OpType::Xor:
+//                 acc ^= in[i];
+//                 break;
+//             case OpType::Add:
+//                 acc += in[i];
+//                 break;
+//             case OpType::Mul:
+//                 acc *= in[i];
+//                 break;
+//             default:
+//                 break;
+//             }
+//             acc &= mask;
+//         }
+//         return {EvalStatus::Success, acc};
+//     }
+//     case OpType::Sub:
+//         if (in.size() != 2)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         return {EvalStatus::Success, (in[0] - in[1]) & mask};
+//     case OpType::Div:
+//         if (in.size() != 2)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         if (in[1] == 0)
+//             return {EvalStatus::DivisionByZero, 0};
+//         return {EvalStatus::Success, (in[0] / in[1]) & mask};
+//     case OpType::Mod:
+//         if (in.size() != 2)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         if (in[1] == 0)
+//             return {EvalStatus::ModuloByZero, 0};
+//         return {EvalStatus::Success, (in[0] % in[1]) & mask};
+//     case OpType::Shl:
+//         if (in.size() != 2)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         return {EvalStatus::Success, (in[0] << NormalizeShift(in[1], bitWidth)) & mask};
+//     case OpType::Shr:
+//     case OpType::UShr:
+//         if (in.size() != 2)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         return {EvalStatus::Success, (in[0] >> NormalizeShift(in[1], bitWidth)) & mask};
+//     case OpType::RotL: {
+//         if (in.size() != 2)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         const uint32_t s = NormalizeShift(in[1], bitWidth);
+//         if (s == 0)
+//             return {EvalStatus::Success, in[0] & mask};
+//         return {EvalStatus::Success, ((in[0] << s) | (in[0] >> (bitWidth - s))) & mask};
+//     }
+//     case OpType::RotR: {
+//         if (in.size() != 2)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         const uint32_t s = NormalizeShift(in[1], bitWidth);
+//         if (s == 0)
+//             return {EvalStatus::Success, in[0] & mask};
+//         return {EvalStatus::Success, ((in[0] >> s) | (in[0] << (bitWidth - s))) & mask};
+//     }
+//     case OpType::Ch:
+//         if (in.size() != 3)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         return {EvalStatus::Success, ((in[0] & in[1]) ^ ((~in[0]) & in[2])) & mask};
+//     case OpType::Maj:
+//         if (in.size() != 3)
+//             return {EvalStatus::UnsupportedOp, 0};
+//         return {EvalStatus::Success, ((in[0] & in[1]) ^ (in[0] & in[2]) ^ (in[1] & in[2])) & mask};
+//     default:
+//         return {EvalStatus::UnsupportedOp, 0};
+//     }
+// }
 Core::Eval::EvalResult EvalWithEnv(const Expr* root, const std::unordered_map<uint32_t, uint64_t>& env,
                                    uint32_t bitWidth) {
     using namespace Core::Eval;
@@ -374,118 +497,7 @@ Core::Eval::EvalResult EvalWithEnv(const Expr* root, const std::unordered_map<ui
     if (bitWidth == 0 || bitWidth > 64)
         return {EvalStatus::InvalidBitWidth, 0};
 
-    if (root->op == OpType::Const)
-        return {EvalStatus::Success, Mask(root->constValue, bitWidth)};
-
-    if (root->op == OpType::Var) {
-        auto it = env.find(root->id.value());
-        const uint64_t value = (it == env.end()) ? 0ull : it->second;
-        return {EvalStatus::Success, Mask(value, bitWidth)};
-    }
-
-    std::vector<uint64_t> in;
-    in.reserve(root->inputs.size());
-    for (const Expr* child : root->inputs) {
-        EvalResult r = EvalWithEnv(child, env, bitWidth);
-        if (r.status != EvalStatus::Success)
-            return r;
-        in.push_back(Mask(r.value, bitWidth));
-    }
-
-    const uint64_t mask = MaskFor(bitWidth);
-    switch (root->op) {
-    case OpType::Not:
-        if (in.size() != 1)
-            return {EvalStatus::UnsupportedOp, 0};
-        return {EvalStatus::Success, (~in[0]) & mask};
-    case OpType::Neg:
-        if (in.size() != 1)
-            return {EvalStatus::UnsupportedOp, 0};
-        return {EvalStatus::Success, ((~in[0]) + 1ull) & mask};
-    case OpType::And:
-    case OpType::Or:
-    case OpType::Xor:
-    case OpType::Add:
-    case OpType::Mul: {
-        if (in.empty())
-            return {EvalStatus::UnsupportedOp, 0};
-        uint64_t acc = in[0] & mask;
-        for (size_t i = 1; i < in.size(); ++i) {
-            switch (root->op) {
-            case OpType::And:
-                acc &= in[i];
-                break;
-            case OpType::Or:
-                acc |= in[i];
-                break;
-            case OpType::Xor:
-                acc ^= in[i];
-                break;
-            case OpType::Add:
-                acc += in[i];
-                break;
-            case OpType::Mul:
-                acc *= in[i];
-                break;
-            default:
-                break;
-            }
-            acc &= mask;
-        }
-        return {EvalStatus::Success, acc};
-    }
-    case OpType::Sub:
-        if (in.size() != 2)
-            return {EvalStatus::UnsupportedOp, 0};
-        return {EvalStatus::Success, (in[0] - in[1]) & mask};
-    case OpType::Div:
-        if (in.size() != 2)
-            return {EvalStatus::UnsupportedOp, 0};
-        if (in[1] == 0)
-            return {EvalStatus::DivisionByZero, 0};
-        return {EvalStatus::Success, (in[0] / in[1]) & mask};
-    case OpType::Mod:
-        if (in.size() != 2)
-            return {EvalStatus::UnsupportedOp, 0};
-        if (in[1] == 0)
-            return {EvalStatus::ModuloByZero, 0};
-        return {EvalStatus::Success, (in[0] % in[1]) & mask};
-    case OpType::Shl:
-        if (in.size() != 2)
-            return {EvalStatus::UnsupportedOp, 0};
-        return {EvalStatus::Success, (in[0] << NormalizeShift(in[1], bitWidth)) & mask};
-    case OpType::Shr:
-    case OpType::UShr:
-        if (in.size() != 2)
-            return {EvalStatus::UnsupportedOp, 0};
-        return {EvalStatus::Success, (in[0] >> NormalizeShift(in[1], bitWidth)) & mask};
-    case OpType::RotL: {
-        if (in.size() != 2)
-            return {EvalStatus::UnsupportedOp, 0};
-        const uint32_t s = NormalizeShift(in[1], bitWidth);
-        if (s == 0)
-            return {EvalStatus::Success, in[0] & mask};
-        return {EvalStatus::Success, ((in[0] << s) | (in[0] >> (bitWidth - s))) & mask};
-    }
-    case OpType::RotR: {
-        if (in.size() != 2)
-            return {EvalStatus::UnsupportedOp, 0};
-        const uint32_t s = NormalizeShift(in[1], bitWidth);
-        if (s == 0)
-            return {EvalStatus::Success, in[0] & mask};
-        return {EvalStatus::Success, ((in[0] >> s) | (in[0] << (bitWidth - s))) & mask};
-    }
-    case OpType::Ch:
-        if (in.size() != 3)
-            return {EvalStatus::UnsupportedOp, 0};
-        return {EvalStatus::Success, ((in[0] & in[1]) ^ ((~in[0]) & in[2])) & mask};
-    case OpType::Maj:
-        if (in.size() != 3)
-            return {EvalStatus::UnsupportedOp, 0};
-        return {EvalStatus::Success, ((in[0] & in[1]) ^ (in[0] & in[2]) ^ (in[1] & in[2])) & mask};
-    default:
-        return {EvalStatus::UnsupportedOp, 0};
-    }
+    return Core::Eval::EvaluateConstant(root, bitWidth);
 }
 
 void RunVerify(const Expr* rewritten, uint32_t bitWidth) {
@@ -510,8 +522,8 @@ void RunVerify(const Expr* rewritten, uint32_t bitWidth) {
         const auto simResult = EvalWithEnv(rewritten, env, bitWidth);
 
         const bool okStatus = (evalResult.status == simResult.status);
-        const bool okValue = (evalResult.status != Core::Eval::EvalStatus::Success) ||
-                             (Mask(evalResult.value, bitWidth) == Mask(simResult.value, bitWidth));
+        const bool okValue =
+            (evalResult.status != Core::Eval::EvalStatus::Success) || evalResult.value == simResult.value;
 
         if (okStatus && okValue) {
             ++passed;
@@ -648,7 +660,7 @@ int main(int argc, char** argv) {
             } else {
                 const auto result = Core::Eval::EvaluateConstant(outputs[0].expr, opt.bitWidth);
                 if (result.status == Core::Eval::EvalStatus::Success)
-                    std::cout << result.value << "\n\n";
+                    std::cout << result.value.ToString() << "\n\n";
                 else
                     std::cout << EvalStatusToString(result.status) << "\n\n";
             }

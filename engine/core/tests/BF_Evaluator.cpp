@@ -1,10 +1,27 @@
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
-using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Eval;
+using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Core::BitVector;
+
+inline bool EqualBits(const bf_uint& a, const bf_uint& b) {
+    const uint32_t bw = std::max(a.BitWidth(), b.BitWidth());
+
+    bf_uint aa = a;
+    bf_uint bb = b;
+
+    aa = bf_uint(aa.ToUint64(), bw);
+    bb = bf_uint(bb.ToUint64(), bw);
+
+    return aa == bb;
+}
+
+inline bool EqualBits(const bf_uint& a, const uint64_t& b) {
+    return EqualBits(a, bf_uint(b, 64));
+}
 
 int TestEvaluate_PureConstantExpression() {
     auto c = MakeConst(1, 0xABCD1234);
@@ -12,7 +29,7 @@ int TestEvaluate_PureConstantExpression() {
     EvalResult r = EvaluateConstant(c, 32);
 
     BF_TEST(r.status == EvalStatus::Success);
-    BF_TEST(r.value == 0xABCD1234ULL);
+    BF_TEST(EqualBits(r.value, 0xABCD1234ULL));
     return 0;
 }
 
@@ -31,7 +48,7 @@ int TestEvaluate_NestedExpression() {
     EvalResult r = EvaluateConstant(expr, 16);
 
     BF_TEST(r.status == EvalStatus::Success);
-    BF_TEST(r.value == 0x2DULL);
+    BF_TEST(EqualBits(r.value, 0x2DULL));
     return 0;
 }
 
@@ -46,16 +63,16 @@ int TestEvaluate_BitWidthVariations_8_16_32_64() {
     EvalResult r64 = EvaluateConstant(expr, 64);
 
     BF_TEST(r8.status == EvalStatus::Success);
-    BF_TEST(r8.value == 0x34ULL);
+    BF_TEST(EqualBits(r8.value, 0x34ULL));
 
     BF_TEST(r16.status == EvalStatus::Success);
-    BF_TEST(r16.value == 0x1234ULL);
+    BF_TEST(EqualBits(r16.value, 0x1234ULL));
 
     BF_TEST(r32.status == EvalStatus::Success);
-    BF_TEST(r32.value == 0xFFFF1234ULL);
+    BF_TEST(EqualBits(r32.value, 0xFFFF1234ULL));
 
     BF_TEST(r64.status == EvalStatus::Success);
-    BF_TEST(r64.value == 0xFFFF1234ULL);
+    BF_TEST(EqualBits(r64.value, 0xFFFF1234ULL));
     return 0;
 }
 
@@ -81,21 +98,21 @@ int TestEvaluate_ShiftRotateEdgeCases() {
     auto rotlN = MakeOp(16, OpType::RotL, {v, n});
     auto rotrN = MakeOp(17, OpType::RotR, {v, n});
 
-    BF_TEST(EvaluateConstant(shl0, 8).value == 0x81ULL);
-    BF_TEST(EvaluateConstant(shr0, 8).value == 0x81ULL);
-    BF_TEST(EvaluateConstant(rotl0, 8).value == 0x81ULL);
-    BF_TEST(EvaluateConstant(rotr0, 8).value == 0x81ULL);
+    BF_TEST(EqualBits(EvaluateConstant(shl0, 8).value, 0x81ULL));
+    BF_TEST(EqualBits(EvaluateConstant(shr0, 8).value, 0x81ULL));
+    BF_TEST(EqualBits(EvaluateConstant(rotl0, 8).value, 0x81ULL));
+    BF_TEST(EqualBits(EvaluateConstant(rotr0, 8).value, 0x81ULL));
 
-    BF_TEST(EvaluateConstant(shlW, 8).value == 0x81ULL);
-    BF_TEST(EvaluateConstant(shrW, 8).value == 0x81ULL);
-    BF_TEST(EvaluateConstant(rotlW, 8).value == 0x81ULL);
-    BF_TEST(EvaluateConstant(rotrW, 8).value == 0x81ULL);
+    BF_TEST(EqualBits(EvaluateConstant(shlW, 8).value, 0x81ULL));
+    BF_TEST(EqualBits(EvaluateConstant(shrW, 8).value, 0x81ULL));
+    BF_TEST(EqualBits(EvaluateConstant(rotlW, 8).value, 0x81ULL));
+    BF_TEST(EqualBits(EvaluateConstant(rotrW, 8).value, 0x81ULL));
 
-    BF_TEST(EvaluateConstant(shlN, 8).value == 0x02ULL);
-    BF_TEST(EvaluateConstant(shrN, 8).value == 0x40ULL);
-    BF_TEST(EvaluateConstant(ushrN, 8).value == 0x40ULL);
-    BF_TEST(EvaluateConstant(rotlN, 8).value == 0x03ULL);
-    BF_TEST(EvaluateConstant(rotrN, 8).value == 0xC0ULL);
+    BF_TEST(EqualBits(EvaluateConstant(shlN, 8).value, 0x02ULL));
+    BF_TEST(EqualBits(EvaluateConstant(shrN, 8).value, 0x40ULL));
+    BF_TEST(EqualBits(EvaluateConstant(ushrN, 8).value, 0x40ULL));
+    BF_TEST(EqualBits(EvaluateConstant(rotlN, 8).value, 0x03ULL));
+    BF_TEST(EqualBits(EvaluateConstant(rotrN, 8).value, 0xC0ULL));
     return 0;
 }
 
@@ -151,16 +168,16 @@ int TestEvaluate_WideBitWidth_UsesBfUintPath() {
     auto add = MakeOp(5, OpType::Add, {rotl, shl});
     auto mod = MakeOp(6, OpType::Mod, {add, MakeConst(7, 257)});
 
-    auto wide = EvaluateConstantWide(mod, 128);
+    auto wide = EvaluateConstant(mod, 128);
     EvalResult r = EvaluateConstant(mod, 128);
 
     BF_TEST(wide.status == EvalStatus::Success);
     BF_TEST(wide.value.BitWidth() == 128U);
     BF_TEST(r.status == EvalStatus::Success);
-    BF_TEST(r.value == ((0x102ULL + 0x102ULL) % 257ULL));
+    BF_TEST(EqualBits(r.value, ((0x102ULL + 0x102ULL) % 257ULL)));
 
     auto rotr = MakeOp(8, OpType::RotR, {c2, MakeConst(9, 1)});
-    auto rotrWide = EvaluateConstantWide(rotr, 128);
+    auto rotrWide = EvaluateConstant(rotr, 128);
     BF_TEST(rotrWide.status == EvalStatus::Success);
     BF_TEST(rotrWide.value.Shr(127).ToUint64() == 1ULL);
     return 0;

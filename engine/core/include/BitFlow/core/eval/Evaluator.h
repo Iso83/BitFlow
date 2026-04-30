@@ -1,0 +1,35 @@
+#pragma once
+
+#include <BitFlow/core/bitvector/BitVector.h>
+#include <BitFlow/core/expression/ExprStore.h>
+#include <BitFlow/core/helper/Attributes.h>
+#include <cstdint>
+
+namespace BitFlow::Core::Eval {
+
+enum class EvalStatus {
+    Success,
+    NotConstant,
+    DivisionByZero,
+    ModuloByZero,
+    InvalidBitWidth,
+    UnsupportedOp,
+};
+
+struct EvalResult {
+    EvalStatus status = EvalStatus::UnsupportedOp;
+    BitVector::bf_uint value = BitVector::bf_uint(0, 0);
+};
+
+// Evaluates a constant expression using BitVector as the canonical arithmetic model.
+// Contract:
+// - bitWidth must be > 0
+// - all operations follow bf_uint semantics
+// - returns Success if the expression is fully constant
+// - otherwise returns a non-success status
+EvalResult EvaluateConstant(const Expression::ExprStore* eStore, const Expression::Expr* root, uint32_t bitWidth);
+
+BF_DEPRECATED("Use EvaluateConstant with const Expr*")
+EvalResult EvaluateConstant(const Expression::ExprOld* root, uint32_t bitWidth);
+
+} // namespace BitFlow::Core::Eval

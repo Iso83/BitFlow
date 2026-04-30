@@ -42,7 +42,7 @@ int TestBigSigma0_ParseBuilderSimplifyEmitVerify() {
 
     BF_TEST(parsedEval.status == Eval::EvalStatus::Success);
     BF_TEST(builderEval.status == Eval::EvalStatus::Success);
-    BF_TEST(static_cast<uint32_t>(parsedEval.value) == (RotR32(x, 2) ^ RotR32(x, 13) ^ RotR32(x, 22)));
+    BF_TEST(parsedEval.value == (RotR32(x, 2) ^ RotR32(x, 13) ^ RotR32(x, 22)));
     BF_TEST(parsedEval.value == builderEval.value);
     return 0;
 }
@@ -63,7 +63,7 @@ int TestBigSigma1_ParseBuilderSimplifyEmitVerify() {
 
     BF_TEST(parsedEval.status == Eval::EvalStatus::Success);
     BF_TEST(builderEval.status == Eval::EvalStatus::Success);
-    BF_TEST(static_cast<uint32_t>(parsedEval.value) == (RotR32(x, 6) ^ RotR32(x, 11) ^ RotR32(x, 25)));
+    BF_TEST(parsedEval.value == (RotR32(x, 6) ^ RotR32(x, 11) ^ RotR32(x, 25)));
     BF_TEST(parsedEval.value == builderEval.value);
     return 0;
 }
@@ -85,7 +85,7 @@ int TestSmallSigma0_ParseBuilderSimplifyEmitVerify() {
 
     BF_TEST(parsedEval.status == Eval::EvalStatus::Success);
     BF_TEST(builderEval.status == Eval::EvalStatus::Success);
-    BF_TEST(static_cast<uint32_t>(parsedEval.value) == (RotR32(x, 7) ^ RotR32(x, 18) ^ (x >> 3)));
+    BF_TEST(parsedEval.value == (RotR32(x, 7) ^ RotR32(x, 18) ^ (x >> 3)));
     BF_TEST(parsedEval.value == builderEval.value);
     return 0;
 }
@@ -107,7 +107,7 @@ int TestSmallSigma1_ParseBuilderSimplifyEmitVerify() {
 
     BF_TEST(parsedEval.status == Eval::EvalStatus::Success);
     BF_TEST(builderEval.status == Eval::EvalStatus::Success);
-    BF_TEST(static_cast<uint32_t>(parsedEval.value) == (RotR32(x, 17) ^ RotR32(x, 19) ^ (x >> 10)));
+    BF_TEST(parsedEval.value == (RotR32(x, 17) ^ RotR32(x, 19) ^ (x >> 10)));
     BF_TEST(parsedEval.value == builderEval.value);
     return 0;
 }

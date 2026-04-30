@@ -15,8 +15,8 @@ class bf_uint {
     enum class StringBase : uint8_t { Binary = 2, Decimal = 10, Hex = 16 };
 
   public:
-    bf_uint(uint32_t bitWidth);
-    bf_uint(uint64_t value, uint32_t bitWidth);
+    explicit bf_uint(uint32_t bitWidth);
+    explicit bf_uint(uint64_t value, uint32_t bitWidth);
 
     uint32_t BitWidth() const noexcept {
         return m_bw;

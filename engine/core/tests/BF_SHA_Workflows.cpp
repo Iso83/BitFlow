@@ -160,8 +160,8 @@ int TestRoundFragments_AreDirectlyEvaluatable() {
     const uint32_t maj = (a & bVal) ^ (a & c) ^ (bVal & c);
     const uint32_t expectedT2 = sigma0 + maj;
 
-    BF_TEST(static_cast<uint32_t>(t1.value) == expectedT1);
-    BF_TEST(static_cast<uint32_t>(t2.value) == expectedT2);
+    BF_TEST(t1.value == expectedT1);
+    BF_TEST(t2.value == expectedT2);
     return 0;
 }
 

@@ -288,7 +288,8 @@ int main() {
     auto wideEvalExpr = MakeOp(53, OpType::RotL, {MakeConst(54, 0x81), MakeConst(55, 5)});
     auto wideEval = Eval::EvaluateConstant(wideEvalExpr, 128);
     BF_TEST(wideEval.status == Eval::EvalStatus::Success);
-    BF_TEST(CompileAndRunWrapper(wideFn, "f(bf_uint(0x81ull, 128)).ToUint64()", support128) == wideEval.value);
+    BF_TEST(CompileAndRunWrapper(wideFn, "f(bf_uint(0x81ull, 128)).ToUint64()", support128) ==
+            wideEval.value.ToUint64());
 
     // Wide shift path: evaluator/codegen alignment on supported low-64 projection.
     auto wideShiftFnExpr = MakeOp(56, OpType::Shl, {MakeVar(57), MakeConst(58, 7)});
@@ -297,7 +298,7 @@ int main() {
     auto wideShiftEval = Eval::EvaluateConstant(wideShiftEvalExpr, 128);
     BF_TEST(wideShiftEval.status == Eval::EvalStatus::Success);
     BF_TEST(CompileAndRunWrapper(wideShiftFn, "f(bf_uint(0x1234ull, 128)).ToUint64()", support128) ==
-            wideShiftEval.value);
+            wideShiftEval.value.ToUint64());
 
     // 96-bit generated code must compile and run under the same bf_uint contract.
     auto v96 = MakeVar(160);
