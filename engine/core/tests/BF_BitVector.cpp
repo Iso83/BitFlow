@@ -94,9 +94,21 @@ int TestStringConversions() {
 int TestLargeShiftCounts() {
     bf_uint x(1ULL, 64);
 
-    BF_TEST((x << 64).ToUint64() == 1ULL); // modulo width
-    BF_TEST((x << 65).ToUint64() == 2ULL);
-    BF_TEST((x >> 129).ToUint64() == 0ULL);
+    auto s64 = x << 64;
+    auto s65 = x << 65;
+    auto r129 = x >> 129;
+
+    BF_TEST(s64.IsZero());
+    BF_TEST(s65.IsZero());
+    BF_TEST(r129.IsZero());
+
+    // extra: check dat lagere shifts nog correct werken
+    BF_TEST((x << 63).ToUint64() == (1ULL << 63));
+    BF_TEST((x << 62).ToUint64() == (1ULL << 62));
+
+    // en dat net over de grens abrupt naar 0 gaat
+    BF_TEST((x << 63).IsZero() == false);
+    BF_TEST((x << 64).IsZero() == true);
 
     return 0;
 }

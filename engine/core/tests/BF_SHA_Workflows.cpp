@@ -1,4 +1,4 @@
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <BitFlow/core/expression/OpType.h>
 #include <SHA_Expr.h>
 #include <TestAssert.h>
@@ -160,8 +160,8 @@ int TestRoundFragments_AreDirectlyEvaluatable() {
     const uint32_t maj = (a & bVal) ^ (a & c) ^ (bVal & c);
     const uint32_t expectedT2 = sigma0 + maj;
 
-    BF_TEST(t1.value == expectedT1);
-    BF_TEST(t2.value == expectedT2);
+    BF_TEST(EqualBits(t1.value, expectedT1));
+    BF_TEST(EqualBits(t2.value, expectedT2));
     return 0;
 }
 

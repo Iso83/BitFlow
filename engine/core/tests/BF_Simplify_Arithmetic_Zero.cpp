@@ -250,7 +250,7 @@ int TestShiftZero_Basic() {
     auto x = MakeVar(700);
     auto zero = ConstPool::Get(0);
 
-    for (OpType op : {OpType::Shl, OpType::Shr, OpType::UShr}) {
+    for (OpType op : {OpType::Shl, OpType::Shr}) {
         auto shift = MakeOp(701 + static_cast<uint32_t>(op), op, {x, zero});
 
         RuleEngine engine = MakeEngine_ShiftZero();
@@ -266,7 +266,7 @@ int TestShiftZero_GuardLeftZeroStaysShift() {
     auto x = MakeVar(710);
     auto zero = ConstPool::Get(0);
 
-    for (OpType op : {OpType::Shl, OpType::Shr, OpType::UShr}) {
+    for (OpType op : {OpType::Shl, OpType::Shr}) {
         auto shift = MakeOp(711 + static_cast<uint32_t>(op), op, {zero, x});
 
         RuleEngine engine = MakeEngine_ShiftZero();

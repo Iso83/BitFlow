@@ -65,6 +65,14 @@ ExprRef ExprRef::operator>>(ExprRef rhs) const {
     return store->create(OpType::Shr, {id, rhs.id}, BitWidth());
 }
 
+ExprRef ExprRef::RotL(ExprRef rhs) const {
+    return store->create(OpType::RotL, {id, rhs.id}, BitWidth());
+}
+
+ExprRef ExprRef::RotR(ExprRef rhs) const {
+    return store->create(OpType::RotR, {id, rhs.id}, BitWidth());
+}
+
 ExprRef ExprRef::operator&(ExprRef rhs) const {
     return store->create(OpType::And, {id, rhs.id}, std::max(BitWidth(), rhs.BitWidth()));
 }
@@ -103,6 +111,14 @@ ExprRef ExprRef::operator<<(uint64_t rhs) const {
 
 ExprRef ExprRef::operator>>(uint64_t rhs) const {
     return *this >> Const(rhs, BitWidth());
+}
+
+ExprRef ExprRef::RotL(uint64_t rhs) const {
+    return RotL(Const(rhs, BitWidth()));
+}
+
+ExprRef ExprRef::RotR(uint64_t rhs) const {
+    return RotR(Const(rhs, BitWidth()));
 }
 
 ExprRef ExprRef::operator&(uint64_t rhs) const {

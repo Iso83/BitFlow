@@ -380,7 +380,8 @@ bf_uint bf_uint::Shl(uint32_t s) const {
     if (m_bw == 0)
         return bf_uint(0, 0);
 
-    s %= m_bw;
+    if (s >= m_bw)
+        return bf_uint(0, m_bw);
 
     bf_uint r(m_bw);
 
@@ -408,7 +409,8 @@ bf_uint bf_uint::Shr(uint32_t s) const {
     if (m_bw == 0)
         return bf_uint(0, 0);
 
-    s %= m_bw;
+    if (s >= m_bw)
+        return bf_uint(0, m_bw);
 
     bf_uint r(m_bw);
 

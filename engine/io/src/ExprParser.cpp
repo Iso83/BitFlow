@@ -136,9 +136,6 @@ class PrattParser {
         case TokenKind::ShiftRight:
             info = InfixInfo{40, OpType::Shr};
             return true;
-        case TokenKind::ShiftRightUnsigned:
-            info = InfixInfo{40, OpType::UShr};
-            return true;
         case TokenKind::Ampersand:
             info = InfixInfo{30, OpType::And};
             return true;

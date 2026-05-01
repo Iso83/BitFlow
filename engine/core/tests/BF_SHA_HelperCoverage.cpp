@@ -1,5 +1,5 @@
 #include <BitFlow/core/codegen/Emitter.h>
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
@@ -63,7 +63,7 @@ int TestSmallSigma0_RewriteEmitEvalConsistency() {
 
     const auto eval = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
-    BF_TEST(eval.value == (RotR32(x, 7) ^ RotR32(x, 18) ^ (x >> 3)));
+    BF_TEST(EqualBits(eval.value, (RotR32(x, 7) ^ RotR32(x, 18) ^ (x >> 3))));
 
     auto sigmaVar = b.SmallSigma0(b.Var());
     auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().Rewrite(sigmaVar), 32);
@@ -81,7 +81,7 @@ int TestSmallSigma1_RewriteEmitEvalConsistency() {
 
     const auto eval = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
-    BF_TEST(eval.value == (RotR32(x, 17) ^ RotR32(x, 19) ^ (x >> 10)));
+    BF_TEST(EqualBits(eval.value, (RotR32(x, 17) ^ RotR32(x, 19) ^ (x >> 10))));
 
     auto sigmaVar = b.SmallSigma1(b.Var());
     auto emitted = Codegen::EmitCExpr(MakeShaSafeEngine().Rewrite(sigmaVar), 32);

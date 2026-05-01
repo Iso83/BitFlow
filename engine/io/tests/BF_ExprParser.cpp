@@ -102,10 +102,9 @@ int TestExprParser_MixedExpressionShape() {
 }
 
 int TestExprParser_ShiftOperators() {
-    auto parsed = BitFlow::IO::Parse("a << b >> c >>> d");
+    auto parsed = BitFlow::IO::Parse("a << b >> c");
     ExprOld* root = parsed.root;
 
-    BF_TEST(root->op == OpType::UShr);
     BF_TEST(root->inputs[0]->op == OpType::Shr);
     BF_TEST(root->inputs[0]->inputs[0]->op == OpType::Shl);
     return 0;

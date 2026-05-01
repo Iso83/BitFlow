@@ -117,7 +117,6 @@ std::string BuildExpr(OpType op, const std::vector<std::string>& in) {
     case OpType::Shl:
         return in.size() == 2 ? "(" + in[0] + " << " + in[1] + ")" : "0";
     case OpType::Shr:
-    case OpType::UShr:
         return in.size() == 2 ? "(" + in[0] + " >> " + in[1] + ")" : "0";
     case OpType::RotL:
         return in.size() == 2 ? "rotl(" + in[0] + ", " + in[1] + ")" : "0";

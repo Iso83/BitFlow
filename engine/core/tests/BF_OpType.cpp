@@ -15,7 +15,6 @@ int TestCommutativeAssociative() {
     BF_TEST(!IsCommutative(OpType::Mod));
     BF_TEST(!IsCommutative(OpType::Shl));
     BF_TEST(!IsCommutative(OpType::Shr));
-    BF_TEST(!IsCommutative(OpType::UShr));
     BF_TEST(!IsCommutative(OpType::RotL));
     BF_TEST(!IsCommutative(OpType::RotR));
 
@@ -30,7 +29,6 @@ int TestCommutativeAssociative() {
     BF_TEST(!IsAssociative(OpType::Mod));
     BF_TEST(!IsAssociative(OpType::Shl));
     BF_TEST(!IsAssociative(OpType::Shr));
-    BF_TEST(!IsAssociative(OpType::UShr));
     return 0;
 }
 

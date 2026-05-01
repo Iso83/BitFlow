@@ -25,9 +25,8 @@ enum class TokenKind {
     Caret,     // ^
     Tilde,     // ~
 
-    ShiftLeft,          // <<
-    ShiftRight,         // >>
-    ShiftRightUnsigned, // >>>
+    ShiftLeft,  // <<
+    ShiftRight, // >>
 };
 
 } // namespace BitFlow::IO::Lexer

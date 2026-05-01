@@ -1,5 +1,5 @@
 #include <BitFlow/core/codegen/Emitter.h>
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>

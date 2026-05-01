@@ -1,5 +1,5 @@
 #include <BitFlow/core/codegen/Emitter.h>
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 

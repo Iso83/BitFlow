@@ -1,13 +1,15 @@
 #include <BitFlow/core/codegen/Emitter.h>
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <BitFlow/io/ExprParser.h>
+#include <Core_Expr.h>
 #include <SHA_Expr.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Rules;
+using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Testing::SHA;
 
 namespace {
@@ -42,7 +44,7 @@ int TestBigSigma0_ParseBuilderSimplifyEmitVerify() {
 
     BF_TEST(parsedEval.status == Eval::EvalStatus::Success);
     BF_TEST(builderEval.status == Eval::EvalStatus::Success);
-    BF_TEST(parsedEval.value == (RotR32(x, 2) ^ RotR32(x, 13) ^ RotR32(x, 22)));
+    BF_TEST(EqualBits(parsedEval.value, (RotR32(x, 2) ^ RotR32(x, 13) ^ RotR32(x, 22))));
     BF_TEST(parsedEval.value == builderEval.value);
     return 0;
 }
@@ -63,7 +65,7 @@ int TestBigSigma1_ParseBuilderSimplifyEmitVerify() {
 
     BF_TEST(parsedEval.status == Eval::EvalStatus::Success);
     BF_TEST(builderEval.status == Eval::EvalStatus::Success);
-    BF_TEST(parsedEval.value == (RotR32(x, 6) ^ RotR32(x, 11) ^ RotR32(x, 25)));
+    BF_TEST(EqualBits(parsedEval.value, (RotR32(x, 6) ^ RotR32(x, 11) ^ RotR32(x, 25))));
     BF_TEST(parsedEval.value == builderEval.value);
     return 0;
 }
@@ -85,7 +87,7 @@ int TestSmallSigma0_ParseBuilderSimplifyEmitVerify() {
 
     BF_TEST(parsedEval.status == Eval::EvalStatus::Success);
     BF_TEST(builderEval.status == Eval::EvalStatus::Success);
-    BF_TEST(parsedEval.value == (RotR32(x, 7) ^ RotR32(x, 18) ^ (x >> 3)));
+    BF_TEST(EqualBits(parsedEval.value, (RotR32(x, 7) ^ RotR32(x, 18) ^ (x >> 3))));
     BF_TEST(parsedEval.value == builderEval.value);
     return 0;
 }
@@ -107,7 +109,7 @@ int TestSmallSigma1_ParseBuilderSimplifyEmitVerify() {
 
     BF_TEST(parsedEval.status == Eval::EvalStatus::Success);
     BF_TEST(builderEval.status == Eval::EvalStatus::Success);
-    BF_TEST(parsedEval.value == (RotR32(x, 17) ^ RotR32(x, 19) ^ (x >> 10)));
+    BF_TEST(EqualBits(parsedEval.value, (RotR32(x, 17) ^ RotR32(x, 19) ^ (x >> 10))));
     BF_TEST(parsedEval.value == builderEval.value);
     return 0;
 }

@@ -1,6 +1,6 @@
 #include <BitFlow/core/codegen/Emitter.h>
 #include <BitFlow/core/eval/ConstantDetect.h>
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 #include <atomic>
@@ -184,13 +184,13 @@ int TestFuzzEvalVsCodegen_32bit() {
 
         BF_TEST(r1 == r2);
 
-        if (eval.value != r1) {
+        if (!EqualBits(eval.value, r1)) {
             std::cout << "EXPR FAIL\n";
             std::cout << "eval: " << eval.value.ToString() << "\n";
             std::cout << "run : " << r1 << "\n";
             std::cout << "code: " << code << "\n";
         }
-        BF_TEST(eval.value == r1);
+        BF_TEST(EqualBits(eval.value, r1));
         ++executed;
     }
 

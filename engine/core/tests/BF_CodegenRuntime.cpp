@@ -1,6 +1,6 @@
 #include <BitFlow/core/bitvector/BitVector.h>
 #include <BitFlow/core/codegen/Emitter.h>
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
@@ -239,7 +239,7 @@ int main() {
     auto expr = MakeOp(3, OpType::Add, {c1, c2});
     auto eval = Eval::EvaluateConstant(expr, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
-    BF_TEST(eval.value == CompileAndRun(Codegen::EmitCExpr(expr, 32), Codegen::EmitCRuntimeSupport(32)));
+    BF_TEST(EqualBits(eval.value, CompileAndRun(Codegen::EmitCExpr(expr, 32), Codegen::EmitCRuntimeSupport(32))));
 
     // 32-bit generated function compile path.
     auto a = MakeVar(11);
@@ -252,7 +252,7 @@ int main() {
     auto rotlExpr = MakeOp(16, OpType::RotL, {MakeConst(17, 0x81), MakeConst(18, 1)});
     auto rotlEval = Eval::EvaluateConstant(rotlExpr, 8);
     BF_TEST(rotlEval.status == Eval::EvalStatus::Success);
-    BF_TEST(rotlEval.value == CompileAndRun(Codegen::EmitCExpr(rotlExpr, 8), Codegen::EmitCRuntimeSupport(8)));
+    BF_TEST(EqualBits(rotlEval.value, CompileAndRun(Codegen::EmitCExpr(rotlExpr, 8), Codegen::EmitCRuntimeSupport(8))));
 
     auto rotArg = MakeVar(19);
     auto rotFnExpr = MakeOp(20, OpType::RotL, {rotArg, MakeConst(21, 1)});

@@ -143,9 +143,6 @@ Token Lexer::ReadOperatorOrPunctuation() {
         return Token{kind, std::move(text), SourceSpan{begin, begin + length}, std::nullopt, std::nullopt};
     };
 
-    if (Peek() == '>' && Peek(1) == '>' && Peek(2) == '>')
-        return makeSimple(TokenKind::ShiftRightUnsigned, 3);
-
     if (Peek() == '>' && Peek(1) == '>')
         return makeSimple(TokenKind::ShiftRight, 2);
 

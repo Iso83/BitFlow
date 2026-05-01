@@ -1,7 +1,7 @@
 #include <BitFlow/core/codegen/Emitter.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
 #include <BitFlow/core/eval/ConstantDetect.h>
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/expression/OpType.h>
@@ -492,10 +492,10 @@ Core::Eval::EvalResult EvalWithEnv(const Expr* root, const std::unordered_map<ui
     using namespace Core::Eval;
 
     if (!root)
-        return {EvalStatus::UnsupportedOp, 0};
+        return {EvalStatus::UnsupportedOp, BitFlow::Core::BitVector::bf_uint(0, 0)};
 
     if (bitWidth == 0 || bitWidth > 64)
-        return {EvalStatus::InvalidBitWidth, 0};
+        return {EvalStatus::InvalidBitWidth, BitFlow::Core::BitVector::bf_uint(0, 0)};
 
     return Core::Eval::EvaluateConstant(root, bitWidth);
 }

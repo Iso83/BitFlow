@@ -33,9 +33,6 @@ static bool TryGetInfixInfo(OpType op, InfixInfo& info) {
     case OpType::Shr:
         info = {40, ">>"};
         return true;
-    case OpType::UShr:
-        info = {40, ">>>"};
-        return true;
     case OpType::And:
         info = {30, "&"};
         return true;

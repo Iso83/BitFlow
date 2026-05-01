@@ -35,6 +35,8 @@ struct ExprRef {
 
     [[nodiscard]] ExprRef operator<<(ExprRef rhs) const;
     [[nodiscard]] ExprRef operator>>(ExprRef rhs) const;
+    [[nodiscard]] ExprRef RotL(ExprRef rhs) const;
+    [[nodiscard]] ExprRef RotR(ExprRef rhs) const;
 
     [[nodiscard]] ExprRef operator&(ExprRef rhs) const;
     [[nodiscard]] ExprRef operator^(ExprRef rhs) const;
@@ -48,6 +50,8 @@ struct ExprRef {
 
     [[nodiscard]] ExprRef operator<<(uint64_t rhs) const;
     [[nodiscard]] ExprRef operator>>(uint64_t rhs) const;
+    [[nodiscard]] ExprRef RotL(uint64_t rhs) const;
+    [[nodiscard]] ExprRef RotR(uint64_t rhs) const;
 
     [[nodiscard]] ExprRef operator&(uint64_t rhs) const;
     [[nodiscard]] ExprRef operator^(uint64_t rhs) const;

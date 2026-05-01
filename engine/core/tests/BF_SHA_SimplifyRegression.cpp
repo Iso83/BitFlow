@@ -1,4 +1,4 @@
-#include <BitFlow/core/eval/ConstantEval.h>
+#include <BitFlow/core/eval/Evaluator.h>
 #include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
@@ -61,7 +61,7 @@ int TestSimplify_CH_ConstantSemantics() {
 
     const auto eval = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
-    BF_TEST(eval.value == ((x & y) ^ ((~x) & z)));
+    BF_TEST(EqualBits(eval.value, ((x & y) ^ ((~x) & z))));
     return 0;
 }
 
@@ -76,7 +76,7 @@ int TestSimplify_MAJ_ConstantSemantics() {
 
     const auto eval = Eval::EvaluateConstant(rewritten, 32);
     BF_TEST(eval.status == Eval::EvalStatus::Success);
-    BF_TEST(eval.value == ((x & y) ^ (x & z) ^ (y & z)));
+    BF_TEST(EqualBits(eval.value, ((x & y) ^ (x & z) ^ (y & z))));
     return 0;
 }
 

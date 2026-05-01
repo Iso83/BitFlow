@@ -72,7 +72,6 @@ static bool Match_Shift_Zero(const Expr& e) {
     switch (e.op) {
     case OpType::Shl:
     case OpType::Shr:
-    case OpType::UShr:
         break;
     default:
         return false;

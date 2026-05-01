@@ -130,7 +130,6 @@ EvalResult EvaluateConstant(const ExprStore* eStore, const Expr* node, uint32_t 
 
     case OpType::Shl:
     case OpType::Shr:
-    case OpType::UShr:
     case OpType::RotL:
     case OpType::RotR: {
         if (node->inputs.size() != 2)
@@ -149,7 +148,6 @@ EvalResult EvaluateConstant(const ExprStore* eStore, const Expr* node, uint32_t 
             return MakeSuccess(a.value << b.value);
 
         case OpType::Shr:
-        case OpType::UShr:
             return MakeSuccess(a.value >> b.value);
 
         case OpType::RotL:
@@ -311,7 +309,6 @@ EvalResult EvaluateConstant(const ExprOld* node, uint32_t bitWidth) {
 
     case OpType::Shl:
     case OpType::Shr:
-    case OpType::UShr:
     case OpType::RotL:
     case OpType::RotR: {
         if (node->inputs.size() != 2)
@@ -330,7 +327,6 @@ EvalResult EvaluateConstant(const ExprOld* node, uint32_t bitWidth) {
             return MakeSuccess(a.value << b.value);
 
         case OpType::Shr:
-        case OpType::UShr:
             return MakeSuccess(a.value >> b.value);
 
         case OpType::RotL:

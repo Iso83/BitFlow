@@ -81,7 +81,6 @@ bool TryFoldPureOp(uint32_t op, const std::vector<uint64_t>& in, uint32_t bitWid
     case OpType::Mod:
     case OpType::Shl:
     case OpType::Shr:
-    case OpType::UShr:
     case OpType::RotL:
     case OpType::RotR:
         if (in.size() != 2)
@@ -104,7 +103,6 @@ bool TryFoldPureOp(uint32_t op, const std::vector<uint64_t>& in, uint32_t bitWid
             outValue = (in[0] << NormalizeShift(in[1], bitWidth)) & mask;
             return true;
         case OpType::Shr:
-        case OpType::UShr:
             outValue = (in[0] >> NormalizeShift(in[1], bitWidth)) & mask;
             return true;
         case OpType::RotL: {
@@ -178,7 +176,6 @@ bool EvalOp(uint32_t op, const std::vector<uint64_t>& in, uint64_t& out, uint32_
         out = Mask(a << shift, bw);
         return true;
     case (uint32_t)OpType::Shr:
-    case (uint32_t)OpType::UShr:
         out = Mask(a >> shift, bw);
         return true;
     case (uint32_t)OpType::RotL: {
