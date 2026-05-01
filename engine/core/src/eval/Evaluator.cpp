@@ -195,6 +195,30 @@ EvalResult EvaluateConstant(const ExprStore* eStore, const Expr* node, uint32_t 
     }
 }
 
+bool IsFullyConstant(const ExprStore* eStore, const Expr* node) {
+    assert(eStore && "IsFullyConstant: eStore must not be null");
+    assert(node && "IsFullyConstant: node must not be null");
+
+    if (node == nullptr)
+        return false;
+
+    if (node->op == Expression::OpType::Const)
+        return true;
+
+    if (node->op == Expression::OpType::Var)
+        return false;
+
+    if (node->inputs.empty())
+        return false;
+
+    for (auto in : node->inputs) {
+        if (!IsFullyConstant(eStore, &eStore->get(in)))
+            return false;
+    }
+
+    return true;
+}
+
 BF_DEPRECATED("Use EvaluateConstant with const Expr*")
 EvalResult EvaluateConstant(const ExprOld* node, uint32_t bitWidth) {
     if (bitWidth == 0)

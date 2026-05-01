@@ -26,13 +26,20 @@ template <typename Tag, typename ValueT = std::uint32_t> class StrongId {
         return m_value != 0;
     }
 
-    friend constexpr bool operator==(StrongId lhs, StrongId rhs) {
-        return lhs.m_value == rhs.m_value;
-    }
+    friend constexpr bool operator==(StrongId lhs, StrongId rhs) = default;
 
     friend constexpr bool operator!=(StrongId lhs, StrongId rhs) {
         return !(lhs == rhs);
     }
 };
-
 } // namespace BitFlow::Core::Ids
+
+namespace std {
+
+template <typename Tag, typename ValueT> struct hash<BitFlow::Core::Ids::StrongId<Tag, ValueT>> {
+    size_t operator()(const BitFlow::Core::Ids::StrongId<Tag, ValueT>& id) const noexcept {
+        return std::hash<ValueT>{}(id.value());
+    }
+};
+
+} // namespace std

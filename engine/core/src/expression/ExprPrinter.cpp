@@ -76,7 +76,7 @@ static bool NeedsParensForRightChild(OpType parentOp, OpType childOp) {
 }
 
 static void Print(const ExprStore* store, const Expr& e, std::ostringstream& out,
-                  const std::unordered_map<uint32_t, std::string>& names, const PrintOptions& options,
+                  const std::unordered_map<Ids::ExprId, std::string>& names, const PrintOptions& options,
                   int parentPrecedence, bool isRightChild, OpType parentOp) {
     if (e.op == OpType::Const) {
         out << e.knownValue;
@@ -84,7 +84,7 @@ static void Print(const ExprStore* store, const Expr& e, std::ostringstream& out
     }
 
     if (e.op == OpType::Var) {
-        auto it = names.find(e.id.value());
+        auto it = names.find(e.id);
         if (it != names.end())
             out << it->second;
         else
@@ -183,14 +183,14 @@ std::string ToString(const ExprStore* store, const Ids::ExprId e) {
 }
 
 std::string ToString(const ExprStore* store, const Ids::ExprId e,
-                     const std::unordered_map<uint32_t, std::string>& names) {
+                     const std::unordered_map<Ids::ExprId, std::string>& names) {
     std::ostringstream out;
     Print(store, store->get(e), out, names, PrintOptions{}, 0, false, OpType::Var);
     return out.str();
 }
 
 std::string ToString(const ExprStore* store, const Ids::ExprId e,
-                     const std::unordered_map<uint32_t, std::string>& names, const PrintOptions& options) {
+                     const std::unordered_map<Ids::ExprId, std::string>& names, const PrintOptions& options) {
     std::ostringstream out;
     Print(store, store->get(e), out, names, options, 0, false, OpType::Var);
     return out.str();

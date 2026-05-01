@@ -1,6 +1,5 @@
 #include <BitFlow/core/codegen/Emitter.h>
 #include <BitFlow/core/codegen_ssa/SsaBuilder.h>
-#include <BitFlow/core/eval/ConstantDetect.h>
 #include <BitFlow/core/eval/Evaluator.h>
 #include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/Expression.h>
@@ -15,7 +14,6 @@
 #include <cstdint>
 #include <iostream>
 #include <random>
-#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>

@@ -1,23 +1,25 @@
 #include "expression/ExprPrinter.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
+#include <Core_Expr.h>
 #include <TestAssert.h>
 
+using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Core::Ids;
 
 int main() {
-    ExprStore eStore;
+    MakeExprStore(32);
 
-    auto a = eStore.createVariable();
+    auto a = V();
     auto b = (a + 6) - 7;
 
     auto c = a ^ b;
 
-    std::unordered_map<uint32_t, std::string> names = {{a.id.value(), "a"}, {b.id.value(), "b"}, {c.id.value(), "c"}};
+    std::unordered_map<ExprId, std::string> names = {{a.id, "a"}, {b.id, "b"}, {c.id, "c"}};
 
-    std::cout << "a: " << ToString(&eStore, a.id, names) << std::endl;
-    std::cout << "b: " << ToString(&eStore, b.id, names) << std::endl;
-    std::cout << "c: " << ToString(&eStore, c.id, names) << std::endl;
+    std::cout << "a: " << ToString(a, names) << std::endl;
+    std::cout << "b: " << ToString(b, names) << std::endl;
+    std::cout << "c: " << ToString(c, names) << std::endl;
 
     return 0;
 }

@@ -6,6 +6,7 @@ using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Eval;
 using namespace BitFlow::Core::Expression;
 
+#pragma region EvaluateConstant
 int TestEvaluate_PureConstantExpression() {
     MakeExprStore(32);
 
@@ -154,6 +155,42 @@ int TestEvaluate_WideBitWidth_UsesBfUintPath() {
     BF_TEST(rotrWide.value.Shr(127).ToUint64() == 1ULL);
     return 0;
 }
+#pragma endregion
+
+#pragma region IsFullyConstant
+int TestDetect_NullIsFalse() {
+    BF_TEST(!IsFullyConstant(nullptr));
+    return 0;
+}
+
+int TestDetect_ConstLeaf() {
+    MakeExprStore(32);
+    BF_TEST(IsFullyConstant(C(42)));
+    return 0;
+}
+
+int TestDetect_VarLeafFalse() {
+    MakeExprStore(32);
+    BF_TEST(!IsFullyConstant(V()));
+    return 0;
+}
+
+int TestDetect_AllChildrenConstant() {
+    MakeExprStore(32);
+    auto expr = C(10) + C(20);
+
+    BF_TEST(IsFullyConstant(expr));
+    return 0;
+}
+
+int TestDetect_AnyChildNonConstantFalse() {
+    MakeExprStore(32);
+    auto expr = C(10) + V();
+
+    BF_TEST(!IsFullyConstant(expr));
+    return 0;
+}
+#pragma endregion
 
 int main() {
     BF_RUN_TEST(TestEvaluate_PureConstantExpression);
@@ -164,5 +201,11 @@ int main() {
     BF_RUN_TEST(TestEvaluate_NotConstantCases);
     BF_RUN_TEST(TestEvaluate_InvalidBitWidth);
     BF_RUN_TEST(TestEvaluate_WideBitWidth_UsesBfUintPath);
+
+    BF_RUN_TEST(TestDetect_NullIsFalse);
+    BF_RUN_TEST(TestDetect_ConstLeaf);
+    BF_RUN_TEST(TestDetect_VarLeafFalse);
+    BF_RUN_TEST(TestDetect_AllChildrenConstant);
+    BF_RUN_TEST(TestDetect_AnyChildNonConstantFalse);
     return 0;
 }

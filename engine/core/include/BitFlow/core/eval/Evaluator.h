@@ -29,7 +29,31 @@ struct EvalResult {
 // - otherwise returns a non-success status
 EvalResult EvaluateConstant(const Expression::ExprStore* eStore, const Expression::Expr* root, uint32_t bitWidth);
 
+bool IsFullyConstant(const Expression::ExprStore* eStore, const Expression::Expr* node);
+
 BF_DEPRECATED("Use EvaluateConstant with const Expr*")
 EvalResult EvaluateConstant(const Expression::ExprOld* root, uint32_t bitWidth);
+
+BF_DEPRECATED("Use IsFullyConstant with const Expr*")
+static bool IsFullyConstant(const Expression::ExprOld* root) {
+    if (root == nullptr)
+        return false;
+
+    if (root->op == Expression::OpType::Const)
+        return true;
+
+    if (root->op == Expression::OpType::Var)
+        return false;
+
+    if (root->inputs.empty())
+        return false;
+
+    for (const Expression::ExprOld* in : root->inputs) {
+        if (!IsFullyConstant(in))
+            return false;
+    }
+
+    return true;
+}
 
 } // namespace BitFlow::Core::Eval

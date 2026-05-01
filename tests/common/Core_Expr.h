@@ -8,6 +8,12 @@
 #include <cassert>
 #include <cstdint>
 
+#ifdef USE_CORE_PRINT
+#include "expression/ExprPrinter.h"
+#else
+// IO ToString
+#endif
+
 namespace BitFlow::Core::Testing {
 
 inline bool EqualBits(const BitVector::bf_uint& a, const BitVector::bf_uint& b) {
@@ -31,13 +37,28 @@ inline Eval::EvalResult EvaluateConstant(const Expression::ExprRef root, uint32_
     return Eval::EvaluateConstant(root.store, &root.store->get(root.id), bitWidth);
 }
 
+inline bool IsFullyConstant(const Expression::ExprRef root) {
+    assert(root.IsValid());
+    return Eval::IsFullyConstant(root.store, &root.store->get(root.id));
+}
+
+#if USE_CORE_PRINT
+#define UseExprPrint BitFlow::Core::Expression::ToString(root.store, root.id, names, options)
+#else
+#define UseExprPrint std::string
+#endif
+
 #define MakeExprStore(bw)                                                                                              \
     ExprStore eStore;                                                                                                  \
     auto C = [&](uint64_t v) { return eStore.createConstant(v, bw); };                                                 \
     auto V = [&]() { return eStore.createVariable(bw); };                                                              \
     auto Eval = [&](const BitFlow::Core::Expression::ExprRef root, uint64_t v, uint32_t bitWidth = bw) {               \
         return EqualBits(EvaluateConstant(root).value, v);                                                             \
-    };
+    };                                                                                                                 \
+    auto ToString = [&](const BitFlow::Core::Expression::ExprRef root,                                                 \
+                        const std::unordered_map<BitFlow::Core::Ids::ExprId, std::string> names = {},                  \
+                        const BitFlow::Core::Expression::PrintOptions& options =                                       \
+                            BitFlow::Core::Expression::PrintOptions{}) { return UseExprPrint; };
 
 BF_DEPRECATED("use Expression::ExprStore")
 static Expression::ExprOld* MakeVar(uint32_t id) {
