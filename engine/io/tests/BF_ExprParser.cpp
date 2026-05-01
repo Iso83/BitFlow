@@ -105,8 +105,8 @@ int TestExprParser_ShiftOperators() {
     auto parsed = BitFlow::IO::Parse("a << b >> c");
     ExprOld* root = parsed.root;
 
-    BF_TEST(root->inputs[0]->op == OpType::Shr);
-    BF_TEST(root->inputs[0]->inputs[0]->op == OpType::Shl);
+    BF_TEST(root->op == OpType::Shr);
+    BF_TEST(root->inputs[0]->op == OpType::Shl);
     return 0;
 }
 

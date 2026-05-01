@@ -81,9 +81,9 @@ int TestLexer_ShiftOperatorsLongestMatch() {
     const std::vector<Token> tokens = BitFlow::IO::Lexer::Tokenize("<< >>");
 
     BF_TEST(tokens.size() == 3);
-    BF_TEST(tokens[1].kind == TokenKind::ShiftLeft);
-    BF_TEST(tokens[2].kind == TokenKind::ShiftRight);
-    BF_TEST(tokens[3].kind == TokenKind::EndOfInput);
+    BF_TEST(tokens[0].kind == TokenKind::ShiftLeft);
+    BF_TEST(tokens[1].kind == TokenKind::ShiftRight);
+    BF_TEST(tokens[2].kind == TokenKind::EndOfInput);
 
     return 0;
 }

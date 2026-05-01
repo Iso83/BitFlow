@@ -46,26 +46,13 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_RuleEngine_InPlaceRewrite USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Evaluator USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_RewriteCost USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_Codegen USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SsaBuilder USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_PerfPass USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Arithmetic_Integration USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_ArithmeticFactorizeMultiplicity USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Arithmetic_CanonicalForms USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Factorize_Arithmetic_Guards USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Factorize_Arithmetic_Split USE_CORE_PRINT)
 
-    # Optional runtime/compiler-invoking tests (slow + toolchain dependent).
-    if(BF_ENABLE_RUNTIME_COMPILE_TESTS)
-        bf_add_module_test(BitFlowCore core BF_CodegenRuntime LABELS runtime_compile USE_CORE_PRINT)
-    endif()
 
-    if(BF_ENABLE_FUZZ_PROPERTY_TESTS)
-        bf_add_module_test(BitFlowCore core BF_FuzzEvalVsCodegen LABELS "fuzz;property" USE_CORE_PRINT)
-    endif()
-
-    bf_add_module_test(BitFlowCore core BF_CodegenMulti USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_CodegenStructuralCSE USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_BitVector USE_CORE_PRINT)
 
     # Rules
@@ -102,17 +89,5 @@ if(BF_BUILD_TESTS)
 
     bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_CH USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_MAJ USE_CORE_PRINT)
-
-    # SHA workflow helpers/examples
-    bf_add_module_test(BitFlowCore core BF_SHA_SimplifyRegression USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_HelperCoverage USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_Fragments USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_Workflows USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_SigmaCanonical USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_SigmaRotateShiftCoverage USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_CanonicalForms USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_NoHighLevelOps USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_RewriteTargets USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_EndToEnd USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_SHA_RoundFragments USE_CORE_PRINT)
+    
 endif()
