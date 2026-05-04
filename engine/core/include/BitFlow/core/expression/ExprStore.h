@@ -1,108 +1,12 @@
 #pragma once
 
+#include <BitFlow/core/expression/Expr.h>
 #include <BitFlow/core/expression/ExprRef.h>
-#include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/helper/Attributes.h>
+#include <stdexcept>
 #include <unordered_map>
 
 namespace BitFlow::Core::Expression {
-
-BF_DEPRECATED("Use ExprRef & ExprStore")
-inline ExprOld* CloneExpr(const ExprOld* e) {
-    ExprOld* n = new ExprOld{};
-    n->op = e->op;
-    n->constValue = e->constValue;
-    n->inputs = e->inputs;
-    return n;
-}
-
-BF_DEPRECATED("Use ExprRef & ExprStore")
-inline ExprOld* Clone(const ExprOld* expr) {
-    std::unordered_map<const ExprOld*, ExprOld*> cloned{};
-
-    const auto cloneNode = [&](const auto& self, const ExprOld* node) -> ExprOld* {
-        auto it = cloned.find(node);
-        if (it != cloned.end())
-            return it->second;
-
-        ExprOld* out = new ExprOld{};
-        out->id = node->id;
-        out->op = node->op;
-        out->constValue = node->constValue;
-        cloned.emplace(node, out);
-
-        out->inputs.reserve(node->inputs.size());
-        for (const ExprOld* input : node->inputs) {
-            out->inputs.push_back(self(self, input));
-        }
-
-        return out;
-    };
-
-    return cloneNode(cloneNode, expr);
-}
-
-BF_DEPRECATED("Use ExprRef & ExprStore")
-inline bool StructEqual(const ExprOld* a, const ExprOld* b) {
-    std::unordered_map<const ExprOld*, const ExprOld*> seen{};
-
-    const auto eqNode = [&](const auto& self, const ExprOld* lhs, const ExprOld* rhs) -> bool {
-        if (lhs == rhs)
-            return true;
-        if (!lhs || !rhs)
-            return lhs == rhs;
-
-        auto seenIt = seen.find(lhs);
-        if (seenIt != seen.end())
-            return seenIt->second == rhs;
-
-        if (lhs->op != rhs->op || lhs->constValue != rhs->constValue || lhs->inputs.size() != rhs->inputs.size())
-            return false;
-
-        seen.emplace(lhs, rhs);
-        for (size_t i = 0; i < lhs->inputs.size(); ++i) {
-            if (!self(self, lhs->inputs[i], rhs->inputs[i]))
-                return false;
-        }
-
-        return true;
-    };
-
-    return eqNode(eqNode, a, b);
-}
-
-BF_DEPRECATED("Use ExprRef & ExprStore")
-ExprOld* MakeOpInterned(OpType op, std::vector<ExprOld*> inputs);
-
-BF_DEPRECATED("Use ExprRef & ExprStore")
-class ConstPool {
-  public:
-    static ExprOld* Get(uint32_t value) {
-        auto it = pool().find(value);
-        if (it != pool().end())
-            return it->second;
-
-        ExprOld* e = new ExprOld{};
-        e->op = OpType::Const;
-        e->constValue = value;
-        e->id = Ids::ExprId{NextId()};
-
-        pool()[value] = e;
-        return e;
-    }
-
-  private:
-    static std::unordered_map<uint32_t, ExprOld*>& pool() {
-        static std::unordered_map<uint32_t, ExprOld*> p;
-        return p;
-    }
-
-    static uint32_t NextId() {
-        static uint32_t id = 1000000;
-        return id++;
-    }
-};
-#pragma endregion
 
 class ExprStore {
   private:
@@ -128,7 +32,25 @@ class ExprStore {
 
         auto& expr = m_nodes[index];
         expr = Expr{};
-        expr.id = id;
+        expr.op = op;
+        expr.bitWidth = bitWidth;
+        expr.inputs = in;
+
+        m_alive[index] = true;
+
+        return ExprRef(this, id);
+    }
+
+    [[nodiscard]] ExprRef create(OpType op, std::vector<Ids::ExprId>&& in, uint16_t bitWidth = 64) {
+        _ASSERT(bitWidth > 0);
+
+        const auto id = createId();
+        const auto index = toIndex(id);
+
+        ensureCapacity(index + 1);
+
+        auto& expr = m_nodes[index];
+        expr = Expr{};
         expr.op = op;
         expr.bitWidth = bitWidth;
         expr.inputs = in;
@@ -146,6 +68,32 @@ class ExprStore {
         expr.knownValue = value;
 
         return ref;
+    }
+
+    [[nodiscard]] ExprRef makeFalse(uint16_t bitWidth = 64) {
+        return createConstant(0ULL, bitWidth);
+    }
+
+    [[nodiscard]] ExprRef makeTrue(uint16_t bitWidth = 64) {
+        auto ref = create(OpType::Const, {}, bitWidth);
+
+        auto& expr = get(ref);
+        expr.knownMask = Expr::fullMask(bitWidth);
+        expr.knownValue = expr.knownMask;
+
+        return ref;
+    }
+
+    [[nodiscard]] ExprRef invertConst(Ids::ExprId id) {
+        const Expr& e = get(id);
+
+        if (e.op != OpType::Const)
+            throw std::runtime_error("ExprStore::invertConst expects Const");
+
+        const uint64_t mask = Expr::fullMask(e.bitWidth);
+        const uint64_t value = (~e.knownValue) & mask;
+
+        return createConstant(value, e.bitWidth);
     }
 
     [[nodiscard]] ExprRef createVariable(uint16_t bitWidth = 64) {

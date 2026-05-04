@@ -44,7 +44,7 @@ class RuleEngine {
     std::unordered_set<RuleId> m_present;
 
   public:
-    RuleEngine();
+    RuleEngine() = default;
     virtual ~RuleEngine() = default;
 
     virtual void AddRule(const Rule& rule);

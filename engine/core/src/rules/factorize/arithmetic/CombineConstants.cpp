@@ -1,25 +1,25 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Factorize::Arithmetic {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
-using ConstPool = Expression::ConstPool;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_Mul_CombineConstants(const Expr& e) {
+static bool Match_Mul_CombineConstants(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::Mul || e.inputs.size() < 2)
         return false;
 
     int constCount = 0;
-    for (const Expr* in : e.inputs) {
-        if (in->op == OpType::Const)
+    for (const auto a : e.inputs) {
+        const Expr& exprA = store->get(a);
+
+        if (exprA.op == OpType::Const)
             ++constCount;
         if (constCount >= 2)
             return true;
@@ -28,32 +28,34 @@ static bool Match_Mul_CombineConstants(const Expr& e) {
     return false;
 }
 
-static Expr* Rewrite_Mul_CombineConstants(Expr& e) {
+static ExprId Rewrite_Mul_CombineConstants(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    _ASSERT(e.op == OpType::Mul);
+
     uint64_t product = 1;
     int constCount = 0;
-    std::vector<Expr*> nonConst;
+    std::vector<ExprId> nonConst;
     nonConst.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
-        if (in->op == OpType::Const) {
+    for (auto a : e.inputs) {
+        const Expr& exprA = store->get(a);
+        if (exprA.op == OpType::Const) {
             ++constCount;
-            product *= static_cast<uint64_t>(in->constValue);
+            product *= static_cast<uint64_t>(exprA.knownValue);
             continue;
         }
 
-        nonConst.push_back(in);
+        nonConst.push_back(a);
     }
 
-    if (constCount < 2)
-        return nullptr;
+    if (constCount > 1) {
+        nonConst.push_back(store->createConstant(product, e.bitWidth).id);
+        return store->create(OpType::Mul, std::move(nonConst), e.bitWidth).id;
+    }
 
-    std::vector<Expr*> merged;
-    merged.reserve(nonConst.size() + 1);
-    for (Expr* in : nonConst)
-        merged.push_back(in);
-    merged.push_back(ConstPool::Get(static_cast<uint32_t>(product)));
-
-    return MakeOpInterned(OpType::Mul, merged);
+    _ASSERT(false);
+    return id;
 }
 
 Rule Get_Mul_CombineConstants_Rule() {

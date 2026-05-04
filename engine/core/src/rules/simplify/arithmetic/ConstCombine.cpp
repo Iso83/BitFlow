@@ -1,14 +1,12 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
 
 static bool IsSupportedOp(OpType op) {
     switch (op) {
@@ -23,34 +21,45 @@ static bool IsSupportedOp(OpType op) {
     }
 }
 
-static bool Match_Const_Combine(const Expr& e) {
+static bool Match_Const_Combine(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
     if (!IsSupportedOp(e.op) || e.inputs.size() != 2)
         return false;
 
-    return e.inputs[0]->op == OpType::Const && e.inputs[1]->op == OpType::Const;
+    return store->get(e.inputs[0]).op == OpType::Const && store->get(e.inputs[1]).op == OpType::Const;
 }
 
-static Expr* Rewrite_Const_Combine(Expr& e) {
-    const uint32_t lhs = e.inputs[0]->constValue;
-    const uint32_t rhs = e.inputs[1]->constValue;
+static ExprId Rewrite_Const_Combine(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    const Expr& lhs = store->get(e.inputs[0]);
+    const Expr& rhs = store->get(e.inputs[0]);
 
     switch (e.op) {
     case OpType::Add:
-        return Expression::ConstPool::Get(lhs + rhs);
+        return store->createConstant((lhs.knownValue + rhs.knownValue) & e.fullMask(e.bitWidth)).id;
     case OpType::Sub:
-        return Expression::ConstPool::Get(lhs - rhs);
+        return store->createConstant((lhs.knownValue - rhs.knownValue) & e.fullMask(e.bitWidth)).id;
     case OpType::Mul:
-        return Expression::ConstPool::Get(lhs * rhs);
+        return store->createConstant((lhs.knownValue * rhs.knownValue) & e.fullMask(e.bitWidth)).id;
     case OpType::Div:
-        if (rhs == 0)
-            return nullptr;
-        return Expression::ConstPool::Get(lhs / rhs);
+        if (rhs.knownValue == 0) {
+            _ASSERT(false);
+            return id;
+        }
+
+        return store->createConstant((lhs.knownValue / rhs.knownValue) & e.fullMask(e.bitWidth)).id;
     case OpType::Mod:
-        if (rhs == 0)
-            return nullptr;
-        return Expression::ConstPool::Get(lhs % rhs);
-    default:
-        return nullptr;
+        if (rhs.knownValue == 0) {
+            _ASSERT(false);
+            return id;
+        }
+
+        return store->createConstant((lhs.knownValue % rhs.knownValue) & e.fullMask(e.bitWidth)).id;
+    default: {
+        _ASSERT(false);
+        return id;
+    }
     }
 }
 

@@ -8,8 +8,7 @@
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 static bool Match_And_Fold(const Expr& e) {

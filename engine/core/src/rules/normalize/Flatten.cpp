@@ -1,47 +1,54 @@
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
+#include <BitFlow/core/expression/Expr.h>
 #include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Normalize {
 
-using Expr = Expression::ExprOld;
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
 
-static bool Match_Flatten(const Expr& e) {
+static bool Match_Flatten(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (!Expression::IsCommutative(e.op))
         return false;
 
     if (e.inputs.empty())
         return false;
 
-    for (const Expr* in : e.inputs) {
-        if (e.op == in->op)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (e.op == exprIn.op)
             return true;
     }
 
     return false;
 }
 
-static Expr* Rewrite_Flatten(Expr& e) {
-    if (!Expression::IsCommutative(e.op))
-        return nullptr;
+static ExprId Rewrite_Flatten(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-    std::vector<Expr*> newInputs;
+    if (!Expression::IsCommutative(e.op)) {
+        _ASSERT(false);
+        return id;
+    }
+
+    std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
-        if (e.op == in->op) {
-            for (Expr* sub : in->inputs)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (e.op == exprIn.op) {
+            for (auto sub : exprIn.inputs)
                 newInputs.push_back(sub);
         } else
             newInputs.push_back(in);
     }
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(newInputs);
-    return target;
+    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
 Rule Get_Flatten_Rule() {

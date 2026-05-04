@@ -29,10 +29,6 @@ enum class OpType {
     // --- Bit ops ---
     RotL,
     RotR,
-
-    // --- SHA / higher-level ---
-    Ch,
-    Maj,
 };
 
 inline constexpr bool IsCommutative(OpType op) {

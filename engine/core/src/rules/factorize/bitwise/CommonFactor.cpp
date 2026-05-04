@@ -11,8 +11,6 @@
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
 using namespace BitFlow::Core::Expression;
 
 static void CollectFactors(Expr* e, std::vector<Expr*>& out) {

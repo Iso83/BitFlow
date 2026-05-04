@@ -1,24 +1,25 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 // a & ... & 0 → 0
-static bool Match_And_ZeroDominance(const Expr& e) {
+static bool Match_And_ZeroDominance(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::And)
         return false;
 
-    for (const Expr* in : e.inputs) {
-        if (in->op == OpType::Const && in->constValue == 0)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op == OpType::Const && IsFalse(store, in))
             return true;
     }
 
@@ -26,12 +27,15 @@ static bool Match_And_ZeroDominance(const Expr& e) {
 }
 
 // a & ... & 1 → remove 1
-static bool Match_And_OneIdentity(const Expr& e) {
+static bool Match_And_OneIdentity(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::And)
         return false;
 
-    for (const Expr* in : e.inputs) {
-        if (in->op == OpType::Const && in->constValue == 1)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op == OpType::Const && IsTrue(store, in))
             return true;
     }
 
@@ -39,12 +43,15 @@ static bool Match_And_OneIdentity(const Expr& e) {
 }
 
 // a | ... | 1 → 1
-static bool Match_Or_OneDominance(const Expr& e) {
+static bool Match_Or_OneDominance(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::Or)
         return false;
 
-    for (const Expr* in : e.inputs) {
-        if (in->op == OpType::Const && in->constValue == 1)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op == OpType::Const && IsTrue(store, in))
             return true;
     }
 
@@ -52,12 +59,15 @@ static bool Match_Or_OneDominance(const Expr& e) {
 }
 
 // a | ... | 0 → remove 0
-static bool Match_Or_ZeroIdentity(const Expr& e) {
+static bool Match_Or_ZeroIdentity(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::Or)
         return false;
 
-    for (const Expr* in : e.inputs) {
-        if (in->op == OpType::Const && in->constValue == 0)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op == OpType::Const && IsFalse(store, in))
             return true;
     }
 
@@ -66,55 +76,59 @@ static bool Match_Or_ZeroIdentity(const Expr& e) {
 #pragma endregion
 
 #pragma region Rewrite
+static ExprId Rewrite_And_ZeroDominance(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-static Expr* Rewrite_And_ZeroDominance(Expr&) {
-    return Expression::ConstPool::Get(0);
+    return store->makeFalse(e.bitWidth).id;
 }
 
-static Expr* Rewrite_And_OneIdentity(Expr& e) {
-    std::vector<Expr*> newInputs;
+static ExprId Rewrite_And_OneIdentity(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
-        if (!(in->op == OpType::Const && in->constValue == 1))
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (!(exprIn.op == OpType::Const && IsTrue(store, in)))
             newInputs.push_back(in);
     }
 
     if (newInputs.empty())
-        return Expression::ConstPool::Get(1);
+        return store->makeTrue(e.bitWidth).id;
 
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(newInputs);
-    return target;
+    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static Expr* Rewrite_Or_OneDominance(Expr&) {
-    return Expression::ConstPool::Get(1);
+static ExprId Rewrite_Or_OneDominance(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    return store->makeTrue(e.bitWidth).id;
 }
 
-static Expr* Rewrite_Or_ZeroIdentity(Expr& e) {
-    std::vector<Expr*> newInputs;
+static ExprId Rewrite_Or_ZeroIdentity(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
-        if (!(in->op == OpType::Const && in->constValue == 0))
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (!(exprIn.op == OpType::Const && IsFalse(store, in)))
             newInputs.push_back(in);
     }
 
     if (newInputs.empty())
-        return Expression::ConstPool::Get(0);
+        return store->makeFalse(e.bitWidth).id;
 
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(newInputs);
-    return target;
+    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
-
 #pragma endregion
 
 Rule Get_And_ZeroDominance_Rule() {

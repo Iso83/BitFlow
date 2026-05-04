@@ -1,66 +1,62 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
-#include <BitFlow/core/rules/RewriteCost.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
 
 #pragma region Helpers
-
-static Expr* BuildAnd(Expr* a, Expr* b) {
-    if (a->op == OpType::Const && a->constValue == 0)
+static ExprId BuildAnd(ExprStore* store, ExprId a, ExprId b) {
+    const Expr& exprA = store->get(a);
+    if (exprA.op == OpType::Const && IsFalse(store, a))
         return a;
 
-    if (b->op == OpType::Const && b->constValue == 0)
+    const Expr& exprB = store->get(b);
+    if (exprB.op == OpType::Const && IsFalse(store, b))
         return b;
 
-    if (a->op == OpType::Const && a->constValue == 1)
+    if (exprA.op == OpType::Const && IsTrue(store, a))
         return b;
 
-    if (b->op == OpType::Const && b->constValue == 1)
+    if (exprB.op == OpType::Const && IsTrue(store, b))
         return a;
 
-    auto* n = Expression::MakeOpInterned(OpType::And, {a, b});
-    return n;
+    return store->create(OpType::And, {a, b}).id;
 }
 
-static Expr* BuildXor(const std::vector<Expr*>& inputs) {
+static ExprId BuildXor(ExprStore* store, std::vector<ExprId>& inputs) {
     if (inputs.empty())
-        return Expression::ConstPool::Get(0);
+        return store->makeFalse().id;
 
     if (inputs.size() == 1)
         return inputs[0];
 
-    Expr* n = Expression::MakeOpInterned(OpType::Xor, inputs);
-    return n;
+    return store->create(OpType::Xor, std::move(inputs)).id;
 }
-
 #pragma endregion
 
 #pragma region Match
+static bool Match_Distribute_And_Over_Xor(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-static bool Match_Distribute_And_Over_Xor(const Expr& e) {
     if (e.op != OpType::And)
         return false;
 
     if (e.inputs.size() < 2)
         return false;
 
-    for (const Expr* in : e.inputs) {
-        if (in->op != OpType::Xor || in->inputs.size() < 2)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op != OpType::Xor || exprIn.inputs.size() < 2)
             continue;
 
-        const size_t termCount = in->inputs.size();
+        const size_t termCount = exprIn.inputs.size();
         const size_t otherCount = e.inputs.size() - 1;
 
-        // beperkte distributie: voorkom explosie
         if (termCount * (otherCount + 1) > 12)
             continue;
 
@@ -69,56 +65,57 @@ static bool Match_Distribute_And_Over_Xor(const Expr& e) {
 
     return false;
 }
-
 #pragma endregion
 
 #pragma region Rewrite
+static ExprId Rewrite_Distribute_And_Over_Xor(ExprStore* store, ExprId id) {
+    const auto& e = store->get(id);
 
-static Expr* Rewrite_Distribute_And_Over_Xor(Expr& e) {
+    ExprId xorNodeID;
     Expr* xorNode = nullptr;
 
-    for (Expr* in : e.inputs) {
-        if (in->op == OpType::Xor && in->inputs.size() >= 2) {
-            xorNode = in;
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(id);
+        if (exprIn.op == OpType::Xor && exprIn.inputs.size() >= 2) {
+            xorNodeID = in;
+            xorNode = &store->get(in);
             break;
         }
     }
 
-    if (xorNode == nullptr)
-        return nullptr;
+    if (xorNode == nullptr) {
+        _ASSERT(false);
+        return id;
+    }
 
-    std::vector<Expr*> others;
+    std::vector<ExprId> others;
     others.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
-        if (in != xorNode)
+    for (auto in : e.inputs) {
+        if (in != xorNodeID)
             others.push_back(in);
     }
 
-    std::vector<Expr*> distributed;
+    std::vector<ExprId> distributed;
     distributed.reserve(xorNode->inputs.size());
 
-    for (Expr* term : xorNode->inputs) {
-        Expr* acc = term;
+    for (auto term : xorNode->inputs) {
+        ExprId acc = term;
 
-        for (Expr* other : others)
-            acc = BuildAnd(acc, other);
+        for (auto other : others)
+            acc = BuildAnd(store, acc, other);
 
         distributed.push_back(acc);
     }
 
     if (distributed.empty())
-        return Expression::ConstPool::Get(0);
+        return store->makeFalse(e.bitWidth).id;
 
     if (distributed.size() == 1)
         return distributed[0];
 
-    auto* n = Expression::MakeOpInterned(OpType::Xor, std::move(distributed));
-    if (!IsRewritePreferred(n, &e, RewriteCostPolicy::ExpandDistribute))
-        return nullptr;
-    return n;
+    return store->create(OpType::Xor, std::move(distributed)).id;
 }
-
 #pragma endregion
 
 Rule Get_Distribute_Rule() {
@@ -130,5 +127,4 @@ Rule Get_Distribute_Rule() {
                 RuleFlags::Factorizing | RuleFlags::Expanding,
                 "Factorize_Distribute"};
 }
-
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

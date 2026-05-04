@@ -1,51 +1,53 @@
-#include "expression/ExprIntern.h"
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_Not(const Expr& e) {
+static bool Match_Not(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::Not)
         return false;
 
     if (e.inputs.size() != 1)
         return false;
 
-    const Expr* in = e.inputs[0];
+    const Expr& in = store->get(e.inputs[0]);
 
-    if (in->op == OpType::Not && in->inputs.size() == 1)
+    if (in.op == OpType::Not && in.inputs.size() == 1)
         return true;
 
-    if (in->op == OpType::Const)
+    if (in.op == OpType::Const)
         return true;
 
     return false;
 }
 
-static bool Match_NotPushdown(const Expr& e) {
+static bool Match_NotPushdown(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::Not)
         return false;
 
     if (e.inputs.size() != 1)
         return false;
 
-    const Expr* in = e.inputs[0];
+    const Expr& in = store->get(e.inputs[0]);
 
-    if (!(in->op == OpType::And || in->op == OpType::Or))
+    if (!(in.op == OpType::And || in.op == OpType::Or))
         return false;
 
     bool allNot = true;
-    for (const Expr* child : in->inputs) {
-        if (child->op != OpType::Not) {
+    for (auto child : in.inputs) {
+        const Expr& exprChild = store->get(child);
+        if (exprChild.op != OpType::Not) {
             allNot = false;
             break;
         }
@@ -54,62 +56,67 @@ static bool Match_NotPushdown(const Expr& e) {
     return !allNot;
 }
 
-static bool Match_Not_Xor(const Expr& e) {
+static bool Match_Not_Xor(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::Not)
         return false;
 
     if (e.inputs.size() != 1)
         return false;
 
-    const Expr* in = e.inputs[0];
+    const Expr& in = store->get(e.inputs[0]);
 
-    return (in->op == OpType::Xor && in->inputs.size() >= 1);
+    return (in.op == OpType::Xor && in.inputs.size() >= 1);
 }
 #pragma endregion
 
 #pragma region Rewrite
-static Expr* Rewrite_Not(Expr& e) {
-    Expr* in = e.inputs[0];
+static ExprId Rewrite_Not(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    ExprId in = e.inputs[0];
+    const Expr& exprIn = store->get(in);
 
-    if (in->op == OpType::Not && in->inputs.size() == 1)
-        return in->inputs[0];
+    if (exprIn.op == OpType::Not && exprIn.inputs.size() == 1)
+        return exprIn.inputs[0];
 
-    if (in->op == OpType::Const)
-        return Expression::ConstPool::Get(~in->constValue);
+    if (exprIn.op == OpType::Const)
+        return store->invertConst(in).id;
 
-    return nullptr;
+    _ASSERT(false);
+    return id;
 }
 
-static Expr* Rewrite_NotPushdown(Expr& e) {
-    Expr* in = e.inputs[0];
+static ExprId Rewrite_NotPushdown(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    ExprId in = e.inputs[0];
+    const Expr& exprIn = store->get(in);
 
-    OpType newOp = (in->op == OpType::And) ? OpType::Or : OpType::And;
+    OpType newOp = (exprIn.op == OpType::And) ? OpType::Or : OpType::And;
 
-    std::vector<Expr*> newInputs;
-    newInputs.reserve(in->inputs.size());
+    std::vector<ExprId> newInputs;
+    newInputs.reserve(exprIn.inputs.size());
 
-    for (Expr* child : in->inputs) {
-        auto* n = Expression::MakeOpInterned(OpType::Not, {child});
-        newInputs.push_back(n);
-    }
+    for (auto child : exprIn.inputs)
+        newInputs.push_back(store->create(OpType::Not, {child}, e.bitWidth).id);
 
-    auto* target = Expression::MakeOpInterned(newOp, std::move(newInputs));
-    return target;
+    return store->create(newOp, std::move(newInputs), e.bitWidth).id;
 }
 
-static Expr* Rewrite_Not_Xor(Expr& e) {
-    Expr* in = e.inputs[0];
+static ExprId Rewrite_Not_Xor(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    ExprId in = e.inputs[0];
+    const Expr& exprIn = store->get(in);
 
-    std::vector<Expr*> newInputs;
-    newInputs.reserve(in->inputs.size() + 1);
+    std::vector<ExprId> newInputs;
+    newInputs.reserve(exprIn.inputs.size() + 1);
 
-    for (Expr* child : in->inputs)
+    for (auto child : exprIn.inputs)
         newInputs.push_back(child);
 
-    newInputs.push_back(Expression::ConstPool::Get(1));
+    newInputs.push_back(store->makeTrue(e.bitWidth).id);
 
-    Expr* target = Expression::MakeOpInterned(OpType::Xor, std::move(newInputs));
-    return target;
+    return store->create(OpType::Xor, std::move(newInputs), e.bitWidth).id;
 }
 #pragma endregion
 

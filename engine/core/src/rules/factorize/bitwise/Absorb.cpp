@@ -1,65 +1,50 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
-
-static bool ContainsExpr(const Expr* e, const Expr* target) {
-    if (e == target)
-        return true;
-
-    for (const Expr* in : e->inputs) {
-        if (in == target)
-            return true;
-    }
-
-    return false;
-}
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_And_Absorb(const Expr& e) {
-    if (e.op != OpType::And)
+static bool Match_And_Absorb(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    if (e.op != OpType::And || e.inputs.size() < 2)
         return false;
 
-    if (e.inputs.size() < 2)
-        return false;
-
-    for (Expr* a : e.inputs) {
-        for (Expr* b : e.inputs) {
-            if (b->op != OpType::Or)
+    for (auto a : e.inputs) {
+        for (auto b : e.inputs) {
+            if (a == b)
                 continue;
 
-            for (Expr* inner : b->inputs) {
-                if (inner->id == a->id)
-                    return true;
-            }
+            const Expr& exprB = store->get(b);
+
+            if (exprB.op == OpType::Or && ContainsExpr(store, b, a))
+                return true;
         }
     }
 
     return false;
 }
 
-static bool Match_Or_Absorb(const Expr& e) {
-    if (e.op != OpType::Or)
+static bool Match_Or_Absorb(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    if (e.op != OpType::Or || e.inputs.size() < 2)
         return false;
 
-    if (e.inputs.size() < 2)
-        return false;
-
-    for (Expr* a : e.inputs) {
-        for (Expr* b : e.inputs) {
-            if (b->op != OpType::And)
+    for (auto a : e.inputs) {
+        for (auto b : e.inputs) {
+            if (a == b)
                 continue;
 
-            for (Expr* inner : b->inputs) {
-                if (inner->id == a->id)
-                    return true;
-            }
+            const Expr& exprB = store->get(b);
+
+            if (exprB.op == OpType::And && ContainsExpr(store, b, a))
+                return true;
         }
     }
 
@@ -68,38 +53,46 @@ static bool Match_Or_Absorb(const Expr& e) {
 #pragma endregion
 
 #pragma region Rewrite
-static Expr* Rewrite_And_Absorb(Expr& e) {
-    if (e.op != OpType::And)
-        return nullptr;
+static ExprId Rewrite_And_Absorb(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-    for (auto* a : e.inputs) {
-        for (auto* b : e.inputs) {
+    _ASSERT(e.op == OpType::And);
+
+    for (auto a : e.inputs) {
+        for (auto b : e.inputs) {
             if (a == b)
                 continue;
 
-            if (b->op == OpType::Or && ContainsExpr(b, a))
+            const Expr& exprB = store->get(b);
+
+            if (exprB.op == OpType::Or && ContainsExpr(store, b, a))
                 return a;
         }
     }
 
-    return nullptr;
+    _ASSERT(false);
+    return id;
 }
 
-static Expr* Rewrite_Or_Absorb(Expr& e) {
-    if (e.op != OpType::Or)
-        return nullptr;
+static ExprId Rewrite_Or_Absorb(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-    for (auto* a : e.inputs) {
-        for (auto* b : e.inputs) {
+    _ASSERT(e.op == OpType::Or);
+
+    for (auto a : e.inputs) {
+        for (auto b : e.inputs) {
             if (a == b)
                 continue;
 
-            if (b->op == OpType::And && ContainsExpr(b, a))
+            const Expr& exprB = store->get(b);
+
+            if (exprB.op == OpType::And && ContainsExpr(store, b, a))
                 return a;
         }
     }
 
-    return nullptr;
+    _ASSERT(false);
+    return id;
 }
 #pragma endregion
 

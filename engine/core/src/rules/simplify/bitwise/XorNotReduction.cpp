@@ -1,38 +1,37 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_Xor_Not_Reduction(const Expr& e) {
+static bool Match_Xor_Not_Reduction(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::And)
         return false;
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {
-        const Expr* a = e.inputs[i];
-        if (a->op != OpType::Not || a->inputs.size() != 1)
+        const Expr& a = store->get(e.inputs[i]);
+        if (a.op != OpType::Not || a.inputs.size() != 1)
             continue;
 
-        const Expr* x = a->inputs[0];
+        const ExprId x = a.inputs[0];
 
         for (size_t j = 0; j < e.inputs.size(); ++j) {
             if (i == j)
                 continue;
 
-            const Expr* other = e.inputs[j];
-            if (other->op != OpType::Xor)
+            const Expr& other = store->get(e.inputs[j]);
+            if (other.op != OpType::Xor)
                 continue;
 
-            for (const Expr* xorIn : other->inputs) {
-                if (xorIn->id.value() == x->id.value())
+            for (auto xorIn : other.inputs) {
+                if (xorIn == x)
                     return true;
             }
         }
@@ -41,28 +40,31 @@ static bool Match_Xor_Not_Reduction(const Expr& e) {
     return false;
 }
 
-static Expr* Rewrite_Xor_Not_Reduction(Expr& e) {
+static ExprId Rewrite_Xor_Not_Reduction(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     for (size_t i = 0; i < e.inputs.size(); ++i) {
-        Expr* notX = e.inputs[i];
-        if (notX->op != OpType::Not || notX->inputs.size() != 1)
+        const ExprId notX = e.inputs[i];
+        const Expr& exprNotX = store->get(notX);
+        if (exprNotX.op != OpType::Not || exprNotX.inputs.size() != 1)
             continue;
 
-        Expr* x = notX->inputs[0];
+        ExprId x = exprNotX.inputs[0];
 
         for (size_t j = 0; j < e.inputs.size(); ++j) {
             if (i == j)
                 continue;
 
-            Expr* other = e.inputs[j];
-            if (other->op != OpType::Xor)
+            const Expr& other = store->get(e.inputs[j]);
+            if (other.op != OpType::Xor)
                 continue;
 
-            std::vector<Expr*> xorRemainder;
-            xorRemainder.reserve(other->inputs.size());
+            std::vector<ExprId> xorRemainder;
+            xorRemainder.reserve(other.inputs.size());
 
             bool removedX = false;
-            for (Expr* xorIn : other->inputs) {
-                if (!removedX && xorIn->id.value() == x->id.value()) {
+            for (auto xorIn : other.inputs) {
+                if (!removedX && xorIn == x) {
                     removedX = true;
                     continue;
                 }
@@ -73,15 +75,15 @@ static Expr* Rewrite_Xor_Not_Reduction(Expr& e) {
             if (!removedX)
                 continue;
 
-            Expr* yExpr = nullptr;
+            ExprId yExpr;
             if (xorRemainder.empty())
-                yExpr = ConstPool::Get(0);
+                yExpr = store->makeFalse(e.bitWidth).id;
             else if (xorRemainder.size() == 1)
                 yExpr = xorRemainder[0];
             else
-                yExpr = MakeOpInterned(OpType::Xor, std::move(xorRemainder));
+                yExpr = store->create(OpType::Xor, std::move(xorRemainder), e.bitWidth).id;
 
-            std::vector<Expr*> newInputs;
+            std::vector<ExprId> newInputs;
             newInputs.reserve(e.inputs.size() + 1);
 
             for (size_t k = 0; k < e.inputs.size(); ++k) {
@@ -98,16 +100,17 @@ static Expr* Rewrite_Xor_Not_Reduction(Expr& e) {
             }
 
             if (newInputs.empty())
-                return ConstPool::Get(1);
+                return store->makeTrue(e.bitWidth).id;
 
             if (newInputs.size() == 1)
                 return newInputs[0];
 
-            return MakeOpInterned(OpType::And, std::move(newInputs));
+            return store->create(OpType::And, std::move(newInputs), e.bitWidth).id;
         }
     }
 
-    return nullptr;
+    _ASSERT(false);
+    return id;
 }
 
 Rule Get_Xor_Not_Reduction_Rule() {

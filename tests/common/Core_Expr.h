@@ -49,9 +49,9 @@ inline bool IsFullyConstant(const Expression::ExprRef root) {
 #endif
 
 #define MakeExprStore(bw)                                                                                              \
-    ExprStore eStore;                                                                                                  \
-    auto C = [&](uint64_t v) { return eStore.createConstant(v, bw); };                                                 \
-    auto V = [&]() { return eStore.createVariable(bw); };                                                              \
+    ExprStore store;                                                                                                   \
+    auto C = [&](uint64_t v) { return store.createConstant(v, bw); };                                                  \
+    auto V = [&]() { return store.createVariable(bw); };                                                               \
     auto Eval = [&](const BitFlow::Core::Expression::ExprRef root, uint64_t v, uint32_t bitWidth = bw) {               \
         return EqualBits(EvaluateConstant(root).value, v);                                                             \
     };                                                                                                                 \
@@ -59,31 +59,5 @@ inline bool IsFullyConstant(const Expression::ExprRef root) {
                         const std::unordered_map<BitFlow::Core::Ids::ExprId, std::string> names = {},                  \
                         const BitFlow::Core::Expression::PrintOptions& options =                                       \
                             BitFlow::Core::Expression::PrintOptions{}) { return UseExprPrint; };
-
-BF_DEPRECATED("use Expression::ExprStore")
-static Expression::ExprOld* MakeVar(uint32_t id) {
-    Expression::ExprOld* e = new Expression::ExprOld{};
-    e->id = Ids::ExprId{id};
-    e->op = Expression::OpType::Var;
-    return e;
-}
-
-BF_DEPRECATED("use Expression::ExprStore")
-static Expression::ExprOld* MakeOp(uint32_t id, Expression::OpType op, std::initializer_list<Expression::ExprOld*> in) {
-    Expression::ExprOld* e = new Expression::ExprOld{};
-    e->id = Ids::ExprId{id};
-    e->op = op;
-    e->inputs = in;
-    return e;
-}
-
-BF_DEPRECATED("use Expression::ExprStore")
-static Expression::ExprOld* MakeConst(uint32_t id, uint32_t v) {
-    Expression::ExprOld* e = new Expression::ExprOld{};
-    e->id = Ids::ExprId{id};
-    e->op = Expression::OpType::Const;
-    e->constValue = v;
-    return e;
-}
 
 } // namespace BitFlow::Core::Testing

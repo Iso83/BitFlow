@@ -1,62 +1,63 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_And_Xor_Reduction(const Expr& e) {
+#pragma region Match
+static bool Match_And_Xor_Reduction(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::And)
         return false;
 
-    for (size_t i = 0; i < e.inputs.size(); ++i) {
-        const Expr* x = e.inputs[i];
-
-        for (size_t j = 0; j < e.inputs.size(); ++j) {
-            if (i == j)
+    for (auto a : e.inputs) {
+        for (auto b : e.inputs) {
+            if (a == b)
                 continue;
 
-            const Expr* other = e.inputs[j];
-            if (other->op != OpType::Xor || other->inputs.size() != 2)
+            const Expr& exprB = store->get(b);
+            if (exprB.op != OpType::Xor || exprB.inputs.size() != 2)
                 continue;
 
-            if (other->inputs[0]->id.value() == x->id.value() || other->inputs[1]->id.value() == x->id.value())
+            if (exprB.inputs[0] == a || exprB.inputs[1] == a)
                 return true;
         }
     }
 
     return false;
 }
+#pragma endregion
 
-static Expr* Rewrite_And_Xor_Reduction(Expr& e) {
+#pragma region Rewrite
+static ExprId Rewrite_And_Xor_Reduction(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     for (size_t i = 0; i < e.inputs.size(); ++i) {
-        Expr* x = e.inputs[i];
+        const Expr& x = store->get(e.inputs[i]);
 
         for (size_t j = 0; j < e.inputs.size(); ++j) {
             if (i == j)
                 continue;
 
-            Expr* other = e.inputs[j];
-            if (other->op != OpType::Xor || other->inputs.size() != 2)
+            const Expr& other = store->get(e.inputs[j]);
+            if (other.op != OpType::Xor || other.inputs.size() != 2)
                 continue;
 
-            Expr* y = nullptr;
-            if (other->inputs[0]->id.value() == x->id.value())
-                y = other->inputs[1];
-            else if (other->inputs[1]->id.value() == x->id.value())
-                y = other->inputs[0];
-
-            if (!y)
+            ExprId y;
+            if (other.inputs[0] == e.inputs[i])
+                y = other.inputs[1];
+            else if (other.inputs[1] == e.inputs[i])
+                y = other.inputs[0];
+            else
                 continue;
 
-            std::vector<Expr*> newInputs;
+            std::vector<ExprId> newInputs;
             newInputs.reserve(e.inputs.size());
 
             for (size_t k = 0; k < e.inputs.size(); ++k) {
@@ -64,20 +65,22 @@ static Expr* Rewrite_And_Xor_Reduction(Expr& e) {
                     continue;
 
                 if (k == i) {
-                    newInputs.push_back(x);
-                    newInputs.push_back(MakeOpInterned(OpType::Not, {y}));
+                    newInputs.push_back(e.inputs[i]);
+                    newInputs.push_back(Make_Expr_Not(store, y).id);
                     continue;
                 }
 
                 newInputs.push_back(e.inputs[k]);
             }
 
-            return MakeOpInterned(OpType::And, std::move(newInputs));
+            return store->create(OpType::And, std::move(newInputs), e.bitWidth).id;
         }
     }
 
-    return nullptr;
+    _ASSERT(false);
+    return id;
 }
+#pragma endregion
 
 Rule Get_And_Xor_Reduction_Rule() {
     return Rule{RuleId::Simplify_AndXorReduction,

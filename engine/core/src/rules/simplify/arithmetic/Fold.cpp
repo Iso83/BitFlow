@@ -8,10 +8,8 @@
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Expression;
 
-#pragma region Match
 static bool Match_Add_Fold(const Expr& e) {
     if (e.op != OpType::Add)
         return false;
@@ -29,9 +27,6 @@ static bool Match_Add_Fold(const Expr& e) {
     return constCount >= 2;
 }
 
-#pragma endregion
-
-#pragma region Rewrite
 static Expr* Rewrite_Add_Fold(Expr& e) {
     uint32_t acc = 0;
     std::vector<Expr*> nonConst;
@@ -58,8 +53,6 @@ static Expr* Rewrite_Add_Fold(Expr& e) {
     target->inputs = std::move(nonConst);
     return target;
 }
-
-#pragma endregion
 
 Rule Get_Add_Fold_Rule() {
     return Rule{RuleId::Simplify_AddFold,    &Match_Add_Fold,       &Rewrite_Add_Fold, Stage_Simplify,

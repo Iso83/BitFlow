@@ -1,6 +1,6 @@
 #include "expression/ExprPrinter.h"
 
-#include <BitFlow/core/expression/Expression.h>
+#include <BitFlow/core/expression/Expr.h>
 #include <sstream>
 
 namespace BitFlow::Core::Expression {
@@ -47,9 +47,9 @@ static bool TryGetInfixInfo(OpType op, InfixInfo& info) {
     }
 }
 
-static int PrecedenceOf(const Expr& e) {
-    if (e.op == OpType::Const || e.op == OpType::Var || e.op == OpType::RotL || e.op == OpType::RotR ||
-        e.op == OpType::Ch || e.op == OpType::Maj)
+static int PrecedenceOf(const ExprStore* store, Ids::ExprId id) {
+    const Expr& e = store->get(id);
+    if (e.op == OpType::Const || e.op == OpType::Var || e.op == OpType::RotL || e.op == OpType::RotR)
         return 80;
 
     if (e.op == OpType::Not || e.op == OpType::Neg)
@@ -75,35 +75,37 @@ static bool NeedsParensForRightChild(OpType parentOp, OpType childOp) {
     return true;
 }
 
-static void Print(const ExprStore* store, const Expr& e, std::ostringstream& out,
+static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& out,
                   const std::unordered_map<Ids::ExprId, std::string>& names, const PrintOptions& options,
                   int parentPrecedence, bool isRightChild, OpType parentOp) {
+    const Expr& e = store->get(id);
+
     if (e.op == OpType::Const) {
         out << e.knownValue;
         return;
     }
 
     if (e.op == OpType::Var) {
-        auto it = names.find(e.id);
+        auto it = names.find(id);
         if (it != names.end())
             out << it->second;
         else
-            out << "v" << e.id.value();
+            out << "v" << id.value();
         return;
     }
 
     if (e.op == OpType::Not || e.op == OpType::Neg) {
         out << (e.op == OpType::Not ? "~" : "-");
 
-        const Expr& inner = store->get(e.inputs[0]);
-        const bool needsParens = PrecedenceOf(inner) < PrecedenceOf(e);
+        Ids::ExprId inner = e.inputs[0];
+        const bool needsParens = PrecedenceOf(store, inner) < PrecedenceOf(store, id);
 
         if (needsParens) {
             out << "(";
             Print(store, inner, out, names, options, 0, false, OpType::Var);
             out << ")";
         } else {
-            Print(store, inner, out, names, options, PrecedenceOf(e), true, e.op);
+            Print(store, inner, out, names, options, PrecedenceOf(store, id), true, e.op);
         }
 
         return;
@@ -112,9 +114,9 @@ static void Print(const ExprStore* store, const Expr& e, std::ostringstream& out
     if (e.op == OpType::RotL || e.op == OpType::RotR) {
         if (options.rotAsFunction) {
             out << (e.op == OpType::RotL ? "rotl(" : "rotr(");
-            Print(store, store->get(e.inputs[0]), out, names, options, 0, false, OpType::Var);
+            Print(store, e.inputs[0], out, names, options, 0, false, OpType::Var);
             out << ", ";
-            Print(store, store->get(e.inputs[1]), out, names, options, 0, true, OpType::Var);
+            Print(store, e.inputs[1], out, names, options, 0, true, OpType::Var);
             out << ")";
             return;
         }
@@ -130,24 +132,13 @@ static void Print(const ExprStore* store, const Expr& e, std::ostringstream& out
         if (wrapSelf)
             out << "(";
 
-        Print(store, store->get(e.inputs[0]), out, names, options, currentPrecedence, false, e.op);
+        Print(store, e.inputs[0], out, names, options, currentPrecedence, false, e.op);
         out << (e.op == OpType::RotL ? " <<< " : " >>> ");
-        Print(store, store->get(e.inputs[1]), out, names, options, currentPrecedence, true, e.op);
+        Print(store, e.inputs[1], out, names, options, currentPrecedence, true, e.op);
 
         if (wrapSelf)
             out << ")";
 
-        return;
-    }
-
-    if (e.op == OpType::Ch || e.op == OpType::Maj) {
-        out << (e.op == OpType::Ch ? "ch(" : "maj(");
-        Print(store, store->get(e.inputs[0]), out, names, options, 0, false, OpType::Var);
-        out << ", ";
-        Print(store, store->get(e.inputs[1]), out, names, options, 0, false, OpType::Var);
-        out << ", ";
-        Print(store, store->get(e.inputs[2]), out, names, options, 0, true, OpType::Var);
-        out << ")";
         return;
     }
 
@@ -169,7 +160,7 @@ static void Print(const ExprStore* store, const Expr& e, std::ostringstream& out
         if (i > 0)
             out << " " << info.symbol << " ";
 
-        Print(store, store->get(e.inputs[i]), out, names, options, currentPrecedence, i > 0, e.op);
+        Print(store, e.inputs[i], out, names, options, currentPrecedence, i > 0, e.op);
     }
 
     if (wrapSelf)
@@ -178,21 +169,21 @@ static void Print(const ExprStore* store, const Expr& e, std::ostringstream& out
 
 std::string ToString(const ExprStore* store, const Ids::ExprId e) {
     std::ostringstream out;
-    Print(store, store->get(e), out, {}, PrintOptions{}, 0, false, OpType::Var);
+    Print(store, e, out, {}, PrintOptions{}, 0, false, OpType::Var);
     return out.str();
 }
 
 std::string ToString(const ExprStore* store, const Ids::ExprId e,
                      const std::unordered_map<Ids::ExprId, std::string>& names) {
     std::ostringstream out;
-    Print(store, store->get(e), out, names, PrintOptions{}, 0, false, OpType::Var);
+    Print(store, e, out, names, PrintOptions{}, 0, false, OpType::Var);
     return out.str();
 }
 
 std::string ToString(const ExprStore* store, const Ids::ExprId e,
                      const std::unordered_map<Ids::ExprId, std::string>& names, const PrintOptions& options) {
     std::ostringstream out;
-    Print(store, store->get(e), out, names, options, 0, false, OpType::Var);
+    Print(store, e, out, names, options, 0, false, OpType::Var);
     return out.str();
 }
 

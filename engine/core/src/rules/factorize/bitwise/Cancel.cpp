@@ -9,8 +9,7 @@
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Expression;
 
 static bool ContainsId(const Expr& e, uint32_t id) {
     for (const Expr* in : e.inputs) {

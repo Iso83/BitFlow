@@ -1,23 +1,12 @@
 #pragma once
-#include <BitFlow/core/expression/ExprFlags.h>
+
 #include <BitFlow/core/expression/OpType.h>
-#include <BitFlow/core/helper/Attributes.h>
 #include <BitFlow/core/ids/ExprId.h>
 #include <vector>
 
 namespace BitFlow::Core::Expression {
 
-BF_DEPRECATED("Use Expr")
-struct ExprOld {
-    Ids::ExprId id{};
-    OpType op{};
-    std::vector<ExprOld*> inputs{};
-
-    uint32_t constValue{0};
-};
-
 struct Expr {
-    Ids::ExprId id{};
     OpType op{};
     std::vector<Ids::ExprId> inputs{};
 

@@ -1,17 +1,18 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleCommon.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <algorithm>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Normalize {
 
-using Expr = Expression::ExprOld;
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
 
-static bool Match_Order(const Expr& e) {
+static bool Match_Order(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
     if (!Expression::IsCommutative(e.op))
         return false;
 
@@ -19,22 +20,20 @@ static bool Match_Order(const Expr& e) {
         return false;
 
     for (size_t i = 1; i < e.inputs.size(); ++i) {
-        if (CanonicalExprLess(e.inputs[i], e.inputs[i - 1]))
+        if (CanonicalExprLess(store, e.inputs[i], e.inputs[i - 1]))
             return true;
     }
 
     return false;
 }
 
-static Expr* Rewrite_Order(Expr& e) {
-    std::vector<Expr*> sorted = e.inputs;
+static ExprId Rewrite_Order(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    std::vector<ExprId> sorted = e.inputs;
 
-    std::sort(sorted.begin(), sorted.end(), [](Expr* a, Expr* b) { return CanonicalExprLess(a, b); });
+    std::sort(sorted.begin(), sorted.end(), [&](ExprId a, ExprId b) { return CanonicalExprLess(store, a, b); });
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(sorted);
-
-    return target;
+    return store->create(e.op, std::move(sorted), e.bitWidth).id;
 }
 
 Rule Get_Order_Rule() {

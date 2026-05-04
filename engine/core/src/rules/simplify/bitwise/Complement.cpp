@@ -1,31 +1,31 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
-using ConstPool = Expression::ConstPool;
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
 
-static bool IsNotOf(Expr* a, Expr* b) {
-    return a->op == OpType::Not && a->inputs.size() == 1 && a->inputs[0] == b;
+static bool IsNotOf(const ExprStore* store, ExprId a, ExprId b) {
+    const Expr& exprA = store->get(a);
+    return exprA.op == OpType::Not && exprA.inputs.size() == 1 && exprA.inputs[0] == b;
 }
 
 #pragma region Match
-static bool Match_Complement(const Expr& e) {
+static bool Match_Complement(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if ((e.op != OpType::And && e.op != OpType::Or) || e.inputs.size() < 2)
         return false;
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {
         for (size_t j = i + 1; j < e.inputs.size(); ++j) {
-            Expr* a = e.inputs[i];
-            Expr* b = e.inputs[j];
+            ExprId a = e.inputs[i];
+            ExprId b = e.inputs[j];
 
-            if (IsNotOf(a, b) || IsNotOf(b, a))
+            if (IsNotOf(store, a, b) || IsNotOf(store, b, a))
                 return true;
         }
     }
@@ -35,23 +35,26 @@ static bool Match_Complement(const Expr& e) {
 #pragma endregion
 
 #pragma region Rewrite
-static Expr* Rewrite_Complement(Expr& e) {
+static ExprId Rewrite_Complement(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     for (size_t i = 0; i < e.inputs.size(); ++i) {
         for (size_t j = i + 1; j < e.inputs.size(); ++j) {
-            Expr* a = e.inputs[i];
-            Expr* b = e.inputs[j];
+            ExprId a = e.inputs[i];
+            ExprId b = e.inputs[j];
 
-            if (IsNotOf(a, b) || IsNotOf(b, a)) {
+            if (IsNotOf(store, a, b) || IsNotOf(store, b, a)) {
                 if (e.op == OpType::And)
-                    return ConstPool::Get(0);
+                    return store->makeFalse().id;
 
                 if (e.op == OpType::Or)
-                    return ConstPool::Get(1);
+                    return store->makeTrue().id;
             }
         }
     }
 
-    return nullptr;
+    _ASSERT(false);
+    return id;
 }
 #pragma endregion
 

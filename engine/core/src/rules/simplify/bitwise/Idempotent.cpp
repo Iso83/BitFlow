@@ -1,8 +1,6 @@
+#include "expression/ExprUtils.h"
 #include "rules/RuleStage.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
 #include <unordered_set>
@@ -10,38 +8,41 @@
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_Idempotent(const Expr& e) {
+static bool Match_Idempotent(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::And && e.op != OpType::Or)
         return false;
 
     if (e.inputs.size() < 2)
         return false;
 
-    std::unordered_map<uint32_t, int> counts;
+    std::unordered_map<ExprId, int> counts;
     counts.reserve(e.inputs.size());
 
-    for (const Expr* in : e.inputs) {
-        const uint32_t key = in->id.value();
-        counts[key]++;
+    for (auto in : e.inputs) {
+        counts[in]++;
 
-        if (counts[key] >= 2)
+        if (counts[in] >= 2)
             return true;
     }
 
     return false;
 }
 
-static bool Match_And_Idempotent(const Expr& e) {
+static bool Match_And_Idempotent(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::And || e.inputs.size() < 2)
         return false;
 
-    std::unordered_set<const Expr*> seen;
+    std::unordered_set<ExprId> seen;
 
-    for (auto* in : e.inputs) {
+    for (auto in : e.inputs) {
         if (!seen.insert(in).second)
             return true;
     }
@@ -50,38 +51,38 @@ static bool Match_And_Idempotent(const Expr& e) {
 #pragma endregion
 
 #pragma region Rewrite
-static Expr* Rewrite_Idempotent(Expr& e) {
-    std::vector<Expr*> unique;
+static ExprId Rewrite_Idempotent(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    std::vector<ExprId> unique;
     unique.reserve(e.inputs.size());
 
-    std::unordered_map<uint32_t, bool> seen;
+    std::unordered_map<ExprId, bool> seen;
     seen.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
-        const uint32_t key = in->id.value();
-
-        if (seen[key])
+    for (auto in : e.inputs) {
+        if (seen[in])
             continue;
 
-        seen[key] = true;
+        seen[in] = true;
         unique.push_back(in);
     }
 
     if (unique.size() == 1)
         return unique[0];
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(unique);
-    return target;
+    return store->create(e.op, std::move(unique), e.bitWidth).id;
 }
 
-static Expr* Rewrite_And_Idempotent(Expr& e) {
-    std::unordered_set<const Expr*> seen;
-    std::vector<Expr*> unique;
+static ExprId Rewrite_And_Idempotent(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    std::unordered_set<ExprId> seen;
+    std::vector<ExprId> unique;
 
     unique.reserve(e.inputs.size());
 
-    for (auto* in : e.inputs) {
+    for (auto in : e.inputs) {
         if (seen.insert(in).second)
             unique.push_back(in);
     }
@@ -89,9 +90,7 @@ static Expr* Rewrite_And_Idempotent(Expr& e) {
     if (unique.size() == 1)
         return unique[0];
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(unique);
-    return target;
+    return store->create(e.op, std::move(unique), e.bitWidth).id;
 }
 #pragma endregion
 
@@ -104,5 +103,4 @@ Rule Get_And_Idempotent_Rule() {
     return Rule{RuleId::Simplify_And_Idempotent, &Match_And_Idempotent, &Rewrite_And_Idempotent,  Stage_Simplify,
                 {RuleId::Normalize_Flatten},     RuleFlags::None,       "Simplify_And_Idempotent"};
 }
-
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

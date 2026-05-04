@@ -1,19 +1,14 @@
 #include "RuleOrderException.h"
-#include "expression/ExprIntern.h"
 
+#include <BitFlow/core/expression/Expr.h>
 #include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <algorithm>
 
 namespace BitFlow::Core::Rules {
 
-using Expr = Expression::ExprOld;
-
-RuleEngine::RuleEngine() {
-    Expression::ExprIntern::Reset();
-}
+using namespace BitFlow::Core::Expression;
 
 void RuleEngine::AddRule(const Rule& rule) {
 #ifndef NDEBUG

@@ -102,11 +102,9 @@ int TestLargeShiftCounts() {
     BF_TEST(s65.IsZero());
     BF_TEST(r129.IsZero());
 
-    // extra: check dat lagere shifts nog correct werken
     BF_TEST((x << 63).ToUint64() == (1ULL << 63));
     BF_TEST((x << 62).ToUint64() == (1ULL << 62));
 
-    // en dat net over de grens abrupt naar 0 gaat
     BF_TEST((x << 63).IsZero() == false);
     BF_TEST((x << 64).IsZero() == true);
 

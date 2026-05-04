@@ -79,20 +79,18 @@ enum class RuleId {
 
 struct Rule {
     RuleId id;
-    bool (*match)(const Expression::ExprOld&);
-    Expression::ExprOld* (*rewrite)(Expression::ExprOld&);
+    bool (*match)(const Expression::ExprStore* store, Ids::ExprId id);
+    Ids::ExprId (*rewrite)(Expression::ExprStore* store, Ids::ExprId id);
     int stage;
 
-    uint32_t Id{0};
     const char* Name{nullptr};
     std::vector<uint32_t> Dependencies{};
     uint32_t Flags{RuleFlags::None};
 
-    Rule(RuleId ruleId, bool (*ruleMatch)(const Expression::ExprOld&),
-         Expression::ExprOld* (*ruleRewrite)(Expression::ExprOld&), int ruleStage, std::vector<RuleId> deps,
+    Rule(RuleId ruleId, bool (*ruleMatch)(const Expression::ExprStore*, Ids::ExprId),
+         Ids::ExprId (*ruleRewrite)(Expression::ExprStore*, Ids::ExprId id), int ruleStage, std::vector<RuleId> deps,
          uint32_t ruleFlags, const char* ruleName)
-        : id(ruleId), match(ruleMatch), rewrite(ruleRewrite), stage(ruleStage), Id(static_cast<uint32_t>(ruleId)),
-          Name(ruleName), Flags(ruleFlags) {
+        : id(ruleId), match(ruleMatch), rewrite(ruleRewrite), stage(ruleStage), Name(ruleName), Flags(ruleFlags) {
         Dependencies.reserve(deps.size());
         for (RuleId dep : deps) {
             Dependencies.push_back(static_cast<uint32_t>(dep));

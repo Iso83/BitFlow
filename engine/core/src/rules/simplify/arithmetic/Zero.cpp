@@ -9,8 +9,7 @@
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
-using Expr = Expression::ExprOld;
-using OpType = Expression::OpType;
+using namespace BitFlow::Core::Expression;
 
 static Expr* Rewrite_Add_Zero(Expr& e) {
     std::vector<Expr*> newInputs;
