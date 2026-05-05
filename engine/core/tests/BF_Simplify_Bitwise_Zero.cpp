@@ -16,7 +16,7 @@ int TestAndZero() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_And_ZeroDominance_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_Zero_Dominance_Rule());
 
     ExprOld* result = engine.Rewrite(and2);
 

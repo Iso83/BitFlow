@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
@@ -9,7 +8,6 @@ namespace BitFlow::Core::Rules::Simplify::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-#pragma region Match
 static bool Match_And_Xor_Reduction(const ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
@@ -32,9 +30,7 @@ static bool Match_And_Xor_Reduction(const ExprStore* store, ExprId id) {
 
     return false;
 }
-#pragma endregion
 
-#pragma region Rewrite
 static ExprId Rewrite_And_Xor_Reduction(ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
@@ -80,16 +76,12 @@ static ExprId Rewrite_And_Xor_Reduction(ExprStore* store, ExprId id) {
     _ASSERT(false);
     return id;
 }
-#pragma endregion
 
 Rule Get_And_Xor_Reduction_Rule() {
-    return Rule{RuleId::Simplify_AndXorReduction,
+    return Rule{And_Xor_Reduction,
                 &Match_And_Xor_Reduction,
                 &Rewrite_And_Xor_Reduction,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order},
-                RuleFlags::None,
-                "Simplify_AndXorReduction"};
+                {Normalize::Flatten, Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

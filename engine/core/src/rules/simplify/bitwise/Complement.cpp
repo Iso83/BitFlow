@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 
@@ -13,7 +12,6 @@ static bool IsNotOf(const ExprStore* store, ExprId a, ExprId b) {
     return exprA.op == OpType::Not && exprA.inputs.size() == 1 && exprA.inputs[0] == b;
 }
 
-#pragma region Match
 static bool Match_Complement(const ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
@@ -32,9 +30,7 @@ static bool Match_Complement(const ExprStore* store, ExprId id) {
 
     return false;
 }
-#pragma endregion
 
-#pragma region Rewrite
 static ExprId Rewrite_Complement(ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
@@ -56,16 +52,9 @@ static ExprId Rewrite_Complement(ExprStore* store, ExprId id) {
     _ASSERT(false);
     return id;
 }
-#pragma endregion
 
 Rule Get_Complement_Rule() {
-    return Rule{RuleId::Simplify_Complement,
-                &Match_Complement,
-                &Rewrite_Complement,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Simplify_Idempotent},
-                RuleFlags::None,
-                "Simplify_Complement"};
+    return Rule{Complement, &Match_Complement, &Rewrite_Complement, {Normalize::Flatten, Idempotent}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

@@ -1,6 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleCommon.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 #include <algorithm>
@@ -13,6 +11,7 @@ using namespace BitFlow::Core::Expression;
 
 static bool Match_Order(const ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
+
     if (!Expression::IsCommutative(e.op))
         return false;
 
@@ -29,6 +28,7 @@ static bool Match_Order(const ExprStore* store, ExprId id) {
 
 static ExprId Rewrite_Order(ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
+
     std::vector<ExprId> sorted = e.inputs;
 
     std::sort(sorted.begin(), sorted.end(), [&](ExprId a, ExprId b) { return CanonicalExprLess(store, a, b); });
@@ -37,8 +37,7 @@ static ExprId Rewrite_Order(ExprStore* store, ExprId id) {
 }
 
 Rule Get_Order_Rule() {
-    return Rule{RuleId::Normalize_Order, &Match_Order,     &Rewrite_Order, Stage_Normalize, {},
-                RuleFlags::None,         "Normalize_Order"};
+    return Rule{Order, &Match_Order, &Rewrite_Order};
 }
 
 } // namespace BitFlow::Core::Rules::Normalize

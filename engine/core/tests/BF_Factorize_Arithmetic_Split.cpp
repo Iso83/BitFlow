@@ -16,7 +16,7 @@ int TestLinearMultiplicityRuleOnly() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule());
+    engine.AddRule(Factorize::Arithmetic::Get_Add_Linear_Multiplicity_Rule());
 
     ExprOld* out = engine.Rewrite(expr);
     BF_TEST(out->op == OpType::Mul);
@@ -32,7 +32,7 @@ int TestCommonFactorRuleOnly() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule());
+    engine.AddRule(Factorize::Arithmetic::Get_Add_Linear_Multiplicity_Rule());
     engine.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
 
     ExprOld* out = engine.Rewrite(expr);
@@ -48,9 +48,9 @@ int TestArithmeticFactorizeOrdering() {
     int i = 0;
     for (const auto& stage : engine.Stages()) {
         for (const auto& rule : stage.rules) {
-            if (rule.id == RuleId::Factorize_AddLinearMultiplicity)
+            if (rule.id == CoreRuleType::Factorize_AddLinearMultiplicity)
                 linearIndex = i;
-            if (rule.id == RuleId::Factorize_AddCommonFactor)
+            if (rule.id == CoreRuleType::Factorize_AddCommonFactor)
                 commonIndex = i;
             ++i;
         }

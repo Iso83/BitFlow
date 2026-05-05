@@ -1,9 +1,5 @@
-#include "rules/RuleCommon.h"
-#include "rules/RuleStage.h"
+#include "expression/ExprUtils.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <algorithm>
 #include <unordered_map>
@@ -11,78 +7,90 @@
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static ExprOld* BuildXorParityResult(const std::vector<ExprOld*>& terms) {
-    if (terms.empty())
-        return ConstPool::Get(0);
-
-    if (terms.size() == 1)
-        return terms[0];
-
-    return MakeOpInterned(OpType::Xor, terms);
-}
-
 #pragma region Match
-static bool Match_And_Cancel(const ExprOld& e) {
+static bool Match_And_Cancel(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::And)
         return false;
 
     if (e.inputs.size() < 2)
         return false;
 
-    std::unordered_map<uint32_t, int> counts;
+    std::unordered_map<ExprId, int> counts;
     counts.reserve(e.inputs.size());
 
-    for (const ExprOld* in : e.inputs) {
-        const uint32_t key = in->id.value();
-        counts[key]++;
+    for (auto in : e.inputs) {
+        counts[in]++;
 
-        if (counts[key] >= 2)
+        if (counts[in] >= 2)
             return true;
     }
 
     return false;
 }
 
-static bool Match_Or_Cancel(const ExprOld& e) {
+static bool Match_Or_Cancel(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::Or)
         return false;
 
     if (e.inputs.size() < 2)
         return false;
 
-    std::unordered_map<uint32_t, int> counts;
+    std::unordered_map<ExprId, int> counts;
     counts.reserve(e.inputs.size());
 
-    for (const ExprOld* in : e.inputs) {
-        const uint32_t key = in->id.value();
-        counts[key]++;
+    for (auto in : e.inputs) {
+        counts[in]++;
 
-        if (counts[key] >= 2)
+        if (counts[in] >= 2)
             return true;
     }
 
     return false;
 }
 
-static bool Match_XorCancel(const ExprOld& e) {
+static bool Match_XorCancel(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
     if (e.op != OpType::Xor || e.inputs.size() < 2)
         return false;
 
-    uint32_t constParity = 0;
+    const uint64_t mask = Expr::fullMask(e.bitWidth);
 
-    for (const ExprOld* in : e.inputs) {
-        if (in->op == OpType::Const)
-            constParity ^= in->constValue;
+    uint64_t constParity = 0;
+    bool hasConst = false;
+
+    std::unordered_map<ExprId, int> counts;
+    counts.reserve(e.inputs.size());
+
+    for (ExprId inId : e.inputs) {
+        const Expr& in = store->get(inId);
+
+        if (in.op == OpType::Const) {
+            constParity ^= in.knownValue;
+            hasConst = true;
+        } else {
+            counts[inId]++;
+
+            // x ^ x → 0
+            if (counts[inId] >= 2)
+                return true;
+        }
     }
 
-    if (constParity != 0)
+    constParity &= mask;
+
+    if (hasConst && constParity != 0)
         return true;
 
-    for (size_t i = 1; i < e.inputs.size(); ++i) {
-        if (e.inputs[i]->op != OpType::Const && e.inputs[i - 1]->op != OpType::Const &&
-            CompareExprCanonical(e.inputs[i - 1], e.inputs[i]) == 0)
+    if (hasConst && constParity == 0) {
+        if (counts.empty())
             return true;
     }
 
@@ -91,116 +99,109 @@ static bool Match_XorCancel(const ExprOld& e) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprOld* Rewrite_And_Cancel(ExprOld& e) {
-    std::vector<ExprOld*> newInputs;
+static ExprId Rewrite_And_Cancel(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
 
-    std::unordered_map<uint32_t, bool> seen;
+    std::unordered_map<ExprId, bool> seen;
     seen.reserve(e.inputs.size());
 
-    for (ExprOld* in : e.inputs) {
-        const uint32_t key = in->id.value();
-
-        if (seen[key])
+    for (auto in : e.inputs) {
+        if (seen[in])
             continue;
 
-        seen[key] = true;
+        seen[in] = true;
         newInputs.push_back(in);
     }
 
     if (newInputs.empty())
-        return ConstPool::Get(1);
+        return store->makeTrue(e.bitWidth).id;
 
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    ExprOld* target = CloneExpr(&e);
-    target->inputs = std::move(newInputs);
-    return target;
+    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprOld* Rewrite_Or_Cancel(ExprOld& e) {
-    std::vector<ExprOld*> newInputs;
+static ExprId Rewrite_Or_Cancel(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
 
-    std::unordered_map<uint32_t, bool> seen;
+    std::unordered_map<ExprId, bool> seen;
     seen.reserve(e.inputs.size());
 
-    for (ExprOld* in : e.inputs) {
-        const uint32_t key = in->id.value();
-
-        if (seen[key])
+    for (auto in : e.inputs) {
+        if (seen[in])
             continue;
 
-        seen[key] = true;
+        seen[in] = true;
         newInputs.push_back(in);
     }
 
     if (newInputs.empty())
-        return ConstPool::Get(0);
+        return store->makeFalse(e.bitWidth).id;
 
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    ExprOld* target = CloneExpr(&e);
-    target->inputs = std::move(newInputs);
-    return target;
+    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprOld* Rewrite_XorCancel(ExprOld& e) {
-    std::vector<ExprOld*> oddTerms;
-    oddTerms.reserve(e.inputs.size());
+static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-    uint32_t constParity = 0;
+    const uint64_t mask = Expr::fullMask(e.bitWidth);
 
-    size_t i = 0;
-    while (i < e.inputs.size()) {
-        ExprOld* cur = e.inputs[i];
+    uint64_t constParity = 0;
+    bool hasConst = false;
 
-        if (cur->op == OpType::Const) {
-            constParity ^= cur->constValue;
-            ++i;
-            continue;
+    std::unordered_map<ExprId, int> counts;
+    counts.reserve(e.inputs.size());
+
+    for (ExprId inId : e.inputs) {
+        const Expr& in = store->get(inId);
+
+        if (in.op == OpType::Const) {
+            constParity ^= in.knownValue;
+            hasConst = true;
+        } else {
+            counts[inId]++;
         }
-
-        size_t j = i + 1;
-        while (j < e.inputs.size() && e.inputs[j]->op != OpType::Const && CompareExprCanonical(e.inputs[j], cur) == 0)
-            ++j;
-
-        const size_t count = j - i;
-        if (count & 1u)
-            oddTerms.push_back(cur);
-
-        i = j;
     }
 
-    if (constParity != 0)
-        oddTerms.push_back(ConstPool::Get(constParity));
+    constParity &= mask;
 
-    std::sort(oddTerms.begin(), oddTerms.end(), [](ExprOld* a, ExprOld* b) { return CanonicalExprLess(a, b); });
+    std::vector<ExprId> terms;
+    terms.reserve(counts.size() + 1);
 
-    return BuildXorParityResult(oddTerms);
+    for (const auto& [exprId, count] : counts) {
+        if (count & 1)
+            terms.push_back(exprId);
+    }
+
+    if (hasConst && constParity != 0)
+        terms.push_back(store->createConstant(constParity, e.bitWidth).id);
+
+    std::sort(terms.begin(), terms.end(), [&](ExprId a, ExprId b) { return CompareExprCanonical(store, a, b) < 0; });
+
+    return MakeXor(store, terms, e.bitWidth);
 }
 #pragma endregion
 
 Rule Get_And_Cancel_Rule() {
-    return Rule{RuleId::Simplify_AndCancel,  &Match_And_Cancel, &Rewrite_And_Cancel, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::None,   "Simplify_AndCancel"};
+    return Rule{And_Cancel, &Match_And_Cancel, &Rewrite_And_Cancel, {Normalize::Flatten}};
 }
 
 Rule Get_Or_Cancel_Rule() {
-    return Rule{RuleId::Simplify_OrCancel,   &Match_Or_Cancel, &Rewrite_Or_Cancel, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::None,  "Simplify_OrCancel"};
+    return Rule{Or_Cancel, &Match_Or_Cancel, &Rewrite_Or_Cancel, {Normalize::Flatten}};
 }
 
 Rule Get_Xor_Cancel_Rule() {
-    return Rule{RuleId::Simplify_XorCancel,
-                &Match_XorCancel,
-                &Rewrite_XorCancel,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order},
-                RuleFlags::None,
-                "Simplify_XorCancel"};
+    return Rule{Xor_Cancel, &Match_XorCancel, &Rewrite_XorCancel, {Normalize::Flatten, Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

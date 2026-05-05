@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
@@ -59,14 +58,10 @@ static ExprId Rewrite_Mul_CombineConstants(ExprStore* store, ExprId id) {
 }
 
 Rule Get_Mul_CombineConstants_Rule() {
-    return Rule{RuleId::Factorize_MulCombineConstants,
+    return Rule{Mul_CombineConstants,
                 &Match_Mul_CombineConstants,
                 &Rewrite_Mul_CombineConstants,
-                Stage_Factorize,
-                {RuleId::Factorize_AddLinearMultiplicity, RuleId::Factorize_AddCommonFactor, RuleId::Normalize_Flatten,
-                 RuleId::Normalize_Order},
-                RuleFlags::Factorizing | RuleFlags::Arithmetic,
-                "Factorize_MulCombineConstants"};
+                {Add_Linear_Multiplicity, Add_CommonFactor, Normalize::Flatten, Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic

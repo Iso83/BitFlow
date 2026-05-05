@@ -32,7 +32,7 @@ int TestEngineHandlesInPlaceRewriteSafely() {
     auto e2 = MakeOp(101, OpType::Xor, {y, x});
 
     RuleEngine engine;
-    engine.AddRule(Rule{RuleId::Normalize_Order,
+    engine.AddRule(Rule{CoreRuleType::Normalize_Order,
                         &Match_Xor_Unsorted,
                         &Rewrite_Xor_InPlaceSort,
                         0,

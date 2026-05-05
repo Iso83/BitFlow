@@ -1,17 +1,16 @@
-#include "rules/RuleStage.h"
+#include "expression/ExprUtils.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
 
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_And_Fold(const Expr& e) {
+static bool Match_And_Fold(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
     if (e.op != OpType::And)
         return false;
 
@@ -21,7 +20,8 @@ static bool Match_And_Fold(const Expr& e) {
     return true;
 }
 
-static bool Match_Or_Fold(const Expr& e) {
+static bool Match_Or_Fold(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
     if (e.op != OpType::Or)
         return false;
 
@@ -31,7 +31,8 @@ static bool Match_Or_Fold(const Expr& e) {
     return true;
 }
 
-static bool Match_Xor_Fold(const Expr& e) {
+static bool Match_Xor_Fold(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
     if (e.op != OpType::Xor)
         return false;
 
@@ -40,8 +41,9 @@ static bool Match_Xor_Fold(const Expr& e) {
 
     int constCount = 0;
 
-    for (const Expr* in : e.inputs) {
-        if (in->op == OpType::Const)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op == OpType::Const)
             constCount++;
     }
 
@@ -50,94 +52,102 @@ static bool Match_Xor_Fold(const Expr& e) {
 #pragma endregion
 
 #pragma region Rewrite
-static Expr* Rewrite_And_Fold(Expr& e) {
-    std::vector<Expr*> newInputs;
+static ExprId Rewrite_And_Fold(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    std::vector<ExprId> newInputs;
 
-    for (Expr* in : e.inputs) {
-        if (in->op == OpType::Const && in->constValue == 0)
-            return Expression::ConstPool::Get(0);
+    for (auto in : e.inputs) {
+        if (IsFalse(store, in))
+            return store->makeFalse(e.bitWidth).id;
 
-        if (in->op == OpType::Const && in->constValue == 1)
+        if (IsTrue(store, in))
             continue;
 
         newInputs.push_back(in);
     }
 
     if (newInputs.empty())
-        return Expression::ConstPool::Get(1);
+        return store->makeTrue(e.bitWidth).id;
 
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(newInputs);
-    return target;
+    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static Expr* Rewrite_Or_Fold(Expr& e) {
-    std::vector<Expr*> newInputs;
+static ExprId Rewrite_Or_Fold(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    std::vector<ExprId> newInputs;
 
-    for (Expr* in : e.inputs) {
-        if (in->op == OpType::Const && in->constValue == 1)
-            return Expression::ConstPool::Get(1);
+    for (auto in : e.inputs) {
+        if (IsTrue(store, in))
+            return store->makeTrue(e.bitWidth).id;
 
-        if (in->op == OpType::Const && in->constValue == 0)
+        if (IsFalse(store, in))
             continue;
 
         newInputs.push_back(in);
     }
 
     if (newInputs.empty())
-        return Expression::ConstPool::Get(0);
+        return store->makeFalse(e.bitWidth).id;
 
     if (newInputs.size() == 1)
         return newInputs[0];
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(newInputs);
-    return target;
+    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static Expr* Rewrite_Xor_Fold(Expr& e) {
-    uint32_t acc = 0;
-    std::vector<Expr*> nonConst;
+static ExprId Rewrite_Xor_Fold(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+
+    uint64_t acc = 0;
+    bool hasConst = false;
+
+    std::vector<ExprId> nonConst;
     nonConst.reserve(e.inputs.size());
 
-    for (Expr* in : e.inputs) {
-        if (in->op == OpType::Const)
-            acc ^= in->constValue;
-        else
-            nonConst.push_back(in);
+    const uint64_t mask = Expr::fullMask(e.bitWidth);
+
+    for (ExprId inId : e.inputs) {
+        const Expr& in = store->get(inId);
+
+        if (in.op == OpType::Const) {
+            acc ^= in.knownValue;
+            hasConst = true;
+        } else {
+            nonConst.push_back(inId);
+        }
     }
 
+    acc &= mask;
+
+    if (!hasConst)
+        return id;
+
     if (acc != 0)
-        nonConst.push_back(Expression::ConstPool::Get(acc));
+        nonConst.push_back(store->createConstant(acc, e.bitWidth).id);
 
     if (nonConst.empty())
-        return Expression::ConstPool::Get(0);
+        return store->createConstant(0, e.bitWidth).id;
 
     if (nonConst.size() == 1)
         return nonConst[0];
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(nonConst);
-    return target;
+    return store->create(OpType::Xor, std::move(nonConst), e.bitWidth).id;
 }
 #pragma endregion
 
 Rule Get_And_Fold_Rule() {
-    return Rule{RuleId::Simplify_AndFold,    &Match_And_Fold, &Rewrite_And_Fold, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_AndFold"};
+    return Rule{And_Fold, &Match_And_Fold, &Rewrite_And_Fold, {Normalize::Flatten}};
 }
 
 Rule Get_Or_Fold_Rule() {
-    return Rule{RuleId::Simplify_OrFold,     &Match_Or_Fold,  &Rewrite_Or_Fold, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_OrFold"};
+    return Rule{Or_Fold, &Match_Or_Fold, &Rewrite_Or_Fold, {Normalize::Flatten}};
 }
 
 Rule Get_Xor_Fold_Rule() {
-    return Rule{RuleId::Simplify_XorFold,    &Match_Xor_Fold, &Rewrite_Xor_Fold, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_XorFold"};
+    return Rule{Xor_Fold, &Match_Xor_Fold, &Rewrite_Xor_Fold, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

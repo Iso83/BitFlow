@@ -1,73 +1,45 @@
-#include "rules/RuleCommon.h"
-#include "rules/RuleStage.h"
+#include "expression/ExprUtils.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
+#include <BitFlow/core/helper/Attributes.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static Expr* Rewrite_Add_Zero(Expr& e) {
-    std::vector<Expr*> newInputs;
+#pragma region Match
+BF_DEPRECATED("Use Match_Zero --> not limited to 2 leafs")
+static bool Match_Sub_Zero(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-    for (Expr* in : e.inputs) {
-        if (!(in->op == OpType::Const && in->constValue == 0))
-            newInputs.push_back(in);
-    }
-
-    if (newInputs.empty())
-        return Expression::ConstPool::Get(0);
-
-    if (newInputs.size() == 1)
-        return newInputs[0];
-
-    Expr* target = Expression::CloneExpr(&e);
-
-    target->inputs = std::move(newInputs);
-    return target;
-}
-
-static Expr* Rewrite_Mul_Zero(Expr&) {
-    return Expression::ConstPool::Get(0);
-}
-
-static bool Match_Sub_Zero(const Expr& e) {
     if (e.op != OpType::Sub)
         return false;
 
     if (e.inputs.size() != 2)
         return false;
 
-    const Expr* rhs = e.inputs[1];
-    return rhs->op == OpType::Const && rhs->constValue == 0;
+    return IsFalse(store, e.inputs[1]);
 }
 
-static Expr* Rewrite_Sub_Zero(Expr& e) {
-    return e.inputs[0];
-}
+BF_DEPRECATED("Use Match_Zero --> not limited to 2 leafs")
+static bool Match_Mod_Zero(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-static bool Match_Mod_Zero(const Expr& e) {
     if (e.op != OpType::Mod)
         return false;
 
     if (e.inputs.size() != 2)
         return false;
 
-    const Expr* rhs = e.inputs[1];
-    return rhs->op == OpType::Const && rhs->constValue == 0;
+    return IsFalse(store, e.inputs[1]);
 }
 
-static Expr* Rewrite_Mod_Zero_Guard(Expr&) {
-    // Keep `% 0` explicit in the AST for now.
-    // We intentionally do not fold or rewrite invalid modulo forms.
-    return nullptr;
-}
+BF_DEPRECATED("TODO: fix limited to 2 leafs")
+static bool Match_Shift_Zero(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-static bool Match_Shift_Zero(const Expr& e) {
     switch (e.op) {
     case OpType::Shl:
     case OpType::Shr:
@@ -79,15 +51,13 @@ static bool Match_Shift_Zero(const Expr& e) {
     if (e.inputs.size() != 2)
         return false;
 
-    const Expr* rhs = e.inputs[1];
-    return rhs->op == OpType::Const && rhs->constValue == 0;
+    return IsFalse(store, e.inputs[1]);
 }
 
-static Expr* Rewrite_Shift_Zero(Expr& e) {
-    return e.inputs[0];
-}
+BF_DEPRECATED("TODO: fix limited to 2 leafs")
+static bool Match_Rotate_Zero(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-static bool Match_Rotate_Modulo_Bitwidth(const Expr& e) {
     switch (e.op) {
     case OpType::RotL:
     case OpType::RotR:
@@ -99,58 +69,87 @@ static bool Match_Rotate_Modulo_Bitwidth(const Expr& e) {
     if (e.inputs.size() != 2)
         return false;
 
-    const Expr* rhs = e.inputs[1];
-    if (rhs->op != OpType::Const)
-        return false;
+    return IsFalse(store, e.inputs[1]);
+}
+#pragma endregion
 
-    constexpr uint32_t kBitWidth = 32;
-    const uint32_t amount = rhs->constValue;
+#pragma region Rewrite
+static ExprId Rewrite_Add_Zero(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-    return amount == 0 || amount >= kBitWidth;
+    std::vector<ExprId> newInputs;
+
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (!(exprIn.op == OpType::Const && IsFalse(store, in)))
+            newInputs.push_back(in);
+    }
+
+    if (newInputs.empty())
+        return store->makeFalse(e.bitWidth).id;
+
+    if (newInputs.size() == 1)
+        return newInputs[0];
+
+    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static Expr* Rewrite_Rotate_Modulo_Bitwidth(Expr& e) {
-    constexpr uint32_t kBitWidth = 32;
-    const uint32_t amount = e.inputs[1]->constValue % kBitWidth;
-
-    if (amount == 0)
-        return e.inputs[0];
-
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs[1] = Expression::ConstPool::Get(amount);
-    return target;
+static ExprId Rewrite_Mul_Zero(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    return store->makeFalse(e.bitWidth).id;
 }
+
+static ExprId Rewrite_Sub_Zero(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    return e.inputs[0];
+}
+
+static ExprId Rewrite_Mod_Zero_Guard(ExprStore* store, ExprId id) {
+    const auto& e = store->get(id);
+
+    for (auto input : e.inputs) {
+        const auto& rhs = store->get(input);
+        if (rhs.op == OpType::Const && rhs.knownValue == 0) {
+            throw std::runtime_error("Modulo by zero detected in rewrite");
+        }
+    }
+
+    return id;
+}
+
+static ExprId Rewrite_Shift_Zero(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    return e.inputs[0];
+}
+
+static ExprId Rewrite_Rotate_Zero(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
+    return e.inputs[0];
+}
+#pragma endregion
 
 Rule Get_Add_Zero_Rule() {
-    return Rule{RuleId::Simplify_AddZero,    &Match_Zero<OpType::Add>, &Rewrite_Add_Zero, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic,    "Simplify_AddZero"};
+    return Rule{Add_Zero, &Match_Zero<OpType::Add>, &Rewrite_Add_Zero, {Normalize::Flatten}};
 }
 
 Rule Get_Mul_Zero_Rule() {
-    return Rule{RuleId::Simplify_MulZero,    &Match_Zero<OpType::Mul>, &Rewrite_Mul_Zero, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic,    "Simplify_MulZero"};
+    return Rule{Mul_Zero, &Match_Zero<OpType::Mul>, &Rewrite_Mul_Zero, {Normalize::Flatten}};
 }
 
 Rule Get_Sub_Zero_Rule() {
-    return Rule{RuleId::Simplify_SubZero,    &Match_Sub_Zero,       &Rewrite_Sub_Zero, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_SubZero"};
+    return Rule{Sub_Zero, &Match_Sub_Zero, &Rewrite_Sub_Zero, {Normalize::Flatten}};
 }
 
 Rule Get_Mod_Zero_Guard_Rule() {
-    return Rule{RuleId::Simplify_ModZeroGuard, &Match_Mod_Zero,       &Rewrite_Mod_Zero_Guard, Stage_Simplify,
-                {RuleId::Normalize_Flatten},   RuleFlags::Arithmetic, "Simplify_ModZeroGuard"};
+    return Rule{Mod_Zero_Guard, &Match_Mod_Zero, &Rewrite_Mod_Zero_Guard, {Normalize::Flatten}};
 }
 
 Rule Get_Shift_Zero_Rule() {
-    return Rule{RuleId::Simplify_ShiftZero,  &Match_Shift_Zero,     &Rewrite_Shift_Zero, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_ShiftZero"};
+    return Rule{Shift_Zero, &Match_Shift_Zero, &Rewrite_Shift_Zero, {Normalize::Flatten}};
 }
 
-Rule Get_Rotate_Modulo_Bitwidth_Rule() {
-    return Rule{RuleId::Simplify_RotateModuloBitwidth, &Match_Rotate_Modulo_Bitwidth,
-                &Rewrite_Rotate_Modulo_Bitwidth,       Stage_Simplify,
-                {RuleId::Normalize_Flatten},           RuleFlags::Arithmetic,
-                "Simplify_RotateModuloBitwidth"};
+Rule Get_Rotate_Zero_Rule() {
+    return Rule{Rotate_Zero, &Match_Rotate_Zero, &Rewrite_Rotate_Zero, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

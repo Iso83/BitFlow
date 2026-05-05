@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
@@ -27,19 +26,8 @@ static ExprId BuildAnd(ExprStore* store, ExprId a, ExprId b) {
 
     return store->create(OpType::And, {a, b}).id;
 }
-
-static ExprId BuildXor(ExprStore* store, std::vector<ExprId>& inputs) {
-    if (inputs.empty())
-        return store->makeFalse().id;
-
-    if (inputs.size() == 1)
-        return inputs[0];
-
-    return store->create(OpType::Xor, std::move(inputs)).id;
-}
 #pragma endregion
 
-#pragma region Match
 static bool Match_Distribute_And_Over_Xor(const ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
@@ -65,9 +53,7 @@ static bool Match_Distribute_And_Over_Xor(const ExprStore* store, ExprId id) {
 
     return false;
 }
-#pragma endregion
 
-#pragma region Rewrite
 static ExprId Rewrite_Distribute_And_Over_Xor(ExprStore* store, ExprId id) {
     const auto& e = store->get(id);
 
@@ -116,15 +102,8 @@ static ExprId Rewrite_Distribute_And_Over_Xor(ExprStore* store, ExprId id) {
 
     return store->create(OpType::Xor, std::move(distributed)).id;
 }
-#pragma endregion
 
 Rule Get_Distribute_Rule() {
-    return Rule{RuleId::Factorize_Distribute,
-                &Match_Distribute_And_Over_Xor,
-                &Rewrite_Distribute_And_Over_Xor,
-                Stage_Factorize,
-                {RuleId::Normalize_Flatten},
-                RuleFlags::Factorizing | RuleFlags::Expanding,
-                "Factorize_Distribute"};
+    return Rule{Distribute, &Match_Distribute_And_Over_Xor, &Rewrite_Distribute_And_Over_Xor, {Normalize::Flatten}};
 }
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

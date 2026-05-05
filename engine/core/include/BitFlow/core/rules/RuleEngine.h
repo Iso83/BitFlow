@@ -6,74 +6,35 @@
 #include <vector>
 
 namespace BitFlow::Core::Expression {
-struct ExprOld;
+class ExprStore;
 }
 
 namespace BitFlow::Core::Rules {
 
-struct RewriteResult {
-    Expression::ExprOld* result;
-    bool stable;
-    bool oscillationDetected;
-    int iterations;
-
-    bool cycleDetected() const {
-        return oscillationDetected;
-    }
-
-    bool StableWithoutCycle() const {
-        return stable && !cycleDetected();
-    }
-
-    bool IterationsWithin(int limit) const {
-        return iterations <= limit;
-    }
-};
-
 class RuleEngine {
   public:
-    using DebugCallback =
-        std::function<void(const Expression::ExprOld* before, const Expression::ExprOld* after, RuleId)>;
+    using DebugCallback = std::function<void(Ids::ExprId before, Ids::ExprId after, RuleKey key)>;
 
   private:
     DebugCallback m_debugCallback;
 
-  protected:
-    std::vector<Stage> m_stages;
-    std::vector<int> m_stageOrder;
-    std::unordered_set<RuleId> m_present;
+    std::vector<Rule> m_rules; // ordered
+    std::unordered_set<RuleKey> m_present;
 
   public:
     RuleEngine() = default;
-    virtual ~RuleEngine() = default;
+    ~RuleEngine() = default;
 
-    virtual void AddRule(const Rule& rule);
-    Expression::ExprOld* ApplyOnce(Expression::ExprOld* expr) const;
-    Expression::ExprOld* ApplyRecursive(Expression::ExprOld* expr) const;
-    Expression::ExprOld* Rewrite(Expression::ExprOld* expr) const {
-        return RewriteToFixedPoint(expr).result;
-    }
-    RewriteResult RewriteToFixedPoint(Expression::ExprOld* expr) const;
+    void AddRule(const Rule& rule);
 
-    void SetDebugCallback(DebugCallback cb);
+    void Merge(const RuleEngine& other);
 
-    const std::vector<Stage>& Stages() const {
-        return m_stages;
-    }
+    Ids::ExprId ApplyOnce(Expression::ExprStore* store, Ids::ExprId id) const;
+    Ids::ExprId ApplyRecursive(Expression::ExprStore* store, Ids::ExprId id) const;
+    Ids::ExprId Rewrite(Expression::ExprStore* store, Ids::ExprId root) const;
 
-    const std::vector<int>& StageOrder() const {
-        return m_stageOrder;
-    }
-
-  protected:
-    virtual void AddRule(Stage& stage, Rule rule);
-
-    bool HasRule(RuleId id) const {
-        return m_present.find(id) != m_present.end();
-    }
-
-    virtual bool ValidateRule(const Rule& rule) const {
-        return rule.Name != nullptr && rule.Name[0] != '\0';
+    void SetDebugCallback(DebugCallback cb) {
+        m_debugCallback = std::move(cb);
     }
 };
 

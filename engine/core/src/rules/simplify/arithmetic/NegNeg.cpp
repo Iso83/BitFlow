@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 
@@ -29,8 +28,7 @@ static ExprId Rewrite_Neg_Neg(ExprStore* store, ExprId id) {
 }
 
 Rule Get_Neg_Neg_Rule() {
-    return Rule{RuleId::Simplify_NegNeg,     &Match_Neg_Neg,        &Rewrite_Neg_Neg, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_NegNeg"};
+    return Rule{Neg_Neg, &Match_Neg_Neg, &Rewrite_Neg_Neg, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

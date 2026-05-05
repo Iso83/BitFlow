@@ -15,24 +15,24 @@ std::unordered_set<uint32_t> CollectRuleIds(const RuleEngine& engine) {
     return ids;
 }
 
-bool HasRule(const std::unordered_set<uint32_t>& ids, RuleId id) {
+bool HasRule(const std::unordered_set<uint32_t>& ids, CoreRuleType id) {
     return ids.find(static_cast<uint32_t>(id)) != ids.end();
 }
 
 int Test_FactorizeSafe_ContainsExpected_ExcludesDistribute() {
     const RuleEngine bitwiseSafe = BuildProfile("factorize_bitwise_safe");
     const auto bitwiseIds = CollectRuleIds(bitwiseSafe);
-    BF_TEST(HasRule(bitwiseIds, RuleId::Normalize_Flatten));
-    BF_TEST(HasRule(bitwiseIds, RuleId::Normalize_Order));
-    BF_TEST(HasRule(bitwiseIds, RuleId::Factorize_XorAnd));
-    BF_TEST(HasRule(bitwiseIds, RuleId::Factorize_XorPairCancel));
-    BF_TEST(!HasRule(bitwiseIds, RuleId::Factorize_Distribute));
+    CoreRuleTypeBF_TEST(HasRule(bitwiseIds, CoreRuleType::Normalize_Flatten));
+    CoreRuleTypeBF_TEST(HasRule(bitwiseIds, CoreRuleType::Normalize_Order));
+    CoreRuleTypeBF_TEST(HasRule(bitwiseIds, CoreRuleType::Factorize_XorAnd));
+    CoreRuleTypeBF_TEST(HasRule(bitwiseIds, CoreRuleType::Factorize_XorPairCancel));
+    CoreRuleTypeBF_TEST(!HasRule(bitwiseIds, CoreRuleType::Factorize_Distribute));
 
     const RuleEngine fullSafe = BuildProfile("factorize_full_safe");
     const auto fullIds = CollectRuleIds(fullSafe);
-    BF_TEST(HasRule(fullIds, RuleId::Factorize_AddLinearMultiplicity));
-    BF_TEST(HasRule(fullIds, RuleId::Factorize_AddCommonFactor));
-    BF_TEST(!HasRule(fullIds, RuleId::Factorize_Distribute));
+    CoreRuleTypeBF_TEST(HasRule(fullIds, CoreRuleType::Factorize_AddLinearMultiplicity));
+    CoreRuleTypeBF_TEST(HasRule(fullIds, CoreRuleType::Factorize_AddCommonFactor));
+    CoreRuleTypeBF_TEST(!HasRule(fullIds, CoreRuleType::Factorize_Distribute));
     return 0;
 }
 
@@ -40,13 +40,13 @@ int Test_ShaSafeAlias_ContainsNormalizeSimplifyAndCHMAJ() {
     const RuleEngine shaSafe = BuildProfile("sha_safe");
     const auto ids = CollectRuleIds(shaSafe);
 
-    BF_TEST(HasRule(ids, RuleId::Normalize_Flatten));
-    BF_TEST(HasRule(ids, RuleId::Normalize_Order));
-    BF_TEST(HasRule(ids, RuleId::Simplify_XorCancel));
-    BF_TEST(HasRule(ids, RuleId::Simplify_AddZero));
-    BF_TEST(HasRule(ids, RuleId::Simplify_CH));
-    BF_TEST(HasRule(ids, RuleId::Simplify_MAJ));
-    BF_TEST(!HasRule(ids, RuleId::Factorize_Distribute));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Normalize_Flatten));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Normalize_Order));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Simplify_XorCancel));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Simplify_AddZero));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Simplify_CH));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Simplify_MAJ));
+    CoreRuleTypeBF_TEST(!HasRule(ids, CoreRuleType::Factorize_Distribute));
     return 0;
 }
 
@@ -57,14 +57,14 @@ int Test_ArithmeticFactorizeProfile_DependencyCompleteAndFocused() {
     const RuleEngine arithmeticSafe = BuildProfile("factorize_arithmetic_safe");
     const auto ids = CollectRuleIds(arithmeticSafe);
 
-    BF_TEST(HasRule(ids, RuleId::Normalize_Flatten));
-    BF_TEST(HasRule(ids, RuleId::Normalize_Order));
-    BF_TEST(HasRule(ids, RuleId::Factorize_AddLinearMultiplicity));
-    BF_TEST(HasRule(ids, RuleId::Factorize_AddCommonFactor));
-    BF_TEST(HasRule(ids, RuleId::Factorize_MulCombineConstants));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Normalize_Flatten));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Normalize_Order));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Factorize_AddLinearMultiplicity));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Factorize_AddCommonFactor));
+    CoreRuleTypeBF_TEST(HasRule(ids, CoreRuleType::Factorize_MulCombineConstants));
 
-    BF_TEST(!HasRule(ids, RuleId::Factorize_XorAnd));
-    BF_TEST(!HasRule(ids, RuleId::Factorize_Distribute));
+    CoreRuleTypeBF_TEST(!HasRule(ids, CoreRuleType::Factorize_XorAnd));
+    CoreRuleTypeBF_TEST(!HasRule(ids, CoreRuleType::Factorize_Distribute));
     return 0;
 }
 

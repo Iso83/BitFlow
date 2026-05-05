@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
@@ -65,13 +64,11 @@ static ExprId Rewrite_Div_One(ExprStore* store, ExprId id) {
 #pragma endregion
 
 Rule Get_Mul_One_Rule() {
-    return Rule{RuleId::Simplify_MulOne,     &Match_Mul_One,        &Rewrite_Mul_One, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_MulOne"};
+    return Rule{Mul_One, &Match_Mul_One, &Rewrite_Mul_One, {Normalize::Flatten}};
 }
 
 Rule Get_Div_One_Rule() {
-    return Rule{RuleId::Simplify_DivOne,     &Match_Div_One,        &Rewrite_Div_One, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_DivOne"};
+    return Rule{Div_One, &Match_Div_One, &Rewrite_Div_One, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

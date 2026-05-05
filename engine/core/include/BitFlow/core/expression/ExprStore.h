@@ -53,7 +53,7 @@ class ExprStore {
         expr = Expr{};
         expr.op = op;
         expr.bitWidth = bitWidth;
-        expr.inputs = in;
+        expr.inputs = std::move(in);
 
         m_alive[index] = true;
 

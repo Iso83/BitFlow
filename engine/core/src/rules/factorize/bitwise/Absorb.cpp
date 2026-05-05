@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 
@@ -97,13 +96,11 @@ static ExprId Rewrite_Or_Absorb(ExprStore* store, ExprId id) {
 #pragma endregion
 
 Rule Get_And_Absorb_Rule() {
-    return Rule{RuleId::Factorize_AndAbsorb, &Match_And_Absorb,      &Rewrite_And_Absorb,  Stage_Factorize,
-                {RuleId::Normalize_Flatten}, RuleFlags::Factorizing, "Factorize_AndAbsorb"};
+    return Rule{And_Absorb, &Match_And_Absorb, &Rewrite_And_Absorb, {Normalize::Flatten}};
 }
 
 Rule Get_Or_Absorb_Rule() {
-    return Rule{RuleId::Factorize_OrAbsorb,  &Match_Or_Absorb,       &Rewrite_Or_Absorb,  Stage_Factorize,
-                {RuleId::Normalize_Flatten}, RuleFlags::Factorizing, "Factorize_OrAbsorb"};
+    return Rule{Or_Absorb, &Match_Or_Absorb, &Rewrite_Or_Absorb, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

@@ -45,7 +45,7 @@ int TestNotPushdown_And() {
     auto expr = MakeOp(4, OpType::Not, {inner});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Pushdown_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
     ExprOld* r = engine.Rewrite(expr);
@@ -63,7 +63,7 @@ int TestNotPushdown_Or() {
     auto expr = MakeOp(4, OpType::Not, {inner});
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Pushdown_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
     ExprOld* r = engine.Rewrite(expr);

@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
@@ -107,13 +106,10 @@ static ExprId Rewrite_Xor_And_Reduction(ExprStore* store, ExprId id) {
 }
 
 Rule Get_Xor_And_Reduction_Rule() {
-    return Rule{RuleId::Simplify_XorAndReduction,
+    return Rule{Xor_And_Reduction,
                 &Match_Xor_And_Reduction,
                 &Rewrite_Xor_And_Reduction,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order, RuleId::Simplify_AndXorReduction},
-                RuleFlags::None,
-                "Simplify_XorAndReduction"};
+                {Normalize::Flatten, Normalize::Order, And_Xor_Reduction}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

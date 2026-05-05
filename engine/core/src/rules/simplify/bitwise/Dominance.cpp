@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
@@ -131,24 +130,20 @@ static ExprId Rewrite_Or_ZeroIdentity(ExprStore* store, ExprId id) {
 }
 #pragma endregion
 
-Rule Get_And_ZeroDominance_Rule() {
-    return Rule{RuleId::Simplify_AndZeroDominance, &Match_And_ZeroDominance, &Rewrite_And_ZeroDominance, Stage_Simplify,
-                {RuleId::Normalize_Flatten},       RuleFlags::None,          "Simplify_AndZeroDominance"};
+Rule Get_And_Zero_Dominance_Rule() {
+    return Rule{And_Zero_Dominance, &Match_And_ZeroDominance, &Rewrite_And_ZeroDominance, {Normalize::Flatten}};
 }
 
-Rule Get_And_OneIdentity_Rule() {
-    return Rule{RuleId::Simplify_AndOneIdentity, &Match_And_OneIdentity, &Rewrite_And_OneIdentity, Stage_Simplify,
-                {RuleId::Normalize_Flatten},     RuleFlags::None,        "Simplify_AndOneIdentity"};
+Rule Get_And_One_Identity_Rule() {
+    return Rule{And_One_Identity, &Match_And_OneIdentity, &Rewrite_And_OneIdentity, {Normalize::Flatten}};
 }
 
-Rule Get_Or_OneDominance_Rule() {
-    return Rule{RuleId::Simplify_OrOneDominance, &Match_Or_OneDominance, &Rewrite_Or_OneDominance, Stage_Simplify,
-                {RuleId::Normalize_Flatten},     RuleFlags::None,        "Simplify_OrOneDominance"};
+Rule Get_Or_One_Dominance_Rule() {
+    return Rule{Or_One_Dominance, &Match_Or_OneDominance, &Rewrite_Or_OneDominance, {Normalize::Flatten}};
 }
 
-Rule Get_Or_ZeroIdentity_Rule() {
-    return Rule{RuleId::Simplify_OrZeroIdentity, &Match_Or_ZeroIdentity, &Rewrite_Or_ZeroIdentity, Stage_Simplify,
-                {RuleId::Normalize_Flatten},     RuleFlags::None,        "Simplify_OrZeroIdentity"};
+Rule Get_Or_Zero_Identity_Rule() {
+    return Rule{Or_Zero_Identity, &Match_Or_ZeroIdentity, &Rewrite_Or_ZeroIdentity, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

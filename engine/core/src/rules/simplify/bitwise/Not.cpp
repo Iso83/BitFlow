@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
@@ -121,17 +120,15 @@ static ExprId Rewrite_Not_Xor(ExprStore* store, ExprId id) {
 #pragma endregion
 
 Rule Get_Not_Rule() {
-    return Rule{RuleId::Simplify_Not, &Match_Not, &Rewrite_Not, Stage_Simplify, {}, RuleFlags::None, "Simplify_Not"};
+    return Rule{Not, &Match_Not, &Rewrite_Not};
 }
 
-Rule Get_NotPushdown_Rule() {
-    return Rule{RuleId::Simplify_NotPushdown, &Match_NotPushdown,    &Rewrite_NotPushdown, Stage_Simplify_Pushdown, {},
-                RuleFlags::Expanding,         "Simplify_NotPushdown"};
+Rule Get_Not_Pushdown_Rule() {
+    return Rule{Not_Pushdown, &Match_NotPushdown, &Rewrite_NotPushdown};
 }
 
 Rule Get_Not_Xor_Rule() {
-    return Rule{RuleId::Simplify_NotXor,     &Match_Not_Xor,  &Rewrite_Not_Xor, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::None, "Simplify_NotXor"};
+    return Rule{Not_Xor, &Match_Not_Xor, &Rewrite_Not_Xor, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

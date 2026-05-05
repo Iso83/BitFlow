@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 
@@ -64,13 +63,7 @@ static ExprId Rewrite_Const_Combine(ExprStore* store, ExprId id) {
 }
 
 Rule Get_Const_Combine_Rule() {
-    return Rule{RuleId::Simplify_ArithmeticConstCombine,
-                &Match_Const_Combine,
-                &Rewrite_Const_Combine,
-                Stage_Simplify,
-                {RuleId::Normalize_Flatten},
-                RuleFlags::Arithmetic,
-                "Simplify_ArithmeticConstCombine"};
+    return Rule{Const_Combine, &Match_Const_Combine, &Rewrite_Const_Combine, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

@@ -1,16 +1,15 @@
-#include "rules/RuleStage.h"
+#include "expression/ExprUtils.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_Add_Fold(const Expr& e) {
+static bool Match_Add_Fold(const ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
     if (e.op != OpType::Add)
         return false;
 
@@ -19,44 +18,54 @@ static bool Match_Add_Fold(const Expr& e) {
 
     int constCount = 0;
 
-    for (const Expr* in : e.inputs) {
-        if (in->op == OpType::Const)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op == OpType::Const)
             constCount++;
     }
 
     return constCount >= 2;
 }
 
-static Expr* Rewrite_Add_Fold(Expr& e) {
-    uint32_t acc = 0;
-    std::vector<Expr*> nonConst;
+static ExprId Rewrite_Add_Fold(ExprStore* store, ExprId id) {
+    const Expr& e = store->get(id);
 
-    for (Expr* in : e.inputs) {
-        if (in->op == OpType::Const)
-            acc += in->constValue;
-        else
-            nonConst.push_back(in);
+    uint64_t acc = 0;
+    bool hasConst = false;
+
+    std::vector<ExprId> nonConst;
+    nonConst.reserve(e.inputs.size());
+
+    const uint64_t mask = Expr::fullMask(e.bitWidth);
+
+    for (ExprId inId : e.inputs) {
+        const Expr& in = store->get(inId);
+
+        if (in.op == OpType::Const) {
+            acc = (acc + in.knownValue) & mask;
+            hasConst = true;
+        } else {
+            nonConst.push_back(inId);
+        }
     }
 
-    if (acc != 0) {
-        Expr* c = Expression::ConstPool::Get(acc);
-        nonConst.push_back(c);
-    }
+    if (!hasConst)
+        return id;
+
+    if (acc != 0)
+        nonConst.push_back(store->createConstant(acc, e.bitWidth).id);
 
     if (nonConst.empty())
-        return Expression::ConstPool::Get(0);
+        return store->createConstant(0, e.bitWidth).id;
 
     if (nonConst.size() == 1)
         return nonConst[0];
 
-    Expr* target = Expression::CloneExpr(&e);
-    target->inputs = std::move(nonConst);
-    return target;
+    return store->create(OpType::Add, std::move(nonConst), e.bitWidth).id;
 }
 
 Rule Get_Add_Fold_Rule() {
-    return Rule{RuleId::Simplify_AddFold,    &Match_Add_Fold,       &Rewrite_Add_Fold, Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::Arithmetic, "Simplify_AddFold"};
+    return Rule{Add_Fold, &Match_Add_Fold, &Rewrite_Add_Fold, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

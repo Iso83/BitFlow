@@ -59,7 +59,7 @@ int TestSimplifyBitwiseXorCancel_PositiveAndNegative() {
 }
 
 int TestFactorizeArithmeticLinearMultiplicity_PositiveAndNegative() {
-    const Rule rule = Factorize::Arithmetic::Get_Add_LinearMultiplicity_Rule();
+    const Rule rule = Factorize::Arithmetic::Get_Add_Linear_Multiplicity_Rule();
 
     ExprOld* a = MakeVar(40);
     ExprOld* linear = MakeOp(41, OpType::Add, {a, MakeOp(42, OpType::Mul, {MakeConst(43, 2), a})});

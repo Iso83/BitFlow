@@ -1,96 +1,34 @@
-#include "rules/RuleStage.h"
+#include "expression/ExprUtils.h"
 
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
-#include <BitFlow/core/rules/RewriteCost.h>
 #include <BitFlow/core/rules/Rule.h>
-#include <algorithm>
 #include <unordered_map>
 #include <vector>
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
 
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static void CollectFactors(Expr* e, std::vector<Expr*>& out) {
-    if (e->op == OpType::And) {
-        for (auto* in : e->inputs)
-            out.push_back(in);
-    } else
-        out.push_back(e);
-}
+static bool Match_Xor_And(const ExprStore* eStore, ExprId id) {
+    const Expr& e = eStore->get(id);
 
-static Expr* BuildAndNode(const std::vector<Expr*>& terms) {
-    if (terms.empty())
-        return ConstPool::Get(1);
-
-    if (terms.size() == 1)
-        return terms[0];
-
-    return MakeOpInterned(OpType::And, terms);
-}
-
-static Expr* BuildXorNode(const std::vector<Expr*>& terms) {
-    if (terms.empty())
-        return ConstPool::Get(0);
-
-    if (terms.size() == 1)
-        return terms[0];
-
-    return MakeOpInterned(OpType::Xor, terms);
-}
-
-static uint32_t FindBestCommonFactorId(const Expr& e) {
-    std::unordered_map<uint32_t, size_t> counts;
-
-    for (const Expr* term : e.inputs) {
-        if (term->op != OpType::And || term->inputs.size() < 2)
-            continue;
-
-        std::vector<uint32_t> seenInBranch;
-        seenInBranch.reserve(term->inputs.size());
-
-        for (const Expr* in : term->inputs) {
-            const uint32_t id = in->id.value();
-
-            if (std::find(seenInBranch.begin(), seenInBranch.end(), id) != seenInBranch.end())
-                continue;
-
-            seenInBranch.push_back(id);
-            counts[id]++;
-        }
-    }
-
-    uint32_t bestId = 0;
-    size_t bestCount = 0;
-
-    for (const auto& [id, count] : counts) {
-        if (count < 2)
-            continue;
-
-        if (bestId == 0 || count > bestCount || (count == bestCount && id < bestId)) {
-            bestId = id;
-            bestCount = count;
-        }
-    }
-
-    return bestId;
-}
-
-static bool Match_Xor_And(const Expr& e) {
     if (e.op != OpType::Xor || e.inputs.size() < 2)
         return false;
 
-    std::unordered_map<Expr*, int> factorCount;
+    std::unordered_map<ExprId, int> factorCount;
 
-    for (Expr* term : e.inputs) {
-        std::vector<Expr*> factors;
-        CollectFactors(term, factors);
+    for (auto termId : e.inputs) {
+        const auto& term = eStore->get(termId);
 
-        for (Expr* f : factors) {
-            factorCount[f]++;
-            if (factorCount[f] >= 2)
+        if (term.op == OpType::And) {
+            for (auto f : term.inputs) {
+                auto& cnt = factorCount[f];
+                if (++cnt >= 2)
+                    return true;
+            }
+        } else {
+            auto& cnt = factorCount[termId];
+            if (++cnt >= 2)
                 return true;
         }
     }
@@ -98,93 +36,131 @@ static bool Match_Xor_And(const Expr& e) {
     return false;
 }
 
-static Expr* Rewrite_Xor_And(Expr& e) {
-    const uint32_t bestFactorId = FindBestCommonFactorId(e);
-    if (bestFactorId == 0)
-        return nullptr;
+static ExprId FindBestCommonFactor(const ExprStore* eStore, ExprId id) {
+    const Expr& e = eStore->get(id);
 
-    Expr* common = nullptr;
-    std::vector<Expr*> termsToFactor;
-    termsToFactor.reserve(e.inputs.size());
+    std::unordered_map<ExprId, size_t> counts;
 
-    for (Expr* term : e.inputs) {
-        if (term->op != OpType::And || term->inputs.size() < 2)
+    for (auto termId : e.inputs) {
+        const auto& term = eStore->get(termId);
+
+        if (term.op != OpType::And || term.inputs.size() < 2)
             continue;
 
-        bool hasBestFactor = false;
-        for (Expr* in : term->inputs) {
-            if (in->id.value() == bestFactorId) {
-                hasBestFactor = true;
-                common = in;
+        std::vector<ExprId> seen;
+        seen.reserve(term.inputs.size());
+
+        for (auto inId : term.inputs) {
+            if (std::find(seen.begin(), seen.end(), inId) != seen.end())
+                continue;
+
+            seen.push_back(inId);
+            counts[inId]++;
+        }
+    }
+
+    ExprId best = id;
+    size_t bestCount = 0;
+    bool hasBest = false;
+
+    for (const auto& [id, count] : counts) {
+        if (count < 2)
+            continue;
+
+        if (!hasBest || count > bestCount) {
+            best = id;
+            bestCount = count;
+            hasBest = true;
+        }
+    }
+
+    return hasBest ? best : id;
+}
+
+static ExprId Rewrite_Xor_And(ExprStore* eStore, ExprId id) {
+    const Expr& e = eStore->get(id);
+
+    const ExprId bestFactor = FindBestCommonFactor(eStore, id);
+    if (bestFactor == id) {
+        _ASSERT(false);
+        return id;
+    }
+
+    ExprId common{};
+    std::vector<ExprId> termsToFactor;
+    termsToFactor.reserve(e.inputs.size());
+
+    for (auto termId : e.inputs) {
+        const auto& term = eStore->get(termId);
+
+        if (term.op != OpType::And || term.inputs.size() < 2)
+            continue;
+
+        for (auto inId : term.inputs) {
+            if (inId == bestFactor) {
+                common = inId;
+                termsToFactor.push_back(termId);
                 break;
             }
         }
-
-        if (hasBestFactor)
-            termsToFactor.push_back(term);
     }
 
-    if (common == nullptr || termsToFactor.size() < 2)
-        return nullptr;
+    if (termsToFactor.size() < 2) {
+        _ASSERT(false);
+        return id;
+    }
 
-    std::vector<Expr*> newXorInputs;
+    std::vector<ExprId> newXorInputs;
     newXorInputs.reserve(termsToFactor.size());
 
-    for (Expr* term : termsToFactor) {
-        std::vector<Expr*> rest;
-        rest.reserve(term->inputs.size());
+    for (auto termId : termsToFactor) {
+        const auto& term = eStore->get(termId);
+
+        std::vector<ExprId> rest;
+        rest.reserve(term.inputs.size());
 
         bool removed = false;
-        for (Expr* in : term->inputs) {
-            if (!removed && in->id.value() == bestFactorId) {
+        for (auto inId : term.inputs) {
+            if (!removed && inId == bestFactor) {
                 removed = true;
                 continue;
             }
-
-            rest.push_back(in);
+            rest.push_back(inId);
         }
 
         if (rest.empty())
-            newXorInputs.push_back(ConstPool::Get(1));
+            newXorInputs.push_back(eStore->makeTrue(term.bitWidth).id);
+        else if (rest.size() == 1)
+            newXorInputs.push_back(rest[0]);
         else
-            newXorInputs.push_back(BuildAndNode(rest));
+            newXorInputs.push_back(eStore->create(OpType::And, std::move(rest), term.bitWidth).id);
     }
 
-    Expr* newXor = BuildXorNode(newXorInputs);
-    Expr* newAnd = Expression::MakeOpInterned(OpType::And, {common, newXor});
+    ExprId newXor;
+    if (newXorInputs.size() == 1)
+        newXor = newXorInputs[0];
+    else
+        newXor = eStore->create(OpType::Xor, std::move(newXorInputs), e.bitWidth).id;
 
-    std::vector<Expr*> finalInputs;
+    ExprId newAnd = eStore->create(OpType::And, {common, newXor}, e.bitWidth).id;
+
+    std::vector<ExprId> finalInputs;
     finalInputs.reserve(e.inputs.size());
     finalInputs.push_back(newAnd);
 
-    for (Expr* term : e.inputs) {
-        bool isFactored = false;
-        for (Expr* candidate : termsToFactor) {
-            if (candidate == term) {
-                isFactored = true;
-                break;
-            }
-        }
-
-        if (!isFactored)
-            finalInputs.push_back(term);
+    for (auto termId : e.inputs) {
+        if (std::find(termsToFactor.begin(), termsToFactor.end(), termId) == termsToFactor.end())
+            finalInputs.push_back(termId);
     }
 
-    Expr* candidate = BuildXorNode(finalInputs);
-    if (!IsRewritePreferred(candidate, &e, RewriteCostPolicy::FactorizeSafe))
-        return nullptr;
+    if (finalInputs.size() == 1)
+        return finalInputs[0];
 
-    return candidate;
+    return eStore->create(OpType::Xor, std::move(finalInputs), e.bitWidth).id;
 }
 
 Rule Get_Xor_And_Rule() {
-    return Rule{RuleId::Factorize_XorAnd,
-                &Match_Xor_And,
-                &Rewrite_Xor_And,
-                Stage_Factorize,
-                {RuleId::Normalize_Flatten, RuleId::Normalize_Order},
-                RuleFlags::Factorizing,
-                "Factorize_XorAnd"};
+    return Rule{Xor_And, &Match_Xor_And, &Rewrite_Xor_And, {Normalize::Flatten, Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

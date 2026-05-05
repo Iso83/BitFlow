@@ -1,5 +1,4 @@
 #include "expression/ExprUtils.h"
-#include "rules/RuleStage.h"
 
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
@@ -95,12 +94,10 @@ static ExprId Rewrite_And_Idempotent(ExprStore* store, ExprId id) {
 #pragma endregion
 
 Rule Get_Idempotent_Rule() {
-    return Rule{RuleId::Simplify_Idempotent, &Match_Idempotent, &Rewrite_Idempotent,  Stage_Simplify,
-                {RuleId::Normalize_Flatten}, RuleFlags::None,   "Simplify_Idempotent"};
+    return Rule{Idempotent, &Match_Idempotent, &Rewrite_Idempotent, {Normalize::Flatten}};
 }
 
 Rule Get_And_Idempotent_Rule() {
-    return Rule{RuleId::Simplify_And_Idempotent, &Match_And_Idempotent, &Rewrite_And_Idempotent,  Stage_Simplify,
-                {RuleId::Normalize_Flatten},     RuleFlags::None,       "Simplify_And_Idempotent"};
+    return Rule{And_Idempotent, &Match_And_Idempotent, &Rewrite_And_Idempotent, {Normalize::Flatten}};
 }
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

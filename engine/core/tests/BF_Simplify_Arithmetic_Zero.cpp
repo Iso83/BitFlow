@@ -48,7 +48,7 @@ static RuleEngine MakeEngine_ShiftZero() {
 static RuleEngine MakeEngine_RotateModuloBitwidth() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Modulo_Bitwidth_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Zero_Rule());
     return engine;
 }
 
@@ -56,7 +56,7 @@ static RuleEngine MakeEngine_RotateModuloBitwidth_WithOrder() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Modulo_Bitwidth_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Zero_Rule());
     return engine;
 }
 

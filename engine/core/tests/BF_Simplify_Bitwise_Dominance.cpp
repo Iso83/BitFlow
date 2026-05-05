@@ -15,7 +15,7 @@ int Test_And_ZeroDominance() {
 
     RuleEngine eng;
     eng.AddRule(Normalize::Get_Flatten_Rule());
-    eng.AddRule(Simplify::Bitwise::Get_And_ZeroDominance_Rule());
+    eng.AddRule(Simplify::Bitwise::Get_And_Zero_Dominance_Rule());
 
     ExprOld* res = eng.Rewrite(expr);
 
@@ -32,7 +32,7 @@ int Test_And_OneIdentity_Multi() {
 
     RuleEngine eng;
     eng.AddRule(Normalize::Get_Flatten_Rule());
-    eng.AddRule(Simplify::Bitwise::Get_And_OneIdentity_Rule());
+    eng.AddRule(Simplify::Bitwise::Get_And_One_Identity_Rule());
 
     ExprOld* res = eng.Rewrite(expr);
 
@@ -49,7 +49,7 @@ int Test_Or_OneDominance() {
 
     RuleEngine eng;
     eng.AddRule(Normalize::Get_Flatten_Rule());
-    eng.AddRule(Simplify::Bitwise::Get_Or_OneDominance_Rule());
+    eng.AddRule(Simplify::Bitwise::Get_Or_One_Dominance_Rule());
 
     ExprOld* res = eng.Rewrite(expr);
 
@@ -66,7 +66,7 @@ int Test_Or_ZeroIdentity_Multi() {
 
     RuleEngine eng;
     eng.AddRule(Normalize::Get_Flatten_Rule());
-    eng.AddRule(Simplify::Bitwise::Get_Or_ZeroIdentity_Rule());
+    eng.AddRule(Simplify::Bitwise::Get_Or_Zero_Identity_Rule());
 
     ExprOld* res = eng.Rewrite(expr);
 

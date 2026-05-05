@@ -1,9 +1,7 @@
-#include "rules/RuleCommon.h"
-#include "rules/RuleStage.h"
+#include "expression/ExprUtils.h"
 
-#include <BitFlow/core/expression/Expr.h>
-#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/rules/Rule.h>
+#include <utility>
 
 namespace BitFlow::Core::Rules::Normalize {
 
@@ -52,8 +50,7 @@ static ExprId Rewrite_Flatten(ExprStore* store, ExprId id) {
 }
 
 Rule Get_Flatten_Rule() {
-    return Rule{RuleId::Normalize_Flatten, &Match_Flatten,     &Rewrite_Flatten, Stage_Normalize, {},
-                RuleFlags::None,           "Normalize_Flatten"};
+    return Rule{Flatten, &Match_Flatten, &Rewrite_Flatten};
 }
 
 } // namespace BitFlow::Core::Rules::Normalize
