@@ -10,7 +10,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool Match_Xor_Xor_CancelPair(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Xor)
         return false;
@@ -21,7 +21,7 @@ static bool Match_Xor_Xor_CancelPair(const ExprStore* store, ExprId id) {
     std::unordered_map<ExprId, int> childCounts;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op != OpType::Xor || exprIn.inputs.size() < 2)
             continue;
 
@@ -44,13 +44,13 @@ static bool Match_Xor_Xor_CancelPair(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Xor_Xor_CancelPair(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     std::unordered_map<ExprId, int> childCounts;
     std::unordered_map<ExprId, ExprId> firstSeen;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op != OpType::Xor || exprIn.inputs.size() < 2)
             continue;
 
@@ -74,7 +74,7 @@ static ExprId Rewrite_Xor_Xor_CancelPair(ExprStore* store, ExprId id) {
     bool hasCommon = false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op != OpType::Xor || exprIn.inputs.size() < 2)
             continue;
 
@@ -102,7 +102,7 @@ static ExprId Rewrite_Xor_Xor_CancelPair(ExprStore* store, ExprId id) {
     int matchedChildren = 0;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Xor && exprIn.inputs.size() >= 2 && ContainsExpr(store, in, commonId)) {
             matchedChildren++;
 

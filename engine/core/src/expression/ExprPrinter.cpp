@@ -92,7 +92,7 @@ static const char* OpTypeName(OpType op) {
 }
 
 static int PrecedenceOf(const ExprStore* store, Ids::ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op == OpType::Const || e.op == OpType::Var || e.op == OpType::RotL || e.op == OpType::RotR)
         return 80;
@@ -123,7 +123,7 @@ static bool NeedsParensForRightChild(OpType parentOp, OpType childOp) {
 static void PrintDebugStructure(const ExprStore* store, Ids::ExprId id, std::ostringstream& out,
                                 const std::unordered_map<Ids::ExprId, std::string>& names,
                                 const PrintOptions& options) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (options.showExprIds)
         out << "#" << id.value() << ":";
@@ -198,7 +198,7 @@ static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& ou
         return;
     }
 
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (options.showExprIds)
         out << "#" << id.value() << ":";

@@ -8,12 +8,12 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool IsNotOf(const ExprStore* store, ExprId a, ExprId b) {
-    const Expr& exprA = store->get(a);
+    const Expr& exprA = (*store)[a];
     return exprA.op == OpType::Not && exprA.inputs.size() == 1 && exprA.inputs[0] == b;
 }
 
 static bool Match_Complement(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if ((e.op != OpType::And && e.op != OpType::Or) || e.inputs.size() < 2)
         return false;
@@ -32,7 +32,7 @@ static bool Match_Complement(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Complement(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {
         for (size_t j = i + 1; j < e.inputs.size(); ++j) {

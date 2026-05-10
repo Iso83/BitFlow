@@ -18,7 +18,7 @@ namespace BitFlow::Core::Expression {
 class ExprStore;
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
-struct _Expr_INTERNALONLY {
+struct ExprUnsafeStorage {
 #else
 struct Expr {
 #endif
@@ -46,7 +46,7 @@ struct Expr {
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
 
-struct Expr {
+struct ExprDebug {
   private:
     template <typename T> friend class FieldHook;
     friend class ExprStore;
@@ -54,27 +54,29 @@ struct Expr {
 
     ExprStore* m_store{};
     Ids::ExprId m_id{};
-    _Expr_INTERNALONLY* m_expr{};
+    ExprUnsafeStorage* m_expr{};
     Types::ExprChunk m_generation{};
 
     void SanityCheck() const;
 
   public:
-    FieldHook<OpType> op{this, &_Expr_INTERNALONLY::op};
+    FieldHook<OpType> op{this, &ExprUnsafeStorage::op};
     CheckedExprInputs inputs{this};
 
-    FieldHook<Types::BitWidth> bitWidth{this, &_Expr_INTERNALONLY::bitWidth};
+    FieldHook<Types::BitWidth> bitWidth{this, &ExprUnsafeStorage::bitWidth};
 
-    FieldHook<Types::ExprChunk> knownMask{this, &_Expr_INTERNALONLY::knownMask};
-    FieldHook<Types::ExprChunk> knownValue{this, &_Expr_INTERNALONLY::knownValue};
+    FieldHook<Types::ExprChunk> knownMask{this, &ExprUnsafeStorage::knownMask};
+    FieldHook<Types::ExprChunk> knownValue{this, &ExprUnsafeStorage::knownValue};
 
-    FieldHook<uint32_t> largeConstIndex{this, &_Expr_INTERNALONLY::largeConstIndex};
+    FieldHook<uint32_t> largeConstIndex{this, &ExprUnsafeStorage::largeConstIndex};
 
   public:
     [[nodiscard]] static Types::ExprChunk fullMask(Types::BitWidth bitWidth) {
-        return _Expr_INTERNALONLY::fullMask(bitWidth);
+        return ExprUnsafeStorage::fullMask(bitWidth);
     }
 };
+
+using Expr = ExprDebug;
 #endif
 
 } // namespace BitFlow::Core::Expression

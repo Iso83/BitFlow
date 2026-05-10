@@ -11,13 +11,13 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool IsConstFalse(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     return e.op == OpType::Const && e.inputs.empty() && store->isFalse(id);
 }
 
 #pragma region Matching
 template <OpType Op> static bool Match_RightZero(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != Op)
         return false;
@@ -34,7 +34,7 @@ template <OpType Op> static bool Match_RightZero(const ExprStore* store, ExprId 
 }
 
 static bool Match_Sub_Zero(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Sub)
         return false;
@@ -54,7 +54,7 @@ static bool Match_Sub_Zero(const ExprStore* store, ExprId id) {
 }
 
 static bool Match_Shift_Zero(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Shl && e.op != OpType::Shr)
         return false;
@@ -66,7 +66,7 @@ static bool Match_Shift_Zero(const ExprStore* store, ExprId id) {
 }
 
 static bool Match_Rotate_Zero(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::RotL && e.op != OpType::RotR)
         return false;
@@ -81,7 +81,7 @@ static bool Match_Rotate_Zero(const ExprStore* store, ExprId id) {
 #pragma region Rewrite
 
 static ExprId Rewrite_Add_Zero(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -106,12 +106,12 @@ static ExprId Rewrite_Add_Zero(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Mul_Zero(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     return store->makeFalse(e.bitWidth).id;
 }
 
 static ExprId Rewrite_Sub_Zero(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -138,7 +138,7 @@ static ExprId Rewrite_Sub_Zero(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Mod_Zero_Guard(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
 
@@ -151,13 +151,13 @@ static ExprId Rewrite_Mod_Zero_Guard(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Shift_Zero(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     return e.inputs[0];
 }
 
 static ExprId Rewrite_Rotate_Zero(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     return e.inputs[0];
 }

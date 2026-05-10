@@ -49,7 +49,7 @@ int TestNotNotDoesNotFlatten() {
     BF_TEST(out.op == OpType::Neg); // of Not
     BF_TEST(out.inputs.size() == 1);
 
-    const auto& inner = store.get(out.inputs[0]);
+    const Expr& inner = store[out.inputs[0]];
 
     BF_TEST(inner.op == OpType::Neg); // of Not
     BF_TEST(inner.inputs.size() == 1);

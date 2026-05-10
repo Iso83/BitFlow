@@ -9,14 +9,14 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool Match_Mul_CombineConstants(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Mul || e.inputs.size() < 2)
         return false;
 
     int constCount = 0;
     for (const auto a : e.inputs) {
-        const Expr& exprA = store->get(a);
+        const Expr& exprA = (*store)[a];
 
         if (exprA.op == OpType::Const)
             ++constCount;
@@ -28,7 +28,7 @@ static bool Match_Mul_CombineConstants(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Mul_CombineConstants(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     _ASSERT(e.op == OpType::Mul);
 
@@ -38,7 +38,7 @@ static ExprId Rewrite_Mul_CombineConstants(ExprStore* store, ExprId id) {
     nonConst.reserve(e.inputs.size());
 
     for (auto a : e.inputs) {
-        const Expr& exprA = store->get(a);
+        const Expr& exprA = (*store)[a];
         if (exprA.op == OpType::Const) {
             ++constCount;
             product *= static_cast<Types::ExprChunk>(exprA.knownValue);

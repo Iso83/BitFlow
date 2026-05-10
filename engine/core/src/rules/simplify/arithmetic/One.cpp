@@ -10,12 +10,12 @@ using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 static bool Match_Mul_One(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     if (e.op != OpType::Mul)
         return false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && exprIn.knownValue == 1)
             return true;
     }
@@ -24,26 +24,26 @@ static bool Match_Mul_One(const ExprStore* store, ExprId id) {
 }
 
 static bool Match_Div_One(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     if (e.op != OpType::Div)
         return false;
 
     if (e.inputs.size() != 2)
         return false;
 
-    const Expr& rhs = store->get(e.inputs[1]);
+    const Expr& rhs = (*store)[e.inputs[1]];
     return rhs.op == OpType::Const && rhs.knownValue == 1;
 }
 #pragma endregion
 
 #pragma region Rewrite
 static ExprId Rewrite_Mul_One(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (!(exprIn.op == OpType::Const && exprIn.knownValue == 1))
             newInputs.push_back(in);
     }
@@ -58,7 +58,7 @@ static ExprId Rewrite_Mul_One(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Div_One(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     return e.inputs[0];
 }
 #pragma endregion

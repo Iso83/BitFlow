@@ -11,12 +11,12 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool IsConstFalse(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     return e.op == OpType::Const && e.inputs.empty() && store->isFalse(id);
 }
 
 static bool Match_Rotate_ModuloBitWidth(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::RotL && e.op != OpType::RotR)
         return false;
@@ -24,7 +24,7 @@ static bool Match_Rotate_ModuloBitWidth(const ExprStore* store, ExprId id) {
     if (e.inputs.size() != 2)
         return false;
 
-    const Expr& amount = store->get(e.inputs[1]);
+    const Expr& amount = (*store)[e.inputs[1]];
     if (!(amount.op == OpType::Const && amount.inputs.empty()))
         return false;
 
@@ -32,8 +32,8 @@ static bool Match_Rotate_ModuloBitWidth(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Rotate_ModuloBitWidth(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
-    const Expr& amount = store->get(e.inputs[1]);
+    const Expr& e = (*store)[id];
+    const Expr& amount = (*store)[e.inputs[1]];
 
     const Types::ExprChunk reduced = amount.knownValue % e.bitWidth;
 

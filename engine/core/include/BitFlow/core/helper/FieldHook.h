@@ -4,18 +4,18 @@ namespace BitFlow::Core::Expression {
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
 
-class Expr;
-class _Expr_INTERNALONLY;
+class ExprDebug;
+class ExprUnsafeStorage;
 
 template <typename T> class FieldHook {
   private:
-    Expr* m_parent{};
-    T _Expr_INTERNALONLY::* m_handler{};
+    ExprDebug* m_parent{};
+    T ExprUnsafeStorage::* m_handler{};
 
   public:
     FieldHook() = default;
 
-    FieldHook(Expr* parent, T _Expr_INTERNALONLY::* handler) : m_parent(parent), m_handler(handler) {}
+    FieldHook(ExprDebug* parent, T ExprUnsafeStorage::* handler) : m_parent(parent), m_handler(handler) {}
 
     operator T&() {
         Validate();

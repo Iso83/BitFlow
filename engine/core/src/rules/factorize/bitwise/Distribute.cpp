@@ -10,11 +10,11 @@ using namespace BitFlow::Core::Expression;
 
 #pragma region Helpers
 static ExprId BuildAnd(ExprStore* store, ExprId a, ExprId b) {
-    const Expr& exprA = store->get(a);
+    const Expr& exprA = (*store)[a];
     if (exprA.op == OpType::Const && store->isFalse(a))
         return a;
 
-    const Expr& exprB = store->get(b);
+    const Expr& exprB = (*store)[b];
     if (exprB.op == OpType::Const && store->isFalse(b))
         return b;
 
@@ -29,7 +29,7 @@ static ExprId BuildAnd(ExprStore* store, ExprId a, ExprId b) {
 #pragma endregion
 
 static bool Match_Distribute_And_Over_Xor(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
         return false;
@@ -38,7 +38,7 @@ static bool Match_Distribute_And_Over_Xor(const ExprStore* store, ExprId id) {
         return false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op != OpType::Xor || exprIn.inputs.size() < 2)
             continue;
 
@@ -55,7 +55,7 @@ static bool Match_Distribute_And_Over_Xor(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Distribute_And_Over_Xor(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -64,7 +64,7 @@ static ExprId Rewrite_Distribute_And_Over_Xor(ExprStore* store, ExprId id) {
     bool foundXor = false;
 
     for (auto in : inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
 
         if (exprIn.op == OpType::Xor && exprIn.inputs.size() >= 2) {
             xorNodeID = in;
@@ -78,7 +78,7 @@ static ExprId Rewrite_Distribute_And_Over_Xor(ExprStore* store, ExprId id) {
         return id;
     }
 
-    const auto xorInputs = store->get(xorNodeID).inputs;
+    const auto xorInputs = (*store)[xorNodeID].inputs;
 
     std::vector<ExprId> others;
     others.reserve(inputs.size());

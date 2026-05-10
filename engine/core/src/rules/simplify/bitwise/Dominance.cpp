@@ -11,13 +11,13 @@ using namespace BitFlow::Core::Expression;
 #pragma region Match
 // a & ... & 0 → 0
 static bool Match_And_ZeroDominance(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
         return false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && store->isFalse(in))
             return true;
     }
@@ -27,13 +27,13 @@ static bool Match_And_ZeroDominance(const ExprStore* store, ExprId id) {
 
 // a & ... & 1 → remove 1
 static bool Match_And_OneIdentity(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
         return false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && store->isTrue(in))
             return true;
     }
@@ -43,13 +43,13 @@ static bool Match_And_OneIdentity(const ExprStore* store, ExprId id) {
 
 // a | ... | 1 → 1
 static bool Match_Or_OneDominance(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or)
         return false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && store->isTrue(in))
             return true;
     }
@@ -59,13 +59,13 @@ static bool Match_Or_OneDominance(const ExprStore* store, ExprId id) {
 
 // a | ... | 0 → remove 0
 static bool Match_Or_ZeroIdentity(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or)
         return false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && store->isFalse(in))
             return true;
     }
@@ -76,19 +76,19 @@ static bool Match_Or_ZeroIdentity(const ExprStore* store, ExprId id) {
 
 #pragma region Rewrite
 static ExprId Rewrite_And_ZeroDominance(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     return store->makeFalse(e.bitWidth).id;
 }
 
 static ExprId Rewrite_And_OneIdentity(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (!(exprIn.op == OpType::Const && store->isTrue(in)))
             newInputs.push_back(in);
     }
@@ -103,19 +103,19 @@ static ExprId Rewrite_And_OneIdentity(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Or_OneDominance(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     return store->makeTrue(e.bitWidth).id;
 }
 
 static ExprId Rewrite_Or_ZeroIdentity(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (!(exprIn.op == OpType::Const && store->isFalse(in)))
             newInputs.push_back(in);
     }

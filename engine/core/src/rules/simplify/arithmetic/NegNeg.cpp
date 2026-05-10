@@ -8,20 +8,20 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool Match_Neg_Neg(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Neg || e.inputs.size() != 1)
         return false;
 
-    const Expr& in = store->get(e.inputs[0]);
+    const Expr& in = (*store)[e.inputs[0]];
     return in.op == OpType::Neg && in.inputs.size() == 1;
 }
 
 static ExprId Rewrite_Neg_Neg(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     _ASSERT(e.op == OpType::Neg && e.inputs.size() == 1);
 
-    const Expr& e2 = store->get(e.inputs[0]);
+    const Expr& e2 = (*store)[e.inputs[0]];
     _ASSERT(e2.op == OpType::Neg && e2.inputs.size() == 1);
 
     return e2.inputs[0];

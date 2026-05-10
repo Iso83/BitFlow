@@ -2,15 +2,14 @@
 #pragma once
 
 #include <BitFlow/core/ids/ExprId.h>
-#include <algorithm>
 #include <vector>
 
 namespace BitFlow::Core::Expression {
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
 
-class Expr;
-class _Expr_INTERNALONLY;
+class ExprDebug;
+class ExprUnsafeStorage;
 
 class CheckedExprInputs {
   public:
@@ -20,11 +19,11 @@ class CheckedExprInputs {
     using const_iterator = Container::const_iterator;
 
   private:
-    Expr* m_parent{};
+    ExprDebug* m_parent{};
 
   public:
     CheckedExprInputs() = default;
-    explicit CheckedExprInputs(Expr* parent);
+    explicit CheckedExprInputs(ExprDebug* parent);
 
   public:
     bool empty() const;

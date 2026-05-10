@@ -9,7 +9,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool Match_Flatten(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (!Expression::IsCommutative(e.op))
         return false;
@@ -18,7 +18,7 @@ static bool Match_Flatten(const ExprStore* store, ExprId id) {
         return false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (e.op == exprIn.op)
             return true;
     }
@@ -27,7 +27,7 @@ static bool Match_Flatten(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Flatten(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (!Expression::IsCommutative(e.op)) {
         _ASSERT(false);
@@ -38,7 +38,7 @@ static ExprId Rewrite_Flatten(ExprStore* store, ExprId id) {
     newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (e.op == exprIn.op) {
             for (auto sub : exprIn.inputs)
                 newInputs.push_back(sub);

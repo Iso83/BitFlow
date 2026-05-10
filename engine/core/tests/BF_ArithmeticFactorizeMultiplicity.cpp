@@ -17,14 +17,14 @@ static RuleEngine MakeArithmeticEngine() {
 }
 
 static bool HasCoeffBaseMul(const ExprStore* store, ExprId id, ExprId base, uint32_t coeff) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     if (e.op != OpType::Mul)
         return false;
 
     bool hasBase = false;
     bool hasCoeff = false;
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (in == base)
             hasBase = true;
         if (exprIn.op == OpType::Const && exprIn.knownValue == coeff)

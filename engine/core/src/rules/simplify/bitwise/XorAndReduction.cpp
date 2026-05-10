@@ -9,7 +9,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool Match_Xor_And_Reduction(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Xor)
         return false;
@@ -21,7 +21,7 @@ static bool Match_Xor_And_Reduction(const ExprStore* store, ExprId id) {
             if (i == j)
                 continue;
 
-            const Expr& other = store->get(e.inputs[j]);
+            const Expr& other = (*store)[e.inputs[j]];
             if (other.op != OpType::And)
                 continue;
 
@@ -36,7 +36,7 @@ static bool Match_Xor_And_Reduction(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Xor_And_Reduction(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -48,7 +48,7 @@ static ExprId Rewrite_Xor_And_Reduction(ExprStore* store, ExprId id) {
             if (i == j)
                 continue;
 
-            const Expr& other = store->get(inputs[j]);
+            const Expr& other = (*store)[inputs[j]];
             if (other.op != OpType::And)
                 continue;
 

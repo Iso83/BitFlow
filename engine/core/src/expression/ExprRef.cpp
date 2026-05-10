@@ -19,7 +19,7 @@ bool ExprRef::operator!=(const ExprRef& other) const noexcept {
 }
 
 Types::BitWidth ExprRef::BitWidth() const {
-    return store->get(*this).bitWidth;
+    return (*store)[*this].bitWidth;
 }
 
 ExprRef ExprRef::Const(Types::ExprChunk value, Types::BitWidth bitWidth) const {

@@ -9,7 +9,7 @@ using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 static bool Match_And_Absorb(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::And || e.inputs.size() < 2)
         return false;
@@ -19,7 +19,7 @@ static bool Match_And_Absorb(const ExprStore* store, ExprId id) {
             if (a == b)
                 continue;
 
-            const Expr& exprB = store->get(b);
+            const Expr& exprB = (*store)[b];
 
             if (exprB.op == OpType::Or && ContainsExpr(store, b, a))
                 return true;
@@ -30,7 +30,7 @@ static bool Match_And_Absorb(const ExprStore* store, ExprId id) {
 }
 
 static bool Match_Or_Absorb(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or || e.inputs.size() < 2)
         return false;
@@ -40,7 +40,7 @@ static bool Match_Or_Absorb(const ExprStore* store, ExprId id) {
             if (a == b)
                 continue;
 
-            const Expr& exprB = store->get(b);
+            const Expr& exprB = (*store)[b];
 
             if (exprB.op == OpType::And && ContainsExpr(store, b, a))
                 return true;
@@ -53,7 +53,7 @@ static bool Match_Or_Absorb(const ExprStore* store, ExprId id) {
 
 #pragma region Rewrite
 static ExprId Rewrite_And_Absorb(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     _ASSERT(e.op == OpType::And);
 
@@ -62,7 +62,7 @@ static ExprId Rewrite_And_Absorb(ExprStore* store, ExprId id) {
             if (a == b)
                 continue;
 
-            const Expr& exprB = store->get(b);
+            const Expr& exprB = (*store)[b];
 
             if (exprB.op == OpType::Or && ContainsExpr(store, b, a))
                 return a;
@@ -74,7 +74,7 @@ static ExprId Rewrite_And_Absorb(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Or_Absorb(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     _ASSERT(e.op == OpType::Or);
 
@@ -83,7 +83,7 @@ static ExprId Rewrite_Or_Absorb(ExprStore* store, ExprId id) {
             if (a == b)
                 continue;
 
-            const Expr& exprB = store->get(b);
+            const Expr& exprB = (*store)[b];
 
             if (exprB.op == OpType::And && ContainsExpr(store, b, a))
                 return a;

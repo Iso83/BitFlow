@@ -10,7 +10,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool Match_Order(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (!Expression::IsCommutative(e.op))
         return false;
@@ -27,7 +27,7 @@ static bool Match_Order(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Order(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     std::vector<ExprId> sorted = e.inputs;
 

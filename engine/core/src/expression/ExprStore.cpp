@@ -18,7 +18,7 @@ ExprStore::ExprStore() {
 
     auto& expr = m_nodes[index];
 #ifdef BF_EXPR_LIFETIME_CHECKS
-    expr = _Expr_INTERNALONLY{};
+    expr = ExprUnsafeStorage{};
 #else
     expr = Expr{};
 #endif
@@ -53,7 +53,7 @@ ExprStore::ExprStore() {
 
     auto& expr = m_nodes[index];
 #ifdef BF_EXPR_LIFETIME_CHECKS
-    expr = _Expr_INTERNALONLY{};
+    expr = ExprUnsafeStorage{};
 #else
     expr = Expr{};
 #endif
@@ -81,7 +81,7 @@ ExprStore::ExprStore() {
 [[nodiscard]] ExprRef ExprStore::createConstant(Types::ExprChunk value, Types::BitWidth bitWidth) {
     auto ref = create(OpType::Const, {}, bitWidth);
 
-    Expr& expr = get(ref);
+    Expr& expr = get(ref.id);
     expr.knownMask = Expr::fullMask(bitWidth);
     expr.knownValue = value;
 
@@ -91,7 +91,7 @@ ExprStore::ExprStore() {
 [[nodiscard]] ExprRef ExprStore::makeTrue(Types::BitWidth bitWidth) {
     auto ref = create(OpType::Const, {}, bitWidth);
 
-    Expr& expr = get(ref);
+    Expr& expr = get(ref.id);
     auto mask = Expr::fullMask(bitWidth);
     expr.knownMask = mask;
     expr.knownValue = mask;

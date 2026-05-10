@@ -41,7 +41,7 @@ ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id) const {
 }
 
 ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id) const {
-    auto& e = store->get(id);
+    Expr& e = store->get(id);
 
     bool changed = false;
 

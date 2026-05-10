@@ -10,7 +10,7 @@ namespace BitFlow::Core::Expression {
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
 
-void Expr::SanityCheck() const {
+void ExprDebug::SanityCheck() const {
     if (!m_store) {
         std::cerr << "[DebugExpr] sanity check failed: null store" << std::endl;
 

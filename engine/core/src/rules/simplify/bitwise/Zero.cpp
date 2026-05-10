@@ -9,11 +9,11 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static ExprId Rewrite_Remove_Zero(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && store->isFalse(in))
             continue;
 

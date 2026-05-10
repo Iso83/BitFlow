@@ -15,7 +15,7 @@ struct LinearTerm {
 };
 
 static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTerm& out, Types::BitWidth bitWidth) {
-    const Expr& term = store->get(termId);
+    const Expr& term = (*store)[termId];
 
     if (term.op == OpType::Const)
         return false;
@@ -33,7 +33,7 @@ static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTer
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
     for (ExprId factorId : term.inputs) {
-        const Expr& factor = store->get(factorId);
+        const Expr& factor = (*store)[factorId];
 
         if (factor.op == OpType::Const) {
             coeff = (coeff * factor.knownValue) & mask;
@@ -56,7 +56,7 @@ static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTer
 }
 
 static bool Match_Add_LinearMultiplicity(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Add || e.inputs.size() < 2)
         return false;
@@ -77,7 +77,7 @@ static bool Match_Add_LinearMultiplicity(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Add_LinearMultiplicity(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
 
@@ -136,18 +136,18 @@ static ExprId Rewrite_Add_LinearMultiplicity(ExprStore* store, ExprId id) {
 }
 
 static bool Match_Add_CommonFactor(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Add || e.inputs.size() < 2)
         return false;
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {
-        const Expr& lhs = store->get(e.inputs[i]);
+        const Expr& lhs = (*store)[e.inputs[i]];
         if (lhs.op != OpType::Mul || lhs.inputs.size() != 2)
             continue;
 
         for (size_t j = i + 1; j < e.inputs.size(); ++j) {
-            const Expr& rhs = store->get(e.inputs[j]);
+            const Expr& rhs = (*store)[e.inputs[j]];
             if (rhs.op != OpType::Mul || rhs.inputs.size() != 2)
                 continue;
 
@@ -164,13 +164,13 @@ static bool Match_Add_CommonFactor(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Add_CommonFactor(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     std::unordered_map<ExprId, int> factorFrequency;
     factorFrequency.reserve(e.inputs.size() * 2);
 
     for (ExprId termId : e.inputs) {
-        const Expr& term = store->get(termId);
+        const Expr& term = (*store)[termId];
 
         if (term.op != OpType::Mul || term.inputs.size() != 2)
             continue;
@@ -183,7 +183,7 @@ static ExprId Rewrite_Add_CommonFactor(ExprStore* store, ExprId id) {
     int bestFrequency = 0;
 
     for (ExprId termId : e.inputs) {
-        const Expr& term = store->get(termId);
+        const Expr& term = (*store)[termId];
 
         if (term.op != OpType::Mul || term.inputs.size() != 2)
             continue;
@@ -207,7 +207,7 @@ static ExprId Rewrite_Add_CommonFactor(ExprStore* store, ExprId id) {
     untouchedTerms.reserve(e.inputs.size());
 
     for (ExprId termId : e.inputs) {
-        const Expr& term = store->get(termId);
+        const Expr& term = (*store)[termId];
 
         if (term.op == OpType::Mul && term.inputs.size() == 2) {
             if (term.inputs[0] == common) {

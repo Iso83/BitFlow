@@ -10,7 +10,7 @@ using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 static bool Match_Not(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Not)
         return false;
@@ -18,7 +18,7 @@ static bool Match_Not(const ExprStore* store, ExprId id) {
     if (e.inputs.size() != 1)
         return false;
 
-    const Expr& in = store->get(e.inputs[0]);
+    const Expr& in = (*store)[e.inputs[0]];
 
     if (in.op == OpType::Not && in.inputs.size() == 1)
         return true;
@@ -30,7 +30,7 @@ static bool Match_Not(const ExprStore* store, ExprId id) {
 }
 
 static bool Match_NotPushdown(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Not)
         return false;
@@ -38,14 +38,14 @@ static bool Match_NotPushdown(const ExprStore* store, ExprId id) {
     if (e.inputs.size() != 1)
         return false;
 
-    const Expr& in = store->get(e.inputs[0]);
+    const Expr& in = (*store)[e.inputs[0]];
 
     if (!(in.op == OpType::And || in.op == OpType::Or))
         return false;
 
     bool allNot = true;
     for (auto child : in.inputs) {
-        const Expr& exprChild = store->get(child);
+        const Expr& exprChild = (*store)[child];
         if (exprChild.op != OpType::Not) {
             allNot = false;
             break;
@@ -56,7 +56,7 @@ static bool Match_NotPushdown(const ExprStore* store, ExprId id) {
 }
 
 static bool Match_Not_Xor(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::Not)
         return false;
@@ -64,7 +64,7 @@ static bool Match_Not_Xor(const ExprStore* store, ExprId id) {
     if (e.inputs.size() != 1)
         return false;
 
-    const Expr& in = store->get(e.inputs[0]);
+    const Expr& in = (*store)[e.inputs[0]];
 
     return (in.op == OpType::Xor && in.inputs.size() >= 1);
 }
@@ -72,9 +72,9 @@ static bool Match_Not_Xor(const ExprStore* store, ExprId id) {
 
 #pragma region Rewrite
 static ExprId Rewrite_Not(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     ExprId in = e.inputs[0];
-    const Expr& exprIn = store->get(in);
+    const Expr& exprIn = (*store)[in];
 
     if (exprIn.op == OpType::Not && exprIn.inputs.size() == 1)
         return exprIn.inputs[0];
@@ -87,9 +87,9 @@ static ExprId Rewrite_Not(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_NotPushdown(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     ExprId in = e.inputs[0];
-    const Expr& exprIn = store->get(in);
+    const Expr& exprIn = (*store)[in];
 
     OpType newOp = (exprIn.op == OpType::And) ? OpType::Or : OpType::And;
 
@@ -103,9 +103,9 @@ static ExprId Rewrite_NotPushdown(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Not_Xor(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     ExprId in = e.inputs[0];
-    const Expr& exprIn = store->get(in);
+    const Expr& exprIn = (*store)[in];
 
     std::vector<ExprId> newInputs;
     newInputs.reserve(exprIn.inputs.size() + 1);

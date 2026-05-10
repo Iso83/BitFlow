@@ -36,7 +36,7 @@ EvalResult EvaluateConstant(const ExprStore* store, const Expr* node, Types::Bit
         if (node->inputs.size() != 1)
             return Make(EvalStatus::UnsupportedOp, bitWidth);
 
-        auto a = EvaluateConstant(store, &store->get(node->inputs[0]), bitWidth);
+        auto a = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
         if (a.status != EvalStatus::Success)
             return a;
 
@@ -51,14 +51,14 @@ EvalResult EvaluateConstant(const ExprStore* store, const Expr* node, Types::Bit
         if (node->inputs.empty())
             return Make(EvalStatus::UnsupportedOp, bitWidth);
 
-        auto first = EvaluateConstant(store, &store->get(node->inputs[0]), bitWidth);
+        auto first = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
         if (first.status != EvalStatus::Success)
             return first;
 
         BitVector::bf_uint acc = std::move(first.value);
 
         for (size_t i = 1; i < node->inputs.size(); ++i) {
-            auto term = EvaluateConstant(store, &store->get(node->inputs[i]), bitWidth);
+            auto term = EvaluateConstant(store, &(*store)[node->inputs[i]], bitWidth);
             if (term.status != EvalStatus::Success)
                 return term;
 
@@ -92,14 +92,14 @@ EvalResult EvaluateConstant(const ExprStore* store, const Expr* node, Types::Bit
         if (node->inputs.size() < 2)
             return Make(EvalStatus::UnsupportedOp, bitWidth);
 
-        auto first = EvaluateConstant(store, &store->get(node->inputs[0]), bitWidth);
+        auto first = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
         if (first.status != EvalStatus::Success)
             return first;
 
         BitVector::bf_uint acc = std::move(first.value);
 
         for (size_t i = 1; i < node->inputs.size(); ++i) {
-            auto term = EvaluateConstant(store, &store->get(node->inputs[i]), bitWidth);
+            auto term = EvaluateConstant(store, &(*store)[node->inputs[i]], bitWidth);
             if (term.status != EvalStatus::Success)
                 return term;
 
@@ -135,11 +135,11 @@ EvalResult EvaluateConstant(const ExprStore* store, const Expr* node, Types::Bit
         if (node->inputs.size() != 2)
             return Make(EvalStatus::UnsupportedOp, bitWidth);
 
-        auto a = EvaluateConstant(store, &store->get(node->inputs[0]), bitWidth);
+        auto a = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
         if (a.status != EvalStatus::Success)
             return a;
 
-        auto b = EvaluateConstant(store, &store->get(node->inputs[1]), bitWidth);
+        auto b = EvaluateConstant(store, &(*store)[node->inputs[1]], bitWidth);
         if (b.status != EvalStatus::Success)
             return b;
 
@@ -183,7 +183,7 @@ bool IsFullyConstant(const ExprStore* store, const Expr* node) {
         return false;
 
     for (auto in : node->inputs) {
-        if (!IsFullyConstant(store, &store->get(in)))
+        if (!IsFullyConstant(store, &(*store)[in]))
             return false;
     }
 

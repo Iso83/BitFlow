@@ -5,7 +5,7 @@ namespace BitFlow::Core::Expression {
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
 
-CheckedExprInputs::CheckedExprInputs(Expr* parent) : m_parent(parent) {}
+CheckedExprInputs::CheckedExprInputs(ExprDebug* parent) : m_parent(parent) {}
 
 bool CheckedExprInputs::empty() const {
     Validate();

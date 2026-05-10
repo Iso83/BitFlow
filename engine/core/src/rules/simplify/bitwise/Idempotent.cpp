@@ -12,7 +12,7 @@ using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 static bool Match_Idempotent(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::And && e.op != OpType::Or)
         return false;
@@ -34,7 +34,7 @@ static bool Match_Idempotent(const ExprStore* store, ExprId id) {
 }
 
 static bool Match_And_Idempotent(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::And || e.inputs.size() < 2)
         return false;
@@ -51,7 +51,7 @@ static bool Match_And_Idempotent(const ExprStore* store, ExprId id) {
 
 #pragma region Rewrite
 static ExprId Rewrite_Idempotent(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     std::vector<ExprId> unique;
     unique.reserve(e.inputs.size());
@@ -74,7 +74,7 @@ static ExprId Rewrite_Idempotent(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_And_Idempotent(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     std::unordered_set<ExprId> seen;
     std::vector<ExprId> unique;

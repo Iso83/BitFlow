@@ -9,7 +9,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool Match_Add_Fold(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     if (e.op != OpType::Add)
         return false;
 
@@ -19,7 +19,7 @@ static bool Match_Add_Fold(const ExprStore* store, ExprId id) {
     int constCount = 0;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const)
             constCount++;
     }
@@ -28,7 +28,7 @@ static bool Match_Add_Fold(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Add_Fold(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     Types::ExprChunk acc = 0;
     bool hasConst = false;
@@ -39,7 +39,7 @@ static ExprId Rewrite_Add_Fold(ExprStore* store, ExprId id) {
     const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
 
     for (ExprId inId : e.inputs) {
-        const Expr& in = store->get(inId);
+        const Expr& in = (*store)[inId];
 
         if (in.op == OpType::Const) {
             acc = (acc + in.knownValue) & mask;

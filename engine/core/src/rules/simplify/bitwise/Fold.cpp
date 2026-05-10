@@ -10,7 +10,7 @@ using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 static bool Match_And_Fold(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     if (e.op != OpType::And)
         return false;
 
@@ -21,7 +21,7 @@ static bool Match_And_Fold(const ExprStore* store, ExprId id) {
 }
 
 static bool Match_Or_Fold(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     if (e.op != OpType::Or)
         return false;
 
@@ -32,7 +32,7 @@ static bool Match_Or_Fold(const ExprStore* store, ExprId id) {
 }
 
 static bool Match_Xor_Fold(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     if (e.op != OpType::Xor)
         return false;
 
@@ -42,7 +42,7 @@ static bool Match_Xor_Fold(const ExprStore* store, ExprId id) {
     int constCount = 0;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const)
             constCount++;
     }
@@ -53,11 +53,11 @@ static bool Match_Xor_Fold(const ExprStore* store, ExprId id) {
 
 #pragma region Rewrite
 static ExprId Rewrite_And_Fold(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && store->isFalse(in))
             return store->makeFalse(e.bitWidth).id;
 
@@ -77,11 +77,11 @@ static ExprId Rewrite_And_Fold(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Or_Fold(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
+        const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && store->isTrue(in))
             return store->makeTrue(e.bitWidth).id;
 
@@ -101,7 +101,7 @@ static ExprId Rewrite_Or_Fold(ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Xor_Fold(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     Types::ExprChunk acc = 0;
     bool hasConst = false;
@@ -112,7 +112,7 @@ static ExprId Rewrite_Xor_Fold(ExprStore* store, ExprId id) {
     const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
 
     for (ExprId inId : e.inputs) {
-        const Expr& in = store->get(inId);
+        const Expr& in = (*store)[inId];
 
         if (in.op == OpType::Const) {
             acc ^= in.knownValue;

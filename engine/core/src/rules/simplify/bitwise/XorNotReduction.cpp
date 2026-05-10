@@ -9,13 +9,13 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 static bool Match_Xor_Not_Reduction(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
         return false;
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {
-        const Expr& a = store->get(e.inputs[i]);
+        const Expr& a = (*store)[e.inputs[i]];
         if (a.op != OpType::Not || a.inputs.size() != 1)
             continue;
 
@@ -25,7 +25,7 @@ static bool Match_Xor_Not_Reduction(const ExprStore* store, ExprId id) {
             if (i == j)
                 continue;
 
-            const Expr& other = store->get(e.inputs[j]);
+            const Expr& other = (*store)[e.inputs[j]];
             if (other.op != OpType::Xor)
                 continue;
 
@@ -40,11 +40,11 @@ static bool Match_Xor_Not_Reduction(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_Xor_Not_Reduction(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {
         const ExprId notX = e.inputs[i];
-        const Expr& exprNotX = store->get(notX);
+        const Expr& exprNotX = (*store)[notX];
         if (exprNotX.op != OpType::Not || exprNotX.inputs.size() != 1)
             continue;
 
@@ -54,7 +54,7 @@ static ExprId Rewrite_Xor_Not_Reduction(ExprStore* store, ExprId id) {
             if (i == j)
                 continue;
 
-            const Expr& other = store->get(e.inputs[j]);
+            const Expr& other = (*store)[e.inputs[j]];
             if (other.op != OpType::Xor)
                 continue;
 

@@ -9,7 +9,7 @@ inline bool ContainsExpr(const ExprStore* store, Ids::ExprId id, Ids::ExprId tar
     if (id == target)
         return true;
 
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
     for (auto in : e.inputs) {
         if (in == target)
@@ -20,7 +20,7 @@ inline bool ContainsExpr(const ExprStore* store, Ids::ExprId id, Ids::ExprId tar
 }
 
 template <OpType Op> inline bool Match_Zero(const ExprStore* store, Ids::ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     if (e.op != Op)
         return false;
 
@@ -28,8 +28,8 @@ template <OpType Op> inline bool Match_Zero(const ExprStore* store, Ids::ExprId 
         return false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = store->get(in);
-        if (exprIn.op == OpType::Const && exprIn.inputs.empty() && exprIn.knownValue == 0)
+        const Expr& exprIn = (*store)[in];
+        if (exprIn.op == OpType::Const && store->isFalse(in))
             return true;
     }
 
@@ -37,7 +37,7 @@ template <OpType Op> inline bool Match_Zero(const ExprStore* store, Ids::ExprId 
 }
 #pragma endregion
 
-inline Ids::ExprId MakeXor(Expression::ExprStore* store, std::vector<Ids::ExprId>& terms,
+inline Ids::ExprId MakeXor(ExprStore* store, std::vector<Ids::ExprId>& terms,
                            Types::BitWidth bitWidth = Types::ExprChunkBits) {
     if (terms.empty())
         return store->makeFalse(bitWidth).id;
@@ -45,22 +45,15 @@ inline Ids::ExprId MakeXor(Expression::ExprStore* store, std::vector<Ids::ExprId
     if (terms.size() == 1)
         return terms[0];
 
-    return store->create(Expression::OpType::Xor, std::move(terms), bitWidth).id;
+    return store->create(OpType::Xor, std::move(terms), bitWidth).id;
 }
 
-// #pragma region MakeExpr
-// inline ExprRef Make_Expr_Not(ExprStore* store, Ids::ExprId id) {
-//     const Expr& e = store->get(id);
-//     return store->create(OpType::Not, {id}, e.bitWidth);
-// }
-// #pragma endregion
-
-inline int CompareExprCanonical(const Expression::ExprStore* store, Ids::ExprId a, Ids::ExprId b) {
+inline int CompareExprCanonical(const ExprStore* store, Ids::ExprId a, Ids::ExprId b) {
     if (a == b)
         return 0;
 
-    const Expression::Expr& exprA = store->get(a);
-    const Expression::Expr& exprB = store->get(b);
+    const Expr& exprA = (*store)[a];
+    const Expr& exprB = (*store)[b];
 
     // --- op type ---
     if (exprA.op != exprB.op)

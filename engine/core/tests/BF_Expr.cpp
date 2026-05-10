@@ -14,7 +14,7 @@ int Check_Input() {
     MakeExprStore(32);
 
     try {
-        const Expr& expr = store.get(store.createConstant(10).id);
+        const Expr& expr = store[store.createConstant(10).id];
 
         auto tmp = store.createConstant(20);
 
@@ -37,7 +37,7 @@ int Check_Field() {
     MakeExprStore(32);
 
     try {
-        const Expr& expr = store.get(store.createConstant(10).id);
+        const Expr& expr = store[store.createConstant(10).id];
 
         auto tmp = store.createConstant(20);
 
@@ -65,7 +65,7 @@ int Check_Foreach() {
     auto exprId = store.create(OpType::Add, {a, b}, 32).id;
 
     try {
-        const Expr& expr = store.get(exprId);
+        const Expr& expr = store[exprId];
 
         auto tmp = store.createConstant(20);
 
@@ -93,6 +93,5 @@ int main() {
     BF_RUN_TEST(Check_Field);
     BF_RUN_TEST(Check_Foreach);
 #endif
-
     return 0;
 }

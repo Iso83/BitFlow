@@ -21,18 +21,18 @@ static bool IsSupportedOp(OpType op) {
 }
 
 static bool Match_Const_Combine(const ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
     if (!IsSupportedOp(e.op) || e.inputs.size() != 2)
         return false;
 
-    return store->get(e.inputs[0]).op == OpType::Const && store->get(e.inputs[1]).op == OpType::Const;
+    return (*store)[e.inputs[0]].op == OpType::Const && (*store)[e.inputs[1]].op == OpType::Const;
 }
 
 static ExprId Rewrite_Const_Combine(ExprStore* store, ExprId id) {
-    const Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
 
-    const Expr& lhs = store->get(e.inputs[0]);
-    const Expr& rhs = store->get(e.inputs[0]);
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const Expr& rhs = (*store)[e.inputs[0]];
 
     switch (e.op) {
     case OpType::Add:

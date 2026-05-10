@@ -3,9 +3,15 @@
 #include <BitFlow/core/expression/Expr.h>
 #include <BitFlow/core/expression/ExprRef.h>
 
+namespace BitFlow::Core::Rules {
+class RuleEngine;
+}
+
 namespace BitFlow::Core::Expression {
 
 class ExprStore {
+    friend Rules::RuleEngine;
+
   private:
     using ValueType = Ids::ExprId::ValueType;
 
@@ -19,7 +25,7 @@ class ExprStore {
 
     uint32_t m_nextDebugSlot{};
     std::vector<Expr> m_debugExprs{};
-    std::vector<_Expr_INTERNALONLY> m_nodes{};
+    std::vector<ExprUnsafeStorage> m_nodes{};
 #else
     std::vector<Expr> m_nodes{};
 #endif
@@ -72,14 +78,8 @@ class ExprStore {
 
     [[nodiscard]] bool contains(ExprRef ref) const;
 
-    [[nodiscard]] Expr& get(ExprRef ref) {
-#ifdef BF_EXPR_LIFETIME_CHECKS
-        return get(ref.id);
-#else
-        return m_nodes[toIndex(ref.id)];
-#endif
-    }
-
+  private:
+#pragma region ExprAccess
 #ifdef BF_EXPR_LIFETIME_CHECKS
     [[nodiscard]] Expr& MakeDebugExpr(Ids::ExprId id);
 #endif
@@ -92,14 +92,6 @@ class ExprStore {
 #endif
     }
 
-    [[nodiscard]] const Expr& get(ExprRef ref) const {
-#ifdef BF_EXPR_LIFETIME_CHECKS
-        return get(ref.id);
-#else
-        return m_nodes[toIndex(ref.id)];
-#endif
-    }
-
     [[nodiscard]] const Expr& get(Ids::ExprId id) const {
 #ifdef BF_EXPR_LIFETIME_CHECKS
         return const_cast<ExprStore*>(this)->MakeDebugExpr(id);
@@ -107,9 +99,15 @@ class ExprStore {
         return m_nodes[toIndex(id)];
 #endif
     }
+#pragma endregion
+
+  public:
+    [[nodiscard]] const Expr& operator[](Ids::ExprId id) const {
+        return get(id);
+    }
 
     [[nodiscard]] const Expr& operator[](ExprRef ref) const {
-        return get(ref);
+        return get(ref.id);
     }
 
   private:

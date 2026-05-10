@@ -36,12 +36,12 @@ inline bool EqualBits(const BitVector::bf_uint& a, const Types::ExprChunk& b) {
 
 inline Eval::EvalResult EvaluateConstant(const Expression::ExprRef root, Types::BitWidth bitWidth = 32) {
     assert(root.IsValid());
-    return Eval::EvaluateConstant(root.store, &root.store->get(root.id), bitWidth);
+    return Eval::EvaluateConstant(root.store, &(*root.store)[root], bitWidth);
 }
 
 inline bool IsFullyConstant(const Expression::ExprRef root) {
     assert(root.IsValid());
-    return Eval::IsFullyConstant(root.store, &root.store->get(root.id));
+    return Eval::IsFullyConstant(root.store, &(*root.store)[root.id]);
 }
 #pragma endregion
 
@@ -118,11 +118,11 @@ Rewrite(Rules::RuleEngine& engine, Expression::ExprRef e,
 }
 
 inline const Expression::Expr& GetExpr(const Expression::ExprRef e) {
-    return e.store->get(e.id);
+    return (*e.store)[e];
 }
 
 inline bool IsConstantValue(const Expression::ExprStore* store, const Ids::ExprId id, const uint64_t value) {
-    const Expression::Expr& expr = store->get(id);
+    const Expression::Expr& expr = (*store)[id];
 
     return expr.op == Expression::OpType::Const && expr.inputs.empty() && expr.knownValue == value;
 }
@@ -137,7 +137,7 @@ inline size_t CountExpr(const Expression::ExprStore* store, Ids::ExprId id, Ids:
     if (id == target)
         ++count;
 
-    const auto& e = store->get(id);
+    const Expression::Expr& e = (*store)[id];
 
     for (auto in : e.inputs) {
         if (in == target)
@@ -155,7 +155,7 @@ inline size_t CountExpr(const Expression::ExprRef e, const Expression::ExprRef t
 }
 
 template <typename Pred> inline bool AnyInput(Expression::ExprRef e, Pred&& pred) {
-    const auto& expr = e.store->get(e.id);
+    const Expression::Expr& expr = (*e.store)[e];
 
     for (auto in : expr.inputs) {
         if (pred(Expression::ExprRef(e.store, in)))
@@ -166,7 +166,7 @@ template <typename Pred> inline bool AnyInput(Expression::ExprRef e, Pred&& pred
 }
 
 inline bool IsFalse(const Expression::ExprStore* store, Ids::ExprId id) {
-    const Expression::Expr& e = store->get(id);
+    const Expression::Expr& e = (*store)[id];
     return e.op == Expression::OpType::Const && e.inputs.empty() && e.knownValue == 0;
 }
 
@@ -175,7 +175,7 @@ inline bool IsFalse(const Expression::ExprRef e) {
 }
 
 inline bool IsTrue(const Expression::ExprStore* store, Ids::ExprId id) {
-    const Expression::Expr& e = store->get(id);
+    const Expression::Expr& e = (*store)[id];
     return e.op == Expression::OpType::Const && e.inputs.empty() &&
            e.knownValue == Expression::Expr::fullMask(e.bitWidth);
 }
