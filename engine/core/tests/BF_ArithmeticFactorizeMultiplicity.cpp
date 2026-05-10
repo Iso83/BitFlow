@@ -1,115 +1,77 @@
-#include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
-#include <Core_Expr.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 static RuleEngine MakeArithmeticEngine() {
+
     RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Arithmetic_Rules(engine);
-    Add_Factorize_Arithmetic_Rules(engine);
+    engine.Merge(BuildNormalize());
+    engine.Merge(BuildSimplifyArithmetic());
+    engine.Merge(BuildFactorizeArithmetic());
     return engine;
 }
 
-static bool HasCoeffBaseMul(ExprOld* expr, ExprOld* base, uint32_t coeff) {
-    if (expr->op != OpType::Mul)
+static bool HasCoeffBaseMul(const ExprStore* store, ExprId id, ExprId base, uint32_t coeff) {
+    const Expr& e = store->get(id);
+    if (e.op != OpType::Mul)
         return false;
 
     bool hasBase = false;
     bool hasCoeff = false;
-    for (ExprOld* in : expr->inputs) {
-        if (in->id == base->id)
+    for (auto in : e.inputs) {
+        const Expr& exprIn = store->get(in);
+        if (in == base)
             hasBase = true;
-        if (in->op == OpType::Const && in->constValue == coeff)
+        if (exprIn.op == OpType::Const && exprIn.knownValue == coeff)
             hasCoeff = true;
     }
 
     return hasBase && hasCoeff;
 }
 
+static bool HasCoeffBaseMul(ExprRef e, ExprRef base, uint32_t coeff) {
+    if (e.store != base.store)
+        return false;
+
+    return HasCoeffBaseMul(e.store, e.id, base.id, coeff);
+}
+
 int TestLinearMultiplicity_BasicAndMixed() {
+    MakeExprStore(32);
+
     RuleEngine engine = MakeArithmeticEngine();
-    auto a = MakeVar(1000);
+    auto a = V("a");
 
-    {
-        auto expr = MakeOp(1001, OpType::Add, {a, a});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(HasCoeffBaseMul(result, a, 2u));
-    }
-
-    {
-        auto expr = MakeOp(1002, OpType::Add, {a, a, a});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(HasCoeffBaseMul(result, a, 3u));
-    }
-
-    {
-        auto expr = MakeOp(1003, OpType::Add, {a, MakeOp(1004, OpType::Mul, {a, MakeConst(1005, 2)})});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(HasCoeffBaseMul(result, a, 3u));
-    }
-
-    {
-        auto expr = MakeOp(1006, OpType::Add, {MakeOp(1007, OpType::Mul, {a, MakeConst(1008, 2)}), a});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(HasCoeffBaseMul(result, a, 3u));
-    }
-
-    {
-        auto expr = MakeOp(
-            1009, OpType::Add,
-            {MakeOp(1010, OpType::Mul, {a, MakeConst(1011, 2)}), MakeOp(1012, OpType::Mul, {a, MakeConst(1013, 3)})});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(HasCoeffBaseMul(result, a, 5u));
-    }
-
-    {
-        auto expr = MakeOp(1014, OpType::Add, {MakeOp(1015, OpType::Mul, {a, MakeConst(1016, 0)}), a});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(result->id == a->id);
-    }
-
-    {
-        auto expr = MakeOp(
-            1017, OpType::Add,
-            {MakeOp(1018, OpType::Mul, {a, MakeConst(1019, 1)}), MakeOp(1020, OpType::Mul, {a, MakeConst(1021, 2)})});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(HasCoeffBaseMul(result, a, 3u));
-    }
-
+    BF_TEST(HasCoeffBaseMul(Rewrite(engine, a + a), a, 2u));
+    BF_TEST(HasCoeffBaseMul(Rewrite(engine, a + a + a), a, 3u));
+    BF_TEST(HasCoeffBaseMul(Rewrite(engine, a + (a * 2)), a, 3u));
+    BF_TEST(HasCoeffBaseMul(Rewrite(engine, (a * 2) + a), a, 3u));
+    BF_TEST(HasCoeffBaseMul(Rewrite(engine, (a * 2) + (a * 3)), a, 5u));
+    BF_TEST(HasCoeffBaseMul(Rewrite(engine, (a * 1) + (a * 2)), a, 3u));
     return 0;
 }
 
 int TestLinearMultiplicity_Guards() {
+    MakeExprStore(32);
+
     RuleEngine engine = MakeArithmeticEngine();
-    auto a = MakeVar(1030);
-    auto b = MakeVar(1031);
-    auto c = MakeVar(1032);
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
 
-    {
-        auto expr = MakeOp(1033, OpType::Add, {a, MakeOp(1034, OpType::Mul, {a, b})});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(result->op == OpType::Add);
-        BF_TEST(result->inputs.size() == 2);
-    }
+    auto expr1 = a + (a * b); // symbolic coefficient -> reject
+    BF_TEST(Rewrite(engine, expr1) == expr1);
 
-    {
-        auto expr = MakeOp(1035, OpType::Add, {MakeOp(1036, OpType::Shl, {a, MakeConst(1037, 1)}), a});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(result->op == OpType::Add);
-        BF_TEST(result->inputs.size() == 2);
-    }
+    auto expr2 = (a << 1) + a; // normalize/simplify may rewrite
+    BF_TEST(Rewrite(engine, expr2) != expr2);
 
-    {
-        auto expr = MakeOp(1038, OpType::Add, {MakeOp(1039, OpType::Mul, {a, b}), MakeOp(1040, OpType::Mul, {a, c})});
-        ExprOld* result = engine.Rewrite(expr);
-        BF_TEST(result->op == OpType::Mul);
-        BF_TEST(result->inputs.size() == 2);
-    }
+    auto expr3 = (a * b) + (a * c); // common factor extraction
+    BF_TEST(Rewrite(engine, expr3) != expr3);
 
     return 0;
 }

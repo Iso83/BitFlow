@@ -18,13 +18,13 @@ bool ExprRef::operator!=(const ExprRef& other) const noexcept {
     return !(*this == other);
 }
 
-uint16_t ExprRef::BitWidth() const {
+Types::BitWidth ExprRef::BitWidth() const {
     return store->get(*this).bitWidth;
 }
 
-ExprRef ExprRef::Const(uint64_t value, uint16_t bitWidth) const {
+ExprRef ExprRef::Const(Types::ExprChunk value, Types::BitWidth bitWidth) const {
     if (bitWidth == 0)
-        bitWidth = defaultBitWidth;
+        bitWidth = Types::ExprChunkBits;
 
     return store->createConstant(value, bitWidth);
 }
@@ -85,51 +85,51 @@ ExprRef ExprRef::operator|(ExprRef rhs) const {
     return store->create(OpType::Or, {id, rhs.id}, std::max(BitWidth(), rhs.BitWidth()));
 }
 
-ExprRef ExprRef::operator+(uint64_t rhs) const {
+ExprRef ExprRef::operator+(Types::ExprChunk rhs) const {
     return *this + Const(rhs, BitWidth());
 }
 
-ExprRef ExprRef::operator-(uint64_t rhs) const {
+ExprRef ExprRef::operator-(Types::ExprChunk rhs) const {
     return *this - Const(rhs, BitWidth());
 }
 
-ExprRef ExprRef::operator*(uint64_t rhs) const {
+ExprRef ExprRef::operator*(Types::ExprChunk rhs) const {
     return *this * Const(rhs, BitWidth());
 }
 
-ExprRef ExprRef::operator/(uint64_t rhs) const {
+ExprRef ExprRef::operator/(Types::ExprChunk rhs) const {
     return *this / Const(rhs, BitWidth());
 }
 
-ExprRef ExprRef::operator%(uint64_t rhs) const {
+ExprRef ExprRef::operator%(Types::ExprChunk rhs) const {
     return *this % Const(rhs, BitWidth());
 }
 
-ExprRef ExprRef::operator<<(uint64_t rhs) const {
+ExprRef ExprRef::operator<<(Types::ExprChunk rhs) const {
     return *this << Const(rhs, BitWidth());
 }
 
-ExprRef ExprRef::operator>>(uint64_t rhs) const {
+ExprRef ExprRef::operator>>(Types::ExprChunk rhs) const {
     return *this >> Const(rhs, BitWidth());
 }
 
-ExprRef ExprRef::RotL(uint64_t rhs) const {
+ExprRef ExprRef::RotL(Types::ExprChunk rhs) const {
     return RotL(Const(rhs, BitWidth()));
 }
 
-ExprRef ExprRef::RotR(uint64_t rhs) const {
+ExprRef ExprRef::RotR(Types::ExprChunk rhs) const {
     return RotR(Const(rhs, BitWidth()));
 }
 
-ExprRef ExprRef::operator&(uint64_t rhs) const {
+ExprRef ExprRef::operator&(Types::ExprChunk rhs) const {
     return *this & Const(rhs, BitWidth());
 }
 
-ExprRef ExprRef::operator^(uint64_t rhs) const {
+ExprRef ExprRef::operator^(Types::ExprChunk rhs) const {
     return *this ^ Const(rhs, BitWidth());
 }
 
-ExprRef ExprRef::operator|(uint64_t rhs) const {
+ExprRef ExprRef::operator|(Types::ExprChunk rhs) const {
     return *this | Const(rhs, BitWidth());
 }
 

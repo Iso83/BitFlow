@@ -13,6 +13,7 @@ inline RuleEngine BuildNormalize() {
 
     e.AddRule(Normalize::Get_Flatten_Rule());
     e.AddRule(Normalize::Get_Order_Rule());
+    e.AddRule(Normalize::Bitwise::Get_Rotate_ModuloBitWidth_Rule());
 
     return e;
 }

@@ -13,8 +13,11 @@ static ExprId Rewrite_Remove_Zero(ExprStore* store, ExprId id) {
     std::vector<ExprId> newInputs;
 
     for (auto in : e.inputs) {
-        if (IsFalse(store, in))
-            newInputs.push_back(in);
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op == OpType::Const && store->isFalse(in))
+            continue;
+
+        newInputs.push_back(in);
     }
 
     if (newInputs.empty())

@@ -57,10 +57,11 @@ static ExprId Rewrite_And_Fold(ExprStore* store, ExprId id) {
     std::vector<ExprId> newInputs;
 
     for (auto in : e.inputs) {
-        if (IsFalse(store, in))
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op == OpType::Const && store->isFalse(in))
             return store->makeFalse(e.bitWidth).id;
 
-        if (IsTrue(store, in))
+        if (exprIn.op == OpType::Const && store->isTrue(in))
             continue;
 
         newInputs.push_back(in);
@@ -80,10 +81,11 @@ static ExprId Rewrite_Or_Fold(ExprStore* store, ExprId id) {
     std::vector<ExprId> newInputs;
 
     for (auto in : e.inputs) {
-        if (IsTrue(store, in))
+        const Expr& exprIn = store->get(in);
+        if (exprIn.op == OpType::Const && store->isTrue(in))
             return store->makeTrue(e.bitWidth).id;
 
-        if (IsFalse(store, in))
+        if (exprIn.op == OpType::Const && store->isFalse(in))
             continue;
 
         newInputs.push_back(in);
@@ -101,13 +103,13 @@ static ExprId Rewrite_Or_Fold(ExprStore* store, ExprId id) {
 static ExprId Rewrite_Xor_Fold(ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
-    uint64_t acc = 0;
+    Types::ExprChunk acc = 0;
     bool hasConst = false;
 
     std::vector<ExprId> nonConst;
     nonConst.reserve(e.inputs.size());
 
-    const uint64_t mask = Expr::fullMask(e.bitWidth);
+    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
 
     for (ExprId inId : e.inputs) {
         const Expr& in = store->get(inId);

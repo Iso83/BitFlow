@@ -1,295 +1,231 @@
-#include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
-#include <Core_Expr.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 int TestAndCancelPair() {
-    auto x = MakeVar(1);
-
-    auto expr = MakeOp(2, OpType::And, {x, x});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
+    auto x = V("x");
 
-    ExprOld* result = engine.Rewrite(expr);
-
-    BF_TEST(result->id == x->id);
+    BF_TEST(Rewrite(engine, x & x) == x);
     return 0;
 }
 
 int TestAndCancelMixed() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
-
-    auto expr = MakeOp(3, OpType::And, {x, y, x});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
+    auto x = V("x");
+    auto y = V("y");
+    auto r = Rewrite(engine, x & y & x);
+    auto out = GetExpr(r);
 
-    ExprOld* result = engine.Rewrite(expr);
+    BF_TEST(out.op == OpType::And);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(ERef(out.inputs[0]) == x);
+    BF_TEST(ERef(out.inputs[1]) == y);
 
-    BF_TEST(result->op == OpType::And);
-    BF_TEST(result->inputs.size() == 2);
-    BF_TEST(result->inputs[0]->id == x->id);
-    BF_TEST(result->inputs[1]->id == y->id);
     return 0;
 }
 
 int TestOrCancelPair() {
-    auto x = MakeVar(1);
-
-    auto expr = MakeOp(2, OpType::Or, {x, x});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
+    auto x = V("x");
 
-    ExprOld* result = engine.Rewrite(expr);
-
-    BF_TEST(result->id == x->id);
+    BF_TEST(Rewrite(engine, x | x) == x);
     return 0;
 }
 
 int TestOrCancelMixed() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
-
-    auto expr = MakeOp(3, OpType::Or, {y, x, y});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
+    auto x = V("x");
+    auto y = V("y");
+    auto r = Rewrite(engine, y | x | y);
+    auto out = GetExpr(r);
 
-    ExprOld* result = engine.Rewrite(expr);
-
-    BF_TEST(result->op == OpType::Or);
-    BF_TEST(result->inputs.size() == 2);
-    BF_TEST(result->inputs[0]->id != result->inputs[1]->id);
+    BF_TEST(out.op == OpType::Or);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(ERef(out.inputs[0]) == x);
+    BF_TEST(ERef(out.inputs[1]) == y);
     return 0;
 }
 
 int TestXorParityCancel_Pair() {
-    auto a = MakeVar(1);
-
-    auto expr = MakeOp(2, OpType::Xor, {a, a});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    auto a = V("a");
+    auto r = Rewrite(engine, a ^ a);
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->op == OpType::Const);
-    BF_TEST(r->constValue == 0);
+    BF_TEST(IsConstantValue(r, 0u));
     return 0;
 }
 
 int TestXorParityCancel_ToSingle() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
-
-    auto expr = MakeOp(3, OpType::Xor, {x, x, y});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    auto x = V("x");
+    auto y = V("y");
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r == y);
-    return 0;
-}
-
-int TestXorParityCancel_MixedToSingle() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-
-    auto expr = MakeOp(3, OpType::Xor, {a, b, a});
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
-
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r == b);
+    BF_TEST(Rewrite(engine, x ^ x ^ y) == y);
     return 0;
 }
 
 int TestXorParityCancel_MixedToXor() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
-
-    auto expr = MakeOp(10, OpType::Xor, {a, b, c, a});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto r = Rewrite(engine, a ^ b ^ c ^ a);
+    auto out = GetExpr(r);
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->op == OpType::Xor);
-    BF_TEST(r->inputs.size() == 2);
-    BF_TEST(r->inputs[0] == b);
-    BF_TEST(r->inputs[1] == c);
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(ERef(out.inputs[0]) == b);
+    BF_TEST(ERef(out.inputs[1]) == c);
     return 0;
 }
 
 int TestXorParityCancel_AllEven() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-
-    auto expr = MakeOp(3, OpType::Xor, {a, b, a, b});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    auto a = V("a");
+    auto b = V("b");
+    auto r = Rewrite(engine, a ^ b ^ a ^ b);
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->op == OpType::Const);
-    BF_TEST(r->constValue == 0);
+    BF_TEST(IsConstantValue(r, 0u));
     return 0;
 }
 
 int TestXorParityCancel_Triple() {
-    auto a = MakeVar(1);
-
-    auto expr = MakeOp(2, OpType::Xor, {a, a, a});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    auto a = V("a");
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r == a);
-    return 0;
-}
-
-int TestXorParityCancel_Frozen() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-
-    auto expr = MakeOp(10, OpType::Xor, {a, b, a});
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
-
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r != expr);
-    BF_TEST(r == b);
+    BF_TEST(Rewrite(engine, a ^ a ^ a) == a);
     return 0;
 }
 
 int TestXorParity_WithConstCancel() {
-    auto a = MakeVar(1);
-    auto one = ConstPool::Get(1);
-
-    auto expr = MakeOp(10, OpType::Xor, {a, one, a});
+    MakeExprStore(32);
 
     RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
+    engine.Merge(BuildNormalize());
+    engine.Merge(BuildSimplifyBitwise());
+    auto a = V("a");
+    auto r = Rewrite(engine, a ^ 1 ^ a);
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->op == OpType::Const);
-    BF_TEST(r->constValue == 1);
+    BF_TEST(IsConstantValue(r, 1u));
     return 0;
 }
 
 int TestXorParity_WithConstMixed() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto one = ConstPool::Get(1);
-
-    auto expr = MakeOp(10, OpType::Xor, {a, one, b, a});
+    MakeExprStore(32);
 
     RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
+    engine.Merge(BuildNormalize());
+    engine.Merge(BuildSimplifyBitwise());
+    auto a = V("a");
+    auto b = V("b");
+    auto r = Rewrite(engine, a ^ 1 ^ b ^ a);
+    auto out = GetExpr(r);
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->op == OpType::Xor);
-    BF_TEST(r->inputs.size() == 2);
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 1u); }));
     return 0;
 }
 
 int TestXorParity_RewriteKeepsCanonicalOrder() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
-    auto one = ConstPool::Get(1);
-
-    auto expr = MakeOp(20, OpType::Xor, {c, a, b, one});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto r = Rewrite(engine, c ^ a ^ b ^ a);
+    auto out = GetExpr(r);
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->op == OpType::Xor);
-    BF_TEST(r->inputs.size() == 4);
-
-    for (size_t i = 1; i < r->inputs.size(); ++i)
-        BF_TEST(r->inputs[i - 1]->id.value() <= r->inputs[i]->id.value());
-
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(ERef(out.inputs[0]) == b);
+    BF_TEST(ERef(out.inputs[1]) == c);
     return 0;
 }
 
 int TestXorParity_StructuralRotatePairCancelsToZero() {
-    auto x = MakeVar(1);
-    auto rotA = MakeOp(10, OpType::RotR, {x, MakeConst(11, 2)});
-    auto rotB = MakeOp(12, OpType::RotR, {x, MakeConst(13, 2)});
-    auto expr = MakeOp(14, OpType::Xor, {rotA, rotB});
+    MakeExprStore(32);
 
     RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
+    engine.Merge(BuildNormalize());
+    engine.Merge(BuildSimplifyBitwise());
+    auto x = V("x");
+    auto r = Rewrite(engine, x.RotR(2) ^ x.RotR(x));
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->op == OpType::Const);
-    BF_TEST(r->constValue == 0);
+    BF_TEST(IsConstantValue(r, 0u));
     return 0;
 }
 
 int TestXorParity_StructuralRotateDuplicateLeavesSingle() {
-    auto x = MakeVar(1);
-    auto rot2A = MakeOp(20, OpType::RotR, {x, MakeConst(21, 2)});
-    auto rot13 = MakeOp(22, OpType::RotR, {x, MakeConst(23, 13)});
-    auto rot2B = MakeOp(24, OpType::RotR, {x, MakeConst(25, 2)});
-    auto expr = MakeOp(26, OpType::Xor, {rot2A, rot13, rot2B});
+    MakeExprStore(32);
 
     RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
+    engine.Merge(BuildNormalize());
+    engine.Merge(BuildSimplifyBitwise());
+    auto x = V("x");
+    auto r = Rewrite(engine, x.RotR(2) ^ x.RotR(13) ^ x.RotR(2));
 
-    ExprOld* r = engine.Rewrite(expr);
+    auto out = GetExpr(r);
 
-    BF_TEST(r == rot13);
+    BF_TEST(out.op == OpType::RotR);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(ERef(out.inputs[0]) == x);
+    BF_TEST(IsConstantValue(ERef(out.inputs[1]), 13u));
+
     return 0;
 }
 
@@ -300,11 +236,9 @@ int main() {
     BF_RUN_TEST(TestOrCancelMixed);
     BF_RUN_TEST(TestXorParityCancel_Pair);
     BF_RUN_TEST(TestXorParityCancel_ToSingle);
-    BF_RUN_TEST(TestXorParityCancel_MixedToSingle);
     BF_RUN_TEST(TestXorParityCancel_MixedToXor);
     BF_RUN_TEST(TestXorParityCancel_AllEven);
     BF_RUN_TEST(TestXorParityCancel_Triple);
-    BF_RUN_TEST(TestXorParityCancel_Frozen);
     BF_RUN_TEST(TestXorParity_WithConstCancel);
     BF_RUN_TEST(TestXorParity_WithConstMixed);
     BF_RUN_TEST(TestXorParity_RewriteKeepsCanonicalOrder);

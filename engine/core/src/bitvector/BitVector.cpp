@@ -4,8 +4,8 @@
 
 namespace BitFlow::Core::BitVector {
 
-static uint64_t Mask64(uint32_t bits) {
-    if (bits == 64)
+static Types::ExprChunk MaskChunk(Types::BitWidth bits) {
+    if (bits == Types::ExprChunkBits)
         return ~0ull;
     return (1ull << bits) - 1;
 }
@@ -15,11 +15,11 @@ static void EnsureSameBitWidth(const bf_uint& lhs, const bf_uint& rhs) {
         throw std::invalid_argument("bf_uint width mismatch");
 }
 
-bf_uint::bf_uint(uint32_t bw) : m_bw(bw) {
-    m_words.resize((bw + 63) / 64, 0);
+bf_uint::bf_uint(Types::BitWidth bw) : m_bw(bw) {
+    m_words.resize((bw + (Types::ExprChunkBits - 1)) / Types::ExprChunkBits, 0);
 }
 
-bf_uint::bf_uint(uint64_t v, uint32_t bw) : bf_uint(bw) {
+bf_uint::bf_uint(Types::ExprChunk v, Types::BitWidth bw) : bf_uint(bw) {
     if (!m_words.empty())
         m_words[0] = v;
     Normalize();
@@ -48,10 +48,10 @@ std::string bf_uint::ToBinaryString() const {
 
     bool started = false;
 
-    for (uint32_t bit = m_bw; bit-- > 0;) {
-        const size_t wi = bit / 64U;
-        const uint32_t bi = bit % 64U;
-        const bool set = ((m_words[wi] >> bi) & 1ULL) != 0ULL;
+    for (Types::BitWidth bit = m_bw; bit-- > 0;) {
+        const size_t wi = bit / Types::ExprChunkBits;
+        const Types::BitWidth bi = bit % Types::ExprChunkBits;
+        const bool set = ((m_words[wi] >> bi) & Types::ExprChunk{1}) != Types::ExprChunk{0};
 
         if (set)
             started = true;
@@ -71,24 +71,24 @@ std::string bf_uint::ToHexString(bool upperCase) const {
     if (m_bw == 0)
         return "0";
 
-    const uint32_t hexDigits = (m_bw + 3) / 4;
+    const Types::BitWidth hexDigits = (m_bw + 3) / 4;
     std::string s;
     s.reserve(hexDigits);
 
     bool started = false;
 
-    for (uint32_t nib = hexDigits; nib-- > 0;) {
-        uint32_t value = 0;
+    for (Types::BitWidth nib = hexDigits; nib-- > 0;) {
+        Types::BitWidth value = 0;
 
-        for (uint32_t b = 0; b < 4; ++b) {
-            const uint32_t bit = nib * 4 + b;
+        for (Types::BitWidth b = 0; b < 4; ++b) {
+            const Types::BitWidth bit = nib * 4 + b;
             if (bit >= m_bw)
                 continue;
 
-            const size_t wi = bit / 64U;
-            const uint32_t bi = bit % 64U;
+            const size_t wi = bit / Types::ExprChunkBits;
+            const Types::BitWidth bi = bit % Types::ExprChunkBits;
 
-            value |= static_cast<uint32_t>(((m_words[wi] >> bi) & 1ULL) << b);
+            value |= static_cast<Types::BitWidth>(((m_words[wi] >> bi) & Types::ExprChunk{1}) << b);
         }
 
         if (value != 0)
@@ -165,13 +165,13 @@ bf_uint bf_uint::operator+(const bf_uint& rhs) const {
 
     bf_uint r(m_bw);
 
-    uint64_t carry = 0;
+    Types::ExprChunk carry = 0;
 
     for (size_t i = 0; i < m_words.size(); ++i) {
-        uint64_t a = m_words[i];
-        uint64_t b = rhs.m_words[i];
+        Types::ExprChunk a = m_words[i];
+        Types::ExprChunk b = rhs.m_words[i];
 
-        uint64_t sum = a + b + carry;
+        Types::ExprChunk sum = a + b + carry;
 
         carry = (sum < a) || (carry && sum == a);
         r.m_words[i] = sum;
@@ -185,12 +185,12 @@ bf_uint bf_uint::operator-(const bf_uint& rhs) const {
     EnsureSameBitWidth(*this, rhs);
 
     bf_uint r(m_bw);
-    uint64_t borrow = 0;
+    Types::ExprChunk borrow = 0;
 
     for (size_t i = 0; i < m_words.size(); ++i) {
-        uint64_t a = m_words[i];
-        uint64_t b = rhs.m_words[i];
-        uint64_t sub = b + borrow;
+        Types::ExprChunk a = m_words[i];
+        Types::ExprChunk b = rhs.m_words[i];
+        Types::ExprChunk sub = b + borrow;
 
         r.m_words[i] = a - sub;
         borrow = (a < sub) || (borrow && sub == 0);
@@ -207,11 +207,11 @@ bf_uint bf_uint::operator*(const bf_uint& rhs) const {
         return bf_uint(0, 0);
 
     bf_uint r(m_bw);
-    for (uint32_t bit = 0; bit < m_bw; ++bit) {
-        const size_t wi = bit / 64U;
-        const uint32_t bi = bit % 64U;
-        const uint64_t set = (rhs.m_words[wi] >> bi) & 1ULL;
-        if (set != 0ULL)
+    for (Types::BitWidth bit = 0; bit < m_bw; ++bit) {
+        const size_t wi = bit / Types::ExprChunkBits;
+        const Types::BitWidth bi = bit % Types::ExprChunkBits;
+        const Types::ExprChunk set = (rhs.m_words[wi] >> bi) & Types::ExprChunk{1};
+        if (set != Types::ExprChunk{0})
             r = r + Shl(bit);
     }
 
@@ -223,7 +223,7 @@ bf_uint bf_uint::operator/(const bf_uint& rhs) const {
     EnsureSameBitWidth(*this, rhs);
 
     bool rhsIsZero = true;
-    for (uint64_t w : rhs.m_words) {
+    for (Types::ExprChunk w : rhs.m_words) {
         if (w != 0) {
             rhsIsZero = false;
             break;
@@ -238,12 +238,12 @@ bf_uint bf_uint::operator/(const bf_uint& rhs) const {
     bf_uint q(m_bw);
     bf_uint rem(m_bw);
 
-    for (uint32_t bit = m_bw; bit-- > 0;) {
+    for (Types::BitWidth bit = m_bw; bit-- > 0;) {
         rem = rem.Shl(1);
 
-        const size_t wi = bit / 64U;
-        const uint32_t bi = bit % 64U;
-        rem.m_words[0] |= (m_words[wi] >> bi) & 1ULL;
+        const size_t wi = bit / Types::ExprChunkBits;
+        const Types::BitWidth bi = bit % Types::ExprChunkBits;
+        rem.m_words[0] |= (m_words[wi] >> bi) & Types::ExprChunk{1};
 
         bool ge = true;
         for (size_t i = rem.m_words.size(); i-- > 0;) {
@@ -259,7 +259,7 @@ bf_uint bf_uint::operator/(const bf_uint& rhs) const {
 
         if (ge) {
             rem = rem - rhs;
-            q.m_words[wi] |= (1ULL << bi);
+            q.m_words[wi] |= (Types::ExprChunk{1} << bi);
         }
     }
 
@@ -271,7 +271,7 @@ bf_uint bf_uint::operator%(const bf_uint& rhs) const {
     EnsureSameBitWidth(*this, rhs);
 
     bool rhsIsZero = true;
-    for (uint64_t w : rhs.m_words) {
+    for (Types::ExprChunk w : rhs.m_words) {
         if (w != 0) {
             rhsIsZero = false;
             break;
@@ -376,7 +376,7 @@ bf_uint& bf_uint::operator^=(const bf_uint& rhs) {
 #pragma endregion
 
 #pragma region shifts
-bf_uint bf_uint::Shl(uint32_t s) const {
+bf_uint bf_uint::Shl(Types::BitWidth s) const {
     if (m_bw == 0)
         return bf_uint(0, 0);
 
@@ -385,17 +385,18 @@ bf_uint bf_uint::Shl(uint32_t s) const {
 
     bf_uint r(m_bw);
 
-    const uint32_t wordShift = s / 64;
-    const uint32_t bitShift = s % 64;
+    const Types::BitWidth wordShift = s / Types::ExprChunkBits;
+    const Types::BitWidth bitShift = s % Types::ExprChunkBits;
 
     for (int i = static_cast<int>(m_words.size()) - 1; i >= 0; --i) {
-        uint64_t val = 0;
+        Types::ExprChunk val = 0;
 
         if (i - static_cast<int>(wordShift) >= 0) {
             val = m_words[static_cast<size_t>(i - static_cast<int>(wordShift))] << bitShift;
 
             if (bitShift && i - static_cast<int>(wordShift) - 1 >= 0)
-                val |= m_words[static_cast<size_t>(i - static_cast<int>(wordShift) - 1)] >> (64 - bitShift);
+                val |= m_words[static_cast<size_t>(i - static_cast<int>(wordShift) - 1)] >>
+                       (Types::ExprChunkBits - bitShift);
         }
 
         r.m_words[static_cast<size_t>(i)] = val;
@@ -405,7 +406,7 @@ bf_uint bf_uint::Shl(uint32_t s) const {
     return r;
 }
 
-bf_uint bf_uint::Shr(uint32_t s) const {
+bf_uint bf_uint::Shr(Types::BitWidth s) const {
     if (m_bw == 0)
         return bf_uint(0, 0);
 
@@ -414,17 +415,17 @@ bf_uint bf_uint::Shr(uint32_t s) const {
 
     bf_uint r(m_bw);
 
-    const uint32_t wordShift = s / 64;
-    const uint32_t bitShift = s % 64;
+    const Types::BitWidth wordShift = s / Types::ExprChunkBits;
+    const Types::BitWidth bitShift = s % Types::ExprChunkBits;
 
     for (size_t i = 0; i < m_words.size(); ++i) {
-        uint64_t val = 0;
+        Types::ExprChunk val = 0;
         const size_t src = i + wordShift;
 
         if (src < m_words.size()) {
             val = m_words[src] >> bitShift;
             if (bitShift && (src + 1) < m_words.size())
-                val |= m_words[src + 1] << (64 - bitShift);
+                val |= m_words[src + 1] << (Types::ExprChunkBits - bitShift);
         }
 
         r.m_words[i] = val;
@@ -434,11 +435,11 @@ bf_uint bf_uint::Shr(uint32_t s) const {
     return r;
 }
 
-bf_uint bf_uint::operator<<(uint32_t s) const {
+bf_uint bf_uint::operator<<(Types::BitWidth s) const {
     return Shl(s);
 }
 
-bf_uint bf_uint::operator>>(uint32_t s) const {
+bf_uint bf_uint::operator>>(Types::BitWidth s) const {
     return Shr(s);
 }
 
@@ -454,12 +455,12 @@ bf_uint bf_uint::operator>>(const bf_uint& rhs) const {
 #pragma endregion
 
 #pragma region compound shifts
-bf_uint& bf_uint::operator<<=(uint32_t s) {
+bf_uint& bf_uint::operator<<=(Types::BitWidth s) {
     *this = Shl(s);
     return *this;
 }
 
-bf_uint& bf_uint::operator>>=(uint32_t s) {
+bf_uint& bf_uint::operator>>=(Types::BitWidth s) {
     *this = Shr(s);
     return *this;
 }
@@ -476,7 +477,7 @@ bf_uint& bf_uint::operator>>=(const bf_uint& rhs) {
 #pragma endregion
 
 #pragma region rotates
-bf_uint bf_uint::RotL(uint32_t s) const {
+bf_uint bf_uint::RotL(Types::BitWidth s) const {
     if (m_bw == 0)
         return bf_uint(0, 0);
 
@@ -484,7 +485,7 @@ bf_uint bf_uint::RotL(uint32_t s) const {
     return Shl(s) | Shr(m_bw - s);
 }
 
-bf_uint bf_uint::RotR(uint32_t s) const {
+bf_uint bf_uint::RotR(Types::BitWidth s) const {
     if (m_bw == 0)
         return bf_uint(0, 0);
 
@@ -507,8 +508,8 @@ void bf_uint::Normalize() {
     if (m_words.empty())
         return;
 
-    const uint32_t rem = m_bw % 64;
+    const Types::BitWidth rem = m_bw % Types::ExprChunkBits;
     if (rem != 0)
-        m_words.back() &= Mask64(rem);
+        m_words.back() &= MaskChunk(rem);
 }
 } // namespace BitFlow::Core::BitVector

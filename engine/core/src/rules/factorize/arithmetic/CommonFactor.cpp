@@ -11,10 +11,10 @@ using namespace BitFlow::Core::Expression;
 
 struct LinearTerm {
     ExprId base{};
-    uint64_t coeff{0};
+    Types::ExprChunk coeff{0};
 };
 
-static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTerm& out, uint16_t bitWidth) {
+static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTerm& out, Types::BitWidth bitWidth) {
     const Expr& term = store->get(termId);
 
     if (term.op == OpType::Const)
@@ -26,11 +26,11 @@ static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTer
         return true;
     }
 
-    uint64_t coeff = 1;
+    Types::ExprChunk coeff = 1;
     ExprId base{};
     bool sawConst = false;
 
-    const uint64_t mask = Expr::fullMask(bitWidth);
+    const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
     for (ExprId factorId : term.inputs) {
         const Expr& factor = store->get(factorId);
@@ -79,9 +79,9 @@ static bool Match_Add_LinearMultiplicity(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_Add_LinearMultiplicity(ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
-    const uint64_t mask = Expr::fullMask(e.bitWidth);
+    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
 
-    std::unordered_map<ExprId, uint64_t> coeffByBaseId;
+    std::unordered_map<ExprId, Types::ExprChunk> coeffByBaseId;
     std::vector<ExprId> baseOrder;
     baseOrder.reserve(e.inputs.size());
 
@@ -105,7 +105,7 @@ static ExprId Rewrite_Add_LinearMultiplicity(ExprStore* store, ExprId id) {
     normalizedAddTerms.reserve(baseOrder.size() + passthroughTerms.size());
 
     for (ExprId baseId : baseOrder) {
-        const uint64_t coeff = coeffByBaseId[baseId] & mask;
+        const Types::ExprChunk coeff = coeffByBaseId[baseId] & mask;
 
         if (coeff == 0)
             continue;

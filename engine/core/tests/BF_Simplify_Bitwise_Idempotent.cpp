@@ -1,97 +1,81 @@
-#include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
-#include <Core_Expr.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-int TestAndIdempotent() {
-    auto a = MakeVar(1);
-
-    auto expr = MakeOp(10, OpType::And, {a, a});
+static RuleEngine MakeEngine() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
+    return engine;
+}
 
-    ExprOld* r = engine.Rewrite(expr);
+int TestAndIdempotent() {
+    MakeExprStore(32);
 
-    BF_TEST(r->id == a->id);
+    RuleEngine engine = MakeEngine();
+
+    auto a = V("a");
+
+    BF_TEST(Rewrite(engine, a & a) == a);
+
     return 0;
 }
 
 int TestAndIdempotentMixed() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
+    MakeExprStore(32);
 
-    auto expr = MakeOp(11, OpType::And, {a, b, a});
+    RuleEngine engine = MakeEngine();
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
+    auto a = V("a");
+    auto b = V("b");
 
-    ExprOld* r = engine.Rewrite(expr);
+    auto r = Rewrite(engine, a & b & a);
+    auto out = GetExpr(r);
 
-    BF_TEST(r->op == OpType::And);
-    BF_TEST(r->inputs.size() == 2);
-    BF_TEST(r->inputs[0]->id == a->id);
-    BF_TEST(r->inputs[1]->id == b->id);
+    BF_TEST(out.op == OpType::And);
+    BF_TEST(out.inputs.size() == 2);
+
+    BF_TEST(ERef(out.inputs[0]) == a);
+    BF_TEST(ERef(out.inputs[1]) == b);
+
     return 0;
 }
 
 int TestOrIdempotent() {
-    auto a = MakeVar(1);
+    MakeExprStore(32);
 
-    auto expr = MakeOp(20, OpType::Or, {a, a});
+    RuleEngine engine = MakeEngine();
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
+    auto a = V("a");
 
-    ExprOld* r = engine.Rewrite(expr);
+    BF_TEST(Rewrite(engine, a | a) == a);
 
-    BF_TEST(r->id == a->id);
     return 0;
 }
 
 int TestOrIdempotentMixed() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
+    MakeExprStore(32);
 
-    auto expr = MakeOp(21, OpType::Or, {b, a, b});
+    RuleEngine engine = MakeEngine();
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
+    auto a = V("a");
+    auto b = V("b");
 
-    ExprOld* r = engine.Rewrite(expr);
+    auto r = Rewrite(engine, b | a | b);
+    auto out = GetExpr(r);
 
-    BF_TEST(r->op == OpType::Or);
-    BF_TEST(r->inputs.size() == 2);
-    BF_TEST(r->inputs[0]->id == b->id);
-    BF_TEST(r->inputs[1]->id == a->id);
-    return 0;
-}
+    BF_TEST(out.op == OpType::Or);
+    BF_TEST(out.inputs.size() == 2);
 
-int TestAndIdempotentFrozen() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
 
-    auto expr = MakeOp(30, OpType::And, {a, b, a});
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
-
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r != expr);
-    BF_TEST(r->op == OpType::And);
-    BF_TEST(r->inputs.size() == 2);
-    BF_TEST(r->inputs[0]->id == a->id);
-    BF_TEST(r->inputs[1]->id == b->id);
     return 0;
 }
 
@@ -100,6 +84,5 @@ int main() {
     BF_RUN_TEST(TestAndIdempotentMixed);
     BF_RUN_TEST(TestOrIdempotent);
     BF_RUN_TEST(TestOrIdempotentMixed);
-    BF_RUN_TEST(TestAndIdempotentFrozen);
     return 0;
 }

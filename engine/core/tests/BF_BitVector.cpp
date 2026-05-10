@@ -8,7 +8,7 @@ int TestNormalizeAndAccessors() {
     bf_uint one(1ULL, 65);
     bf_uint sum = v + one;
 
-    BF_TEST(sum.ToUint64() == 0ULL);
+    BF_TEST(sum.ToChunk() == 0ULL);
     BF_TEST(sum.BitWidth() == 65U);
     BF_TEST(one.ToUint32() == 1U);
     BF_TEST(!one.IsZero());
@@ -20,30 +20,30 @@ int TestBitwiseAndShifts() {
     bf_uint one(1ULL, 128);
     bf_uint high = one.Shl(127);
 
-    BF_TEST(high.Shr(127).ToUint64() == 1ULL);
-    BF_TEST(high.Shr(64).ToUint64() == (1ULL << 63));
+    BF_TEST(high.Shr(127).ToChunk() == 1ULL);
+    BF_TEST(high.Shr(64).ToChunk() == (1ULL << 63));
 
     bf_uint allLow(~0ULL, 128);
     bf_uint mask(0x0f0f0f0f0f0f0f0fULL, 128);
-    BF_TEST((allLow & mask).ToUint64() == 0x0f0f0f0f0f0f0f0fULL);
-    BF_TEST((allLow ^ mask).ToUint64() == 0xf0f0f0f0f0f0f0f0ULL);
+    BF_TEST((allLow & mask).ToChunk() == 0x0f0f0f0f0f0f0f0fULL);
+    BF_TEST((allLow ^ mask).ToChunk() == 0xf0f0f0f0f0f0f0f0ULL);
     return 0;
 }
 
 int TestRotateArithmeticAndDivision() {
     bf_uint x(0x81ULL, 128);
-    BF_TEST(x.RotL(1).ToUint64() == 0x102ULL);
-    BF_TEST(x.RotR(1).ToUint64() == 0x40ULL);
+    BF_TEST(x.RotL(1).ToChunk() == 0x102ULL);
+    BF_TEST(x.RotR(1).ToChunk() == 0x40ULL);
 
     bf_uint max64(~0ULL, 128);
     bf_uint two(2ULL, 128);
     bf_uint prod = max64 * two;
-    BF_TEST(prod.ToUint64() == 0xfffffffffffffffeULL);
+    BF_TEST(prod.ToChunk() == 0xfffffffffffffffeULL);
 
     bf_uint dividend(100ULL, 128);
     bf_uint divisor(9ULL, 128);
-    BF_TEST((dividend / divisor).ToUint64() == 11ULL);
-    BF_TEST((dividend % divisor).ToUint64() == 1ULL);
+    BF_TEST((dividend / divisor).ToChunk() == 11ULL);
+    BF_TEST((dividend % divisor).ToChunk() == 1ULL);
     return 0;
 }
 
@@ -56,16 +56,16 @@ int TestComparisonAndCompound() {
     BF_TEST(a != b);
 
     a += bf_uint(5ULL, 64);
-    BF_TEST(a.ToUint64() == 15ULL);
+    BF_TEST(a.ToChunk() == 15ULL);
 
     a <<= 1;
-    BF_TEST(a.ToUint64() == 30ULL);
+    BF_TEST(a.ToChunk() == 30ULL);
 
     a >>= 2;
-    BF_TEST(a.ToUint64() == 7ULL);
+    BF_TEST(a.ToChunk() == 7ULL);
 
     a |= bf_uint(8ULL, 64);
-    BF_TEST(a.ToUint64() == 15ULL);
+    BF_TEST(a.ToChunk() == 15ULL);
 
     return 0;
 }
@@ -74,9 +74,9 @@ int TestWrapAroundModuloWidth() {
     bf_uint x(0xffULL, 8);
     bf_uint one(1ULL, 8);
 
-    BF_TEST((x + one).ToUint64() == 0ULL);
-    BF_TEST((-one).ToUint64() == 0xffULL);
-    BF_TEST((x << 1).ToUint64() == 0xfeULL);
+    BF_TEST((x + one).ToChunk() == 0ULL);
+    BF_TEST((-one).ToChunk() == 0xffULL);
+    BF_TEST((x << 1).ToChunk() == 0xfeULL);
 
     return 0;
 }
@@ -102,8 +102,8 @@ int TestLargeShiftCounts() {
     BF_TEST(s65.IsZero());
     BF_TEST(r129.IsZero());
 
-    BF_TEST((x << 63).ToUint64() == (1ULL << 63));
-    BF_TEST((x << 62).ToUint64() == (1ULL << 62));
+    BF_TEST((x << 63).ToChunk() == (1ULL << 63));
+    BF_TEST((x << 62).ToChunk() == (1ULL << 62));
 
     BF_TEST((x << 63).IsZero() == false);
     BF_TEST((x << 64).IsZero() == true);

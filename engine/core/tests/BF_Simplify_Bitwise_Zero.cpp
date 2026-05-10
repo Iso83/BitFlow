@@ -1,43 +1,39 @@
-#include <BitFlow/core/rules/Rule.h>
-#include <BitFlow/core/rules/RuleEngine.h>
-#include <Core_Expr.h>
+#include <BitFlow/core/rules/RulePipeline.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 int TestAndZero() {
-    auto x = MakeVar(1);
-    auto zero = ConstPool::Get(0);
-
-    auto and1 = MakeOp(3, OpType::And, {x, zero});
-    auto and2 = MakeOp(4, OpType::And, {and1, zero});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_And_Zero_Dominance_Rule());
 
-    ExprOld* result = engine.Rewrite(and2);
+    auto x = V("x");
 
-    BF_TEST(result->id == zero->id);
+    auto r = Rewrite(engine, (x & False()) & False());
+
+    BF_TEST(IsFalse(r));
+
     return 0;
 }
 
 int TestXorZero() {
-    auto x = MakeVar(10);
-    auto zero = ConstPool::Get(0);
-
-    auto xor1 = MakeOp(12, OpType::Xor, {x, zero});
-    auto xor2 = MakeOp(13, OpType::Xor, {zero, xor1});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
 
-    ExprOld* result = engine.Rewrite(xor2);
+    auto x = V("x");
 
-    BF_TEST(result->id == x->id);
+    BF_TEST(Rewrite(engine, False() ^ (x ^ False())) == x);
+
     return 0;
 }
 

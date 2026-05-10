@@ -1,9 +1,9 @@
-#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <Core_Expr.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 

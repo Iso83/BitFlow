@@ -38,14 +38,17 @@ static bool Match_Xor_And_Reduction(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_Xor_And_Reduction(ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
-    for (size_t i = 0; i < e.inputs.size(); ++i) {
-        ExprId x = e.inputs[i];
+    const auto inputs = e.inputs;
+    const Types::BitWidth bitWidth = e.bitWidth;
 
-        for (size_t j = 0; j < e.inputs.size(); ++j) {
+    for (size_t i = 0; i < inputs.size(); ++i) {
+        ExprId x = inputs[i];
+
+        for (size_t j = 0; j < inputs.size(); ++j) {
             if (i == j)
                 continue;
 
-            const Expr& other = store->get(e.inputs[j]);
+            const Expr& other = store->get(inputs[j]);
             if (other.op != OpType::And)
                 continue;
 
@@ -67,19 +70,20 @@ static ExprId Rewrite_Xor_And_Reduction(ExprStore* store, ExprId id) {
 
             ExprId yExpr;
             if (andRemainder.empty())
-                yExpr = store->makeTrue(e.bitWidth).id;
+                yExpr = store->makeTrue(bitWidth).id;
             else if (andRemainder.size() == 1)
                 yExpr = andRemainder[0];
             else
-                yExpr = store->create(OpType::And, std::move(andRemainder), e.bitWidth).id;
+                yExpr = store->create(OpType::And, std::move(andRemainder), bitWidth).id;
 
-            ExprId replacement =
-                store->create(OpType::And, {x, store->create(OpType::Not, {yExpr}, e.bitWidth).id}, e.bitWidth).id;
+            ExprId notY = store->create(OpType::Not, {yExpr}, bitWidth).id;
+
+            ExprId replacement = store->create(OpType::And, {x, notY}, bitWidth).id;
 
             std::vector<ExprId> newInputs;
-            newInputs.reserve(e.inputs.size() - 1);
+            newInputs.reserve(inputs.size() - 1);
 
-            for (size_t k = 0; k < e.inputs.size(); ++k) {
+            for (size_t k = 0; k < inputs.size(); ++k) {
                 if (k == i) {
                     newInputs.push_back(replacement);
                     continue;
@@ -88,16 +92,16 @@ static ExprId Rewrite_Xor_And_Reduction(ExprStore* store, ExprId id) {
                 if (k == j)
                     continue;
 
-                newInputs.push_back(e.inputs[k]);
+                newInputs.push_back(inputs[k]);
             }
 
             if (newInputs.empty())
-                return store->makeFalse(e.bitWidth).id;
+                return store->makeFalse(bitWidth).id;
 
             if (newInputs.size() == 1)
                 return newInputs[0];
 
-            return store->create(OpType::Xor, std::move(newInputs), e.bitWidth).id;
+            return store->create(OpType::Xor, std::move(newInputs), bitWidth).id;
         }
     }
 

@@ -1,77 +1,72 @@
-#include <BitFlow/core/rules/Rule.h>
-#include <BitFlow/core/rules/RuleEngine.h>
-#include <Core_Expr.h>
+#include <BitFlow/core/rules/RulePipeline.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
+static RuleEngine MakeEngine() {
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_And_Zero_Dominance_Rule());
+    return engine;
+}
+
 int Test_And_ZeroDominance() {
-    auto a = MakeVar(1);
-    auto zero = ConstPool::Get(0);
+    MakeExprStore(32);
 
-    auto expr = MakeOp(10, OpType::And, {a, zero});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto r = Rewrite(engine, a & 0);
 
-    RuleEngine eng;
-    eng.AddRule(Normalize::Get_Flatten_Rule());
-    eng.AddRule(Simplify::Bitwise::Get_And_Zero_Dominance_Rule());
-
-    ExprOld* res = eng.Rewrite(expr);
-
-    BF_TEST(res->op == OpType::Const && res->constValue == 0);
+    BF_TEST(IsFalse(r));
     return 0;
 }
 
 int Test_And_OneIdentity_Multi() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto one = ConstPool::Get(1);
+    MakeExprStore(32);
 
-    auto expr = MakeOp(10, OpType::And, {a, one, b});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto r = Rewrite(engine, a & True() & b);
+    auto out = GetExpr(r);
 
-    RuleEngine eng;
-    eng.AddRule(Normalize::Get_Flatten_Rule());
-    eng.AddRule(Simplify::Bitwise::Get_And_One_Identity_Rule());
-
-    ExprOld* res = eng.Rewrite(expr);
-
-    BF_TEST(res->op == OpType::And);
-    BF_TEST(res->inputs.size() == 2);
+    BF_TEST(out.op == OpType::And);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(ERef(out.inputs[0]) == a);
+    BF_TEST(ERef(out.inputs[1]) == b);
     return 0;
 }
 
 int Test_Or_OneDominance() {
-    auto a = MakeVar(1);
-    auto one = ConstPool::Get(1);
+    MakeExprStore(32);
 
-    auto expr = MakeOp(10, OpType::Or, {a, one});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto r = Rewrite(engine, a | True());
 
-    RuleEngine eng;
-    eng.AddRule(Normalize::Get_Flatten_Rule());
-    eng.AddRule(Simplify::Bitwise::Get_Or_One_Dominance_Rule());
-
-    ExprOld* res = eng.Rewrite(expr);
-
-    BF_TEST(res->op == OpType::Const && res->constValue == 1);
+    BF_TEST(IsTrue(r));
     return 0;
 }
 
 int Test_Or_ZeroIdentity_Multi() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto zero = ConstPool::Get(0);
+    MakeExprStore(32);
 
-    auto expr = MakeOp(10, OpType::Or, {a, zero, b});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto r = Rewrite(engine, a | False() | b);
+    auto out = GetExpr(r);
 
-    RuleEngine eng;
-    eng.AddRule(Normalize::Get_Flatten_Rule());
-    eng.AddRule(Simplify::Bitwise::Get_Or_Zero_Identity_Rule());
+    BF_TEST(out.op == OpType::Or);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(ERef(out.inputs[0]) == a);
+    BF_TEST(ERef(out.inputs[1]) == b);
 
-    ExprOld* res = eng.Rewrite(expr);
-
-    BF_TEST(res->op == OpType::Or);
-    BF_TEST(res->inputs.size() == 2);
     return 0;
 }
 

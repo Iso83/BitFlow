@@ -30,6 +30,11 @@ inline constexpr RuleKey Order{"CORE.NORMALIZE.ORDER"};
 Rule Get_Order_Rule();
 } // namespace Normalize
 
+namespace Normalize::Bitwise {
+inline constexpr RuleKey Rotate_ModuloBitWidth{"CORE.NORMALIZE.BITWISE.Rotate_ModuloBitWidth"};
+Rule Get_Rotate_ModuloBitWidth_Rule();
+} // namespace Normalize::Bitwise
+
 namespace Simplify::Arithmetic {
 inline constexpr RuleKey Add_Zero{"CORE.SIMPLIFY.ARITHMETIC.ADD_ZERO"};
 Rule Get_Add_Zero_Rule();

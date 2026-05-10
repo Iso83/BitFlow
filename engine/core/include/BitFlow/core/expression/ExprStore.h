@@ -2,9 +2,6 @@
 
 #include <BitFlow/core/expression/Expr.h>
 #include <BitFlow/core/expression/ExprRef.h>
-#include <BitFlow/core/helper/Attributes.h>
-#include <stdexcept>
-#include <unordered_map>
 
 namespace BitFlow::Core::Expression {
 
@@ -15,136 +12,100 @@ class ExprStore {
     ValueType m_nextId{1};
     std::vector<ValueType> m_freeIds{};
 
+#ifdef BF_EXPR_LIFETIME_CHECKS
+    friend Expr;
+
+    uint64_t m_generation{};
+
+    uint32_t m_nextDebugSlot{};
+    std::vector<Expr> m_debugExprs{};
+    std::vector<_Expr_INTERNALONLY> m_nodes{};
+#else
     std::vector<Expr> m_nodes{};
+#endif
     std::vector<bool> m_alive{};
 
   public:
+#ifdef BF_EXPR_LIFETIME_CHECKS
+    ExprStore();
+#else
     ExprStore() = default;
+#endif
     ~ExprStore() = default;
 
-    [[nodiscard]] ExprRef create(OpType op, std::initializer_list<Ids::ExprId> in, uint16_t bitWidth = 64) {
-        _ASSERT(bitWidth > 0);
+    [[nodiscard]] ExprRef create(OpType op, std::initializer_list<Ids::ExprId> in,
+                                 Types::BitWidth bitWidth = Types::ExprChunkBits);
+    [[nodiscard]] ExprRef create(OpType op, std::vector<Ids::ExprId>&& in,
+                                 Types::BitWidth bitWidth = Types::ExprChunkBits);
 
-        const auto id = createId();
-        const auto index = toIndex(id);
+    [[nodiscard]] ExprRef createConstant(Types::ExprChunk value, Types::BitWidth bitWidth = Types::ExprChunkBits);
 
-        ensureCapacity(index + 1);
-
-        auto& expr = m_nodes[index];
-        expr = Expr{};
-        expr.op = op;
-        expr.bitWidth = bitWidth;
-        expr.inputs = in;
-
-        m_alive[index] = true;
-
-        return ExprRef(this, id);
-    }
-
-    [[nodiscard]] ExprRef create(OpType op, std::vector<Ids::ExprId>&& in, uint16_t bitWidth = 64) {
-        _ASSERT(bitWidth > 0);
-
-        const auto id = createId();
-        const auto index = toIndex(id);
-
-        ensureCapacity(index + 1);
-
-        auto& expr = m_nodes[index];
-        expr = Expr{};
-        expr.op = op;
-        expr.bitWidth = bitWidth;
-        expr.inputs = std::move(in);
-
-        m_alive[index] = true;
-
-        return ExprRef(this, id);
-    }
-
-    [[nodiscard]] ExprRef createConstant(uint64_t value, uint16_t bitWidth = 64) {
-        auto ref = create(OpType::Const, {}, bitWidth);
-
-        auto& expr = get(ref);
-        expr.knownMask = Expr::fullMask(bitWidth);
-        expr.knownValue = value;
-
-        return ref;
-    }
-
-    [[nodiscard]] ExprRef makeFalse(uint16_t bitWidth = 64) {
-        return createConstant(0ULL, bitWidth);
-    }
-
-    [[nodiscard]] ExprRef makeTrue(uint16_t bitWidth = 64) {
-        auto ref = create(OpType::Const, {}, bitWidth);
-
-        auto& expr = get(ref);
-        expr.knownMask = Expr::fullMask(bitWidth);
-        expr.knownValue = expr.knownMask;
-
-        return ref;
-    }
-
-    [[nodiscard]] ExprRef invertConst(Ids::ExprId id) {
-        const Expr& e = get(id);
-
-        if (e.op != OpType::Const)
-            throw std::runtime_error("ExprStore::invertConst expects Const");
-
-        const uint64_t mask = Expr::fullMask(e.bitWidth);
-        const uint64_t value = (~e.knownValue) & mask;
-
-        return createConstant(value, e.bitWidth);
-    }
-
-    [[nodiscard]] ExprRef createVariable(uint16_t bitWidth = 64) {
+    [[nodiscard]] ExprRef createVariable(Types::BitWidth bitWidth = Types::ExprChunkBits) {
         return create(OpType::Var, {}, bitWidth);
     }
 
-    [[nodiscard]] bool remove(ExprRef ref) {
-        if (!contains(ref)) {
-            return false;
-        }
-
-        const auto index = toIndex(ref.id);
-
-        m_alive[index] = false;
-        m_freeIds.push_back(ref.id.value());
-
-        return true;
+    [[nodiscard]] ExprRef makeFalse(Types::BitWidth bitWidth = Types::ExprChunkBits) {
+        return createConstant(Types::ExprChunk{0}, bitWidth);
     }
 
-    [[nodiscard]] bool contains(ExprRef ref) const {
-        if (ref.store != this || ref.id.value() == 0) {
-            return false;
-        }
+    [[nodiscard]] bool isFalse(Ids::ExprId id) const {
+        const Expr& e = get(id);
 
-        const auto index = toIndex(ref.id);
+        _ASSERT(e.op == OpType::Const && e.inputs.empty());
 
-        if (index >= m_alive.size()) {
-            return false;
-        }
-
-        return m_alive[index];
+        return e.knownValue == 0;
     }
+
+    [[nodiscard]] ExprRef makeTrue(Types::BitWidth bitWidth = Types::ExprChunkBits);
+
+    [[nodiscard]] bool isTrue(Ids::ExprId id) const {
+        const Expr& e = get(id);
+
+        _ASSERT(e.op == OpType::Const && e.inputs.empty());
+
+        return e.knownValue == Expr::fullMask(e.bitWidth);
+    }
+
+    [[nodiscard]] ExprRef invertConst(Ids::ExprId id);
+
+    [[nodiscard]] bool remove(ExprRef ref);
+
+    [[nodiscard]] bool contains(ExprRef ref) const;
 
     [[nodiscard]] Expr& get(ExprRef ref) {
+#ifdef BF_EXPR_LIFETIME_CHECKS
+        return get(ref.id);
+#else
         return m_nodes[toIndex(ref.id)];
+#endif
     }
 
+#ifdef BF_EXPR_LIFETIME_CHECKS
+    [[nodiscard]] Expr& MakeDebugExpr(Ids::ExprId id);
+#endif
+
     [[nodiscard]] Expr& get(Ids::ExprId id) {
+#ifdef BF_EXPR_LIFETIME_CHECKS
+        return MakeDebugExpr(id);
+#else
         return m_nodes[toIndex(id)];
+#endif
     }
 
     [[nodiscard]] const Expr& get(ExprRef ref) const {
+#ifdef BF_EXPR_LIFETIME_CHECKS
+        return get(ref.id);
+#else
         return m_nodes[toIndex(ref.id)];
+#endif
     }
 
-    [[nodiscard]] const Expr& get(const Ids::ExprId id) const {
+    [[nodiscard]] const Expr& get(Ids::ExprId id) const {
+#ifdef BF_EXPR_LIFETIME_CHECKS
+        return const_cast<ExprStore*>(this)->MakeDebugExpr(id);
+#else
         return m_nodes[toIndex(id)];
-    }
-
-    [[nodiscard]] Expr& operator[](ExprRef ref) {
-        return get(ref);
+#endif
     }
 
     [[nodiscard]] const Expr& operator[](ExprRef ref) const {
@@ -152,28 +113,18 @@ class ExprStore {
     }
 
   private:
-    [[nodiscard]] Ids::ExprId createId() {
-        ValueType value{};
-
-        if (!m_freeIds.empty()) {
-            value = m_freeIds.back();
-            m_freeIds.pop_back();
-        } else {
-            value = m_nextId++;
-        }
-
-        return Ids::ExprId{value};
-    }
+    [[nodiscard]] Ids::ExprId createId();
 
     [[nodiscard]] static size_t toIndex(Ids::ExprId id) {
         return static_cast<size_t>(id.value());
     }
 
     void ensureCapacity(size_t size) {
-        if (m_nodes.size() < size) {
-            m_nodes.resize(size);
-            m_alive.resize(size, false);
-        }
+#ifdef BF_EXPR_LIFETIME_CHECKS
+        m_generation++;
+#endif
+        m_nodes.resize(size);
+        m_alive.resize(size, false);
     }
 };
 

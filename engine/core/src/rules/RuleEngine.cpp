@@ -1,38 +1,27 @@
 #include "expression/ExprUtils.h"
 
 #include <BitFlow/core/rules/RuleEngine.h>
+#include <stdexcept>
 
 namespace BitFlow::Core::Rules {
 
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-#pragma region Add rules
 void RuleEngine::AddRule(const Rule& rule) {
-    if (!m_present.insert(rule.key).second) {
-        _ASSERT(false && "Duplicate RuleKey in RuleEngine");
+    if (m_present.contains(rule.key))
         return;
-    }
 
-    for (const auto& dep : rule.deps) {
-        if (m_present.find(dep) == m_present.end()) {
-            _ASSERT(false && "Missing rule dependency");
-        }
-    }
+    m_present.insert(rule.key);
+    m_rules.push_back(rule);
 
-    m_rules.push_back(rule); // by value!
-}
-#pragma endregion
-
-void RuleEngine::Merge(const RuleEngine& other) {
-    for (const Rule& r : other.m_rules) {
-        if (m_present.insert(r.key).second)
-            m_rules.push_back(r);
-    }
+    m_validated = false;
 }
 
-#pragma region Execution
 ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id) const {
+    if (!m_validated)
+        ValidateDependencies();
+
     for (const Rule& r : m_rules) {
         if (!r.match(store, id))
             continue;
@@ -84,6 +73,85 @@ ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root) const {
     _ASSERT(false && "Rewrite did not converge");
     return current;
 }
-#pragma endregion
+
+void CollectDependenciesRecursive(const std::vector<Rule>& rules, const std::unordered_map<RuleKey, size_t>& indices,
+                                  const Rule& rule, std::unordered_set<RuleKey>& out) {
+
+    if (!out.insert(rule.key).second)
+        return;
+
+    for (const auto& dep : rule.deps) {
+        const auto it = indices.find(dep);
+
+        if (it == indices.end())
+            continue;
+
+        const Rule& depRule = rules[it->second];
+
+        CollectDependenciesRecursive(rules, indices, depRule, out);
+    }
+}
+
+DependencyValidationResult RuleEngine::ValidateMinimalDependencies(const Rule& testingRule) const {
+    DependencyValidationResult result(testingRule.key);
+
+    std::unordered_map<RuleKey, size_t> indices;
+
+    indices.reserve(m_rules.size());
+
+    for (size_t i = 0; i < m_rules.size(); ++i)
+        indices.emplace(m_rules[i].key, i);
+
+    std::unordered_set<RuleKey> required;
+
+    CollectDependenciesRecursive(m_rules, indices, testingRule, required);
+
+    // --- missing ---
+    for (const auto& key : required) {
+        if (!m_present.contains(key)) {
+            result.valid = false;
+            result.missing.push_back(key);
+        }
+    }
+
+    // --- extra ---
+    for (const auto& rule : m_rules) {
+        if (!required.contains(rule.key)) {
+            result.valid = false;
+            result.extra.push_back(rule.key);
+        }
+    }
+
+    return result;
+}
+
+void RuleEngine::ValidateDependencies() const {
+    std::unordered_map<RuleKey, size_t> indices;
+
+    indices.reserve(m_rules.size());
+
+    for (size_t i = 0; i < m_rules.size(); ++i)
+        indices.emplace(m_rules[i].key, i);
+
+    for (size_t i = 0; i < m_rules.size(); ++i) {
+        const auto& rule = m_rules[i];
+
+        for (const auto& dep : rule.deps) {
+            const auto it = indices.find(dep);
+
+            if (it == indices.end()) {
+                throw std::runtime_error(std::string("Missing dependency: ") + dep.value + " required by " +
+                                         rule.key.value);
+            }
+
+            if (it->second >= i) {
+                throw std::runtime_error(std::string("Dependency order invalid: ") + dep.value +
+                                         " must execute before " + rule.key.value);
+            }
+        }
+    }
+
+    m_validated = true;
+}
 
 } // namespace BitFlow::Core::Rules

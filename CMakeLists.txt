@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(BitFlow LANGUAGES C CXX)
 
 option(BF_BUILD_TESTS "Build tests" ON)
+option(BF_EXPR_LIFETIME_CHECKS "Enable Expr lifetime validation instrumentation" OFF)
 
 if(BF_BUILD_TESTS)
     enable_testing()

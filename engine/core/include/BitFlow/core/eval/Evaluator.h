@@ -27,7 +27,7 @@ struct EvalResult {
 // - all operations follow bf_uint semantics
 // - returns Success if the expression is fully constant
 // - otherwise returns a non-success status
-EvalResult EvaluateConstant(const Expression::ExprStore* store, const Expression::Expr* root, uint32_t bitWidth);
+EvalResult EvaluateConstant(const Expression::ExprStore* store, const Expression::Expr* root, Types::BitWidth bitWidth);
 
 bool IsFullyConstant(const Expression::ExprStore* store, const Expression::Expr* node);
 

@@ -1,87 +1,86 @@
-#include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
-#include <Core_Expr.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-int TestAndFold() {
-    auto x = MakeVar(1);
-    auto zero = ConstPool::Get(0);
-    auto one = ConstPool::Get(1);
-
-    auto expr = MakeOp(2, OpType::And, {x, one, one});
-    auto expr2 = MakeOp(3, OpType::And, {x, zero, one});
+static RuleEngine MakeEngine() {
 
     RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
+    engine.Merge(BuildNormalize());
+    engine.Merge(BuildSimplifyBitwise());
+    return engine;
+}
 
-    ExprOld* r1 = engine.Rewrite(expr);
-    BF_TEST(r1->id == x->id);
+int TestAndFold() {
+    MakeExprStore(32);
 
-    ExprOld* r2 = engine.Rewrite(expr2);
-    BF_TEST(r2->id == zero->id);
+    RuleEngine engine = MakeEngine();
+    auto x = V("x");
+
+    {
+        auto r = Rewrite(engine, x & True() & True());
+        BF_TEST(r == x);
+    }
+
+    {
+        auto r = Rewrite(engine, x & False() & True());
+        BF_TEST(IsFalse(r));
+    }
 
     return 0;
 }
 
 int TestOrFold() {
-    auto x = MakeVar(1);
-    auto zero = ConstPool::Get(0);
-    auto one = ConstPool::Get(1);
+    MakeExprStore(32);
 
-    auto expr = MakeOp(2, OpType::Or, {x, zero, zero});
-    auto expr2 = MakeOp(3, OpType::Or, {x, one, zero});
+    RuleEngine engine = MakeEngine();
+    auto x = V("x");
 
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
+    {
+        auto r = Rewrite(engine, x | False() | False());
 
-    ExprOld* r1 = engine.Rewrite(expr);
-    BF_TEST(r1->id == x->id);
+        BF_TEST(r == x);
+    }
 
-    ExprOld* r2 = engine.Rewrite(expr2);
-    BF_TEST(r2->id == one->id);
+    {
+        auto r = Rewrite(engine, x | True() | False());
+
+        BF_TEST(IsTrue(r));
+    }
 
     return 0;
 }
 
 int TestXorFold() {
-    auto x = MakeVar(1);
-    auto c1 = MakeConst(2, 1);
-    auto c2 = MakeConst(3, 1);
+    MakeExprStore(32);
 
-    auto expr = MakeOp(4, OpType::Xor, {x, c1, c2});
+    RuleEngine engine = MakeEngine();
+    auto x = V("x");
+    auto r = Rewrite(engine, x ^ True() ^ True());
 
-    RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
+    // true ^ true = false
+    // x ^ false = x
 
-    ExprOld* result = engine.Rewrite(expr);
-
-    // 1 ^ 1 = 0 → x ^ 0 → x
-    BF_TEST(result->id == x->id);
+    BF_TEST(r == x);
 
     return 0;
 }
 
 int TestXorFoldAllConstZero() {
-    auto c1 = MakeConst(2, 1);
-    auto c2 = MakeConst(3, 1);
-
-    auto expr = MakeOp(4, OpType::Xor, {c1, c2});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Fold_Rule());
 
-    ExprOld* result = engine.Rewrite(expr);
+    auto r = Rewrite(engine, True() ^ True());
 
-    BF_TEST(result->op == OpType::Const);
-    BF_TEST(result->constValue == 0);
+    BF_TEST(IsFalse(r));
+
     return 0;
 }
 

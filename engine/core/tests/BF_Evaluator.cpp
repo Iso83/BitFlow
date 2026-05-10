@@ -1,5 +1,5 @@
 #include <BitFlow/core/eval/Evaluator.h>
-#include <Core_Expr.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
@@ -152,17 +152,12 @@ int TestEvaluate_WideBitWidth_UsesBfUintPath() {
     auto rotr = c2.RotR(1);
     auto rotrWide = EvaluateConstant(rotr, 128);
     BF_TEST(rotrWide.status == EvalStatus::Success);
-    BF_TEST(rotrWide.value.Shr(127).ToUint64() == 1ULL);
+    BF_TEST(rotrWide.value.Shr(127).ToChunk() == 1ULL);
     return 0;
 }
 #pragma endregion
 
 #pragma region IsFullyConstant
-int TestDetect_NullIsFalse() {
-    BF_TEST(!IsFullyConstant(nullptr));
-    return 0;
-}
-
 int TestDetect_ConstLeaf() {
     MakeExprStore(32);
     BF_TEST(IsFullyConstant(C(42)));
@@ -202,7 +197,6 @@ int main() {
     BF_RUN_TEST(TestEvaluate_InvalidBitWidth);
     BF_RUN_TEST(TestEvaluate_WideBitWidth_UsesBfUintPath);
 
-    BF_RUN_TEST(TestDetect_NullIsFalse);
     BF_RUN_TEST(TestDetect_ConstLeaf);
     BF_RUN_TEST(TestDetect_VarLeafFalse);
     BF_RUN_TEST(TestDetect_AllChildrenConstant);

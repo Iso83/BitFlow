@@ -62,7 +62,7 @@ static ExprId Rewrite_And_Xor_Reduction(ExprStore* store, ExprId id) {
 
                 if (k == i) {
                     newInputs.push_back(e.inputs[i]);
-                    newInputs.push_back(Make_Expr_Not(store, y).id);
+                    newInputs.push_back(store->create(OpType::Not, {y}, e.bitWidth).id);
                     continue;
                 }
 

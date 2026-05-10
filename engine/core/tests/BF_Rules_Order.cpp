@@ -1,29 +1,33 @@
-#include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
-#include <Core_Expr.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 int TestXorOrdering() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
-
-    // bewust unsorted
-    auto expr = MakeOp(3, OpType::Xor, {y, x, y, x});
+    MakeExprStore(32);
 
     RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
 
-    ExprOld* result = engine.Rewrite(expr);
+    auto x = V("x");
+    auto y = V("y");
 
-    // verwacht: [x, x, y, y]
-    BF_TEST(result->inputs[0]->id == x->id);
-    BF_TEST(result->inputs[1]->id == x->id);
-    BF_TEST(result->inputs[2]->id == y->id);
-    BF_TEST(result->inputs[3]->id == y->id);
+    auto r = Rewrite(engine, y ^ x ^ y ^ x);
+    auto out = GetExpr(r);
+
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 4);
+
+    BF_TEST(ERef(out.inputs[0]) == x);
+    BF_TEST(ERef(out.inputs[1]) == x);
+    BF_TEST(ERef(out.inputs[2]) == y);
+    BF_TEST(ERef(out.inputs[3]) == y);
+
     return 0;
 }
 

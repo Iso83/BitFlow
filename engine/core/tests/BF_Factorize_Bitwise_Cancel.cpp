@@ -1,82 +1,56 @@
-#include <BitFlow/core/expression/OpType.h>
-#include <BitFlow/core/rules/Rule.h>
-#include <BitFlow/core/rules/RuleEngine.h>
-#include <Core_Expr.h>
+#include <BitFlow/core/rules/RulePipeline.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-int TestXorXorCancelPair() {
-    auto a = MakeVar(40);
-    auto b = MakeVar(41);
-    auto c = MakeVar(42);
-
-    auto x1 = MakeOp(50, OpType::Xor, {a, b});
-    auto x2 = MakeOp(51, OpType::Xor, {a, c});
-    auto expr = MakeOp(52, OpType::Xor, {x1, x2});
-
+static RuleEngine MakeEngine() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
+    return engine;
+}
 
-    ExprOld* result = engine.Rewrite(expr);
+int TestXorXorCancelPair() {
+    MakeExprStore(32);
 
-    BF_TEST(result->op == OpType::Xor);
-    BF_TEST(result->inputs.size() == 2);
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto r = Rewrite(engine, (a ^ b) ^ (a ^ c));
+    auto out = GetExpr(r);
 
-    auto i0 = result->inputs[0];
-    auto i1 = result->inputs[1];
-
-    BF_TEST((i0->id == b->id && i1->id == c->id) || (i0->id == c->id && i1->id == b->id));
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(CountExpr(r, a) == 0);
+    BF_TEST(CountExpr(r, b) == 1);
+    BF_TEST(CountExpr(r, c) == 1);
     return 0;
 }
 
 int TestXorXorCancelPair_MultiInputOddCommon() {
-    auto a = MakeVar(60);
-    auto b = MakeVar(61);
-    auto c = MakeVar(62);
-    auto d = MakeVar(63);
+    MakeExprStore(32);
 
-    auto x1 = MakeOp(70, OpType::Xor, {a, b});
-    auto x2 = MakeOp(71, OpType::Xor, {a, c});
-    auto x3 = MakeOp(72, OpType::Xor, {a, d});
-    auto expr = MakeOp(73, OpType::Xor, {x1, x2, x3});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+    auto r = Rewrite(engine, (a ^ b) ^ (a ^ c) ^ (a ^ d));
+    auto out = GetExpr(r);
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
-
-    ExprOld* result = engine.Rewrite(expr);
-
-    BF_TEST(result->op == OpType::Xor);
-    BF_TEST(result->inputs.size() == 4);
-
-    bool hasA = false;
-    bool hasB = false;
-    bool hasC = false;
-    bool hasD = false;
-
-    for (ExprOld* in : result->inputs) {
-        if (in->id == a->id)
-            hasA = true;
-        else if (in->id == b->id)
-            hasB = true;
-        else if (in->id == c->id)
-            hasC = true;
-        else if (in->id == d->id)
-            hasD = true;
-    }
-
-    BF_TEST(hasA);
-    BF_TEST(hasB);
-    BF_TEST(hasC);
-    BF_TEST(hasD);
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 4);
+    BF_TEST(CountExpr(r, a) == 1);
+    BF_TEST(CountExpr(r, b) == 1);
+    BF_TEST(CountExpr(r, c) == 1);
+    BF_TEST(CountExpr(r, d) == 1);
     return 0;
 }
 

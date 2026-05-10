@@ -32,7 +32,7 @@ static ExprId Rewrite_Mul_CombineConstants(ExprStore* store, ExprId id) {
 
     _ASSERT(e.op == OpType::Mul);
 
-    uint64_t product = 1;
+    Types::ExprChunk product = 1;
     int constCount = 0;
     std::vector<ExprId> nonConst;
     nonConst.reserve(e.inputs.size());
@@ -41,7 +41,7 @@ static ExprId Rewrite_Mul_CombineConstants(ExprStore* store, ExprId id) {
         const Expr& exprA = store->get(a);
         if (exprA.op == OpType::Const) {
             ++constCount;
-            product *= static_cast<uint64_t>(exprA.knownValue);
+            product *= static_cast<Types::ExprChunk>(exprA.knownValue);
             continue;
         }
 

@@ -1,324 +1,231 @@
-#include <BitFlow/core/rules/RuleEngine.h>
-#include <Core_Expr.h>
+#include <BitFlow/core/rules/RulePipeline.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-int TestXorAndCommonFactor() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
-
-    auto and1 = MakeOp(10, OpType::And, {a, b});
-    auto and2 = MakeOp(11, OpType::And, {a, c});
-    auto expr = MakeOp(12, OpType::Xor, {and1, and2});
+static RuleEngine MakeEngine() {
 
     RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.Merge(BuildNormalize());
     engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+    return engine;
+}
 
-    ExprOld* result = engine.Rewrite(expr);
+int TestXorAndCommonFactor() {
+    MakeExprStore(32);
 
-    BF_TEST(result->op == OpType::And);
-    BF_TEST(result->inputs.size() == 2);
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto r = Rewrite(engine, (a & b) ^ (a & c));
+    auto out = GetExpr(r);
 
-    ExprOld* left = result->inputs[0];
-    ExprOld* right = result->inputs[1];
+    BF_TEST(out.op == OpType::And);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (GetExpr(in).op != OpType::Xor)
+            return false;
 
-    ExprOld* common = nullptr;
-    ExprOld* inner = nullptr;
+        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
+    }));
 
-    if (left->id == a->id) {
-        common = left;
-        inner = right;
-    } else if (right->id == a->id) {
-        common = right;
-        inner = left;
-    } else
-        BF_TEST(false);
-
-    BF_TEST(common->id == a->id);
-    BF_TEST(inner->op == OpType::Xor);
-    BF_TEST(inner->inputs.size() == 2);
-
-    auto x0 = inner->inputs[0];
-    auto x1 = inner->inputs[1];
-
-    BF_TEST((x0->id == b->id && x1->id == c->id) || (x0->id == c->id && x1->id == b->id));
     return 0;
 }
 
 int TestXorAndCommonFactor_MultiInput() {
-    auto a = MakeVar(20);
-    auto b = MakeVar(21);
-    auto c = MakeVar(22);
-    auto d = MakeVar(23);
+    MakeExprStore(32);
 
-    auto and1 = MakeOp(30, OpType::And, {a, b});
-    auto and2 = MakeOp(31, OpType::And, {a, c});
-    auto and3 = MakeOp(32, OpType::And, {a, d});
-    auto expr = MakeOp(33, OpType::Xor, {and1, and2, and3});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+    auto r = Rewrite(engine, (a & b) ^ (a & c) ^ (a & d));
+    auto out = GetExpr(r);
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+    BF_TEST(out.op == OpType::And);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (GetExpr(in).op != OpType::Xor)
+            return false;
 
-    ExprOld* result = engine.Rewrite(expr);
-
-    BF_TEST(result->op == OpType::And);
-    BF_TEST(result->inputs.size() == 2);
-
-    ExprOld* common = nullptr;
-    ExprOld* inner = nullptr;
-
-    if (result->inputs[0]->id == a->id) {
-        common = result->inputs[0];
-        inner = result->inputs[1];
-    } else if (result->inputs[1]->id == a->id) {
-        common = result->inputs[1];
-        inner = result->inputs[0];
-    } else
-        BF_TEST(false);
-
-    BF_TEST(common->id == a->id);
-    BF_TEST(inner->op == OpType::Xor);
-    BF_TEST(inner->inputs.size() == 3);
-
-    bool hasB = false;
-    bool hasC = false;
-    bool hasD = false;
-
-    for (ExprOld* in : inner->inputs) {
-        if (in->id == b->id)
-            hasB = true;
-        else if (in->id == c->id)
-            hasC = true;
-        else if (in->id == d->id)
-            hasD = true;
-    }
-
-    BF_TEST(hasB);
-    BF_TEST(hasC);
-    BF_TEST(hasD);
+        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == c; }) &&
+               AnyInput(in, [&](ExprRef x) { return x == d; });
+    }));
     return 0;
 }
 
 int TestXorAndFactor_Basic() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
+    MakeExprStore(32);
 
-    auto ab = MakeOp(10, OpType::And, {a, b});
-    auto ac = MakeOp(11, OpType::And, {a, c});
-    auto expr = MakeOp(12, OpType::Xor, {ab, ac});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto r = Rewrite(engine, (a & b) ^ (a & c));
+    auto out = GetExpr(r);
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+    BF_TEST(out.op == OpType::And);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (GetExpr(in).op != OpType::Xor)
+            return false;
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->op == OpType::And);
-    BF_TEST(r->inputs.size() == 2);
-    BF_TEST(r->inputs[0] == a);
-    BF_TEST(r->inputs[1]->op == OpType::Xor);
-    BF_TEST(r->inputs[1]->inputs.size() == 2);
-    BF_TEST(r->inputs[1]->inputs[0] == b);
-    BF_TEST(r->inputs[1]->inputs[1] == c);
+        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
+    }));
     return 0;
 }
 
 int TestXorAndFactor_WithUntouchedTerm() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
-    auto d = MakeVar(4);
+    MakeExprStore(32);
 
-    auto ab = MakeOp(10, OpType::And, {a, b});
-    auto ac = MakeOp(11, OpType::And, {a, c});
-    auto expr = MakeOp(12, OpType::Xor, {ab, ac, d});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+    auto r = Rewrite(engine, (a & b) ^ (a & c) ^ d);
+    auto out = GetExpr(r);
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == d; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (GetExpr(in).op != OpType::And)
+            return false;
 
-    ExprOld* r = engine.Rewrite(expr);
+        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef inner) {
+                   if (GetExpr(inner).op != OpType::Xor)
+                       return false;
 
-    BF_TEST(r->op == OpType::Xor);
-    BF_TEST(r->inputs.size() == 2);
-
-    ExprOld* factored = nullptr;
-    ExprOld* untouched = nullptr;
-
-    if (r->inputs[0]->op == OpType::And) {
-        factored = r->inputs[0];
-        untouched = r->inputs[1];
-    } else {
-        factored = r->inputs[1];
-        untouched = r->inputs[0];
-    }
-
-    BF_TEST(factored != nullptr);
-    BF_TEST(untouched == d);
-
-    BF_TEST(factored->op == OpType::And);
-    BF_TEST(factored->inputs.size() == 2);
-    BF_TEST(factored->inputs[0] == a);
-    BF_TEST(factored->inputs[1]->op == OpType::Xor);
-    BF_TEST(factored->inputs[1]->inputs.size() == 2);
-    BF_TEST(factored->inputs[1]->inputs[0] == b);
-    BF_TEST(factored->inputs[1]->inputs[1] == c);
-
+                   return AnyInput(inner, [&](ExprRef x) { return x == b; }) &&
+                          AnyInput(inner, [&](ExprRef x) { return x == c; });
+               });
+    }));
     return 0;
 }
 
 int TestXorAndFactor_NoMatch() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
-    auto d = MakeVar(4);
+    MakeExprStore(32);
 
-    auto ab = MakeOp(10, OpType::And, {a, b});
-    auto cd = MakeOp(11, OpType::And, {c, d});
-    auto expr = MakeOp(12, OpType::Xor, {ab, cd});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+    auto expr = (a & b) ^ (c & d);
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
-
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r == expr);
+    BF_TEST(Rewrite(engine, expr) == expr);
     return 0;
 }
 
 int TestXorAndFactor_MultiFactorChoice_PicksMostFrequent() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
-    auto d = MakeVar(4);
-    auto e = MakeVar(5);
+    MakeExprStore(32);
 
-    auto ab = MakeOp(10, OpType::And, {a, b});
-    auto ac = MakeOp(11, OpType::And, {a, c});
-    auto ad = MakeOp(12, OpType::And, {a, d});
-    auto be = MakeOp(13, OpType::And, {b, e});
-    auto expr = MakeOp(14, OpType::Xor, {ab, ac, ad, be});
+    RuleEngine engine = MakeEngine();
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+    auto e = V("e");
 
-    ExprOld* r = engine.Rewrite(expr);
+    auto r = Rewrite(engine, (a & b) ^ (a & c) ^ (a & d) ^ (b ^ e));
+    auto out = GetExpr(r);
 
-    BF_TEST(r->op == OpType::Xor);
-    BF_TEST(r->inputs.size() == 2);
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 2);
 
-    ExprOld* factored = nullptr;
-    ExprOld* untouched = nullptr;
+    // untouched (b ^ e)
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (GetExpr(in).op != OpType::Xor)
+            return false;
 
-    for (ExprOld* in : r->inputs) {
-        if (in->op == OpType::And && in->inputs.size() == 2 &&
-            (in->inputs[0]->op == OpType::Xor || in->inputs[1]->op == OpType::Xor))
-            factored = in;
-        else
-            untouched = in;
-    }
+        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == e; });
+    }));
 
-    BF_TEST(factored != nullptr);
-    BF_TEST(untouched != nullptr);
-    BF_TEST(untouched->op == OpType::And);
-    BF_TEST(untouched->inputs.size() == 2);
-    const auto u0 = untouched->inputs[0]->id;
-    const auto u1 = untouched->inputs[1]->id;
-    BF_TEST((u0 == b->id && u1 == e->id) || (u0 == e->id && u1 == b->id));
-    BF_TEST(factored->op == OpType::And);
-    BF_TEST(factored->inputs.size() == 2);
-    BF_TEST(factored->inputs[0] == a);
-    BF_TEST(factored->inputs[1]->op == OpType::Xor);
-    BF_TEST(factored->inputs[1]->inputs.size() == 3);
+    // factored a & (b ^ c ^ d)
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (GetExpr(in).op != OpType::And)
+            return false;
+
+        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef inner) {
+                   if (GetExpr(inner).op != OpType::Xor)
+                       return false;
+
+                   return AnyInput(inner, [&](ExprRef x) { return x == b; }) &&
+                          AnyInput(inner, [&](ExprRef x) { return x == c; }) &&
+                          AnyInput(inner, [&](ExprRef x) { return x == d; }) && GetExpr(inner).inputs.size() == 3;
+               });
+    }));
+
     return 0;
 }
 
 int TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
+    MakeExprStore(32);
 
-    auto ab = MakeOp(10, OpType::And, {a, b});
-    auto ac = MakeOp(11, OpType::And, {a, c});
-    auto bc = MakeOp(12, OpType::And, {b, c});
-    auto expr = MakeOp(13, OpType::Xor, {ab, ac, bc});
+    RuleEngine engine = MakeEngine();
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
 
-    ExprOld* r = engine.Rewrite(expr);
+    auto r = Rewrite(engine, (a & b) ^ (a & c) ^ (b & c));
+    auto out = GetExpr(r);
 
-    BF_TEST(r->op == OpType::Xor);
-    BF_TEST(r->inputs.size() == 2);
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 2);
 
-    ExprOld* factored = nullptr;
-    ExprOld* untouched = nullptr;
+    // untouched: (b & c)
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (GetExpr(in).op != OpType::And)
+            return false;
 
-    for (ExprOld* in : r->inputs) {
-        if (in->op == OpType::And && in->inputs.size() == 2 &&
-            (in->inputs[0]->op == OpType::Xor || in->inputs[1]->op == OpType::Xor))
-            factored = in;
-        else
-            untouched = in;
-    }
+        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
+    }));
 
-    BF_TEST(factored != nullptr);
-    BF_TEST(untouched != nullptr);
-    BF_TEST(untouched->op == OpType::And);
-    BF_TEST(untouched->inputs.size() == 2);
-    const auto t0 = untouched->inputs[0]->id;
-    const auto t1 = untouched->inputs[1]->id;
-    BF_TEST((t0 == b->id && t1 == c->id) || (t0 == c->id && t1 == b->id));
-    BF_TEST(factored->op == OpType::And);
-    BF_TEST(factored->inputs.size() == 2);
-    BF_TEST(factored->inputs[0] == a);
-    BF_TEST(factored->inputs[1]->op == OpType::Xor);
-    BF_TEST(factored->inputs[1]->inputs.size() == 2);
-    BF_TEST(factored->inputs[1]->inputs[0] == b);
-    BF_TEST(factored->inputs[1]->inputs[1] == c);
+    // factored: a & (b ^ c)
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (GetExpr(in).op != OpType::And)
+            return false;
+
+        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef inner) {
+                   if (GetExpr(inner).op != OpType::Xor)
+                       return false;
+
+                   return GetExpr(inner).inputs.size() == 2 && AnyInput(inner, [&](ExprRef x) { return x == b; }) &&
+                          AnyInput(inner, [&](ExprRef x) { return x == c; });
+               });
+    }));
+
     return 0;
 }
 
 int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
-    auto d = MakeVar(4);
-    auto e = MakeVar(5);
-    auto f = MakeVar(6);
+    MakeExprStore(32);
 
-    auto abc = MakeOp(10, OpType::And, {a, b, c});
-    auto ade = MakeOp(11, OpType::And, {a, d, e});
-    auto expr = MakeOp(12, OpType::Xor, {abc, ade, f});
+    RuleEngine engine = MakeEngine();
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+    auto e = V("e");
+    auto f = V("f");
 
-    ExprOld* r = engine.Rewrite(expr);
-    BF_TEST(r->op == OpType::Xor);
-    BF_TEST(r->inputs.size() == 3);
-    BF_TEST(r->inputs[0] == f);
-    BF_TEST(r->inputs[1] == abc);
-    BF_TEST(r->inputs[2] == ade);
+    auto expr = (a & b & c) ^ (a & d & e) ^ f;
+
+    BF_TEST(Rewrite(engine, expr) == expr);
+
     return 0;
 }
 

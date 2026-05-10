@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
-#include <Core_Expr.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
@@ -8,24 +8,24 @@ using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 int TestXorDedup() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
-
-    auto e1 = MakeOp(3, OpType::Xor, {x, y});
-    auto e2 = MakeOp(4, OpType::Xor, {y, x});
+    MakeExprStore(32);
 
     RuleEngine engine;
-    Add_Normalize_Rules(engine);
-    Add_Simplify_Bitwise_Rules(engine);
+    engine.Merge(BuildNormalize());
+    engine.Merge(BuildSimplifyBitwise());
 
-    ExprOld* r1 = engine.Rewrite(e1);
-    ExprOld* r2 = engine.Rewrite(e2);
+    auto x = V("x");
+    auto y = V("y");
+
+    auto r1 = Rewrite(engine, x ^ y);
+    auto r2 = Rewrite(engine, y ^ x);
 
     BF_TEST(r1 == r2);
-    BF_TEST(r1->id == r2->id);
-    BF_TEST(r1->op == OpType::Xor);
-    BF_TEST(r1->inputs.size() == 2);
-    BF_TEST(r1->inputs[0]->id.value() < r1->inputs[1]->id.value());
+
+    auto exprR1 = GetExpr(r1);
+    BF_TEST(exprR1.op == OpType::Xor);
+    BF_TEST(exprR1.inputs.size() == 2);
+    BF_TEST(exprR1.inputs[0].value() < exprR1.inputs[1].value());
     return 0;
 }
 

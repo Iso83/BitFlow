@@ -61,9 +61,9 @@ static bool Match_XorCancel(const ExprStore* store, ExprId id) {
     if (e.op != OpType::Xor || e.inputs.size() < 2)
         return false;
 
-    const uint64_t mask = Expr::fullMask(e.bitWidth);
+    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
 
-    uint64_t constParity = 0;
+    Types::ExprChunk constParity = 0;
     bool hasConst = false;
 
     std::unordered_map<ExprId, int> counts;
@@ -154,9 +154,9 @@ static ExprId Rewrite_Or_Cancel(ExprStore* store, ExprId id) {
 static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
-    const uint64_t mask = Expr::fullMask(e.bitWidth);
+    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
 
-    uint64_t constParity = 0;
+    Types::ExprChunk constParity = 0;
     bool hasConst = false;
 
     std::unordered_map<ExprId, int> counts;

@@ -1,35 +1,14 @@
-#include <BitFlow/core/rules/RuleEngine.h>
-#include <Core_Expr.h>
+#include <BitFlow/core/rules/RulePipeline.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static bool HasInput(ExprOld* expr, ExprOld* needle) {
-    for (ExprOld* in : expr->inputs) {
-        if (in == needle)
-            return true;
-    }
-
-    return false;
-}
-
-static bool HasNotOf(ExprOld* expr, ExprOld* child) {
-    for (ExprOld* in : expr->inputs) {
-        if (in->op == OpType::Not && in->inputs.size() == 1 && in->inputs[0] == child)
-            return true;
-    }
-
-    return false;
-}
-
 int TestXorAndReduction_Basic() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
-
-    auto xay = MakeOp(3, OpType::And, {x, y});
-    auto expr = MakeOp(4, OpType::Xor, {x, xay});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
@@ -37,22 +16,28 @@ int TestXorAndReduction_Basic() {
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_And_Reduction_Rule());
 
-    ExprOld* r = engine.Rewrite(expr);
+    auto x = V("x");
+    auto y = V("y");
 
-    BF_TEST(r->op == OpType::And);
-    BF_TEST(r->inputs.size() == 2);
-    BF_TEST(HasInput(r, x));
-    BF_TEST(HasNotOf(r, y));
+    auto r = Rewrite(engine, x ^ (x & y));
+    auto out = GetExpr(r);
+
+    BF_TEST(out.op == OpType::And);
+    BF_TEST(out.inputs.size() == 2);
+
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == x; }));
+
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        const auto& e = GetExpr(in);
+
+        return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == y;
+    }));
+
     return 0;
 }
 
 int TestXorAndReduction_MultiArgXor() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
-
-    auto aab = MakeOp(4, OpType::And, {a, b});
-    auto expr = MakeOp(5, OpType::Xor, {c, a, aab});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
@@ -60,37 +45,33 @@ int TestXorAndReduction_MultiArgXor() {
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_And_Reduction_Rule());
 
-    ExprOld* r = engine.Rewrite(expr);
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
 
-    BF_TEST(r->op == OpType::Xor);
-    BF_TEST(HasInput(r, c));
+    auto r = Rewrite(engine, c ^ a ^ (a & b));
+    auto out = GetExpr(r);
 
-    bool foundReduced = false;
-    for (ExprOld* in : r->inputs) {
-        if (in->op != OpType::And || in->inputs.size() != 2)
-            continue;
+    BF_TEST(out.op == OpType::Xor);
 
-        if (!HasInput(in, a))
-            continue;
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));
 
-        for (ExprOld* andIn : in->inputs) {
-            if (andIn->op == OpType::Not && andIn->inputs.size() == 1 && andIn->inputs[0] == b)
-                foundReduced = true;
-        }
-    }
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (GetExpr(in).op != OpType::And)
+            return false;
 
-    BF_TEST(foundReduced);
+        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) {
+                   const auto& e = GetExpr(x);
+
+                   return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == b;
+               });
+    }));
 
     return 0;
 }
 
 int TestXorAndReduction_AndWithManyFactors() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-    auto c = MakeVar(3);
-
-    auto aandbAndc = MakeOp(4, OpType::And, {a, b, c});
-    auto expr = MakeOp(5, OpType::Xor, {a, aandbAndc});
+    MakeExprStore(32);
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
@@ -98,21 +79,31 @@ int TestXorAndReduction_AndWithManyFactors() {
     engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_And_Reduction_Rule());
 
-    ExprOld* r = engine.Rewrite(expr);
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
 
-    BF_TEST(r->op == OpType::And);
-    BF_TEST(HasInput(r, a));
+    auto r = Rewrite(engine, a ^ (a & b & c));
+    auto out = GetExpr(r);
 
-    ExprOld* notNode = nullptr;
-    for (ExprOld* in : r->inputs) {
-        if (in->op == OpType::Not && in->inputs.size() == 1)
-            notNode = in;
-    }
+    BF_TEST(out.op == OpType::And);
 
-    BF_TEST(notNode != nullptr);
-    BF_TEST(notNode->inputs[0]->op == OpType::And);
-    BF_TEST(HasInput(notNode->inputs[0], b));
-    BF_TEST(HasInput(notNode->inputs[0], c));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        const auto& e = GetExpr(in);
+
+        if (e.op != OpType::Not || e.inputs.size() != 1)
+            return false;
+
+        ExprRef inner = ERef(e.inputs[0]);
+
+        if (GetExpr(inner).op != OpType::And)
+            return false;
+
+        return AnyInput(inner, [&](ExprRef x) { return x == b; }) && AnyInput(inner, [&](ExprRef x) { return x == c; });
+    }));
+
     return 0;
 }
 

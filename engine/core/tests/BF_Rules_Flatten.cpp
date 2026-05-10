@@ -1,49 +1,59 @@
-#include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
-#include <Core_Expr.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-int TestXorFlatten() {
-    auto x = MakeVar(1);
-    auto y = MakeVar(2);
-    auto z = MakeVar(3);
-
-    auto inner = MakeOp(4, OpType::Xor, {x, y});
-    auto outer = MakeOp(5, OpType::Xor, {inner, z});
+static RuleEngine MakeEngine() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    return engine;
+}
 
-    ExprOld* result = engine.Rewrite(outer);
+int TestXorFlatten() {
+    MakeExprStore(32);
 
-    BF_TEST(result != outer);
-    BF_TEST(result->inputs.size() == 3);
-    BF_TEST(result->inputs[0]->id == x->id);
-    BF_TEST(result->inputs[1]->id == y->id);
-    BF_TEST(result->inputs[2]->id == z->id);
+    RuleEngine engine = MakeEngine();
+
+    auto x = V("x");
+    auto y = V("y");
+    auto z = V("z");
+
+    auto r = Rewrite(engine, (x ^ y) ^ z);
+    auto out = GetExpr(r);
+
+    BF_TEST(out.op == OpType::Xor);
+    BF_TEST(out.inputs.size() == 3);
+
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == x; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == y; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == z; }));
+
     return 0;
 }
 
 int TestNotNotDoesNotFlatten() {
-    auto x = MakeVar(1);
+    MakeExprStore(32);
 
-    auto inner = MakeOp(10, OpType::Not, {x});
-    auto outer = MakeOp(11, OpType::Not, {inner});
+    RuleEngine engine = MakeEngine();
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
+    auto x = V("x");
 
-    ExprOld* result = engine.Rewrite(outer);
+    auto r = Rewrite(engine, -(-x)); // of ~(~x) indien bitwise-not
+    auto out = GetExpr(r);
 
-    BF_TEST(result->op == OpType::Not);
-    BF_TEST(result->inputs.size() == 1);
-    BF_TEST(result->inputs[0]->op == OpType::Not);
-    BF_TEST(result->inputs[0]->inputs.size() == 1);
-    BF_TEST(result->inputs[0]->inputs[0]->id == x->id);
+    BF_TEST(out.op == OpType::Neg); // of Not
+    BF_TEST(out.inputs.size() == 1);
+
+    const auto& inner = store.get(out.inputs[0]);
+
+    BF_TEST(inner.op == OpType::Neg); // of Not
+    BF_TEST(inner.inputs.size() == 1);
+    BF_TEST(ERef(inner.inputs[0]) == x);
 
     return 0;
 }

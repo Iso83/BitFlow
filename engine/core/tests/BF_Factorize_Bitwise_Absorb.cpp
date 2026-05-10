@@ -1,42 +1,41 @@
-#include <BitFlow/core/rules/RuleEngine.h>
-#include <Core_Expr.h>
+#include <BitFlow/core/rules/RulePipeline.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-int TestAndAbsorb() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
-
-    auto inner = MakeOp(3, OpType::Or, {a, b});
-    auto expr = MakeOp(4, OpType::And, {a, inner});
+static RuleEngine MakeEngine() {
 
     RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.Merge(BuildNormalize());
     engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
+    return engine;
+}
 
-    ExprOld* r = engine.Rewrite(expr);
+int TestAndAbsorb() {
+    MakeExprStore(32);
 
-    BF_TEST(r->id == a->id);
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto inner = a | b;
+
+    BF_TEST(Rewrite(engine, a & inner) == a);
     return 0;
 }
 
 int TestOrAbsorb() {
-    auto a = MakeVar(1);
-    auto b = MakeVar(2);
+    MakeExprStore(32);
 
-    auto inner = MakeOp(3, OpType::And, {a, b});
-    auto expr = MakeOp(4, OpType::Or, {a, inner});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto b = V("b");
+    auto inner = a & b;
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Or_Absorb_Rule());
-
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->id == a->id);
+    BF_TEST(Rewrite(engine, a | inner) == a);
     return 0;
 }
 

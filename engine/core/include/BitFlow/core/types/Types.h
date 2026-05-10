@@ -1,0 +1,13 @@
+#pragma once
+
+#include <cstdint>
+
+namespace BitFlow::Core::Types {
+
+using BitWidth = uint16_t;
+
+using ExprChunk = uint64_t;
+
+constexpr BitWidth ExprChunkBits = static_cast<BitWidth>(sizeof(ExprChunk) * 8);
+
+} // namespace BitFlow::Core::Types

@@ -1,44 +1,42 @@
-#include <BitFlow/core/rules/RuleEngine.h>
-#include <Core_Expr.h>
+#include <BitFlow/core/rules/RulePipeline.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-int TestAndComplement() {
-    auto a = MakeVar(1);
-    auto na = MakeOp(2, OpType::Not, {a});
-
-    auto expr = MakeOp(3, OpType::And, {a, na});
+static RuleEngine MakeEngine() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Complement_Rule());
+    return engine;
+}
 
-    ExprOld* r = engine.Rewrite(expr);
+int TestAndComplement() {
+    MakeExprStore(32);
 
-    BF_TEST(r->op == OpType::Const);
-    BF_TEST(r->constValue == 0);
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto r = Rewrite(engine, a & ~a);
+
+    BF_TEST(IsFalse(r));
+
     return 0;
 }
 
 int TestOrComplement() {
-    auto a = MakeVar(1);
-    auto na = MakeOp(2, OpType::Not, {a});
+    MakeExprStore(32);
 
-    auto expr = MakeOp(3, OpType::Or, {a, na});
+    RuleEngine engine = MakeEngine();
+    auto a = V("a");
+    auto r = Rewrite(engine, a | ~a);
 
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Complement_Rule());
+    BF_TEST(IsTrue(r));
 
-    ExprOld* r = engine.Rewrite(expr);
-
-    BF_TEST(r->op == OpType::Const);
-    BF_TEST(r->constValue == 1);
     return 0;
 }
 

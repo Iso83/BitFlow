@@ -18,7 +18,7 @@ static bool Match_And_ZeroDominance(const ExprStore* store, ExprId id) {
 
     for (auto in : e.inputs) {
         const Expr& exprIn = store->get(in);
-        if (exprIn.op == OpType::Const && IsFalse(store, in))
+        if (exprIn.op == OpType::Const && store->isFalse(in))
             return true;
     }
 
@@ -34,7 +34,7 @@ static bool Match_And_OneIdentity(const ExprStore* store, ExprId id) {
 
     for (auto in : e.inputs) {
         const Expr& exprIn = store->get(in);
-        if (exprIn.op == OpType::Const && IsTrue(store, in))
+        if (exprIn.op == OpType::Const && store->isTrue(in))
             return true;
     }
 
@@ -50,7 +50,7 @@ static bool Match_Or_OneDominance(const ExprStore* store, ExprId id) {
 
     for (auto in : e.inputs) {
         const Expr& exprIn = store->get(in);
-        if (exprIn.op == OpType::Const && IsTrue(store, in))
+        if (exprIn.op == OpType::Const && store->isTrue(in))
             return true;
     }
 
@@ -66,7 +66,7 @@ static bool Match_Or_ZeroIdentity(const ExprStore* store, ExprId id) {
 
     for (auto in : e.inputs) {
         const Expr& exprIn = store->get(in);
-        if (exprIn.op == OpType::Const && IsFalse(store, in))
+        if (exprIn.op == OpType::Const && store->isFalse(in))
             return true;
     }
 
@@ -89,7 +89,7 @@ static ExprId Rewrite_And_OneIdentity(ExprStore* store, ExprId id) {
 
     for (auto in : e.inputs) {
         const Expr& exprIn = store->get(in);
-        if (!(exprIn.op == OpType::Const && IsTrue(store, in)))
+        if (!(exprIn.op == OpType::Const && store->isTrue(in)))
             newInputs.push_back(in);
     }
 
@@ -116,7 +116,7 @@ static ExprId Rewrite_Or_ZeroIdentity(ExprStore* store, ExprId id) {
 
     for (auto in : e.inputs) {
         const Expr& exprIn = store->get(in);
-        if (!(exprIn.op == OpType::Const && IsFalse(store, in)))
+        if (!(exprIn.op == OpType::Const && store->isFalse(in)))
             newInputs.push_back(in);
     }
 

@@ -6,7 +6,7 @@ namespace BitFlow::Core::Eval {
 using namespace Expression;
 using namespace BitVector;
 
-EvalResult Make(EvalStatus status, uint32_t bitWidth) {
+EvalResult Make(EvalStatus status, Types::BitWidth bitWidth) {
     return EvalResult{status, bf_uint(0, bitWidth)};
 }
 
@@ -14,7 +14,7 @@ EvalResult MakeSuccess(const bf_uint& value) {
     return EvalResult{EvalStatus::Success, value};
 }
 
-EvalResult EvaluateConstant(const ExprStore* store, const Expr* node, uint32_t bitWidth) {
+EvalResult EvaluateConstant(const ExprStore* store, const Expr* node, Types::BitWidth bitWidth) {
     assert(store && "EvaluateConstant: store must not be null");
     assert(node && "EvaluateConstant: node must not be null");
 

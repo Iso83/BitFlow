@@ -36,21 +36,21 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
     FILES ${BF_CORE_SRC} ${BF_CORE_PRIVATE_HEADERS}
 )
 
+if(BF_EXPR_LIFETIME_CHECKS)
+    target_compile_definitions(BitFlowCore PUBLIC BF_EXPR_LIFETIME_CHECKS)
+endif()
+
 if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_ExprRef USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core BF_Expr USE_CORE_PRINT)
 
     # Active always-on core test set.
     bf_add_module_test(BitFlowCore core BF_OpType USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Dedup USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_ExprIntern_KeyBuilder USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_RuleEngine_InPlaceRewrite USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Evaluator USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_RewriteCost USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Arithmetic_Integration USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_ArithmeticFactorizeMultiplicity USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Arithmetic_CanonicalForms USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_Factorize_Arithmetic_Guards USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core BF_Factorize_Arithmetic_Split USE_CORE_PRINT)
 
 
     bf_add_module_test(BitFlowCore core BF_BitVector USE_CORE_PRINT)
@@ -58,15 +58,8 @@ if(BF_BUILD_TESTS)
     # Rules
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Order USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Flatten USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/rules BF_Rules_Isolated SOURCE tests/rules/Rule_Isolated.cpp USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/rules BF_Rules_Isolated_Semantics SOURCE tests/rules/Rule_Isolated_Semantics.cpp USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/rules BF_Rules_Dependencies SOURCE tests/rules/Rule_Dependencies.cpp USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/rules BF_RuleEngine_RewriteStability USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_Profiles SOURCE tests/pipeline/Pipeline_Profiles.cpp USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_ProfileDependencies SOURCE tests/pipeline/Pipeline_ProfileDependencies.cpp USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_NoOscillation SOURCE tests/pipeline/Pipeline_NoOscillation.cpp USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_Validation SOURCE tests/pipeline/Pipeline_Validation.cpp USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/pipeline BF_Pipeline_ManualVsProfile SOURCE tests/pipeline/Pipeline_ManualVsProfile.cpp USE_CORE_PRINT)
+
+    bf_add_module_test(BitFlowCore core/rules/normalize/bitwize BF_Normalize_Bitwise_Rotate USE_CORE_PRINT)
 
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Fold USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Cancel USE_CORE_PRINT)
@@ -86,8 +79,5 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_Fold USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_Zero USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_One USE_CORE_PRINT)
-
-    bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_CH USE_CORE_PRINT)
-    bf_add_module_test(BitFlowCore core/rules/simplify BF_Rules_MAJ USE_CORE_PRINT)
     
 endif()

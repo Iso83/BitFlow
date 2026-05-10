@@ -47,8 +47,53 @@ static bool TryGetInfixInfo(OpType op, InfixInfo& info) {
     }
 }
 
+static const char* OpTypeName(OpType op) {
+    switch (op) {
+    case OpType::Var:
+        return "Var";
+    case OpType::Const:
+        return "Const";
+    case OpType::Not:
+        return "Not";
+    case OpType::Neg:
+        return "Neg";
+
+    case OpType::And:
+        return "And";
+    case OpType::Or:
+        return "Or";
+    case OpType::Xor:
+        return "Xor";
+
+    case OpType::Add:
+        return "Add";
+    case OpType::Sub:
+        return "Sub";
+    case OpType::Mul:
+        return "Mul";
+    case OpType::Div:
+        return "Div";
+    case OpType::Mod:
+        return "Mod";
+
+    case OpType::Shl:
+        return "Shl";
+    case OpType::Shr:
+        return "Shr";
+
+    case OpType::RotL:
+        return "RotL";
+    case OpType::RotR:
+        return "RotR";
+
+    default:
+        return "Unknown";
+    }
+}
+
 static int PrecedenceOf(const ExprStore* store, Ids::ExprId id) {
     const Expr& e = store->get(id);
+
     if (e.op == OpType::Const || e.op == OpType::Var || e.op == OpType::RotL || e.op == OpType::RotR)
         return 80;
 
@@ -75,22 +120,125 @@ static bool NeedsParensForRightChild(OpType parentOp, OpType childOp) {
     return true;
 }
 
+static void PrintDebugStructure(const ExprStore* store, Ids::ExprId id, std::ostringstream& out,
+                                const std::unordered_map<Ids::ExprId, std::string>& names,
+                                const PrintOptions& options) {
+    const Expr& e = store->get(id);
+
+    if (options.showExprIds)
+        out << "#" << id.value() << ":";
+
+    switch (e.op) {
+    case OpType::Const:
+        out << e.knownValue;
+
+        if (options.showBitWidth)
+            out << ":" << e.bitWidth;
+
+        return;
+
+    case OpType::Var: {
+        auto it = names.find(id);
+
+        if (it != names.end())
+            out << it->second;
+        else
+            out << "v" << id.value();
+
+        if (options.showBitWidth)
+            out << ":" << e.bitWidth;
+
+        return;
+    }
+
+    default:
+        break;
+    }
+
+    switch (e.op) {
+    case OpType::Not:
+        out << "Not(";
+        break;
+
+    case OpType::Neg:
+        out << "Neg(";
+        break;
+
+    case OpType::RotL:
+        out << "RotL(";
+        break;
+
+    case OpType::RotR:
+        out << "RotR(";
+        break;
+
+    default:
+        out << static_cast<int>((OpType)e.op) << "(";
+        break;
+    }
+
+    for (size_t i = 0; i < e.inputs.size(); ++i) {
+        if (i > 0)
+            out << ", ";
+
+        PrintDebugStructure(store, e.inputs[i], out, names, options);
+    }
+
+    out << ")";
+
+    if (options.showBitWidth)
+        out << ":" << e.bitWidth;
+}
+
 static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& out,
                   const std::unordered_map<Ids::ExprId, std::string>& names, const PrintOptions& options,
                   int parentPrecedence, bool isRightChild, OpType parentOp) {
+    if (options.debugStructure) {
+        PrintDebugStructure(store, id, out, names, options);
+        return;
+    }
+
     const Expr& e = store->get(id);
+
+    if (options.showExprIds)
+        out << "#" << id.value() << ":";
 
     if (e.op == OpType::Const) {
         out << e.knownValue;
+
+        if (options.showBitWidth)
+            out << ":" << e.bitWidth;
+
+        return;
+    }
+
+    if (options.showOpTypes && e.op != OpType::Var && e.op != OpType::Const) {
+
+        out << OpTypeName(e.op) << "(";
+
+        for (size_t i = 0; i < e.inputs.size(); ++i) {
+            if (i > 0)
+                out << ", ";
+
+            Print(store, e.inputs[i], out, names, options, 0, false, OpType::Var);
+        }
+
+        out << ")";
+
         return;
     }
 
     if (e.op == OpType::Var) {
         auto it = names.find(id);
+
         if (it != names.end())
             out << it->second;
         else
             out << "v" << id.value();
+
+        if (options.showBitWidth)
+            out << ":" << e.bitWidth;
+
         return;
     }
 
@@ -98,7 +246,8 @@ static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& ou
         out << (e.op == OpType::Not ? "~" : "-");
 
         Ids::ExprId inner = e.inputs[0];
-        const bool needsParens = PrecedenceOf(store, inner) < PrecedenceOf(store, id);
+
+        const bool needsParens = options.explicitGroups || (PrecedenceOf(store, inner) < PrecedenceOf(store, id));
 
         if (needsParens) {
             out << "(";
@@ -108,50 +257,72 @@ static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& ou
             Print(store, inner, out, names, options, PrecedenceOf(store, id), true, e.op);
         }
 
+        if (options.showBitWidth)
+            out << ":" << e.bitWidth;
+
         return;
     }
 
     if (e.op == OpType::RotL || e.op == OpType::RotR) {
         if (options.rotAsFunction) {
             out << (e.op == OpType::RotL ? "rotl(" : "rotr(");
+
             Print(store, e.inputs[0], out, names, options, 0, false, OpType::Var);
+
             out << ", ";
+
             Print(store, e.inputs[1], out, names, options, 0, true, OpType::Var);
+
             out << ")";
+
+            if (options.showBitWidth)
+                out << ":" << e.bitWidth;
+
             return;
         }
 
         const int currentPrecedence = 40;
-        bool wrapSelf = false;
 
-        if (currentPrecedence < parentPrecedence)
-            wrapSelf = true;
-        else if (isRightChild && currentPrecedence == parentPrecedence)
-            wrapSelf = NeedsParensForRightChild(parentOp, e.op);
+        bool wrapSelf = options.explicitGroups;
+
+        if (!wrapSelf) {
+            if (currentPrecedence < parentPrecedence)
+                wrapSelf = true;
+            else if (isRightChild && currentPrecedence == parentPrecedence)
+                wrapSelf = NeedsParensForRightChild(parentOp, e.op);
+        }
 
         if (wrapSelf)
             out << "(";
 
         Print(store, e.inputs[0], out, names, options, currentPrecedence, false, e.op);
+
         out << (e.op == OpType::RotL ? " <<< " : " >>> ");
+
         Print(store, e.inputs[1], out, names, options, currentPrecedence, true, e.op);
 
         if (wrapSelf)
             out << ")";
+
+        if (options.showBitWidth)
+            out << ":" << e.bitWidth;
 
         return;
     }
 
     InfixInfo info{};
     const bool isInfix = TryGetInfixInfo(e.op, info);
+
     const int currentPrecedence = isInfix ? info.precedence : 0;
 
-    bool wrapSelf = false;
+    bool wrapSelf = options.explicitGroups;
 
-    if (currentPrecedence < parentPrecedence)
-        wrapSelf = true;
-    else if (isRightChild && currentPrecedence == parentPrecedence)
-        wrapSelf = NeedsParensForRightChild(parentOp, e.op);
+    if (!wrapSelf) {
+        if (currentPrecedence < parentPrecedence)
+            wrapSelf = true;
+        else if (isRightChild && currentPrecedence == parentPrecedence)
+            wrapSelf = NeedsParensForRightChild(parentOp, e.op);
+    }
 
     if (wrapSelf)
         out << "(";
@@ -165,6 +336,9 @@ static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& ou
 
     if (wrapSelf)
         out << ")";
+
+    if (options.showBitWidth)
+        out << ":" << e.bitWidth;
 }
 
 std::string ToString(const ExprStore* store, const Ids::ExprId e) {

@@ -33,11 +33,14 @@ static ExprId Rewrite_Order(ExprStore* store, ExprId id) {
 
     std::sort(sorted.begin(), sorted.end(), [&](ExprId a, ExprId b) { return CanonicalExprLess(store, a, b); });
 
+    if (sorted == e.inputs)
+        return id;
+
     return store->create(e.op, std::move(sorted), e.bitWidth).id;
 }
 
 Rule Get_Order_Rule() {
-    return Rule{Order, &Match_Order, &Rewrite_Order};
+    return Rule{Order, &Match_Order, &Rewrite_Order, {Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Normalize

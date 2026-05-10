@@ -30,13 +30,13 @@ static bool Match_Add_Fold(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_Add_Fold(ExprStore* store, ExprId id) {
     const Expr& e = store->get(id);
 
-    uint64_t acc = 0;
+    Types::ExprChunk acc = 0;
     bool hasConst = false;
 
     std::vector<ExprId> nonConst;
     nonConst.reserve(e.inputs.size());
 
-    const uint64_t mask = Expr::fullMask(e.bitWidth);
+    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
 
     for (ExprId inId : e.inputs) {
         const Expr& in = store->get(inId);

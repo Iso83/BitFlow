@@ -1,5 +1,6 @@
 #pragma once
 
+#include <BitFlow/core/types/Types.h>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -8,33 +9,33 @@ namespace BitFlow::Core::BitVector {
 
 class bf_uint {
   private:
-    uint32_t m_bw = 0;
-    std::vector<uint64_t> m_words;
+    Types::BitWidth m_bw = 0;
+    std::vector<Types::ExprChunk> m_words;
 
   public:
     enum class StringBase : uint8_t { Binary = 2, Decimal = 10, Hex = 16 };
 
   public:
-    explicit bf_uint(uint32_t bitWidth);
-    explicit bf_uint(uint64_t value, uint32_t bitWidth);
+    explicit bf_uint(Types::BitWidth bitWidth);
+    explicit bf_uint(Types::ExprChunk value, Types::BitWidth bitWidth);
 
-    uint32_t BitWidth() const noexcept {
+    Types::BitWidth BitWidth() const noexcept {
         return m_bw;
     }
 
     bool IsZero() const noexcept {
-        for (uint64_t w : m_words) {
-            if (w != 0ULL)
+        for (Types::ExprChunk w : m_words) {
+            if (w != Types::ExprChunk{0})
                 return false;
         }
         return true;
     }
 
-    uint64_t ToUint64() const noexcept {
-        return m_words.empty() ? 0ULL : m_words[0];
+    Types::ExprChunk ToChunk() const noexcept {
+        return m_words.empty() ? Types::ExprChunk{0} : m_words[0];
     }
     uint32_t ToUint32() const noexcept {
-        return static_cast<uint32_t>(ToUint64() & 0xffffffffULL);
+        return static_cast<uint32_t>(ToChunk() & 0xffffffffULL);
     }
 
     // string conversion
@@ -77,22 +78,22 @@ class bf_uint {
     bf_uint& operator^=(const bf_uint& rhs);
 
     // shifts
-    bf_uint Shl(uint32_t s) const;
-    bf_uint Shr(uint32_t s) const;
-    bf_uint operator<<(uint32_t s) const;
-    bf_uint operator>>(uint32_t s) const;
+    bf_uint Shl(Types::BitWidth s) const;
+    bf_uint Shr(Types::BitWidth s) const;
+    bf_uint operator<<(Types::BitWidth s) const;
+    bf_uint operator>>(Types::BitWidth s) const;
     bf_uint operator<<(const bf_uint& rhs) const;
     bf_uint operator>>(const bf_uint& rhs) const;
 
     // compound shifts
-    bf_uint& operator<<=(uint32_t s);
-    bf_uint& operator>>=(uint32_t s);
+    bf_uint& operator<<=(Types::BitWidth s);
+    bf_uint& operator>>=(Types::BitWidth s);
     bf_uint& operator<<=(const bf_uint& rhs);
     bf_uint& operator>>=(const bf_uint& rhs);
 
     // rotates
-    bf_uint RotL(uint32_t s) const;
-    bf_uint RotR(uint32_t s) const;
+    bf_uint RotL(Types::BitWidth s) const;
+    bf_uint RotR(Types::BitWidth s) const;
 
     // unary
     bf_uint operator-() const;
