@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <TestAssert.h>
+#include <RuleTestHelpers.h>
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Ids;
@@ -28,7 +28,7 @@ int TestNotConst() {
 
     auto r = Rewrite(engine, ~C(0b1010));
 
-    BF_TEST(IsConstantValue(r, 0b0101u));
+    BF_TEST(EqualChunkValue(r, 0b0101u));
 
     return 0;
 }

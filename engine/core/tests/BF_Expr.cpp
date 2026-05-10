@@ -1,7 +1,5 @@
-#include <BitFlow/core/expression/Expr.h>
 #include <ExprTestUtils.h>
 #include <TestAssert.h>
-#include <iostream>
 #include <stdexcept>
 
 using namespace BitFlow::Core::Testing;

@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <TestAssert.h>
+#include <RuleTestHelpers.h>
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Ids;
@@ -80,7 +80,7 @@ int TestXorParityCancel_Pair() {
     auto a = V("a");
     auto r = Rewrite(engine, a ^ a);
 
-    BF_TEST(IsConstantValue(r, 0u));
+    BF_TEST(EqualChunkValue(r, 0u));
     return 0;
 }
 
@@ -129,7 +129,7 @@ int TestXorParityCancel_AllEven() {
     auto b = V("b");
     auto r = Rewrite(engine, a ^ b ^ a ^ b);
 
-    BF_TEST(IsConstantValue(r, 0u));
+    BF_TEST(EqualChunkValue(r, 0u));
     return 0;
 }
 
@@ -155,7 +155,7 @@ int TestXorParity_WithConstCancel() {
     auto a = V("a");
     auto r = Rewrite(engine, a ^ 1 ^ a);
 
-    BF_TEST(IsConstantValue(r, 1u));
+    BF_TEST(EqualChunkValue(r, 1u));
     return 0;
 }
 
@@ -173,7 +173,7 @@ int TestXorParity_WithConstMixed() {
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 1u); }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 1u); }));
     return 0;
 }
 
@@ -206,7 +206,7 @@ int TestXorParity_StructuralRotatePairCancelsToZero() {
     auto x = V("x");
     auto r = Rewrite(engine, x.RotR(2) ^ x.RotR(x));
 
-    BF_TEST(IsConstantValue(r, 0u));
+    BF_TEST(EqualChunkValue(r, 0u));
     return 0;
 }
 
@@ -224,7 +224,7 @@ int TestXorParity_StructuralRotateDuplicateLeavesSingle() {
     BF_TEST(out.op == OpType::RotR);
     BF_TEST(out.inputs.size() == 2);
     BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(IsConstantValue(ERef(out.inputs[1]), 13u));
+    BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 13u));
 
     return 0;
 }

@@ -1,8 +1,6 @@
-#include <BitFlow/core/rules/Rule.h>
-#include <BitFlow/core/rules/RuleEngine.h>
+#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <TestAssert.h>
-#include <vector>
+#include <RuleTestHelpers.h>
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Expression;
@@ -39,7 +37,7 @@ int TestMulOne_AllOnesBecomeConstOne() {
     RuleEngine engine = MakeMultEngine();
     auto r = Rewrite(engine, C(1) * 1 * 1);
 
-    BF_TEST(IsConstantValue(r, 1u));
+    BF_TEST(EqualChunkValue(r, 1u));
     return 0;
 }
 

@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <TestAssert.h>
+#include <RuleTestHelpers.h>
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Ids;
@@ -30,7 +30,7 @@ int TestAddFold() {
     BF_TEST(out.inputs.size() == 2);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == x; }));
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 30u); }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 30u); }));
 
     return 0;
 }

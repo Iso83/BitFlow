@@ -23,7 +23,7 @@ int TestRotateModuloBitwidth_ReducesConstantAmount() {
     BF_TEST(out.op == OpType::RotL);
     BF_TEST(out.inputs.size() == 2);
     BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(IsConstantValue(ERef(out.inputs[1]), 3u));
+    BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 3u));
 
     return 0;
 }

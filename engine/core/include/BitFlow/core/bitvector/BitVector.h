@@ -34,6 +34,9 @@ class bf_uint {
     Types::ExprChunk ToChunk() const noexcept {
         return m_words.empty() ? Types::ExprChunk{0} : m_words[0];
     }
+    uint64_t ToUint64() const noexcept {
+        return static_cast<uint64_t>(ToChunk() & 0xffffffffffffffffULL);
+    }
     uint32_t ToUint32() const noexcept {
         return static_cast<uint32_t>(ToChunk() & 0xffffffffULL);
     }

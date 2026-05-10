@@ -1,7 +1,6 @@
-#include <BitFlow/core/rules/RuleEngine.h>
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <TestAssert.h>
+#include <RuleTestHelpers.h>
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Expression;

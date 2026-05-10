@@ -2,13 +2,16 @@
 #include <stdexcept>
 
 namespace BitFlow::Core::Expression {
+
+using namespace Ids;
+
 #ifdef BF_EXPR_LIFETIME_CHECKS
 ExprStore::ExprStore() {
-    m_debugExprs.resize(20000);
+    m_debugExprs.resize(200000);
 }
 #endif
 
-[[nodiscard]] ExprRef ExprStore::create(OpType op, std::initializer_list<Ids::ExprId> in, Types::BitWidth bitWidth) {
+[[nodiscard]] ExprRef ExprStore::create(OpType op, std::initializer_list<ExprId> in, Types::BitWidth bitWidth) {
     _ASSERT(bitWidth > 0);
 
     const auto id = createId();
@@ -43,7 +46,7 @@ ExprStore::ExprStore() {
     return ExprRef(this, id);
 }
 
-[[nodiscard]] ExprRef ExprStore::create(OpType op, std::vector<Ids::ExprId>&& in, Types::BitWidth bitWidth) {
+[[nodiscard]] ExprRef ExprStore::create(OpType op, std::vector<ExprId>&& in, Types::BitWidth bitWidth) {
     _ASSERT(bitWidth > 0);
 
     const auto id = createId();
@@ -99,7 +102,7 @@ ExprStore::ExprStore() {
     return ref;
 }
 
-[[nodiscard]] ExprRef ExprStore::invertConst(Ids::ExprId id) {
+[[nodiscard]] ExprRef ExprStore::invertConst(ExprId id) {
     const Expr& e = get(id);
 
     if (e.op != OpType::Const)
@@ -136,7 +139,7 @@ ExprStore::ExprStore() {
 }
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
-[[nodiscard]] Expr& ExprStore::MakeDebugExpr(Ids::ExprId id) {
+[[nodiscard]] Expr& ExprStore::MakeDebugExpr(ExprId id) {
 
     if (m_nextDebugSlot >= m_debugExprs.size())
         throw std::runtime_error("ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper "
@@ -152,7 +155,7 @@ ExprStore::ExprStore() {
 }
 #endif
 
-[[nodiscard]] Ids::ExprId ExprStore::createId() {
+[[nodiscard]] ExprId ExprStore::createId() {
     ValueType value{};
 
     if (!m_freeIds.empty()) {
@@ -162,7 +165,7 @@ ExprStore::ExprStore() {
         value = m_nextId++;
     }
 
-    return Ids::ExprId{value};
+    return ExprId{value};
 }
 
 } // namespace BitFlow::Core::Expression

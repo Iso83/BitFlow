@@ -1,4 +1,3 @@
-#include <BitFlow/core/eval/Evaluator.h>
 #include <ExprTestUtils.h>
 #include <TestAssert.h>
 
@@ -13,7 +12,7 @@ int TestEvaluate_PureConstantExpression() {
     EvalResult r = EvaluateConstant(C(0xABCD1234));
 
     BF_TEST(r.status == EvalStatus::Success);
-    BF_TEST(EqualBits(r.value, 0xABCD1234ULL));
+    BF_TEST(EqualChunkValue(r.value, 0xABCD1234ULL));
     return 0;
 }
 
@@ -28,7 +27,7 @@ int TestEvaluate_NestedExpression() {
     EvalResult r = EvaluateConstant(expr, 16);
 
     BF_TEST(r.status == EvalStatus::Success);
-    BF_TEST(EqualBits(r.value, 0x2DULL));
+    BF_TEST(EqualChunkValue(r.value, 0x2DULL));
     return 0;
 }
 
@@ -45,16 +44,16 @@ int TestEvaluate_BitWidthVariations_8_16_32_64() {
     EvalResult r64 = EvaluateConstant(expr, 64);
 
     BF_TEST(r8.status == EvalStatus::Success);
-    BF_TEST(EqualBits(r8.value, 0x34ULL));
+    BF_TEST(EqualChunkValue(r8.value, 0x34ULL));
 
     BF_TEST(r16.status == EvalStatus::Success);
-    BF_TEST(EqualBits(r16.value, 0x1234ULL));
+    BF_TEST(EqualChunkValue(r16.value, 0x1234ULL));
 
     BF_TEST(r32.status == EvalStatus::Success);
-    BF_TEST(EqualBits(r32.value, 0xFFFF1234ULL));
+    BF_TEST(EqualChunkValue(r32.value, 0xFFFF1234ULL));
 
     BF_TEST(r64.status == EvalStatus::Success);
-    BF_TEST(EqualBits(r64.value, 0xFFFF1234ULL));
+    BF_TEST(EqualChunkValue(r64.value, 0xFFFF1234ULL));
     return 0;
 }
 
@@ -147,7 +146,7 @@ int TestEvaluate_WideBitWidth_UsesBfUintPath() {
 
     BF_TEST(r.status == EvalStatus::Success);
     BF_TEST(r.value.BitWidth() == 128U);
-    BF_TEST(EqualBits(r.value, ((0x102ULL + 0x102ULL) % 257ULL)));
+    BF_TEST(EqualChunkValue(r.value, ((0x102ULL + 0x102ULL) % 257ULL)));
 
     auto rotr = c2.RotR(1);
     auto rotrWide = EvaluateConstant(rotr, 128);

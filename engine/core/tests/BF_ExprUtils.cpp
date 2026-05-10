@@ -91,7 +91,7 @@ static int TestMakeXor_EmptyTerms() {
 
     auto out = MakeXor(&store, terms);
 
-    BF_TEST(IsConstantValue(ERef(out), 0u));
+    BF_TEST(EqualChunkValue(ERef(out), 0u));
 
     return 0;
 }

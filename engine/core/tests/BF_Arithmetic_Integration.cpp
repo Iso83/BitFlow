@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <TestAssert.h>
+#include <RuleTestHelpers.h>
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Ids;
@@ -31,10 +31,10 @@ int TestSimplify_ConstCombine_Basic() {
 
     RuleEngine engine = MakeArithmeticEngine();
 
-    BF_TEST(IsConstantValue(Rewrite(engine, C(5) + 7), 12u));
-    BF_TEST(IsConstantValue(Rewrite(engine, C(9) - 4), 5u));
-    BF_TEST(IsConstantValue(Rewrite(engine, C(3) * 6), 18u));
-    BF_TEST(IsConstantValue(Rewrite(engine, C(8) / 2), 4u));
+    BF_TEST(EqualChunkValue(Rewrite(engine, C(5) + 7), 12u));
+    BF_TEST(EqualChunkValue(Rewrite(engine, C(9) - 4), 5u));
+    BF_TEST(EqualChunkValue(Rewrite(engine, C(3) * 6), 18u));
+    BF_TEST(EqualChunkValue(Rewrite(engine, C(8) / 2), 4u));
     return 0;
 }
 
@@ -83,7 +83,7 @@ int TestFactorize_Canonical_a_b_plus_b_a() {
     BF_TEST(out.op == OpType::Mul);
     BF_TEST(CountExpr(r, a) == 1);
     BF_TEST(CountExpr(r, b) == 1);
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 2u); }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 2u); }));
 
     return 0;
 }
@@ -99,7 +99,7 @@ int TestFactorize_AddRepeatedTermCount() {
 
     BF_TEST(out.op == OpType::Mul);
     BF_TEST(out.inputs.size() == 2);
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 6u); }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 6u); }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     return 0;
 }
@@ -114,7 +114,7 @@ int TestFactorize_CombineNestedMulConstants() {
 
     BF_TEST(out.op == OpType::Mul);
     BF_TEST(out.inputs.size() == 2);
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 6u); }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 6u); }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     return 0;
 }
@@ -132,7 +132,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
-        BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 2u); }));
+        BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 2u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
@@ -142,7 +142,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
-        BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 3u); }));
+        BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 3u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
@@ -152,7 +152,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
-        BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 3u); }));
+        BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 3u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
@@ -162,7 +162,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
-        BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 3u); }));
+        BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 3u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
@@ -172,7 +172,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
-        BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 5u); }));
+        BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 5u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
@@ -188,7 +188,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
                 return false;
 
             return AnyInput(in, [&](ExprRef factor) { return factor == a; }) &&
-                   AnyInput(in, [&](ExprRef factor) { return IsConstantValue(factor, 2u); });
+                   AnyInput(in, [&](ExprRef factor) { return EqualChunkValue(factor, 2u); });
         }));
     }
 
@@ -198,7 +198,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
-        BF_TEST(AnyInput(r, [&](ExprRef in) { return IsConstantValue(in, 3u); }));
+        BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 3u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 

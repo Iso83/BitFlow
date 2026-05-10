@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <TestAssert.h>
+#include <RuleTestHelpers.h>
 
 using namespace BitFlow::Core::Testing;
 using namespace BitFlow::Core::Ids;
@@ -26,7 +26,7 @@ int TestCanonical_MulCoeffOrder_2a_plus_a() {
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
         BF_TEST(ERef(out.inputs[0]) == a);
-        BF_TEST(IsConstantValue(ERef(out.inputs[1]), 3u));
+        BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 3u));
     }
 
     {
@@ -34,7 +34,7 @@ int TestCanonical_MulCoeffOrder_2a_plus_a() {
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
         BF_TEST(ERef(out.inputs[0]) == a);
-        BF_TEST(IsConstantValue(ERef(out.inputs[1]), 3u));
+        BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 3u));
     }
     return 0;
 }
@@ -51,7 +51,7 @@ int TestCanonical_a_b_plus_b_a() {
     BF_TEST(out.inputs.size() == 3);
     BF_TEST(ERef(out.inputs[0]) == a);
     BF_TEST(ERef(out.inputs[1]) == b);
-    BF_TEST(IsConstantValue(ERef(out.inputs[2]), 2u));
+    BF_TEST(EqualChunkValue(ERef(out.inputs[2]), 2u));
     return 0;
 }
 
@@ -65,7 +65,7 @@ int TestCanonical_combineMulConstants_Order() {
     BF_TEST(out.op == OpType::Mul);
     BF_TEST(out.inputs.size() == 2);
     BF_TEST(ERef(out.inputs[0]) == a);
-    BF_TEST(IsConstantValue(ERef(out.inputs[1]), 6u));
+    BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 6u));
     return 0;
 }
 

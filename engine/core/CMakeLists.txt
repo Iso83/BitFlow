@@ -44,6 +44,7 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core BF_ExprRef USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_Expr USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core BF_ExprUtils USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core BF_ExprStore USE_CORE_PRINT)
 
     # Active always-on core test set.
     bf_add_module_test(BitFlowCore core BF_OpType USE_CORE_PRINT)

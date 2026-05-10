@@ -2,7 +2,6 @@
 
 #include <BitFlow/core/ids/ExprId.h>
 #include <BitFlow/core/types/Types.h>
-#include <cstdint>
 
 namespace BitFlow::Core::Expression {
 

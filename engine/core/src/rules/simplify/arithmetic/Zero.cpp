@@ -1,6 +1,5 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/helper/Attributes.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <stdexcept>
 #include <vector>

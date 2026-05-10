@@ -31,7 +31,7 @@ int TestAddZero_AllZerosBecomeConstZero() {
     engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
     auto r = Rewrite(engine, C(0) + 0 + 0);
 
-    BF_TEST(IsConstantValue(r, 0u));
+    BF_TEST(EqualChunkValue(r, 0u));
     return 0;
 }
 
@@ -64,7 +64,7 @@ int TestMulZero_Nested() {
     auto x = V("x");
     auto r = Rewrite(engine, (x * 0) * x);
 
-    BF_TEST(IsConstantValue(r, 0u));
+    BF_TEST(EqualChunkValue(r, 0u));
     return 0;
 }
 
@@ -79,7 +79,7 @@ int TestMulZero_DominanceWithMixedInputs() {
     auto y = V("y");
     auto r = Rewrite(engine, x * y * 0);
 
-    BF_TEST(IsConstantValue(r, 0u));
+    BF_TEST(EqualChunkValue(r, 0u));
     return 0;
 }
 
@@ -229,7 +229,7 @@ int TestRotateModuloBitwidth_Property_ConstantAmounts() {
             BF_TEST(out.inputs.size() == 2);
 
             BF_TEST(ERef(out.inputs[0]) == x);
-            BF_TEST(IsConstantValue(ERef(out.inputs[1]), reduced));
+            BF_TEST(EqualChunkValue(ERef(out.inputs[1]), reduced));
         }
     }
 

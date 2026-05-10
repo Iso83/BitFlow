@@ -5,9 +5,13 @@
 namespace BitFlow::Core::BitVector {
 
 static Types::ExprChunk MaskChunk(Types::BitWidth bits) {
-    if (bits == Types::ExprChunkBits)
-        return ~0ull;
-    return (1ull << bits) - 1;
+    if (bits == 0)
+        return Types::ExprChunk{0};
+
+    if (bits >= Types::ExprChunkBits)
+        return ~Types::ExprChunk{0};
+
+    return (Types::ExprChunk{1} << bits) - Types::ExprChunk{1};
 }
 
 static void EnsureSameBitWidth(const bf_uint& lhs, const bf_uint& rhs) {
@@ -16,7 +20,7 @@ static void EnsureSameBitWidth(const bf_uint& lhs, const bf_uint& rhs) {
 }
 
 bf_uint::bf_uint(Types::BitWidth bw) : m_bw(bw) {
-    m_words.resize((bw + (Types::ExprChunkBits - 1)) / Types::ExprChunkBits, 0);
+    m_words.resize((bw + Types::ExprChunkBitsMinusOne) / Types::ExprChunkBits, 0);
 }
 
 bf_uint::bf_uint(Types::ExprChunk v, Types::BitWidth bw) : bf_uint(bw) {
@@ -482,6 +486,9 @@ bf_uint bf_uint::RotL(Types::BitWidth s) const {
         return bf_uint(0, 0);
 
     s %= m_bw;
+    if (s == 0)
+        return *this;
+
     return Shl(s) | Shr(m_bw - s);
 }
 
@@ -490,6 +497,9 @@ bf_uint bf_uint::RotR(Types::BitWidth s) const {
         return bf_uint(0, 0);
 
     s %= m_bw;
+    if (s == 0)
+        return *this;
+
     return Shr(s) | Shl(m_bw - s);
 }
 #pragma endregion
