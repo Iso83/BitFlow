@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
@@ -21,7 +21,7 @@ int TestXorDedup() {
 
     BF_TEST(r1 == r2);
 
-    auto exprR1 = GetExpr(r1);
+    auto exprR1 = ExprOf(r1);
     BF_TEST(exprR1.op == OpType::Xor);
     BF_TEST(exprR1.inputs.size() == 2);
     BF_TEST(exprR1.inputs[0].value() < exprR1.inputs[1].value());

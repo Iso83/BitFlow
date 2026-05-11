@@ -3,7 +3,7 @@
 #include <RuleTestHelpers.h>
 #include <TestAssert.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -45,7 +45,7 @@ int TestAddZero_CanonicalOrderRegression() {
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, y + 0 + x);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Add);
     BF_TEST(out.inputs.size() == 2);
@@ -103,7 +103,7 @@ int TestSubZero_LeftZeroBecomesNeg() {
     engine.AddRule(Simplify::Arithmetic::Get_Sub_Zero_Rule());
     auto x = V("x");
     auto r = Rewrite(engine, C(0) - x);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Neg);
     BF_TEST(out.inputs.size() == 1);
@@ -223,7 +223,7 @@ int TestRotateModuloBitwidth_Property_ConstantAmounts() {
         if (reduced == 0) {
             BF_TEST(r == x);
         } else {
-            auto out = GetExpr(r);
+            auto out = ExprOf(r);
 
             BF_TEST(out.op == OpType::RotR);
             BF_TEST(out.inputs.size() == 2);
@@ -247,7 +247,7 @@ int TestRotateModuloBitwidth_CanonicalOrderRegression() {
     auto y = V("y");
 
     auto r = Rewrite(engine, y + x.RotL(32));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Add);
     BF_TEST(out.inputs.size() == 2);

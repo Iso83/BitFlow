@@ -3,7 +3,7 @@
 #include <RuleTestHelpers.h>
 #include <TestAssert.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -18,7 +18,7 @@ int TestRotateModuloBitwidth_ReducesConstantAmount() {
 
     auto x = V("x");
     const Expr& out =
-        GetExpr(Rewrite(engine, x.RotL(35), &names, PrintOptions{}.ExplicitGroups().ShowOpTypes().RotAsFunction()));
+        ExprOf(Rewrite(engine, x.RotL(35), &names, PrintOptions{}.ExplicitGroups().ShowOpTypes().RotAsFunction()));
 
     BF_TEST(out.op == OpType::RotL);
     BF_TEST(out.inputs.size() == 2);

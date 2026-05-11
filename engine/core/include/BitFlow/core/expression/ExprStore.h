@@ -7,10 +7,15 @@ namespace BitFlow::Core::Rules {
 class RuleEngine;
 }
 
+namespace BitFlow::IO {
+class PrattParser;
+}
+
 namespace BitFlow::Core::Expression {
 
 class ExprStore {
     friend Rules::RuleEngine;
+    friend BitFlow::IO::PrattParser;
 
   private:
     using ValueType = Ids::ExprId::ValueType;

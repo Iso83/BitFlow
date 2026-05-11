@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -18,7 +18,7 @@ int TestXorOrdering() {
     auto y = V("y");
 
     auto r = Rewrite(engine, y ^ x ^ y ^ x);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 4);

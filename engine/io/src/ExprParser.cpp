@@ -1,7 +1,5 @@
 #include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/expression/Expression.h>
-#include <BitFlow/core/expression/OpType.h>
-#include <BitFlow/core/ids/ExprId.h>
+#include <BitFlow/core/expression/OpInfo.h>
 #include <BitFlow/io/ExprParser.h>
 #include <BitFlow/io/lexer/Lexer.h>
 #include <BitFlow/io/lexer/Token.h>
@@ -15,49 +13,28 @@
 
 namespace BitFlow::IO {
 
-using Expr = BitFlow::Core::Expression::ExprOld;
-using OpType = BitFlow::Core::Expression::OpType;
-using Token = BitFlow::IO::Lexer::Token;
-using TokenKind = BitFlow::IO::Lexer::TokenKind;
-
-namespace {
-
-static Expr* MakeVar(uint32_t id) {
-    Expr* e = new Expr{};
-    e->id = BitFlow::Core::Ids::ExprId{id};
-    e->op = OpType::Var;
-    return e;
-}
-
-static Expr* MakeOp(OpType op, std::vector<Expr*> inputs) {
-    Expr* e = new Expr{};
-    e->op = op;
-    e->inputs = std::move(inputs);
-    return e;
-}
+using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Core::Expression;
+using namespace BitFlow::IO::Lexer;
 
 static std::runtime_error ParseErrorAt(const std::string& message, const Token& token) {
     return std::runtime_error(message + " at position " + std::to_string(token.span.begin));
 }
 
-struct InfixInfo {
-    std::uint8_t precedence;
-    OpType op;
-};
-
 class PrattParser {
   private:
     std::vector<Token> m_tokens;
     std::size_t m_pos = 0;
-    std::unordered_map<std::string, uint32_t> m_varIds;
-    uint32_t m_nextVarId = 1;
+    std::unordered_map<std::string, ExprId> m_varIds;
+    ExprStore* m_store;
 
   public:
-    std::unordered_map<uint32_t, std::string> m_idToName;
+    ExprNameMap m_idToName;
 
-    explicit PrattParser(const std::string& input) : m_tokens(BitFlow::IO::Lexer::Tokenize(input)) {}
+    explicit PrattParser(ExprStore* store, const std::string& input)
+        : m_store(store), m_tokens(BitFlow::IO::Lexer::Tokenize(input)) {}
 
-    Expr* ParseExpressionRoot() {
+    ExprId ParseExpressionRoot() {
         if (m_tokens.empty())
             throw std::runtime_error("Internal parser error: empty token stream");
 
@@ -65,7 +42,7 @@ class PrattParser {
         if (first.kind == TokenKind::Error)
             throw ParseErrorAt(first.text, first);
 
-        Expr* expr = ParseExpression(0);
+        ExprId expr = ParseExpression(0);
 
         const Token& tail = Current();
         if (tail.kind == TokenKind::Error)
@@ -106,52 +83,46 @@ class PrattParser {
                kind == TokenKind::LeftParen || kind == TokenKind::Tilde || kind == TokenKind::Minus;
     }
 
-    static std::uint8_t PrefixBindingPower(TokenKind kind) {
-        if (kind == TokenKind::Tilde || kind == TokenKind::Minus)
-            return 70;
-
-        return 0;
-    }
-
-    static bool TryGetInfixInfo(TokenKind kind, InfixInfo& info) {
+    static OpType TokenToOp(TokenKind kind) {
         switch (kind) {
         case TokenKind::Star:
-            info = InfixInfo{60, OpType::Mul};
-            return true;
+            return OpType::Mul;
+
         case TokenKind::Slash:
-            info = InfixInfo{60, OpType::Div};
-            return true;
+            return OpType::Div;
+
         case TokenKind::Percent:
-            info = InfixInfo{60, OpType::Mod};
-            return true;
+            return OpType::Mod;
+
         case TokenKind::Plus:
-            info = InfixInfo{50, OpType::Add};
-            return true;
+            return OpType::Add;
+
         case TokenKind::Minus:
-            info = InfixInfo{50, OpType::Sub};
-            return true;
+            return OpType::Sub;
+
         case TokenKind::ShiftLeft:
-            info = InfixInfo{40, OpType::Shl};
-            return true;
+            return OpType::Shl;
+
         case TokenKind::ShiftRight:
-            info = InfixInfo{40, OpType::Shr};
-            return true;
+            return OpType::Shr;
+
         case TokenKind::Ampersand:
-            info = InfixInfo{30, OpType::And};
-            return true;
+            return OpType::And;
+
         case TokenKind::Caret:
-            info = InfixInfo{20, OpType::Xor};
-            return true;
+            return OpType::Xor;
+
         case TokenKind::Pipe:
-            info = InfixInfo{10, OpType::Or};
-            return true;
+            return OpType::Or;
+
         default:
-            return false;
+            throw std::runtime_error("TokenToOp: unsupported TokenKind");
         }
     }
 
-    Expr* ParseExpression(std::uint8_t minBindingPower) {
+    ExprId ParseExpression(std::uint8_t minBindingPower) {
         Token token = Current();
+
         if (token.kind == TokenKind::Error)
             throw ParseErrorAt(token.text, token);
 
@@ -159,29 +130,57 @@ class PrattParser {
             throw ParseErrorAt("Expected expression", token);
 
         Advance();
-        Expr* left = ParsePrefix(token);
+
+        ExprId left = ParsePrefix(token);
 
         while (true) {
             const Token lookahead = Current();
+
             if (lookahead.kind == TokenKind::Error)
                 throw ParseErrorAt(lookahead.text, lookahead);
 
-            InfixInfo infix{};
-            if (!TryGetInfixInfo(lookahead.kind, infix))
+            switch (lookahead.kind) {
+            case TokenKind::Star:
+            case TokenKind::Slash:
+            case TokenKind::Percent:
+            case TokenKind::Plus:
+            case TokenKind::Minus:
+            case TokenKind::ShiftLeft:
+            case TokenKind::ShiftRight:
+            case TokenKind::Ampersand:
+            case TokenKind::Caret:
+            case TokenKind::Pipe:
                 break;
 
-            if (infix.precedence <= minBindingPower)
+            default:
+                return left;
+            }
+
+            const OpType op = TokenToOp(lookahead.kind);
+
+            const OpInfo* info = GetOpInfo(op);
+
+            if (!info || !info->infix)
+                break;
+
+            if (info->precedence <= minBindingPower)
                 break;
 
             Advance();
-            Expr* right = ParseExpression(infix.precedence);
-            left = MakeOp(infix.op, {left, right});
+
+            const std::uint8_t rbp = info->associativity == Associativity::Left
+                                         ? info->precedence
+                                         : static_cast<std::uint8_t>(info->precedence - 1);
+
+            ExprId right = ParseExpression(rbp);
+
+            left = m_store->create(op, {left, right}).id;
         }
 
         return left;
     }
 
-    Expr* ParsePrefix(const Token& token) {
+    ExprId ParsePrefix(const Token& token) {
         switch (token.kind) {
         case TokenKind::Identifier:
             return ParseIdentifierOrCall(token);
@@ -191,40 +190,48 @@ class PrattParser {
         case TokenKind::LeftParen:
             return ParseGroupedExpression(token);
         case TokenKind::Tilde: {
-            const std::uint8_t unaryBindingPower = PrefixBindingPower(token.kind);
-            Expr* inner = ParseExpression(unaryBindingPower);
-            return MakeOp(OpType::Not, {inner});
+            const OpInfo* info = GetOpInfo(OpType::Not);
+
+            if (!info)
+                throw std::runtime_error("Missing OpInfo for Not");
+
+            ExprId inner = ParseExpression(info->precedence);
+            return m_store->create(OpType::Not, {inner}).id;
         }
         case TokenKind::Minus: {
-            const std::uint8_t unaryBindingPower = PrefixBindingPower(token.kind);
-            Expr* inner = ParseExpression(unaryBindingPower);
-            return MakeOp(OpType::Neg, {inner});
+            const OpInfo* info = GetOpInfo(OpType::Not);
+
+            if (!info)
+                throw std::runtime_error("Missing OpInfo for Not");
+
+            ExprId inner = ParseExpression(info->precedence);
+            return m_store->create(OpType::Neg, {inner}).id;
         }
         default:
             throw ParseErrorAt("Expected expression", token);
         }
     }
 
-    Expr* ParseIdentifierOrCall(const Token& token) {
+    ExprId ParseIdentifierOrCall(const Token& token) {
         if (Current().kind == TokenKind::LeftParen)
             return ParseFunctionCall(token);
 
         auto it = m_varIds.find(token.text);
         if (it == m_varIds.end()) {
-            uint32_t id = m_nextVarId++;
+            ExprId id = m_store->createVariable().id;
             m_varIds[token.text] = id;
             m_idToName[id] = token.text;
-            return MakeVar(id);
+            return id;
         }
 
-        return MakeVar(it->second);
+        return it->second;
     }
 
-    Expr* ParseFunctionCall(const Token& identifier) {
+    ExprId ParseFunctionCall(const Token& identifier) {
         if (!Consume(TokenKind::LeftParen))
             throw ParseErrorAt("Expected '(' after function name", Current());
 
-        std::vector<Expr*> args;
+        std::vector<ExprId> args;
         if (Current().kind != TokenKind::RightParen) {
             do {
                 args.push_back(ParseExpression(0));
@@ -237,41 +244,29 @@ class PrattParser {
         if (identifier.text == "rotl") {
             if (args.size() != 2)
                 throw ParseErrorAt("Function rotl expects exactly 2 arguments", identifier);
-            return MakeOp(OpType::RotL, {args[0], args[1]});
+            return m_store->create(OpType::RotL, {args[0], args[1]}).id;
         }
 
         if (identifier.text == "rotr") {
             if (args.size() != 2)
                 throw ParseErrorAt("Function rotr expects exactly 2 arguments", identifier);
-            return MakeOp(OpType::RotR, {args[0], args[1]});
-        }
-
-        if (identifier.text == "ch") {
-            if (args.size() != 3)
-                throw ParseErrorAt("Function ch expects exactly 3 arguments", identifier);
-            return MakeOp(OpType::Ch, {args[0], args[1], args[2]});
-        }
-
-        if (identifier.text == "maj") {
-            if (args.size() != 3)
-                throw ParseErrorAt("Function maj expects exactly 3 arguments", identifier);
-            return MakeOp(OpType::Maj, {args[0], args[1], args[2]});
+            return m_store->create(OpType::RotR, {args[0], args[1]}).id;
         }
 
         throw ParseErrorAt("Unknown function: " + identifier.text, identifier);
     }
 
-    Expr* ParseLiteral(const Token& token) {
+    ExprId ParseLiteral(const Token& token) {
         if (!token.numericValue)
             throw ParseErrorAt("Missing literal numeric value", token);
 
-        return BitFlow::Core::Expression::ConstPool::Get(static_cast<uint32_t>(*token.numericValue));
+        return m_store->createConstant(*token.numericValue).id;
     }
 
-    Expr* ParseGroupedExpression(const Token& leftParen) {
+    ExprId ParseGroupedExpression(const Token& leftParen) {
         (void)leftParen;
 
-        Expr* expr = ParseExpression(0);
+        ExprId expr = ParseExpression(0);
         const Token& closing = Current();
 
         if (closing.kind != TokenKind::RightParen)
@@ -282,14 +277,12 @@ class PrattParser {
     }
 };
 
-} // namespace
-
-ParseResult Parse(const std::string& input) {
-    PrattParser parser(input);
+ParseResult Parse(ExprStore* store, const std::string& input) {
+    PrattParser parser(store, input);
 
     ParseResult result;
-    result.root = parser.ParseExpressionRoot();
-    result.idToName = std::move(parser.m_idToName);
+    result.root = ExprRef(store, parser.ParseExpressionRoot());
+    result.names = std::move(parser.m_idToName);
     return result;
 }
 

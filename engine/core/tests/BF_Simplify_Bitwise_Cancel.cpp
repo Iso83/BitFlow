@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -28,7 +28,7 @@ int TestAndCancelMixed() {
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, x & y & x);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::And);
     BF_TEST(out.inputs.size() == 2);
@@ -61,7 +61,7 @@ int TestOrCancelMixed() {
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, y | x | y);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Or);
     BF_TEST(out.inputs.size() == 2);
@@ -109,7 +109,7 @@ int TestXorParityCancel_MixedToXor() {
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, a ^ b ^ c ^ a);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 2);
@@ -168,7 +168,7 @@ int TestXorParity_WithConstMixed() {
     auto a = V("a");
     auto b = V("b");
     auto r = Rewrite(engine, a ^ 1 ^ b ^ a);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 2);
@@ -188,7 +188,7 @@ int TestXorParity_RewriteKeepsCanonicalOrder() {
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, c ^ a ^ b ^ a);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 2);
@@ -219,7 +219,7 @@ int TestXorParity_StructuralRotateDuplicateLeavesSingle() {
     auto x = V("x");
     auto r = Rewrite(engine, x.RotR(2) ^ x.RotR(13) ^ x.RotR(2));
 
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::RotR);
     BF_TEST(out.inputs.size() == 2);

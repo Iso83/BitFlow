@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -20,7 +20,7 @@ int TestXorAndReduction_Basic() {
     auto y = V("y");
 
     auto r = Rewrite(engine, x ^ (x & y));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::And);
     BF_TEST(out.inputs.size() == 2);
@@ -28,7 +28,7 @@ int TestXorAndReduction_Basic() {
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == x; }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = GetExpr(in);
+        const auto& e = ExprOf(in);
 
         return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == y;
     }));
@@ -50,18 +50,18 @@ int TestXorAndReduction_MultiArgXor() {
     auto c = V("c");
 
     auto r = Rewrite(engine, c ^ a ^ (a & b));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (GetExpr(in).op != OpType::And)
+        if (ExprOf(in).op != OpType::And)
             return false;
 
         return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) {
-                   const auto& e = GetExpr(x);
+                   const auto& e = ExprOf(x);
 
                    return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == b;
                });
@@ -84,21 +84,21 @@ int TestXorAndReduction_AndWithManyFactors() {
     auto c = V("c");
 
     auto r = Rewrite(engine, a ^ (a & b & c));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::And);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = GetExpr(in);
+        const auto& e = ExprOf(in);
 
         if (e.op != OpType::Not || e.inputs.size() != 1)
             return false;
 
         ExprRef inner = ERef(e.inputs[0]);
 
-        if (GetExpr(inner).op != OpType::And)
+        if (ExprOf(inner).op != OpType::And)
             return false;
 
         return AnyInput(inner, [&](ExprRef x) { return x == b; }) && AnyInput(inner, [&](ExprRef x) { return x == c; });

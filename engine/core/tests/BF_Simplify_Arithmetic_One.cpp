@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
@@ -48,7 +48,7 @@ int TestMulOne_CanonicalOrderRegression() {
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, y * 1 * x);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Mul);
     BF_TEST(out.inputs.size() == 2);

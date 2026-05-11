@@ -1,6 +1,5 @@
 #pragma once
 
-#include <BitFlow/core/rules/Rule.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 
 namespace BitFlow::Core::Rules {

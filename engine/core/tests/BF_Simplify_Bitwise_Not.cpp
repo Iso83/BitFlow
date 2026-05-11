@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -44,19 +44,19 @@ int TestNotPushdown_And() {
     auto b = V("b");
 
     auto r = Rewrite(engine, ~(a & b));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Or);
     BF_TEST(out.inputs.size() == 2);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = GetExpr(in);
+        const auto& e = ExprOf(in);
 
         return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == a;
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = GetExpr(in);
+        const auto& e = ExprOf(in);
 
         return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == b;
     }));
@@ -75,19 +75,19 @@ int TestNotPushdown_Or() {
     auto b = V("b");
 
     auto r = Rewrite(engine, ~(a | b));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::And);
     BF_TEST(out.inputs.size() == 2);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = GetExpr(in);
+        const auto& e = ExprOf(in);
 
         return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == a;
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = GetExpr(in);
+        const auto& e = ExprOf(in);
 
         return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == b;
     }));
@@ -106,7 +106,7 @@ int TestNotXor() {
     auto b = V("b");
 
     auto r = Rewrite(engine, ~(a ^ b));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 3);

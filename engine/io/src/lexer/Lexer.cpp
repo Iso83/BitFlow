@@ -2,12 +2,9 @@
 #include <cctype>
 #include <charconv>
 #include <cstdint>
-#include <limits>
 #include <utility>
 
 namespace BitFlow::IO::Lexer {
-
-namespace {
 
 bool IsIdentifierStart(char ch) {
     const unsigned char uch = static_cast<unsigned char>(ch);
@@ -43,8 +40,6 @@ std::optional<std::uint64_t> ParseUnsigned(const std::string& text, int base) {
 std::string BuildErrorText(const std::string& message, std::size_t position) {
     return message + " at position " + std::to_string(position);
 }
-
-} // namespace
 
 Lexer::Lexer(const std::string& input) : m_input(input) {}
 

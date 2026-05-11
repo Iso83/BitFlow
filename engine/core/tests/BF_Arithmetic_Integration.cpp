@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -63,7 +63,7 @@ int TestFactorize_AddCommonFactor() {
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, (a * b) + (a * c));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Mul);
     BF_TEST(out.inputs.size() == 2);
@@ -78,7 +78,7 @@ int TestFactorize_Canonical_a_b_plus_b_a() {
     auto a = V("a");
     auto b = V("b");
     auto r = Rewrite(engine, (a * b) + (b * a));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Mul);
     BF_TEST(CountExpr(r, a) == 1);
@@ -95,7 +95,7 @@ int TestFactorize_AddRepeatedTermCount() {
     auto a = V("a");
     auto term = a * 2;
     auto r = Rewrite(engine, term + term + term);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Mul);
     BF_TEST(out.inputs.size() == 2);
@@ -110,7 +110,7 @@ int TestFactorize_CombineNestedMulConstants() {
     RuleEngine engine = MakeArithmeticEngine();
     auto a = V("a");
     auto r = Rewrite(engine, C(3) * (a * 2));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Mul);
     BF_TEST(out.inputs.size() == 2);
@@ -128,7 +128,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto r = Rewrite(engine, a + a);
-        auto out = GetExpr(r);
+        auto out = ExprOf(r);
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
@@ -138,7 +138,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto r = Rewrite(engine, a + a + a);
-        auto out = GetExpr(r);
+        auto out = ExprOf(r);
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
@@ -148,7 +148,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto r = Rewrite(engine, a + (a * 2));
-        auto out = GetExpr(r);
+        auto out = ExprOf(r);
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
@@ -158,7 +158,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto r = Rewrite(engine, a + (C(2) * a));
-        auto out = GetExpr(r);
+        auto out = ExprOf(r);
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
@@ -168,7 +168,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto r = Rewrite(engine, (a * 2) + (a * 3));
-        auto out = GetExpr(r);
+        auto out = ExprOf(r);
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
@@ -178,13 +178,13 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto r = Rewrite(engine, b + a + a);
-        auto out = GetExpr(r);
+        auto out = ExprOf(r);
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
         BF_TEST(AnyInput(r, [&](ExprRef in) {
-            if (GetExpr(in).op != OpType::Mul)
+            if (ExprOf(in).op != OpType::Mul)
                 return false;
 
             return AnyInput(in, [&](ExprRef factor) { return factor == a; }) &&
@@ -194,7 +194,7 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto r = Rewrite(engine, (a * 1) + (a * 2));
-        auto out = GetExpr(r);
+        auto out = ExprOf(r);
 
         BF_TEST(out.op == OpType::Mul);
         BF_TEST(out.inputs.size() == 2);

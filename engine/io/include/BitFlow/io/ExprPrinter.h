@@ -1,19 +1,22 @@
 #pragma once
 
-#include <BitFlow/core/expression/Expression.h>
-#include <cctype>
-#include <string>
-#include <unordered_map>
+#include <BitFlow/core/expression/ExprPrinter.h>
 
 namespace BitFlow::IO {
 
-struct PrintOptions {
-    bool rotAsFunction = true;
-};
+using PrintOptions = Core::Expression::PrintOptions;
+using ExprNameMap = Core::Expression::ExprNameMap;
 
-std::string ToString(const Core::Expression::ExprOld* e);
-std::string ToString(const Core::Expression::ExprOld* e, const std::unordered_map<uint32_t, std::string>& names);
-std::string ToString(const Core::Expression::ExprOld* e, const std::unordered_map<uint32_t, std::string>& names,
-                     const PrintOptions& options);
+inline std::string ToString(const Core::Expression::ExprRef& e) {
+    return Core::Expression::ToString(e.store, e.id);
+}
+
+inline std::string ToString(const Core::Expression::ExprRef& e, const ExprNameMap& names) {
+    return Core::Expression::ToString(e.store, e.id, names);
+}
+
+inline std::string ToString(const Core::Expression::ExprRef& e, const ExprNameMap& names, const PrintOptions& options) {
+    return Core::Expression::ToString(e.store, e.id, names, options);
+}
 
 } // namespace BitFlow::IO

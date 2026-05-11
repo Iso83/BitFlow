@@ -1,7 +1,7 @@
 #include <ExprTestUtils.h>
 #include <TestAssert.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Eval;
 using namespace BitFlow::Core::Expression;
 

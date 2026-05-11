@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -24,7 +24,7 @@ int TestXorFlatten() {
     auto z = V("z");
 
     auto r = Rewrite(engine, (x ^ y) ^ z);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 3);
@@ -44,7 +44,7 @@ int TestNotNotDoesNotFlatten() {
     auto x = V("x");
 
     auto r = Rewrite(engine, -(-x)); // of ~(~x) indien bitwise-not
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Neg); // of Not
     BF_TEST(out.inputs.size() == 1);

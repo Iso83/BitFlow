@@ -1,8 +1,7 @@
 #pragma once
 
+#include <BitFlow/core/types/Types.h>
 #include <BitFlow/io/lexer/TokenKind.h>
-#include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <string>
 
@@ -28,7 +27,7 @@ struct Token {
     TokenKind kind;
     std::string text;
     SourceSpan span;
-    std::optional<std::uint64_t> numericValue;
+    std::optional<Core::Types::ExprChunk> numericValue;
     std::optional<LexerErrorCode> errorCode;
 };
 

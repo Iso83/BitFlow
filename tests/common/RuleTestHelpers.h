@@ -2,14 +2,15 @@
 
 #include "TestAssert.h"
 
+#include <BitFlow/core/expression/ExprPrinter.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 #include <iostream>
 
-namespace BitFlow::Core::Testing {
+namespace BitFlow::Testing {
 
 #define BF_VALIDATE_ENGINE(engine, rule) BF_TEST(PrintDependencyValidation(engine.ValidateMinimalDependencies(rule)))
 
-inline bool PrintDependencyValidation(const Rules::DependencyValidationResult& result) {
+inline bool PrintDependencyValidation(const Core::Rules::DependencyValidationResult& result) {
 
     if (result.valid)
         return true;
@@ -36,14 +37,14 @@ inline bool PrintDependencyValidation(const Rules::DependencyValidationResult& r
     return false;
 }
 
-inline Expression::ExprRef Rewrite(Expression::ExprStore* store, Rules::RuleEngine& engine, Ids::ExprId id) {
-    return Expression::ExprRef(store, engine.Rewrite(store, id));
+inline Core::Expression::ExprRef Rewrite(Core::Expression::ExprStore* store, Core::Rules::RuleEngine& engine,
+                                         Core::Ids::ExprId id) {
+    return Core::Expression::ExprRef(store, engine.Rewrite(store, id));
 }
 
-inline Expression::ExprRef
-Rewrite(Rules::RuleEngine& engine, Expression::ExprRef e,
-        const std::unordered_map<BitFlow::Core::Ids::ExprId, std::string>* traceNames = nullptr,
-        const Expression::PrintOptions& options = {}) {
+inline Core::Expression::ExprRef Rewrite(Core::Rules::RuleEngine& engine, Core::Expression::ExprRef e,
+                                         const Core::Expression::ExprNameMap* traceNames = nullptr,
+                                         const Core::Expression::PrintOptions& options = {}) {
 
     if (traceNames == nullptr)
         return Rewrite(e.store, engine, e.id);
@@ -51,14 +52,14 @@ Rewrite(Rules::RuleEngine& engine, Expression::ExprRef e,
     std::cout << "=== Rewrite Trace ===" << std::endl;
     std::cout << "Input : " << ToString(e.store, e.id, *traceNames, options) << std::endl;
 
-    engine.SetDebugCallback(
-        [traceNames, step = 0, e, options](Ids::ExprId before, Ids::ExprId after, Rules::RuleKey key) mutable {
-            if (before == after)
-                return;
+    engine.SetDebugCallback([traceNames, step = 0, e, options](Core::Ids::ExprId before, Core::Ids::ExprId after,
+                                                               Core::Rules::RuleKey key) mutable {
+        if (before == after)
+            return;
 
-            std::cout << "#" << step++ << " [" << key.value << "] " << ToString(e.store, before, *traceNames, options)
-                      << " -> " << ToString(e.store, after, *traceNames, options) << std::endl;
-        });
+        std::cout << "#" << step++ << " [" << key.value << "] " << ToString(e.store, before, *traceNames, options)
+                  << " -> " << ToString(e.store, after, *traceNames, options) << std::endl;
+    });
 
     auto result = Rewrite(e.store, engine, e.id);
 
@@ -70,4 +71,4 @@ Rewrite(Rules::RuleEngine& engine, Expression::ExprRef e,
     return result;
 }
 
-} // namespace BitFlow::Core::Testing
+} // namespace BitFlow::Testing

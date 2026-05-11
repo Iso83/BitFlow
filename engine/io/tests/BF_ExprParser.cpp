@@ -1,112 +1,164 @@
 #include <BitFlow/io/ExprParser.h>
+#include <ExprTestUtils.h>
 #include <TestAssert.h>
 
+using namespace BitFlow::Testing;
+using namespace BitFlow::Core;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-int TestExprParser_Precedence_MulBeforeAdd() {
-    auto parsed = BitFlow::IO::Parse("1 + 2 * 3");
-    ExprOld* root = parsed.root;
+inline bool EqualParseTree(const ExprStore* store, ExprId a, ExprId b) {
 
-    BF_TEST(root->op == OpType::Add);
-    BF_TEST(root->inputs[0]->op == OpType::Const);
-    BF_TEST(root->inputs[1]->op == OpType::Mul);
+    const Expr& ea = (*store)[a];
+    const Expr& eb = (*store)[b];
+
+    if (ea.op != eb.op)
+        return false;
+
+    if (ea.inputs.size() != eb.inputs.size())
+        return false;
+
+    if (ea.bitWidth != eb.bitWidth)
+        return false;
+
+    if (ea.op == OpType::Const) {
+        if (ea.knownMask != eb.knownMask)
+            return false;
+
+        if (ea.knownValue != eb.knownValue)
+            return false;
+    }
+
+    for (std::size_t i = 0; i < ea.inputs.size(); ++i) {
+        if (!EqualParseTree(store, ea.inputs[i], eb.inputs[i]))
+            return false;
+    }
+
+    return true;
+}
+
+inline bool EqualParseTree(ExprRef a, ExprRef b) {
+    BF_ASSERT(a.store == b.store);
+
+    return EqualParseTree(a.store, a.id, b.id);
+}
+
+int TestExprParser_Precedence_MulBeforeAdd() {
+    MakeExprStore(32);
+
+    auto root = Parse("1 + 2 * 3").root;
+
+    BF_TEST(Op(root) == OpType::Add);
+    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(Op(Input(root, 0)) == OpType::Const);
+    BF_TEST(Op(Input(root, 1)) == OpType::Mul);
     return 0;
 }
 
 int TestExprParser_Precedence_AddBeforeShift() {
-    auto parsed = BitFlow::IO::Parse("1 << 2 + 3");
-    ExprOld* root = parsed.root;
+    MakeExprStore(32);
 
-    BF_TEST(root->op == OpType::Shl);
-    BF_TEST(root->inputs[0]->op == OpType::Const);
-    BF_TEST(root->inputs[1]->op == OpType::Add);
+    auto root = Parse("1 << 2 + 3").root;
+
+    BF_TEST(Op(root) == OpType::Shl);
+    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(Op(Input(root, 0)) == OpType::Const);
+    BF_TEST(Op(Input(root, 1)) == OpType::Add);
     return 0;
 }
 
 int TestExprParser_Associativity_SubIsLeft() {
-    auto parsed = BitFlow::IO::Parse("1 - 2 - 3");
-    ExprOld* root = parsed.root;
+    MakeExprStore(32);
 
-    BF_TEST(root->op == OpType::Sub);
-    BF_TEST(root->inputs[0]->op == OpType::Sub);
-    BF_TEST(root->inputs[1]->op == OpType::Const);
+    auto root = Parse("1 - 2 - 3").root;
+
+    BF_TEST(Op(root) == OpType::Sub);
+    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(Op(Input(root, 0)) == OpType::Sub);
+    BF_TEST(Op(Input(root, 1)) == OpType::Const);
     return 0;
 }
 
 int TestExprParser_ParsesUnaryAndBinaryMinus() {
-    auto parsed = BitFlow::IO::Parse("-a - b");
-    ExprOld* root = parsed.root;
+    MakeExprStore(32);
 
-    BF_TEST(root->op == OpType::Sub);
-    BF_TEST(root->inputs[0]->op == OpType::Neg);
-    BF_TEST(root->inputs[1]->op == OpType::Var);
+    auto root = Parse("-a - b").root;
+
+    BF_TEST(Op(root) == OpType::Sub);
+    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(Op(Input(root, 0)) == OpType::Neg);
+    BF_TEST(Op(Input(root, 1)) == OpType::Var);
     return 0;
 }
 
 int TestExprParser_ParsesRotrCall() {
-    auto parsed = BitFlow::IO::Parse("rotr(a, 3)");
-    ExprOld* root = parsed.root;
+    MakeExprStore(32);
 
-    BF_TEST(root->op == OpType::RotR);
-    BF_TEST(root->inputs.size() == 2);
-    BF_TEST(root->inputs[0]->op == OpType::Var);
-    BF_TEST(root->inputs[1]->op == OpType::Const);
+    auto root = Parse("rotr(a, 3)").root;
+
+    BF_TEST(Op(root) == OpType::RotR);
+    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(Op(Input(root, 0)) == OpType::Var);
+    BF_TEST(Op(Input(root, 1)) == OpType::Const);
     return 0;
 }
 
 int TestExprParser_ParsesRotlCall() {
-    auto parsed = BitFlow::IO::Parse("rotl(x + y, 5)");
-    ExprOld* root = parsed.root;
+    MakeExprStore(32);
 
-    BF_TEST(root->op == OpType::RotL);
-    BF_TEST(root->inputs.size() == 2);
-    BF_TEST(root->inputs[0]->op == OpType::Add);
-    BF_TEST(root->inputs[1]->op == OpType::Const);
-    return 0;
-}
+    auto root = Parse("rotl(x + y, 5)").root;
 
-int TestExprParser_ParsesChCall() {
-    auto parsed = BitFlow::IO::Parse("ch(a, b, c)");
-    ExprOld* root = parsed.root;
-
-    BF_TEST(root->op == OpType::Ch);
-    BF_TEST(root->inputs.size() == 3);
-    BF_TEST(root->inputs[0]->op == OpType::Var);
-    BF_TEST(root->inputs[1]->op == OpType::Var);
-    BF_TEST(root->inputs[2]->op == OpType::Var);
-    return 0;
-}
-
-int TestExprParser_ParsesMajCall() {
-    auto parsed = BitFlow::IO::Parse("maj(x, y, z)");
-    ExprOld* root = parsed.root;
-
-    BF_TEST(root->op == OpType::Maj);
-    BF_TEST(root->inputs.size() == 3);
-    BF_TEST(root->inputs[0]->op == OpType::Var);
-    BF_TEST(root->inputs[1]->op == OpType::Var);
-    BF_TEST(root->inputs[2]->op == OpType::Var);
+    BF_TEST(Op(root) == OpType::RotL);
+    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(Op(Input(root, 0)) == OpType::Add);
+    BF_TEST(Op(Input(root, 1)) == OpType::Const);
     return 0;
 }
 
 int TestExprParser_MixedExpressionShape() {
-    auto parsed = BitFlow::IO::Parse("~a ^ b & (c + 3) << 2");
-    ExprOld* root = parsed.root;
+    MakeExprStore(32);
 
-    BF_TEST(root->op == OpType::Xor);
-    BF_TEST(root->inputs[0]->op == OpType::Not);
-    BF_TEST(root->inputs[1]->op == OpType::And);
-    BF_TEST(root->inputs[1]->inputs[1]->op == OpType::Shl);
-    BF_TEST(root->inputs[1]->inputs[1]->inputs[0]->op == OpType::Add);
+    auto root = Parse("~a ^ b & (c + 3) << 2").root;
+
+    BF_TEST(Op(root) == OpType::Xor);
+    BF_TEST(ExprOf(root).inputs.size() == 2);
+
+    auto lhs = Input(root, 0);
+    auto rhs = Input(root, 1);
+
+    BF_TEST(Op(lhs) == OpType::Not);
+    BF_TEST(Op(rhs) == OpType::And);
+
+    auto shl = Input(rhs, 1);
+    BF_TEST(Op(shl) == OpType::Shl);
+
+    auto add = Input(shl, 0);
+    BF_TEST(Op(add) == OpType::Add);
+
     return 0;
 }
 
 int TestExprParser_ShiftOperators() {
-    auto parsed = BitFlow::IO::Parse("a << b >> c");
-    ExprOld* root = parsed.root;
+    MakeExprStore(32);
 
-    BF_TEST(root->op == OpType::Shr);
-    BF_TEST(root->inputs[0]->op == OpType::Shl);
+    auto root = Parse("a << b >> c").root;
+
+    BF_TEST(Op(root) == OpType::Shr);
+    BF_TEST(Op(Input(root, 0)) == OpType::Shl);
+    return 0;
+}
+
+int TestExprParser_RoundTrip_ToString() {
+    MakeExprStore(32);
+
+    auto original = Parse("1 << (2 + 3) ^ ~(a - b)").root;
+
+    std::string text = ToString(original);
+
+    auto reparsed = Parse(text).root;
+
+    BF_TEST(EqualParseTree(original, reparsed));
+
     return 0;
 }
 
@@ -117,9 +169,8 @@ int main() {
     BF_RUN_TEST(TestExprParser_ParsesUnaryAndBinaryMinus);
     BF_RUN_TEST(TestExprParser_ParsesRotrCall);
     BF_RUN_TEST(TestExprParser_ParsesRotlCall);
-    BF_RUN_TEST(TestExprParser_ParsesChCall);
-    BF_RUN_TEST(TestExprParser_ParsesMajCall);
     BF_RUN_TEST(TestExprParser_MixedExpressionShape);
     BF_RUN_TEST(TestExprParser_ShiftOperators);
+    BF_RUN_TEST(TestExprParser_RoundTrip_ToString);
     return 0;
 }

@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -36,7 +36,7 @@ int TestAndIdempotentMixed() {
     auto b = V("b");
 
     auto r = Rewrite(engine, a & b & a);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::And);
     BF_TEST(out.inputs.size() == 2);
@@ -68,7 +68,7 @@ int TestOrIdempotentMixed() {
     auto b = V("b");
 
     auto r = Rewrite(engine, b | a | b);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Or);
     BF_TEST(out.inputs.size() == 2);

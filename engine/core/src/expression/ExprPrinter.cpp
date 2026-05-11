@@ -1,51 +1,8 @@
-#include "expression/ExprPrinter.h"
-
-#include <BitFlow/core/expression/Expr.h>
+#include <BitFlow/core/expression/ExprPrinter.h>
+#include <BitFlow/core/expression/OpInfo.h>
 #include <sstream>
 
 namespace BitFlow::Core::Expression {
-
-struct InfixInfo {
-    int precedence = 0;
-    const char* symbol = nullptr;
-};
-
-static bool TryGetInfixInfo(OpType op, InfixInfo& info) {
-    switch (op) {
-    case OpType::Mul:
-        info = {60, "*"};
-        return true;
-    case OpType::Div:
-        info = {60, "/"};
-        return true;
-    case OpType::Mod:
-        info = {60, "%"};
-        return true;
-    case OpType::Add:
-        info = {50, "+"};
-        return true;
-    case OpType::Sub:
-        info = {50, "-"};
-        return true;
-    case OpType::Shl:
-        info = {40, "<<"};
-        return true;
-    case OpType::Shr:
-        info = {40, ">>"};
-        return true;
-    case OpType::And:
-        info = {30, "&"};
-        return true;
-    case OpType::Xor:
-        info = {20, "^"};
-        return true;
-    case OpType::Or:
-        info = {10, "|"};
-        return true;
-    default:
-        return false;
-    }
-}
 
 static const char* OpTypeName(OpType op) {
     switch (op) {
@@ -100,9 +57,9 @@ static int PrecedenceOf(const ExprStore* store, Ids::ExprId id) {
     if (e.op == OpType::Not || e.op == OpType::Neg)
         return 70;
 
-    InfixInfo info{};
-    if (TryGetInfixInfo(e.op, info))
-        return info.precedence;
+    const OpInfo* info = GetOpInfo(e.op);
+    if (info)
+        return info->precedence;
 
     return 0;
 }
@@ -121,8 +78,7 @@ static bool NeedsParensForRightChild(OpType parentOp, OpType childOp) {
 }
 
 static void PrintDebugStructure(const ExprStore* store, Ids::ExprId id, std::ostringstream& out,
-                                const std::unordered_map<Ids::ExprId, std::string>& names,
-                                const PrintOptions& options) {
+                                const ExprNameMap& names, const PrintOptions& options) {
     const Expr& e = (*store)[id];
 
     if (options.showExprIds)
@@ -190,9 +146,8 @@ static void PrintDebugStructure(const ExprStore* store, Ids::ExprId id, std::ost
         out << ":" << e.bitWidth;
 }
 
-static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& out,
-                  const std::unordered_map<Ids::ExprId, std::string>& names, const PrintOptions& options,
-                  int parentPrecedence, bool isRightChild, OpType parentOp) {
+static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& out, const ExprNameMap& names,
+                  const PrintOptions& options, int parentPrecedence, bool isRightChild, OpType parentOp) {
     if (options.debugStructure) {
         PrintDebugStructure(store, id, out, names, options);
         return;
@@ -310,10 +265,9 @@ static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& ou
         return;
     }
 
-    InfixInfo info{};
-    const bool isInfix = TryGetInfixInfo(e.op, info);
+    const OpInfo* info = GetOpInfo(e.op);
 
-    const int currentPrecedence = isInfix ? info.precedence : 0;
+    const int currentPrecedence = info ? info->precedence : 0;
 
     bool wrapSelf = options.explicitGroups;
 
@@ -329,7 +283,7 @@ static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& ou
 
     for (std::size_t i = 0; i < e.inputs.size(); ++i) {
         if (i > 0)
-            out << " " << info.symbol << " ";
+            out << " " << info->symbol << " ";
 
         Print(store, e.inputs[i], out, names, options, currentPrecedence, i > 0, e.op);
     }
@@ -347,15 +301,14 @@ std::string ToString(const ExprStore* store, const Ids::ExprId e) {
     return out.str();
 }
 
-std::string ToString(const ExprStore* store, const Ids::ExprId e,
-                     const std::unordered_map<Ids::ExprId, std::string>& names) {
+std::string ToString(const ExprStore* store, const Ids::ExprId e, const ExprNameMap& names) {
     std::ostringstream out;
     Print(store, e, out, names, PrintOptions{}, 0, false, OpType::Var);
     return out.str();
 }
 
-std::string ToString(const ExprStore* store, const Ids::ExprId e,
-                     const std::unordered_map<Ids::ExprId, std::string>& names, const PrintOptions& options) {
+std::string ToString(const ExprStore* store, const Ids::ExprId e, const ExprNameMap& names,
+                     const PrintOptions& options) {
     std::ostringstream out;
     Print(store, e, out, names, options, 0, false, OpType::Var);
     return out.str();

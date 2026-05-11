@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -20,7 +20,7 @@ int TestXorNotReduction_Basic() {
     auto b = V("b");
 
     auto r = Rewrite(engine, (a ^ b) & ~a);
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::And);
     BF_TEST(out.inputs.size() == 2);
@@ -28,7 +28,7 @@ int TestXorNotReduction_Basic() {
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = GetExpr(in);
+        const auto& e = ExprOf(in);
 
         return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == a;
     }));
@@ -50,18 +50,18 @@ int TestXorNotReduction_MultiXorArgs() {
     auto c = V("c");
 
     auto r = Rewrite(engine, ~a & (a ^ b ^ c));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::And);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = GetExpr(in);
+        const auto& e = ExprOf(in);
 
         return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == a;
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (GetExpr(in).op != OpType::Xor)
+        if (ExprOf(in).op != OpType::Xor)
             return false;
 
         return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
@@ -84,7 +84,7 @@ int TestXorNotReduction_IntegrationScenario() {
     auto c = V("c");
 
     auto r = Rewrite(engine, (a ^ b) & c & (a ^ c));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::And);
 
@@ -92,12 +92,12 @@ int TestXorNotReduction_IntegrationScenario() {
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = GetExpr(in);
+        const auto& e = ExprOf(in);
 
         return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == a;
     }));
 
-    BF_TEST(!AnyInput(r, [&](ExprRef in) { return GetExpr(in).op == OpType::Xor; }));
+    BF_TEST(!AnyInput(r, [&](ExprRef in) { return ExprOf(in).op == OpType::Xor; }));
 
     return 0;
 }

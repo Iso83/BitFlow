@@ -8,8 +8,6 @@
 using BitFlow::IO::Lexer::Token;
 using BitFlow::IO::Lexer::TokenKind;
 
-namespace {
-
 int TestLexer_AllTokenTypes() {
     const std::string input = "foo 12 0x2A ( ) , + - * / % & | ^ ~";
     const std::vector<Token> tokens = BitFlow::IO::Lexer::Tokenize(input);
@@ -115,8 +113,6 @@ int TestLexer_UnexpectedCharacterHasPosition() {
 
     return 0;
 }
-
-} // namespace
 
 int main() {
     BF_RUN_TEST(TestLexer_AllTokenTypes);

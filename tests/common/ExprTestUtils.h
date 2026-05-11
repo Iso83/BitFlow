@@ -9,93 +9,103 @@
 #include <iostream>
 
 #ifdef USE_CORE_PRINT
-#include "expression/ExprPrinter.h"
+#include <BitFlow/core/expression/ExprPrinter.h>
 #else
-// IO ToString
+#include <BitFlow/io/ExprParser.h>
 #endif
 
-namespace BitFlow::Core::Testing {
+namespace BitFlow::Testing {
 
-inline const Expression::Expr& GetExpr(const Expression::ExprRef e) {
+inline const Core::Expression::Expr& ExprOf(const Core::Expression::ExprRef e) {
     return (*e.store)[e];
 }
 
-template <typename Pred> inline bool AnyInput(Expression::ExprRef e, Pred&& pred) {
-    const Expression::Expr& expr = (*e.store)[e];
+inline Core::Expression::ExprRef Input(const Core::Expression::ExprRef e, std::size_t index) {
+    return Core::Expression::ExprRef(e.store, ExprOf(e).inputs[index]);
+}
+
+inline Core::Expression::OpType Op(const Core::Expression::ExprRef e) {
+    return (*e.store)[e].op;
+}
+
+template <typename Pred> inline bool AnyInput(Core::Expression::ExprRef e, Pred&& pred) {
+    const Core::Expression::Expr& expr = (*e.store)[e];
 
     for (auto in : expr.inputs) {
-        if (pred(Expression::ExprRef(e.store, in)))
+        if (pred(Core::Expression::ExprRef(e.store, in)))
             return true;
     }
 
     return false;
 }
 
-template <typename Fn> inline size_t CountInput(Expression::ExprRef e, Fn&& fn) {
+template <typename Fn> inline size_t CountInput(Core::Expression::ExprRef e, Fn&& fn) {
     size_t count = 0;
 
-    const Expression::Expr& expr = (*e.store)[e];
+    const Core::Expression::Expr& expr = (*e.store)[e];
 
     for (auto in : expr.inputs)
-        count += fn(Expression::ExprRef(e.store, in));
+        count += fn(Core::Expression::ExprRef(e.store, in));
 
     return count;
 }
 
-inline size_t CountExpr(Expression::ExprRef e, Expression::ExprRef t) {
-    return CountInput(e, [&](Expression::ExprRef in) { return in == t; });
+inline size_t CountExpr(Core::Expression::ExprRef e, Core::Expression::ExprRef t) {
+    return CountInput(e, [&](Core::Expression::ExprRef in) { return in == t; });
 }
 
 #pragma region Evaluate
-inline bool EqualChunkValue(const BitVector::bf_uint& a, const BitVector::bf_uint& b) {
-    const Types::BitWidth bw = std::max(a.BitWidth(), b.BitWidth());
+inline bool EqualChunkValue(const Core::BitVector::bf_uint& a, const Core::BitVector::bf_uint& b) {
+    const Core::Types::BitWidth bw = std::max(a.BitWidth(), b.BitWidth());
 
-    BitVector::bf_uint aa = a;
-    BitVector::bf_uint bb = b;
+    Core::BitVector::bf_uint aa = a;
+    Core::BitVector::bf_uint bb = b;
 
-    aa = BitVector::bf_uint(aa.ToChunk(), bw);
-    bb = BitVector::bf_uint(bb.ToChunk(), bw);
+    aa = Core::BitVector::bf_uint(aa.ToChunk(), bw);
+    bb = Core::BitVector::bf_uint(bb.ToChunk(), bw);
 
     return aa == bb;
 }
 
-inline bool EqualChunkValue(const BitVector::bf_uint& a, const Types::ExprChunk& b) {
-    return EqualChunkValue(a, BitVector::bf_uint(b, Types::ExprChunkBits));
+inline bool EqualChunkValue(const Core::BitVector::bf_uint& a, const Core::Types::ExprChunk& b) {
+    return EqualChunkValue(a, Core::BitVector::bf_uint(b, Core::Types::ExprChunkBits));
 }
 
-inline bool EqualChunkValue(const Expression::ExprStore* store, const Ids::ExprId id, const Types::ExprChunk& value) {
-    const Expression::Expr& expr = (*store)[id];
+inline bool EqualChunkValue(const Core::Expression::ExprStore* store, const Core::Ids::ExprId id,
+                            const Core::Types::ExprChunk& value) {
+    const Core::Expression::Expr& expr = (*store)[id];
 
-    return expr.op == Expression::OpType::Const && expr.inputs.empty() && expr.knownValue == value;
+    return expr.op == Core::Expression::OpType::Const && expr.inputs.empty() && expr.knownValue == value;
 }
 
-inline bool EqualChunkValue(const Expression::ExprRef e, const Types::ExprChunk& value) {
+inline bool EqualChunkValue(const Core::Expression::ExprRef e, const Core::Types::ExprChunk& value) {
     return EqualChunkValue(e.store, e.id, value);
 }
 
-inline Eval::EvalResult EvaluateConstant(const Expression::ExprRef root,
-                                         Types::BitWidth bitWidth = Types::ExprChunkBits) {
-    assert(root.IsValid());
-    return Eval::EvaluateConstant(root.store, &(*root.store)[root], bitWidth);
+inline Core::Eval::EvalResult EvaluateConstant(const Core::Expression::ExprRef root,
+                                               Core::Types::BitWidth bitWidth = Core::Types::ExprChunkBits) {
+    _ASSERT(root.IsValid());
+    return Core::Eval::EvaluateConstant(root.store, &(*root.store)[root], bitWidth);
 }
 
-inline bool IsFullyConstant(const Expression::ExprRef root) {
+inline bool IsFullyConstant(const Core::Expression::ExprRef root) {
     assert(root.IsValid());
-    return Eval::IsFullyConstant(root.store, &(*root.store)[root.id]);
+    return Core::Eval::IsFullyConstant(root.store, &(*root.store)[root.id]);
 }
 #pragma endregion
 
 #pragma region Test DSL
-#if USE_CORE_PRINT
-#define UseExprPrint BitFlow::Core::Expression::ToString(root.store, root.id, names, options)
+
+#ifndef USE_CORE_PRINT
+#define LAMBDA_IO_PRASE auto Parse = [&](const std::string& input) { return BitFlow::IO::Parse(&store, input); };
 #else
-#define UseExprPrint std::string
+#define LAMBDA_IO_PRASE
 #endif
 
 #define MakeExprStore(bw)                                                                                              \
-    ExprStore store;                                                                                                   \
+    BitFlow::Core::Expression::ExprStore store;                                                                        \
     auto C = [&](uint64_t v) { return store.createConstant(v, bw); };                                                  \
-    std::unordered_map<BitFlow::Core::Ids::ExprId, std::string> names;                                                 \
+    BitFlow::Core::Expression::ExprNameMap names;                                                                      \
     auto V = [&](const std::string name = "") {                                                                        \
         auto e = store.createVariable(bw);                                                                             \
         if (!name.empty())                                                                                             \
@@ -104,30 +114,41 @@ inline bool IsFullyConstant(const Expression::ExprRef root) {
     };                                                                                                                 \
     auto Eval = [&](const BitFlow::Core::Expression::ExprRef root, BitFlow::Core::Types::ExprChunk v,                  \
                     BitFlow::Core::Types::BitWidth bitWidth = bw) {                                                    \
-        return EqualChunkValue(EvaluateConstant(root).value, v);                                                       \
+        return EqualChunkValue(EvaluateConstant(root, bw).value, v);                                                   \
     };                                                                                                                 \
     auto ToString = [&](const BitFlow::Core::Expression::ExprRef root,                                                 \
-                        const std::unordered_map<BitFlow::Core::Ids::ExprId, std::string> names = {},                  \
                         const BitFlow::Core::Expression::PrintOptions& options =                                       \
-                            BitFlow::Core::Expression::PrintOptions{}) { return UseExprPrint; };                       \
+                            BitFlow::Core::Expression::PrintOptions{},                                                 \
+                        const BitFlow::Core::Expression::ExprNameMap& _names = {}) {                                   \
+        return BitFlow::Core::Expression::ToString(root.store, root.id, _names.empty() ? names : _names, options);     \
+    };                                                                                                                 \
     auto False = [&](BitFlow::Core::Types::BitWidth bitWidth = bw) {                                                   \
         return ExprRef(&store, store.makeFalse(bitWidth).id);                                                          \
     };                                                                                                                 \
     auto True = [&](BitFlow::Core::Types::BitWidth bitWidth = bw) {                                                    \
         return ExprRef(&store, store.makeTrue(bitWidth).id);                                                           \
-    };
+    };                                                                                                                 \
+    LAMBDA_IO_PRASE
 
 #define E(name, expr) V(#name) = expr
 
 #define ERef(id) ExprRef(&store, id)
 #pragma endregion
 
-inline bool IsFalse(const Expression::ExprRef e) {
+inline bool IsFalse(const Core::Expression::ExprRef e) {
     return e.store->isFalse(e.id);
 }
 
-inline bool IsTrue(const Expression::ExprRef e) {
+inline bool IsTrue(const Core::Expression::ExprRef e) {
     return e.store->isTrue(e.id);
 }
 
-} // namespace BitFlow::Core::Testing
+inline bool Contains(const std::string& s, const char* text) {
+    return s.find(text) != std::string::npos;
+}
+
+inline bool Contains(const std::string& s, char ch) {
+    return s.find(ch) != std::string::npos;
+}
+
+} // namespace BitFlow::Testing

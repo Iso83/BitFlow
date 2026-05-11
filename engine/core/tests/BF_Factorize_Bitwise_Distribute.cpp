@@ -2,7 +2,7 @@
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
-using namespace BitFlow::Core::Testing;
+using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
@@ -25,20 +25,20 @@ int TestAndOverXor() {
     auto c = V("c");
 
     auto r = Rewrite(engine, a & (b ^ c));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 2);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (GetExpr(in).op != OpType::And)
+        if (ExprOf(in).op != OpType::And)
             return false;
 
         return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == b; });
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (GetExpr(in).op != OpType::And)
+        if (ExprOf(in).op != OpType::And)
             return false;
 
         return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
@@ -58,27 +58,27 @@ int TestAndOverXor_Multi() {
     auto d = V("d");
 
     auto r = Rewrite(engine, a & (b ^ c ^ d));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 3);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (GetExpr(in).op != OpType::And)
+        if (ExprOf(in).op != OpType::And)
             return false;
 
         return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == b; });
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (GetExpr(in).op != OpType::And)
+        if (ExprOf(in).op != OpType::And)
             return false;
 
         return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (GetExpr(in).op != OpType::And)
+        if (ExprOf(in).op != OpType::And)
             return false;
 
         return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == d; });
@@ -98,13 +98,13 @@ int TestAndMultipleOthers() {
     auto d = V("d");
 
     auto r = Rewrite(engine, a & b & (c ^ d));
-    auto out = GetExpr(r);
+    auto out = ExprOf(r);
 
     BF_TEST(out.op == OpType::Xor);
     BF_TEST(out.inputs.size() == 2);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (GetExpr(in).op != OpType::And)
+        if (ExprOf(in).op != OpType::And)
             return false;
 
         return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == b; }) &&
@@ -112,7 +112,7 @@ int TestAndMultipleOthers() {
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (GetExpr(in).op != OpType::And)
+        if (ExprOf(in).op != OpType::And)
             return false;
 
         return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == b; }) &&
