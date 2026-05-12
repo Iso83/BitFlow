@@ -22,19 +22,19 @@ int TestCanonical_MulCoeffOrder_2a_plus_a() {
     auto a = V("a");
 
     {
-        auto out = ExprOf(Rewrite(engine, (C(2) * a) + a));
-        BF_TEST(out.op == OpType::Mul);
-        BF_TEST(out.inputs.size() == 2);
-        BF_TEST(ERef(out.inputs[0]) == a);
-        BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 3u));
+        auto out = Rewrite(engine, (C(2) * a) + a);
+        BF_TEST(Op(out) == OpType::Mul);
+        BF_TEST(InputSize(out) == 2);
+        BF_TEST(Input(out, 0) == a);
+        BF_TEST(EqualChunkValue(Input(out, 1), 3u));
     }
 
     {
-        auto out = ExprOf(Rewrite(engine, (a * 2) + a));
-        BF_TEST(out.op == OpType::Mul);
-        BF_TEST(out.inputs.size() == 2);
-        BF_TEST(ERef(out.inputs[0]) == a);
-        BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 3u));
+        auto out = Rewrite(engine, (a * 2) + a);
+        BF_TEST(Op(out) == OpType::Mul);
+        BF_TEST(InputSize(out) == 2);
+        BF_TEST(Input(out, 0) == a);
+        BF_TEST(EqualChunkValue(Input(out, 1), 3u));
     }
     return 0;
 }
@@ -45,13 +45,13 @@ int TestCanonical_a_b_plus_b_a() {
     RuleEngine engine = MakeArithmeticCanonicalEngine();
     auto a = V("a");
     auto b = V("b");
-    auto out = ExprOf(Rewrite(engine, (a * b) + (b * a)));
+    auto out = Rewrite(engine, (a * b) + (b * a));
 
-    BF_TEST(out.op == OpType::Mul);
-    BF_TEST(out.inputs.size() == 3);
-    BF_TEST(ERef(out.inputs[0]) == a);
-    BF_TEST(ERef(out.inputs[1]) == b);
-    BF_TEST(EqualChunkValue(ERef(out.inputs[2]), 2u));
+    BF_TEST(Op(out) == OpType::Mul);
+    BF_TEST(InputSize(out) == 3);
+    BF_TEST(Input(out, 0) == a);
+    BF_TEST(Input(out, 1) == b);
+    BF_TEST(EqualChunkValue(Input(out, 2), 2u));
     return 0;
 }
 
@@ -60,12 +60,12 @@ int TestCanonical_combineMulConstants_Order() {
 
     RuleEngine engine = MakeArithmeticCanonicalEngine();
     auto a = V("a");
-    auto out = ExprOf(Rewrite(engine, C(2) * a * 3));
+    auto out = Rewrite(engine, C(2) * a * 3);
 
-    BF_TEST(out.op == OpType::Mul);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == a);
-    BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 6u));
+    BF_TEST(Op(out) == OpType::Mul);
+    BF_TEST(InputSize(out) == 2);
+    BF_TEST(Input(out, 0) == a);
+    BF_TEST(EqualChunkValue(Input(out, 1), 6u));
     return 0;
 }
 

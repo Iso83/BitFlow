@@ -10,14 +10,11 @@ int TestMakeFalse_CreatesFalseConstant() {
     auto v = store.makeFalse(32);
 
     BF_TEST(v.IsValid());
-
-    const Expr& expr = store[v];
-
-    BF_TEST(expr.op == OpType::Const);
-    BF_TEST(expr.inputs.empty());
-    BF_TEST(expr.bitWidth == 32);
-    BF_TEST(expr.knownMask == Expr::fullMask(32));
-    BF_TEST(expr.knownValue == 0);
+    BF_TEST(Op(v) == OpType::Const);
+    BF_TEST(ExprOf(v).inputs.empty());
+    BF_TEST(BitWidth(v) == 32);
+    BF_TEST(ExprOf(v).knownMask == Expr::fullMask(32));
+    BF_TEST(EqualChunkValue(v, 0));
 
     BF_TEST(store.isFalse(v.id));
     BF_TEST(!store.isTrue(v.id));
@@ -32,13 +29,11 @@ int TestMakeTrue_CreatesTrueConstant() {
 
     BF_TEST(v.IsValid());
 
-    const Expr& expr = store[v];
-
-    BF_TEST(expr.op == OpType::Const);
-    BF_TEST(expr.inputs.empty());
-    BF_TEST(expr.bitWidth == 16);
-    BF_TEST(expr.knownMask == Expr::fullMask(16));
-    BF_TEST(expr.knownValue == Expr::fullMask(16));
+    BF_TEST(Op(v) == OpType::Const);
+    BF_TEST(ExprOf(v).inputs.empty());
+    BF_TEST(BitWidth(v) == 16);
+    BF_TEST(ExprOf(v).knownMask == Expr::fullMask(16));
+    BF_TEST(EqualChunkValue(v, Expr::fullMask(16)));
 
     BF_TEST(store.isTrue(v.id));
     BF_TEST(!store.isFalse(v.id));

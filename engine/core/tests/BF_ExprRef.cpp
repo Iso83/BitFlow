@@ -11,20 +11,20 @@ static int TestExprRefArithmeticDsl() {
     auto a = V("a");
     auto expr = (a + 6) - 7;
 
-    const Expr& sub = store[expr.id];
+    auto sub = expr;
 
-    BF_TEST(sub.op == OpType::Sub);
-    BF_TEST(sub.inputs.size() == 2);
+    BF_TEST(Op(sub) == OpType::Sub);
+    BF_TEST(InputSize(sub) == 2);
 
-    const Expr& add = store[sub.inputs[0]];
+    auto add = Input(sub, 0);
 
-    BF_TEST(add.op == OpType::Add);
-    BF_TEST(add.inputs.size() == 2);
+    BF_TEST(Op(add) == OpType::Add);
+    BF_TEST(InputSize(add) == 2);
 
-    BF_TEST(ERef(add.inputs[0]) == a);
-    BF_TEST(EqualChunkValue(ERef(add.inputs[1]), 6));
+    BF_TEST(Input(add, 0) == a);
+    BF_TEST(EqualChunkValue(Input(add, 1), 6));
 
-    BF_TEST(EqualChunkValue(ERef(sub.inputs[1]), 7));
+    BF_TEST(EqualChunkValue(Input(sub, 1), 7));
 
     return 0;
 }
@@ -37,18 +37,18 @@ static int TestExprRefBitwiseDsl() {
 
     auto expr = (~a) ^ (b & 0xff);
 
-    const Expr& xorExpr = store[expr.id];
+    auto xorExpr = expr;
 
-    BF_TEST(xorExpr.op == OpType::Xor);
-    BF_TEST(xorExpr.inputs.size() == 2);
+    BF_TEST(Op(xorExpr) == OpType::Xor);
+    BF_TEST(InputSize(xorExpr) == 2);
 
-    const Expr& notExpr = store[xorExpr.inputs[0]];
-    BF_TEST(notExpr.op == OpType::Not);
+    auto notExpr = Input(xorExpr, 0);
+    BF_TEST(Op(notExpr) == OpType::Not);
 
-    const Expr& andExpr = store[xorExpr.inputs[1]];
-    BF_TEST(andExpr.op == OpType::And);
+    auto andExpr = Input(xorExpr, 1);
+    BF_TEST(Op(andExpr) == OpType::And);
 
-    BF_TEST(EqualChunkValue(ERef(andExpr.inputs[1]), 0xff));
+    BF_TEST(EqualChunkValue(Input(andExpr, 1), 0xff));
 
     return 0;
 }
@@ -63,15 +63,15 @@ static int TestExprRefShiftRotateDsl() {
     auto rotl = a.RotL(5);
     auto rotr = a.RotR(7);
 
-    BF_TEST(store[shl.id].op == OpType::Shl);
-    BF_TEST(store[shr.id].op == OpType::Shr);
-    BF_TEST(store[rotl.id].op == OpType::RotL);
-    BF_TEST(store[rotr.id].op == OpType::RotR);
+    BF_TEST(Op(shl) == OpType::Shl);
+    BF_TEST(Op(shr) == OpType::Shr);
+    BF_TEST(Op(rotl) == OpType::RotL);
+    BF_TEST(Op(rotr) == OpType::RotR);
 
-    BF_TEST(EqualChunkValue(ERef(store[shl.id].inputs[1]), 3));
-    BF_TEST(EqualChunkValue(ERef(store[shr.id].inputs[1]), 2));
-    BF_TEST(EqualChunkValue(ERef(store[rotl.id].inputs[1]), 5));
-    BF_TEST(EqualChunkValue(ERef(store[rotr.id].inputs[1]), 7));
+    BF_TEST(EqualChunkValue(Input(shl, 1), 3));
+    BF_TEST(EqualChunkValue(Input(shr, 1), 2));
+    BF_TEST(EqualChunkValue(Input(rotl, 1), 5));
+    BF_TEST(EqualChunkValue(Input(rotr, 1), 7));
 
     return 0;
 }

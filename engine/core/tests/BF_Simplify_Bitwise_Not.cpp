@@ -44,22 +44,13 @@ int TestNotPushdown_And() {
     auto b = V("b");
 
     auto r = Rewrite(engine, ~(a & b));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Or);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Or);
+    BF_TEST(InputSize(r) == 2);
 
-    BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = ExprOf(in);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == a; }));
 
-        return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == a;
-    }));
-
-    BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = ExprOf(in);
-
-        return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == b;
-    }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == b; }));
 
     return 0;
 }
@@ -75,22 +66,13 @@ int TestNotPushdown_Or() {
     auto b = V("b");
 
     auto r = Rewrite(engine, ~(a | b));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::And);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::And);
+    BF_TEST(InputSize(r) == 2);
 
-    BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = ExprOf(in);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == a; }));
 
-        return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == a;
-    }));
-
-    BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = ExprOf(in);
-
-        return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == b;
-    }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == b; }));
 
     return 0;
 }
@@ -106,14 +88,13 @@ int TestNotXor() {
     auto b = V("b");
 
     auto r = Rewrite(engine, ~(a ^ b));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 3);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 3);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return IsTrue(in); }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Const && IsTrue(in); }));
 
     return 0;
 }

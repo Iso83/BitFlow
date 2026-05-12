@@ -25,23 +25,24 @@ int TestAndOverXor() {
     auto c = V("c");
 
     auto r = Rewrite(engine, a & (b ^ c));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 2);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == b; });
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) &&
+               AnyInput(in, [&](ExprRef inB) { return inB == b; });
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) &&
+               AnyInput(in, [&](ExprRef inC) { return inC == c; });
     }));
 
     return 0;
@@ -58,30 +59,32 @@ int TestAndOverXor_Multi() {
     auto d = V("d");
 
     auto r = Rewrite(engine, a & (b ^ c ^ d));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 3);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 3);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == b; });
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) &&
+               AnyInput(in, [&](ExprRef inB) { return inB == b; });
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) &&
+               AnyInput(in, [&](ExprRef inC) { return inC == c; });
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == d; });
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) &&
+               AnyInput(in, [&](ExprRef inD) { return inD == d; });
     }));
 
     return 0;
@@ -98,25 +101,26 @@ int TestAndMultipleOthers() {
     auto d = V("d");
 
     auto r = Rewrite(engine, a & b & (c ^ d));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 2);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == b; }) &&
-               AnyInput(in, [&](ExprRef x) { return x == c; });
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) &&
+               AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
+               AnyInput(in, [&](ExprRef inC) { return inC == c; });
     }));
 
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef x) { return x == b; }) &&
-               AnyInput(in, [&](ExprRef x) { return x == d; });
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) &&
+               AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
+               AnyInput(in, [&](ExprRef inD) { return inD == d; });
     }));
 
     return 0;

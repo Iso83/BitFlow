@@ -18,15 +18,14 @@ int TestXorOrdering() {
     auto y = V("y");
 
     auto r = Rewrite(engine, y ^ x ^ y ^ x);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 4);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 4);
 
-    BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(ERef(out.inputs[1]) == x);
-    BF_TEST(ERef(out.inputs[2]) == y);
-    BF_TEST(ERef(out.inputs[3]) == y);
+    BF_TEST(Input(r, 0) == x);
+    BF_TEST(Input(r, 1) == x);
+    BF_TEST(Input(r, 2) == y);
+    BF_TEST(Input(r, 3) == y);
 
     return 0;
 }

@@ -5,11 +5,13 @@ namespace BitFlow::Core::Expression {
 
 using namespace Ids;
 
-#ifdef BF_EXPR_LIFETIME_CHECKS
 ExprStore::ExprStore() {
+    m_zero = createConstant(0, Types::BitWidth{1}).id;
+
+#ifdef BF_EXPR_LIFETIME_CHECKS
     m_debugExprs.resize(200000);
-}
 #endif
+}
 
 [[nodiscard]] ExprRef ExprStore::create(OpType op, std::initializer_list<ExprId> in, Types::BitWidth bitWidth) {
     _ASSERT(bitWidth > 0);

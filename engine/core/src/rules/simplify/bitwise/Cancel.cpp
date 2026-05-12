@@ -55,44 +55,53 @@ static bool Match_Or_Cancel(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_XorCancel(const ExprStore* store, ExprId id) {
+static bool Match_Xor_Cancel(const ExprStore* store, Ids::ExprId id) {
     const Expr& e = (*store)[id];
 
-    if (e.op != OpType::Xor || e.inputs.size() < 2)
+    if (e.op != OpType::Xor)
         return false;
 
-    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
+    if (e.inputs.size() < 2)
+        return false;
 
-    Types::ExprChunk constParity = 0;
-    bool hasConst = false;
+    std::unordered_map<Ids::ExprId, size_t> counts{};
 
-    std::unordered_map<ExprId, int> counts;
-    counts.reserve(e.inputs.size());
+    bool hasZero = false;
+    bool hasCancelablePair = false;
 
-    for (ExprId inId : e.inputs) {
-        const Expr& in = (*store)[inId];
+    uint64_t constParity = 0;
+    size_t constCount = 0;
 
-        if (in.op == OpType::Const) {
-            constParity ^= in.knownValue;
-            hasConst = true;
-        } else {
-            counts[inId]++;
+    for (auto in : e.inputs) {
+        const Expr& child = (*store)[in];
 
-            // x ^ x → 0
-            if (counts[inId] >= 2)
-                return true;
+        if (child.op == OpType::Const && store->isFalse(in)) {
+            hasZero = true;
+            continue;
         }
+
+        if (child.op == OpType::Const) {
+            constParity ^= child.knownValue;
+            constCount++;
+            continue;
+        }
+
+        auto& count = counts[in];
+        count++;
+
+        if (count >= 2)
+            hasCancelablePair = true;
     }
 
-    constParity &= mask;
-
-    if (hasConst && constParity != 0)
+    if (hasZero)
         return true;
 
-    if (hasConst && constParity == 0) {
-        if (counts.empty())
-            return true;
-    }
+    if (hasCancelablePair)
+        return true;
+
+    // 1 ^ 1 -> 0
+    if (constCount >= 2 && constParity == 0)
+        return true;
 
     return false;
 }
@@ -151,7 +160,7 @@ static ExprId Rewrite_Or_Cancel(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_Xor_Cancel(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
@@ -188,7 +197,12 @@ static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
 
     std::sort(terms.begin(), terms.end(), [&](ExprId a, ExprId b) { return CompareExprCanonical(store, a, b) < 0; });
 
-    return MakeXor(store, terms, e.bitWidth);
+    if (terms.empty())
+        return store->zeroId();
+    if (terms.size() == 1)
+        return terms[0];
+
+    return store->create(OpType::Xor, std::move(terms), e.bitWidth).id;
 }
 #pragma endregion
 
@@ -201,7 +215,7 @@ Rule Get_Or_Cancel_Rule() {
 }
 
 Rule Get_Xor_Cancel_Rule() {
-    return Rule{Xor_Cancel, &Match_XorCancel, &Rewrite_XorCancel, {Normalize::Flatten, Normalize::Order}};
+    return Rule{Xor_Cancel, &Match_Xor_Cancel, &Rewrite_Xor_Cancel, {Normalize::Flatten, Normalize::Order, Xor_Zero}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

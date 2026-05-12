@@ -49,7 +49,7 @@ int TestExprParser_Precedence_MulBeforeAdd() {
     auto root = Parse("1 + 2 * 3").root;
 
     BF_TEST(Op(root) == OpType::Add);
-    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(InputSize(root) == 2);
     BF_TEST(Op(Input(root, 0)) == OpType::Const);
     BF_TEST(Op(Input(root, 1)) == OpType::Mul);
     return 0;
@@ -61,7 +61,7 @@ int TestExprParser_Precedence_AddBeforeShift() {
     auto root = Parse("1 << 2 + 3").root;
 
     BF_TEST(Op(root) == OpType::Shl);
-    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(InputSize(root) == 2);
     BF_TEST(Op(Input(root, 0)) == OpType::Const);
     BF_TEST(Op(Input(root, 1)) == OpType::Add);
     return 0;
@@ -73,7 +73,7 @@ int TestExprParser_Associativity_SubIsLeft() {
     auto root = Parse("1 - 2 - 3").root;
 
     BF_TEST(Op(root) == OpType::Sub);
-    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(InputSize(root) == 2);
     BF_TEST(Op(Input(root, 0)) == OpType::Sub);
     BF_TEST(Op(Input(root, 1)) == OpType::Const);
     return 0;
@@ -85,7 +85,7 @@ int TestExprParser_ParsesUnaryAndBinaryMinus() {
     auto root = Parse("-a - b").root;
 
     BF_TEST(Op(root) == OpType::Sub);
-    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(InputSize(root) == 2);
     BF_TEST(Op(Input(root, 0)) == OpType::Neg);
     BF_TEST(Op(Input(root, 1)) == OpType::Var);
     return 0;
@@ -97,7 +97,7 @@ int TestExprParser_ParsesRotrCall() {
     auto root = Parse("rotr(a, 3)").root;
 
     BF_TEST(Op(root) == OpType::RotR);
-    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(InputSize(root) == 2);
     BF_TEST(Op(Input(root, 0)) == OpType::Var);
     BF_TEST(Op(Input(root, 1)) == OpType::Const);
     return 0;
@@ -109,7 +109,7 @@ int TestExprParser_ParsesRotlCall() {
     auto root = Parse("rotl(x + y, 5)").root;
 
     BF_TEST(Op(root) == OpType::RotL);
-    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(InputSize(root) == 2);
     BF_TEST(Op(Input(root, 0)) == OpType::Add);
     BF_TEST(Op(Input(root, 1)) == OpType::Const);
     return 0;
@@ -121,7 +121,7 @@ int TestExprParser_MixedExpressionShape() {
     auto root = Parse("~a ^ b & (c + 3) << 2").root;
 
     BF_TEST(Op(root) == OpType::Xor);
-    BF_TEST(ExprOf(root).inputs.size() == 2);
+    BF_TEST(InputSize(root) == 2);
 
     auto lhs = Input(root, 0);
     auto rhs = Input(root, 1);

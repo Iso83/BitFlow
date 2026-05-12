@@ -37,17 +37,6 @@ template <OpType Op> inline bool Match_Zero(const ExprStore* store, Ids::ExprId 
 }
 #pragma endregion
 
-inline Ids::ExprId MakeXor(ExprStore* store, std::vector<Ids::ExprId>& terms,
-                           Types::BitWidth bitWidth = Types::ExprChunkBits) {
-    if (terms.empty())
-        return store->makeFalse(bitWidth).id;
-
-    if (terms.size() == 1)
-        return terms[0];
-
-    return store->create(OpType::Xor, std::move(terms), bitWidth).id;
-}
-
 inline int CompareExprCanonical(const ExprStore* store, Ids::ExprId a, Ids::ExprId b) {
     if (a == b)
         return 0;

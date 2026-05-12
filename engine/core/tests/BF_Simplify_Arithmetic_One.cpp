@@ -48,12 +48,11 @@ int TestMulOne_CanonicalOrderRegression() {
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, y * 1 * x);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Mul);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(ERef(out.inputs[1]) == y);
+    BF_TEST(Op(r) == OpType::Mul);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == x);
+    BF_TEST(Input(r, 1) == y);
     return 0;
 }
 

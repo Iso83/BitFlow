@@ -23,16 +23,16 @@ int TestXorAndCommonFactor() {
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, (a & b) ^ (a & c));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::And);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::And);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::Xor)
+        if (Op(in) != OpType::Xor)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
+        return AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
+               AnyInput(in, [&](ExprRef inC) { return inC == c; });
     }));
 
     return 0;
@@ -47,17 +47,17 @@ int TestXorAndCommonFactor_MultiInput() {
     auto c = V("c");
     auto d = V("d");
     auto r = Rewrite(engine, (a & b) ^ (a & c) ^ (a & d));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::And);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::And);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::Xor)
+        if (Op(in) != OpType::Xor)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == c; }) &&
-               AnyInput(in, [&](ExprRef x) { return x == d; });
+        return AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
+               AnyInput(in, [&](ExprRef inC) { return inC == c; }) &&
+               AnyInput(in, [&](ExprRef inD) { return inD == d; });
     }));
     return 0;
 }
@@ -70,16 +70,16 @@ int TestXorAndFactor_Basic() {
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, (a & b) ^ (a & c));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::And);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::And);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::Xor)
+        if (Op(in) != OpType::Xor)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
+        return AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
+               AnyInput(in, [&](ExprRef inC) { return inC == c; });
     }));
     return 0;
 }
@@ -93,21 +93,20 @@ int TestXorAndFactor_WithUntouchedTerm() {
     auto c = V("c");
     auto d = V("d");
     auto r = Rewrite(engine, (a & b) ^ (a & c) ^ d);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == d; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef inner) {
-                   if (ExprOf(inner).op != OpType::Xor)
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) && AnyInput(in, [&](ExprRef inner) {
+                   if (Op(inner) != OpType::Xor)
                        return false;
 
-                   return AnyInput(inner, [&](ExprRef x) { return x == b; }) &&
-                          AnyInput(inner, [&](ExprRef x) { return x == c; });
+                   return AnyInput(inner, [&](ExprRef inB) { return inB == b; }) &&
+                          AnyInput(inner, [&](ExprRef inC) { return inC == c; });
                });
     }));
     return 0;
@@ -139,31 +138,31 @@ int TestXorAndFactor_MultiFactorChoice_PicksMostFrequent() {
     auto e = V("e");
 
     auto r = Rewrite(engine, (a & b) ^ (a & c) ^ (a & d) ^ (b ^ e));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 2);
 
     // untouched (b ^ e)
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::Xor)
+        if (Op(in) != OpType::Xor)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == e; });
+        return AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
+               AnyInput(in, [&](ExprRef inE) { return inE == e; });
     }));
 
     // factored a & (b ^ c ^ d)
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef inner) {
-                   if (ExprOf(inner).op != OpType::Xor)
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) && AnyInput(in, [&](ExprRef inner) {
+                   if (Op(inner) != OpType::Xor)
                        return false;
 
-                   return AnyInput(inner, [&](ExprRef x) { return x == b; }) &&
-                          AnyInput(inner, [&](ExprRef x) { return x == c; }) &&
-                          AnyInput(inner, [&](ExprRef x) { return x == d; }) && ExprOf(inner).inputs.size() == 3;
+                   return InputSize(inner) == 3 && AnyInput(inner, [&](ExprRef inB) { return inB == b; }) &&
+                          AnyInput(inner, [&](ExprRef inC) { return inC == c; }) &&
+                          AnyInput(inner, [&](ExprRef inD) { return inD == d; });
                });
     }));
 
@@ -180,30 +179,30 @@ int TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId() {
     auto c = V("c");
 
     auto r = Rewrite(engine, (a & b) ^ (a & c) ^ (b & c));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 2);
 
     // untouched: (b & c)
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == b; }) && AnyInput(in, [&](ExprRef x) { return x == c; });
+        return AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
+               AnyInput(in, [&](ExprRef inC) { return inC == c; });
     }));
 
     // factored: a & (b ^ c)
     BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (ExprOf(in).op != OpType::And)
+        if (Op(in) != OpType::And)
             return false;
 
-        return AnyInput(in, [&](ExprRef x) { return x == a; }) && AnyInput(in, [&](ExprRef inner) {
-                   if (ExprOf(inner).op != OpType::Xor)
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) && AnyInput(in, [&](ExprRef inner) {
+                   if (Op(inner) != OpType::Xor)
                        return false;
 
-                   return ExprOf(inner).inputs.size() == 2 && AnyInput(inner, [&](ExprRef x) { return x == b; }) &&
-                          AnyInput(inner, [&](ExprRef x) { return x == c; });
+                   return InputSize(inner) == 2 && AnyInput(inner, [&](ExprRef inB) { return inB == b; }) &&
+                          AnyInput(inner, [&](ExprRef inC) { return inC == c; });
                });
     }));
 

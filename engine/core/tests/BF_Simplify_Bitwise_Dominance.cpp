@@ -33,12 +33,11 @@ int Test_And_OneIdentity_Multi() {
     auto a = V("a");
     auto b = V("b");
     auto r = Rewrite(engine, a & True() & b);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::And);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == a);
-    BF_TEST(ERef(out.inputs[1]) == b);
+    BF_TEST(Op(r) == OpType::And);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == a);
+    BF_TEST(Input(r, 1) == b);
     return 0;
 }
 
@@ -60,12 +59,11 @@ int Test_Or_ZeroIdentity_Multi() {
     auto a = V("a");
     auto b = V("b");
     auto r = Rewrite(engine, a | False() | b);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Or);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == a);
-    BF_TEST(ERef(out.inputs[1]) == b);
+    BF_TEST(Op(r) == OpType::Or);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == a);
+    BF_TEST(Input(r, 1) == b);
 
     return 0;
 }

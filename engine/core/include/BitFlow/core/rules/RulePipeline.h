@@ -28,6 +28,9 @@ inline RuleEngine BuildSimplifyBitwise() {
     e.AddRule(Simplify::Bitwise::Get_Not_Rule());
     e.AddRule(Simplify::Bitwise::Get_Not_Xor_Rule());
 
+    // Neutral
+    e.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
+
     // Cancel
     e.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     e.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
@@ -42,9 +45,6 @@ inline RuleEngine BuildSimplifyBitwise() {
     e.AddRule(Simplify::Bitwise::Get_Xor_Fold_Rule());
     e.AddRule(Simplify::Bitwise::Get_And_Fold_Rule());
     e.AddRule(Simplify::Bitwise::Get_Or_Fold_Rule());
-
-    // Neutral
-    e.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
 
     // Structural
     e.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());

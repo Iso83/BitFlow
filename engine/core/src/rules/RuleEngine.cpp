@@ -1,7 +1,7 @@
 #include "expression/ExprUtils.h"
+#include "rules/RuleDiagnostics.h"
 
 #include <BitFlow/core/rules/RuleEngine.h>
-#include <stdexcept>
 
 namespace BitFlow::Core::Rules {
 
@@ -139,15 +139,13 @@ void RuleEngine::ValidateDependencies() const {
         for (const auto& dep : rule.deps) {
             const auto it = indices.find(dep);
 
-            if (it == indices.end()) {
-                throw std::runtime_error(std::string("Missing dependency: ") + dep.value + " required by " +
-                                         rule.key.value);
-            }
+            if (it == indices.end())
+                BF_RULE_ERROR("Missing dependency: " + std::string(dep.value) + " required by " +
+                              std::string(rule.key.value));
 
-            if (it->second >= i) {
-                throw std::runtime_error(std::string("Dependency order invalid: ") + dep.value +
-                                         " must execute before " + rule.key.value);
-            }
+            if (it->second >= i)
+                BF_RULE_ERROR("Dependency order invalid: " + std::string(dep.value) + " must execute before " +
+                              std::string(rule.key.value));
         }
     }
 

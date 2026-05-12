@@ -111,27 +111,7 @@ static void PrintDebugStructure(const ExprStore* store, Ids::ExprId id, std::ost
         break;
     }
 
-    switch (e.op) {
-    case OpType::Not:
-        out << "Not(";
-        break;
-
-    case OpType::Neg:
-        out << "Neg(";
-        break;
-
-    case OpType::RotL:
-        out << "RotL(";
-        break;
-
-    case OpType::RotR:
-        out << "RotR(";
-        break;
-
-    default:
-        out << static_cast<int>((OpType)e.op) << "(";
-        break;
-    }
+    out << OpTypeName(e.op) << "(";
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {
         if (i > 0)

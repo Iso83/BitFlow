@@ -20,11 +20,9 @@ int TestXorDedup() {
     auto r2 = Rewrite(engine, y ^ x);
 
     BF_TEST(r1 == r2);
-
-    auto exprR1 = ExprOf(r1);
-    BF_TEST(exprR1.op == OpType::Xor);
-    BF_TEST(exprR1.inputs.size() == 2);
-    BF_TEST(exprR1.inputs[0].value() < exprR1.inputs[1].value());
+    BF_TEST(Op(r1) == OpType::Xor);
+    BF_TEST(InputSize(r1) == 2);
+    BF_TEST(Input(r1, 0).id.value() < Input(r1, 1).id.value());
     return 0;
 }
 

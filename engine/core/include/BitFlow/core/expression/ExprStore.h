@@ -23,6 +23,8 @@ class ExprStore {
     ValueType m_nextId{1};
     std::vector<ValueType> m_freeIds{};
 
+    Ids::ExprId m_zero;
+
 #ifdef BF_EXPR_LIFETIME_CHECKS
     friend Expr;
 
@@ -37,12 +39,16 @@ class ExprStore {
     std::vector<bool> m_alive{};
 
   public:
-#ifdef BF_EXPR_LIFETIME_CHECKS
     ExprStore();
-#else
-    ExprStore() = default;
-#endif
     ~ExprStore() = default;
+
+    [[nodiscard]] inline Ids::ExprId zeroId() const noexcept {
+        return m_zero;
+    }
+
+    [[nodiscard]] inline ExprRef zero() const {
+        return ExprRef(const_cast<ExprStore*>(this), m_zero);
+    }
 
     [[nodiscard]] ExprRef create(OpType op, std::initializer_list<Ids::ExprId> in,
                                  Types::BitWidth bitWidth = Types::ExprChunkBits);

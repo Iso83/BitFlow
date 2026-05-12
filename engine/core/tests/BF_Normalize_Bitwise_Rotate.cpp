@@ -17,13 +17,12 @@ int TestRotateModuloBitwidth_ReducesConstantAmount() {
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto x = V("x");
-    const Expr& out =
-        ExprOf(Rewrite(engine, x.RotL(35), &names, PrintOptions{}.ExplicitGroups().ShowOpTypes().RotAsFunction()));
+    auto out = Rewrite(engine, x.RotL(35), &names, PrintOptions{}.ExplicitGroups().ShowOpTypes().RotAsFunction());
 
-    BF_TEST(out.op == OpType::RotL);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 3u));
+    BF_TEST(Op(out) == OpType::RotL);
+    BF_TEST(InputSize(out) == 2);
+    BF_TEST(Input(out, 0) == x);
+    BF_TEST(EqualChunkValue(Input(out, 1), 3u));
 
     return 0;
 }

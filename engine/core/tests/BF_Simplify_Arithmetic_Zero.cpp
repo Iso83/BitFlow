@@ -45,12 +45,11 @@ int TestAddZero_CanonicalOrderRegression() {
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, y + 0 + x);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Add);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(ERef(out.inputs[1]) == y);
+    BF_TEST(Op(r) == OpType::Add);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == x);
+    BF_TEST(Input(r, 1) == y);
     return 0;
 }
 
@@ -103,11 +102,10 @@ int TestSubZero_LeftZeroBecomesNeg() {
     engine.AddRule(Simplify::Arithmetic::Get_Sub_Zero_Rule());
     auto x = V("x");
     auto r = Rewrite(engine, C(0) - x);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Neg);
-    BF_TEST(out.inputs.size() == 1);
-    BF_TEST(ERef(out.inputs[0]) == x);
+    BF_TEST(Op(r) == OpType::Neg);
+    BF_TEST(InputSize(r) == 1);
+    BF_TEST(Input(r, 0) == x);
     return 0;
 }
 
@@ -212,24 +210,22 @@ int TestRotateModuloBitwidth_Property_ConstantAmounts() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Bitwise::Get_Rotate_ModuloBitWidth_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_Rotate_Zero_Rule());
     auto x = V("x");
 
-    for (BitWidth amount = 0; amount < 128; ++amount) {
+    for (uint32_t amount = 0; amount < 128; ++amount) {
         auto r = Rewrite(engine, x.RotR(amount));
 
-        const BitWidth reduced = amount % 32;
+        const uint32_t reduced = amount % 32;
 
         if (reduced == 0) {
             BF_TEST(r == x);
         } else {
-            auto out = ExprOf(r);
-
-            BF_TEST(out.op == OpType::RotR);
-            BF_TEST(out.inputs.size() == 2);
-
-            BF_TEST(ERef(out.inputs[0]) == x);
-            BF_TEST(EqualChunkValue(ERef(out.inputs[1]), reduced));
+            BF_TEST(Op(r) == OpType::RotR);
+            BF_TEST(InputSize(r) == 2);
+            BF_TEST(Input(r, 0) == x);
+            BF_TEST(EqualChunkValue(Input(r, 1), reduced));
         }
     }
 
@@ -242,17 +238,17 @@ int TestRotateModuloBitwidth_CanonicalOrderRegression() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Normalize::Bitwise::Get_Rotate_ModuloBitWidth_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_Rotate_Zero_Rule());
     auto x = V("x");
     auto y = V("y");
 
     auto r = Rewrite(engine, y + x.RotL(32));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Add);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(ERef(out.inputs[1]) == y);
+    BF_TEST(Op(r) == OpType::Add);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == x);
+    BF_TEST(Input(r, 1) == y);
     return 0;
 }
 

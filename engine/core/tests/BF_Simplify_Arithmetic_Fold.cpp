@@ -24,10 +24,9 @@ int TestAddFold() {
     auto x = V("x");
 
     auto r = Rewrite(engine, x + 10 + 20);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Add);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Add);
+    BF_TEST(InputSize(r) == 2);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == x; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 30u); }));

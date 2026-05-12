@@ -28,12 +28,11 @@ int TestAndCancelMixed() {
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, x & y & x);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::And);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(ERef(out.inputs[1]) == y);
+    BF_TEST(Op(r) == OpType::And);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == x);
+    BF_TEST(Input(r, 1) == y);
 
     return 0;
 }
@@ -61,12 +60,11 @@ int TestOrCancelMixed() {
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, y | x | y);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Or);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(ERef(out.inputs[1]) == y);
+    BF_TEST(Op(r) == OpType::Or);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == x);
+    BF_TEST(Input(r, 1) == y);
     return 0;
 }
 
@@ -76,6 +74,7 @@ int TestXorParityCancel_Pair() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     auto a = V("a");
     auto r = Rewrite(engine, a ^ a);
@@ -90,6 +89,7 @@ int TestXorParityCancel_ToSingle() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     auto x = V("x");
     auto y = V("y");
@@ -104,17 +104,17 @@ int TestXorParityCancel_MixedToXor() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, a ^ b ^ c ^ a);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == b);
-    BF_TEST(ERef(out.inputs[1]) == c);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == b);
+    BF_TEST(Input(r, 1) == c);
     return 0;
 }
 
@@ -124,6 +124,7 @@ int TestXorParityCancel_AllEven() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     auto a = V("a");
     auto b = V("b");
@@ -139,6 +140,7 @@ int TestXorParityCancel_Triple() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     auto a = V("a");
 
@@ -168,10 +170,9 @@ int TestXorParity_WithConstMixed() {
     auto a = V("a");
     auto b = V("b");
     auto r = Rewrite(engine, a ^ 1 ^ b ^ a);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 1u); }));
     return 0;
@@ -183,17 +184,17 @@ int TestXorParity_RewriteKeepsCanonicalOrder() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, c ^ a ^ b ^ a);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == b);
-    BF_TEST(ERef(out.inputs[1]) == c);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == b);
+    BF_TEST(Input(r, 1) == c);
     return 0;
 }
 
@@ -204,7 +205,8 @@ int TestXorParity_StructuralRotatePairCancelsToZero() {
     engine.Merge(BuildNormalize());
     engine.Merge(BuildSimplifyBitwise());
     auto x = V("x");
-    auto r = Rewrite(engine, x.RotR(2) ^ x.RotR(x));
+    auto term = x.RotR(2);
+    auto r = Rewrite(engine, term ^ term);
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -217,14 +219,13 @@ int TestXorParity_StructuralRotateDuplicateLeavesSingle() {
     engine.Merge(BuildNormalize());
     engine.Merge(BuildSimplifyBitwise());
     auto x = V("x");
-    auto r = Rewrite(engine, x.RotR(2) ^ x.RotR(13) ^ x.RotR(2));
+    auto term = x.RotR(2);
+    auto r = Rewrite(engine, term ^ x.RotR(13) ^ term);
 
-    auto out = ExprOf(r);
-
-    BF_TEST(out.op == OpType::RotR);
-    BF_TEST(out.inputs.size() == 2);
-    BF_TEST(ERef(out.inputs[0]) == x);
-    BF_TEST(EqualChunkValue(ERef(out.inputs[1]), 13u));
+    BF_TEST(Op(r) == OpType::RotR);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == x);
+    BF_TEST(EqualChunkValue(Input(r, 1), 13u));
 
     return 0;
 }

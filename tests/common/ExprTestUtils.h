@@ -24,6 +24,14 @@ inline Core::Expression::ExprRef Input(const Core::Expression::ExprRef e, std::s
     return Core::Expression::ExprRef(e.store, ExprOf(e).inputs[index]);
 }
 
+inline auto InputSize(const Core::Expression::ExprRef e) {
+    return ExprOf(e).inputs.size();
+}
+
+inline auto BitWidth(const Core::Expression::ExprRef e) {
+    return ExprOf(e).bitWidth;
+}
+
 inline Core::Expression::OpType Op(const Core::Expression::ExprRef e) {
     return (*e.store)[e].op;
 }
@@ -132,7 +140,6 @@ inline bool IsFullyConstant(const Core::Expression::ExprRef root) {
 
 #define E(name, expr) V(#name) = expr
 
-#define ERef(id) ExprRef(&store, id)
 #pragma endregion
 
 inline bool IsFalse(const Core::Expression::ExprRef e) {

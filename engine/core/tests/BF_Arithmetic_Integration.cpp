@@ -63,10 +63,9 @@ int TestFactorize_AddCommonFactor() {
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, (a * b) + (a * c));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Mul);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Mul);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(CountExpr(r, a) == 1);
     return 0;
 }
@@ -95,10 +94,9 @@ int TestFactorize_AddRepeatedTermCount() {
     auto a = V("a");
     auto term = a * 2;
     auto r = Rewrite(engine, term + term + term);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Mul);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Mul);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 6u); }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     return 0;
@@ -110,10 +108,9 @@ int TestFactorize_CombineNestedMulConstants() {
     RuleEngine engine = MakeArithmeticEngine();
     auto a = V("a");
     auto r = Rewrite(engine, C(3) * (a * 2));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Mul);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Mul);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 6u); }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     return 0;
@@ -128,63 +125,57 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto r = Rewrite(engine, a + a);
-        auto out = ExprOf(r);
 
-        BF_TEST(out.op == OpType::Mul);
-        BF_TEST(out.inputs.size() == 2);
+        BF_TEST(Op(r) == OpType::Mul);
+        BF_TEST(InputSize(r) == 2);
         BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 2u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
     {
         auto r = Rewrite(engine, a + a + a);
-        auto out = ExprOf(r);
 
-        BF_TEST(out.op == OpType::Mul);
-        BF_TEST(out.inputs.size() == 2);
+        BF_TEST(Op(r) == OpType::Mul);
+        BF_TEST(InputSize(r) == 2);
         BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 3u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
     {
         auto r = Rewrite(engine, a + (a * 2));
-        auto out = ExprOf(r);
 
-        BF_TEST(out.op == OpType::Mul);
-        BF_TEST(out.inputs.size() == 2);
+        BF_TEST(Op(r) == OpType::Mul);
+        BF_TEST(InputSize(r) == 2);
         BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 3u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
     {
         auto r = Rewrite(engine, a + (C(2) * a));
-        auto out = ExprOf(r);
 
-        BF_TEST(out.op == OpType::Mul);
-        BF_TEST(out.inputs.size() == 2);
+        BF_TEST(Op(r) == OpType::Mul);
+        BF_TEST(InputSize(r) == 2);
         BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 3u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
     {
         auto r = Rewrite(engine, (a * 2) + (a * 3));
-        auto out = ExprOf(r);
 
-        BF_TEST(out.op == OpType::Mul);
-        BF_TEST(out.inputs.size() == 2);
+        BF_TEST(Op(r) == OpType::Mul);
+        BF_TEST(InputSize(r) == 2);
         BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 5u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }
 
     {
         auto r = Rewrite(engine, b + a + a);
-        auto out = ExprOf(r);
 
-        BF_TEST(out.op == OpType::Mul);
-        BF_TEST(out.inputs.size() == 2);
+        BF_TEST(Op(r) == OpType::Mul);
+        BF_TEST(InputSize(r) == 2);
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
         BF_TEST(AnyInput(r, [&](ExprRef in) {
-            if (ExprOf(in).op != OpType::Mul)
+            if (Op(in) != OpType::Mul)
                 return false;
 
             return AnyInput(in, [&](ExprRef factor) { return factor == a; }) &&
@@ -194,10 +185,9 @@ int TestFactorize_AddLinearMultiplicityMixedForms() {
 
     {
         auto r = Rewrite(engine, (a * 1) + (a * 2));
-        auto out = ExprOf(r);
 
-        BF_TEST(out.op == OpType::Mul);
-        BF_TEST(out.inputs.size() == 2);
+        BF_TEST(Op(r) == OpType::Mul);
+        BF_TEST(InputSize(r) == 2);
         BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 3u); }));
         BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     }

@@ -36,13 +36,12 @@ int TestAndIdempotentMixed() {
     auto b = V("b");
 
     auto r = Rewrite(engine, a & b & a);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::And);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::And);
+    BF_TEST(InputSize(r) == 2);
 
-    BF_TEST(ERef(out.inputs[0]) == a);
-    BF_TEST(ERef(out.inputs[1]) == b);
+    BF_TEST(Input(r, 0) == a);
+    BF_TEST(Input(r, 1) == b);
 
     return 0;
 }
@@ -68,10 +67,9 @@ int TestOrIdempotentMixed() {
     auto b = V("b");
 
     auto r = Rewrite(engine, b | a | b);
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Or);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Or);
+    BF_TEST(InputSize(r) == 2);
 
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));

@@ -23,16 +23,11 @@ int TestAndXorReduction_RightXor() {
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, x & (x ^ y));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::And);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::And);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == x; }));
-    BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = ExprOf(in);
-
-        return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == y;
-    }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == y; }));
 
     return 0;
 }
@@ -45,21 +40,12 @@ int TestAndXorReduction_MultiArgAnd() {
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, c & (a ^ c) & (b ^ c));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::And);
+    BF_TEST(Op(r) == OpType::And);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));
-    BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = ExprOf(in);
-
-        return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == a;
-    }));
-    BF_TEST(AnyInput(r, [&](ExprRef in) {
-        const auto& e = ExprOf(in);
-
-        return e.op == OpType::Not && e.inputs.size() == 1 && ERef(e.inputs[0]) == b;
-    }));
-    BF_TEST(!AnyInput(r, [&](ExprRef in) { return ExprOf(in).op == OpType::Xor; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == b; }));
+    BF_TEST(!AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Xor; }));
 
     return 0;
 }

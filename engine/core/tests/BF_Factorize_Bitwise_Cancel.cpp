@@ -11,6 +11,7 @@ static RuleEngine MakeEngine() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
     engine.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
     return engine;
@@ -24,10 +25,9 @@ int TestXorXorCancelPair() {
     auto b = V("b");
     auto c = V("c");
     auto r = Rewrite(engine, (a ^ b) ^ (a ^ c));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 2);
     BF_TEST(CountExpr(r, a) == 0);
     BF_TEST(CountExpr(r, b) == 1);
     BF_TEST(CountExpr(r, c) == 1);
@@ -43,10 +43,9 @@ int TestXorXorCancelPair_MultiInputOddCommon() {
     auto c = V("c");
     auto d = V("d");
     auto r = Rewrite(engine, (a ^ b) ^ (a ^ c) ^ (a ^ d));
-    auto out = ExprOf(r);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 4);
+    BF_TEST(Op(r) == OpType::Xor);
+    BF_TEST(InputSize(r) == 4);
     BF_TEST(CountExpr(r, a) == 1);
     BF_TEST(CountExpr(r, b) == 1);
     BF_TEST(CountExpr(r, c) == 1);

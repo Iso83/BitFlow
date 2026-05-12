@@ -89,9 +89,9 @@ static int TestMakeXor_EmptyTerms() {
 
     std::vector<ExprId> terms{};
 
-    auto out = MakeXor(&store, terms);
+    auto out = store.create(OpType::Xor, std::move(terms), 32);
 
-    BF_TEST(EqualChunkValue(ERef(out), 0u));
+    BF_TEST(InputSize(out) == 0);
 
     return 0;
 }
@@ -103,9 +103,9 @@ static int TestMakeXor_SingleTerm() {
 
     std::vector<ExprId> terms{a.id};
 
-    auto out = MakeXor(&store, terms);
+    auto out = store.create(OpType::Xor, std::move(terms), 32);
 
-    BF_TEST(out == a.id);
+    BF_TEST(Input(out, 0) == a);
 
     return 0;
 }
@@ -118,13 +118,13 @@ static int TestMakeXor_MultipleTerms() {
 
     std::vector<ExprId> terms{a.id, b.id};
 
-    const Expr& out = store[MakeXor(&store, terms)];
+    auto out = store.create(OpType::Xor, std::move(terms), 32);
 
-    BF_TEST(out.op == OpType::Xor);
-    BF_TEST(out.inputs.size() == 2);
+    BF_TEST(Op(out) == OpType::Xor);
+    BF_TEST(InputSize(out) == 2);
 
-    BF_TEST(ERef(out.inputs[0]) == a);
-    BF_TEST(ERef(out.inputs[1]) == b);
+    BF_TEST(Input(out, 0) == a);
+    BF_TEST(Input(out, 1) == b);
 
     return 0;
 }
