@@ -9,7 +9,7 @@ namespace BitFlow::Core::Rules::Factorize::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_Xor_And(const ExprStore* store, ExprId id) {
+static bool Match_XorAnd(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Xor || e.inputs.size() < 2)
@@ -77,7 +77,7 @@ static ExprId FindBestCommonFactor(const ExprStore* store, ExprId id) {
     return hasBest ? best : id;
 }
 
-static ExprId Rewrite_Xor_And(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorAnd(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     const ExprId bestFactor = FindBestCommonFactor(store, id);
@@ -159,8 +159,8 @@ static ExprId Rewrite_Xor_And(ExprStore* store, ExprId id) {
     return store->create(OpType::Xor, std::move(finalInputs), e.bitWidth).id;
 }
 
-Rule Get_Xor_And_Rule() {
-    return Rule{Xor_And, &Match_Xor_And, &Rewrite_Xor_And, {Normalize::Flatten, Normalize::Order}};
+Rule Get_XorAnd_Rule() {
+    return Rule{XorAnd, &Match_XorAnd, &Rewrite_XorAnd, {Normalize::Flatten, Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

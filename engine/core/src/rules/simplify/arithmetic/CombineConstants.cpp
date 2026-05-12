@@ -20,7 +20,7 @@ static bool IsSupportedOp(OpType op) {
     }
 }
 
-static bool Match_Const_Combine(const ExprStore* store, ExprId id) {
+static bool Match_CombineConstants(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     if (!IsSupportedOp(e.op) || e.inputs.size() != 2)
         return false;
@@ -28,7 +28,7 @@ static bool Match_Const_Combine(const ExprStore* store, ExprId id) {
     return (*store)[e.inputs[0]].op == OpType::Const && (*store)[e.inputs[1]].op == OpType::Const;
 }
 
-static ExprId Rewrite_Const_Combine(ExprStore* store, ExprId id) {
+static ExprId Rewrite_CombineConstants(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     const Expr& lhs = (*store)[e.inputs[0]];
@@ -62,8 +62,8 @@ static ExprId Rewrite_Const_Combine(ExprStore* store, ExprId id) {
     }
 }
 
-Rule Get_Const_Combine_Rule() {
-    return Rule{Const_Combine, &Match_Const_Combine, &Rewrite_Const_Combine, {Normalize::Flatten}};
+Rule Get_CombineConstants_Rule() {
+    return Rule{CombineConstants, &Match_CombineConstants, &Rewrite_CombineConstants, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

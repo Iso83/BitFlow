@@ -79,7 +79,7 @@ static bool Match_Rotate_Zero(const ExprStore* store, ExprId id) {
 
 #pragma region Rewrite
 
-static ExprId Rewrite_Add_Zero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AddZero(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
@@ -104,12 +104,12 @@ static ExprId Rewrite_Add_Zero(ExprStore* store, ExprId id) {
     return store->create(OpType::Add, std::move(newInputs), bitWidth).id;
 }
 
-static ExprId Rewrite_Mul_Zero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_MulZero(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     return store->makeFalse(e.bitWidth).id;
 }
 
-static ExprId Rewrite_Sub_Zero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_SubZero(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
@@ -136,7 +136,7 @@ static ExprId Rewrite_Sub_Zero(ExprStore* store, ExprId id) {
     return store->create(OpType::Sub, std::move(newInputs), bitWidth).id;
 }
 
-static ExprId Rewrite_Mod_Zero_Guard(ExprStore* store, ExprId id) {
+static ExprId Rewrite_ModZeroGuard(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
@@ -149,41 +149,41 @@ static ExprId Rewrite_Mod_Zero_Guard(ExprStore* store, ExprId id) {
     return id;
 }
 
-static ExprId Rewrite_Shift_Zero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_ShiftZero(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     return e.inputs[0];
 }
 
-static ExprId Rewrite_Rotate_Zero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_RotateZero(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     return e.inputs[0];
 }
 #pragma endregion
 
-Rule Get_Add_Zero_Rule() {
-    return Rule{Add_Zero, &Match_Zero<OpType::Add>, &Rewrite_Add_Zero, {Normalize::Flatten}};
+Rule Get_AddZero_Rule() {
+    return Rule{AddZero, &Match_Zero<OpType::Add>, &Rewrite_AddZero, {Normalize::Flatten}};
 }
 
-Rule Get_Mul_Zero_Rule() {
-    return Rule{Mul_Zero, &Match_Zero<OpType::Mul>, &Rewrite_Mul_Zero, {Normalize::Flatten}};
+Rule Get_MulZero_Rule() {
+    return Rule{MulZero, &Match_Zero<OpType::Mul>, &Rewrite_MulZero, {Normalize::Flatten}};
 }
 
-Rule Get_Sub_Zero_Rule() {
-    return Rule{Sub_Zero, &Match_Sub_Zero, &Rewrite_Sub_Zero, {Normalize::Flatten}};
+Rule Get_SubZero_Rule() {
+    return Rule{SubZero, &Match_Sub_Zero, &Rewrite_SubZero, {Normalize::Flatten}};
 }
 
-Rule Get_Mod_Zero_Guard_Rule() {
-    return Rule{Mod_Zero_Guard, &Match_RightZero<OpType::Mod>, &Rewrite_Mod_Zero_Guard, {Normalize::Flatten}};
+Rule Get_ModZeroGuard_Rule() {
+    return Rule{ModZeroGuard, &Match_RightZero<OpType::Mod>, &Rewrite_ModZeroGuard, {Normalize::Flatten}};
 }
 
-Rule Get_Shift_Zero_Rule() {
-    return Rule{Shift_Zero, &Match_Shift_Zero, &Rewrite_Shift_Zero, {Normalize::Flatten}};
+Rule Get_ShiftZero_Rule() {
+    return Rule{ShiftZero, &Match_Shift_Zero, &Rewrite_ShiftZero, {Normalize::Flatten}};
 }
 
-Rule Get_Rotate_Zero_Rule() {
-    return Rule{Rotate_Zero, &Match_Rotate_Zero, &Rewrite_Rotate_Zero, {Normalize::Bitwise::Rotate_ModuloBitWidth}};
+Rule Get_RotateZero_Rule() {
+    return Rule{RotateZero, &Match_Rotate_Zero, &Rewrite_RotateZero, {Normalize::Bitwise::RotateModulo}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

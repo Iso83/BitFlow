@@ -10,7 +10,7 @@ using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 // a & ... & 0 → 0
-static bool Match_And_ZeroDominance(const ExprStore* store, ExprId id) {
+static bool Match_AndZeroDominance(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
@@ -26,7 +26,7 @@ static bool Match_And_ZeroDominance(const ExprStore* store, ExprId id) {
 }
 
 // a & ... & 1 → remove 1
-static bool Match_And_OneIdentity(const ExprStore* store, ExprId id) {
+static bool Match_AndOneIdentity(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
@@ -42,7 +42,7 @@ static bool Match_And_OneIdentity(const ExprStore* store, ExprId id) {
 }
 
 // a | ... | 1 → 1
-static bool Match_Or_OneDominance(const ExprStore* store, ExprId id) {
+static bool Match_OrOneDominance(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or)
@@ -58,7 +58,7 @@ static bool Match_Or_OneDominance(const ExprStore* store, ExprId id) {
 }
 
 // a | ... | 0 → remove 0
-static bool Match_Or_ZeroIdentity(const ExprStore* store, ExprId id) {
+static bool Match_OrZeroIdentity(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or)
@@ -75,13 +75,13 @@ static bool Match_Or_ZeroIdentity(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_And_ZeroDominance(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndZeroDominance(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     return store->makeFalse(e.bitWidth).id;
 }
 
-static ExprId Rewrite_And_OneIdentity(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndOneIdentity(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
@@ -102,13 +102,13 @@ static ExprId Rewrite_And_OneIdentity(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_Or_OneDominance(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrOneDominance(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     return store->makeTrue(e.bitWidth).id;
 }
 
-static ExprId Rewrite_Or_ZeroIdentity(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrZeroIdentity(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
@@ -130,20 +130,20 @@ static ExprId Rewrite_Or_ZeroIdentity(ExprStore* store, ExprId id) {
 }
 #pragma endregion
 
-Rule Get_And_Zero_Dominance_Rule() {
-    return Rule{And_Zero_Dominance, &Match_And_ZeroDominance, &Rewrite_And_ZeroDominance, {Normalize::Flatten}};
+Rule Get_AndZeroDominance_Rule() {
+    return Rule{AndZeroDominance, &Match_AndZeroDominance, &Rewrite_AndZeroDominance, {Normalize::Flatten}};
 }
 
-Rule Get_And_One_Identity_Rule() {
-    return Rule{And_One_Identity, &Match_And_OneIdentity, &Rewrite_And_OneIdentity, {Normalize::Flatten}};
+Rule Get_AndOneIdentity_Rule() {
+    return Rule{AndOneIdentity, &Match_AndOneIdentity, &Rewrite_AndOneIdentity, {Normalize::Flatten}};
 }
 
-Rule Get_Or_One_Dominance_Rule() {
-    return Rule{Or_One_Dominance, &Match_Or_OneDominance, &Rewrite_Or_OneDominance, {Normalize::Flatten}};
+Rule Get_OrOneDominance_Rule() {
+    return Rule{OrOneDominance, &Match_OrOneDominance, &Rewrite_OrOneDominance, {Normalize::Flatten}};
 }
 
-Rule Get_Or_Zero_Identity_Rule() {
-    return Rule{Or_Zero_Identity, &Match_Or_ZeroIdentity, &Rewrite_Or_ZeroIdentity, {Normalize::Flatten}};
+Rule Get_OrZeroIdentity_Rule() {
+    return Rule{OrZeroIdentity, &Match_OrZeroIdentity, &Rewrite_OrZeroIdentity, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

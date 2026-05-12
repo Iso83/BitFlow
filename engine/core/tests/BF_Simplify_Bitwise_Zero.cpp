@@ -12,7 +12,7 @@ int TestAndZero() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_And_Zero_Dominance_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndZeroDominance_Rule());
 
     auto x = V("x");
 
@@ -28,7 +28,7 @@ int TestXorZero() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorZero_Rule());
 
     auto x = V("x");
 

@@ -11,7 +11,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_And_Cancel(const ExprStore* store, ExprId id) {
+static bool Match_AndCancel(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
@@ -33,7 +33,7 @@ static bool Match_And_Cancel(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_Or_Cancel(const ExprStore* store, ExprId id) {
+static bool Match_OrCancel(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or)
@@ -55,7 +55,7 @@ static bool Match_Or_Cancel(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_Xor_Cancel(const ExprStore* store, Ids::ExprId id) {
+static bool Match_XorCancel(const ExprStore* store, Ids::ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Xor)
@@ -108,7 +108,7 @@ static bool Match_Xor_Cancel(const ExprStore* store, Ids::ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_And_Cancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndCancel(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
@@ -134,7 +134,7 @@ static ExprId Rewrite_And_Cancel(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_Or_Cancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrCancel(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
@@ -160,7 +160,7 @@ static ExprId Rewrite_Or_Cancel(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_Xor_Cancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
@@ -206,16 +206,16 @@ static ExprId Rewrite_Xor_Cancel(ExprStore* store, ExprId id) {
 }
 #pragma endregion
 
-Rule Get_And_Cancel_Rule() {
-    return Rule{And_Cancel, &Match_And_Cancel, &Rewrite_And_Cancel, {Normalize::Flatten}};
+Rule Get_AndCancel_Rule() {
+    return Rule{AndCancel, &Match_AndCancel, &Rewrite_AndCancel, {Normalize::Flatten}};
 }
 
-Rule Get_Or_Cancel_Rule() {
-    return Rule{Or_Cancel, &Match_Or_Cancel, &Rewrite_Or_Cancel, {Normalize::Flatten}};
+Rule Get_OrCancel_Rule() {
+    return Rule{OrCancel, &Match_OrCancel, &Rewrite_OrCancel, {Normalize::Flatten}};
 }
 
-Rule Get_Xor_Cancel_Rule() {
-    return Rule{Xor_Cancel, &Match_Xor_Cancel, &Rewrite_Xor_Cancel, {Normalize::Flatten, Normalize::Order, Xor_Zero}};
+Rule Get_XorCancel_Rule() {
+    return Rule{XorCancel, &Match_XorCancel, &Rewrite_XorCancel, {Normalize::Flatten, Normalize::Order, XorZero}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

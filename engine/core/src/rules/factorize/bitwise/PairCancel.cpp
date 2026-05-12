@@ -9,7 +9,7 @@ namespace BitFlow::Core::Rules::Factorize::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_Xor_Xor_CancelPair(const ExprStore* store, ExprId id) {
+static bool Match_XorPairCancel(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Xor)
@@ -43,7 +43,7 @@ static bool Match_Xor_Xor_CancelPair(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_Xor_Xor_CancelPair(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorPairCancel(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     std::unordered_map<ExprId, int> childCounts;
@@ -132,11 +132,11 @@ static ExprId Rewrite_Xor_Xor_CancelPair(ExprStore* store, ExprId id) {
     return store->create(OpType::Xor, std::move(newInputs), e.bitWidth).id;
 }
 
-Rule Get_Xor_Pair_Cancel_Rule() {
-    return Rule{Xor_Pair_Cancel,
-                &Match_Xor_Xor_CancelPair,
-                &Rewrite_Xor_Xor_CancelPair,
-                {Normalize::Flatten, Simplify::Bitwise::Xor_Cancel}};
+Rule Get_XorPairCancel_Rule() {
+    return Rule{XorPairCancel,
+                &Match_XorPairCancel,
+                &Rewrite_XorPairCancel,
+                {Normalize::Flatten, Simplify::Bitwise::XorCancel}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

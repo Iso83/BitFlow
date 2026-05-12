@@ -7,7 +7,7 @@ namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_Neg_Neg(const ExprStore* store, ExprId id) {
+static bool Match_NegNeg(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Neg || e.inputs.size() != 1)
@@ -17,7 +17,7 @@ static bool Match_Neg_Neg(const ExprStore* store, ExprId id) {
     return in.op == OpType::Neg && in.inputs.size() == 1;
 }
 
-static ExprId Rewrite_Neg_Neg(ExprStore* store, ExprId id) {
+static ExprId Rewrite_NegNeg(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     _ASSERT(e.op == OpType::Neg && e.inputs.size() == 1);
 
@@ -27,8 +27,8 @@ static ExprId Rewrite_Neg_Neg(ExprStore* store, ExprId id) {
     return e2.inputs[0];
 }
 
-Rule Get_Neg_Neg_Rule() {
-    return Rule{Neg_Neg, &Match_Neg_Neg, &Rewrite_Neg_Neg, {Normalize::Flatten}};
+Rule Get_NegNeg_Rule() {
+    return Rule{NegNeg, &Match_NegNeg, &Rewrite_NegNeg, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

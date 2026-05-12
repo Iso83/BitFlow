@@ -11,8 +11,8 @@ static RuleEngine MakeEngine() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Add_Fold_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
     return engine;
 }
 

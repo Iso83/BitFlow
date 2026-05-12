@@ -8,7 +8,7 @@ namespace BitFlow::Core::Rules::Factorize::Arithmetic {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_Mul_CombineConstants(const ExprStore* store, ExprId id) {
+static bool Match_MulCombineConstants(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Mul || e.inputs.size() < 2)
@@ -27,7 +27,7 @@ static bool Match_Mul_CombineConstants(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_Mul_CombineConstants(ExprStore* store, ExprId id) {
+static ExprId Rewrite_MulCombineConstants(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     _ASSERT(e.op == OpType::Mul);
@@ -57,11 +57,11 @@ static ExprId Rewrite_Mul_CombineConstants(ExprStore* store, ExprId id) {
     return id;
 }
 
-Rule Get_Mul_CombineConstants_Rule() {
-    return Rule{Mul_CombineConstants,
-                &Match_Mul_CombineConstants,
-                &Rewrite_Mul_CombineConstants,
-                {Add_Linear_Multiplicity, Add_CommonFactor, Normalize::Flatten, Normalize::Order}};
+Rule Get_MulCombineConstants_Rule() {
+    return Rule{MulCombineConstants,
+                &Match_MulCombineConstants,
+                &Rewrite_MulCombineConstants,
+                {AddLinearMultiplicity, AddCommonFactor, Normalize::Flatten, Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic

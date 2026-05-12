@@ -37,7 +37,7 @@ int TestNotPushdown_And() {
     MakeExprStore(32);
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Bitwise::Get_Not_Pushdown_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
     auto a = V("a");
@@ -59,7 +59,7 @@ int TestNotPushdown_Or() {
     MakeExprStore(32);
 
     RuleEngine engine;
-    engine.AddRule(Simplify::Bitwise::Get_Not_Pushdown_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
     engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
 
     auto a = V("a");
@@ -82,7 +82,7 @@ int TestNotXor() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Not_Xor_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_NotXor_Rule());
 
     auto a = V("a");
     auto b = V("b");

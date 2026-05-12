@@ -55,7 +55,7 @@ static bool Match_NotPushdown(const ExprStore* store, ExprId id) {
     return !allNot;
 }
 
-static bool Match_Not_Xor(const ExprStore* store, ExprId id) {
+static bool Match_NotXor(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Not)
@@ -102,7 +102,7 @@ static ExprId Rewrite_NotPushdown(ExprStore* store, ExprId id) {
     return store->create(newOp, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_Not_Xor(ExprStore* store, ExprId id) {
+static ExprId Rewrite_NotXor(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     ExprId in = e.inputs[0];
     const Expr& exprIn = (*store)[in];
@@ -123,12 +123,12 @@ Rule Get_Not_Rule() {
     return Rule{Not, &Match_Not, &Rewrite_Not};
 }
 
-Rule Get_Not_Pushdown_Rule() {
-    return Rule{Not_Pushdown, &Match_NotPushdown, &Rewrite_NotPushdown};
+Rule Get_NotPushdown_Rule() {
+    return Rule{NotPushdown, &Match_NotPushdown, &Rewrite_NotPushdown};
 }
 
-Rule Get_Not_Xor_Rule() {
-    return Rule{Not_Xor, &Match_Not_Xor, &Rewrite_Not_Xor, {Normalize::Flatten}};
+Rule Get_NotXor_Rule() {
+    return Rule{NotXor, &Match_NotXor, &Rewrite_NotXor, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

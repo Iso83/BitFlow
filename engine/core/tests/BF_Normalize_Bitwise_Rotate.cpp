@@ -1,7 +1,5 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
-#include <TestAssert.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -10,19 +8,20 @@ using namespace BitFlow::Core::Rules;
 
 int TestRotateModuloBitwidth_ReducesConstantAmount() {
     MakeExprStore(32);
-    const auto rule = Normalize::Bitwise::Get_Rotate_ModuloBitWidth_Rule();
+    const auto rule = Normalize::Bitwise::Get_RotateModulo_Rule();
 
     RuleEngine engine;
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto x = V("x");
-    auto out = Rewrite(engine, x.RotL(35), &names, PrintOptions{}.ExplicitGroups().ShowOpTypes().RotAsFunction());
 
-    BF_TEST(Op(out) == OpType::RotL);
-    BF_TEST(InputSize(out) == 2);
-    BF_TEST(Input(out, 0) == x);
-    BF_TEST(EqualChunkValue(Input(out, 1), 3u));
+    BF_SAFE_REWRITE(r, Rewrite(engine, x.RotL(35)));
+
+    BF_TEST(Op(r) == OpType::RotL);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == x);
+    BF_TEST(EqualChunkValue(Input(r, 1), 3u));
 
     return 0;
 }

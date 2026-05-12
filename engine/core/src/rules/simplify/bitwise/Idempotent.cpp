@@ -33,7 +33,7 @@ static bool Match_Idempotent(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_And_Idempotent(const ExprStore* store, ExprId id) {
+static bool Match_AndIdempotent(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And || e.inputs.size() < 2)
@@ -73,7 +73,7 @@ static ExprId Rewrite_Idempotent(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(unique), e.bitWidth).id;
 }
 
-static ExprId Rewrite_And_Idempotent(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndIdempotent(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     std::unordered_set<ExprId> seen;
@@ -97,7 +97,7 @@ Rule Get_Idempotent_Rule() {
     return Rule{Idempotent, &Match_Idempotent, &Rewrite_Idempotent, {Normalize::Flatten}};
 }
 
-Rule Get_And_Idempotent_Rule() {
-    return Rule{And_Idempotent, &Match_And_Idempotent, &Rewrite_And_Idempotent, {Normalize::Flatten}};
+Rule Get_AndIdempotent_Rule() {
+    return Rule{AndIdempotent, &Match_AndIdempotent, &Rewrite_AndIdempotent, {Normalize::Flatten}};
 }
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

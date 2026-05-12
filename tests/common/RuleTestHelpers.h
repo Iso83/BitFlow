@@ -71,4 +71,12 @@ inline Core::Expression::ExprRef Rewrite(Core::Rules::RuleEngine& engine, Core::
     return result;
 }
 
+#define BF_SAFE_REWRITE(field, rewrite)                                                                                \
+    BitFlow::Core::Expression::ExprRef field{};                                                                        \
+    try {                                                                                                              \
+        field = rewrite;                                                                                               \
+    } catch (const std::exception& ex) {                                                                               \
+        return -1;                                                                                                     \
+    }
+
 } // namespace BitFlow::Testing

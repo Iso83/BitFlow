@@ -12,7 +12,7 @@ int TestAndCancelPair() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndCancel_Rule());
     auto x = V("x");
 
     BF_TEST(Rewrite(engine, x & x) == x);
@@ -24,7 +24,7 @@ int TestAndCancelMixed() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndCancel_Rule());
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, x & y & x);
@@ -43,7 +43,7 @@ int TestOrCancelPair() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_OrCancel_Rule());
     auto x = V("x");
 
     BF_TEST(Rewrite(engine, x | x) == x);
@@ -56,7 +56,7 @@ int TestOrCancelMixed() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_OrCancel_Rule());
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, y | x | y);
@@ -74,8 +74,8 @@ int TestXorParityCancel_Pair() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorZero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorCancel_Rule());
     auto a = V("a");
     auto r = Rewrite(engine, a ^ a);
 
@@ -89,8 +89,8 @@ int TestXorParityCancel_ToSingle() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorZero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorCancel_Rule());
     auto x = V("x");
     auto y = V("y");
 
@@ -104,8 +104,8 @@ int TestXorParityCancel_MixedToXor() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorZero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorCancel_Rule());
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
@@ -124,8 +124,8 @@ int TestXorParityCancel_AllEven() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorZero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorCancel_Rule());
     auto a = V("a");
     auto b = V("b");
     auto r = Rewrite(engine, a ^ b ^ a ^ b);
@@ -140,8 +140,8 @@ int TestXorParityCancel_Triple() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorZero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorCancel_Rule());
     auto a = V("a");
 
     BF_TEST(Rewrite(engine, a ^ a ^ a) == a);
@@ -184,8 +184,8 @@ int TestXorParity_RewriteKeepsCanonicalOrder() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorZero_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorCancel_Rule());
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");

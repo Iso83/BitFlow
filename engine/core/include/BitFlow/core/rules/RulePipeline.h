@@ -12,7 +12,7 @@ inline RuleEngine BuildNormalize() {
 
     e.AddRule(Normalize::Get_Flatten_Rule());
     e.AddRule(Normalize::Get_Order_Rule());
-    e.AddRule(Normalize::Bitwise::Get_Rotate_ModuloBitWidth_Rule());
+    e.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
 
     return e;
 }
@@ -24,40 +24,40 @@ inline RuleEngine BuildSimplifyBitwise() {
     RuleEngine e;
 
     // NOT
-    e.AddRule(Simplify::Bitwise::Get_Not_Pushdown_Rule());
+    e.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
     e.AddRule(Simplify::Bitwise::Get_Not_Rule());
-    e.AddRule(Simplify::Bitwise::Get_Not_Xor_Rule());
+    e.AddRule(Simplify::Bitwise::Get_NotXor_Rule());
 
     // Neutral
-    e.AddRule(Simplify::Bitwise::Get_Xor_Zero_Rule());
+    e.AddRule(Simplify::Bitwise::Get_XorZero_Rule());
 
     // Cancel
-    e.AddRule(Simplify::Bitwise::Get_Xor_Cancel_Rule());
-    e.AddRule(Simplify::Bitwise::Get_And_Cancel_Rule());
-    e.AddRule(Simplify::Bitwise::Get_Or_Cancel_Rule());
+    e.AddRule(Simplify::Bitwise::Get_XorCancel_Rule());
+    e.AddRule(Simplify::Bitwise::Get_AndCancel_Rule());
+    e.AddRule(Simplify::Bitwise::Get_OrCancel_Rule());
 
     // Reduction
-    e.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
-    e.AddRule(Simplify::Bitwise::Get_Xor_Not_Reduction_Rule());
-    e.AddRule(Simplify::Bitwise::Get_Xor_And_Reduction_Rule());
+    e.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    e.AddRule(Simplify::Bitwise::Get_XorNotReduction_Rule());
+    e.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
 
     // Fold
-    e.AddRule(Simplify::Bitwise::Get_Xor_Fold_Rule());
-    e.AddRule(Simplify::Bitwise::Get_And_Fold_Rule());
-    e.AddRule(Simplify::Bitwise::Get_Or_Fold_Rule());
+    e.AddRule(Simplify::Bitwise::Get_XorFold_Rule());
+    e.AddRule(Simplify::Bitwise::Get_AndFold_Rule());
+    e.AddRule(Simplify::Bitwise::Get_OrFold_Rule());
 
     // Structural
     e.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
-    e.AddRule(Simplify::Bitwise::Get_And_Idempotent_Rule());
+    e.AddRule(Simplify::Bitwise::Get_AndIdempotent_Rule());
 
     // Logical
     e.AddRule(Simplify::Bitwise::Get_Complement_Rule());
 
     // Dominance
-    e.AddRule(Simplify::Bitwise::Get_And_Zero_Dominance_Rule());
-    e.AddRule(Simplify::Bitwise::Get_And_One_Identity_Rule());
-    e.AddRule(Simplify::Bitwise::Get_Or_One_Dominance_Rule());
-    e.AddRule(Simplify::Bitwise::Get_Or_Zero_Identity_Rule());
+    e.AddRule(Simplify::Bitwise::Get_AndZeroDominance_Rule());
+    e.AddRule(Simplify::Bitwise::Get_AndOneIdentity_Rule());
+    e.AddRule(Simplify::Bitwise::Get_OrOneDominance_Rule());
+    e.AddRule(Simplify::Bitwise::Get_OrZeroIdentity_Rule());
 
     return e;
 }
@@ -68,17 +68,17 @@ inline RuleEngine BuildSimplifyBitwise() {
 inline RuleEngine BuildSimplifyArithmetic() {
     RuleEngine e;
 
-    e.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Sub_Zero_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Mul_One_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Mul_Zero_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Div_One_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Mod_Zero_Guard_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Shift_Zero_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Rotate_Zero_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Neg_Neg_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Add_Fold_Rule());
-    e.AddRule(Simplify::Arithmetic::Get_Const_Combine_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_SubZero_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_MulOne_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_MulZero_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_DivOne_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_ModZeroGuard_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_ShiftZero_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_NegNeg_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_CombineConstants_Rule());
 
     return e;
 }
@@ -89,10 +89,10 @@ inline RuleEngine BuildSimplifyArithmetic() {
 inline RuleEngine BuildFactorizeBitwise() {
     RuleEngine e;
 
-    e.AddRule(Factorize::Bitwise::Get_Xor_And_Rule());
-    e.AddRule(Factorize::Bitwise::Get_Xor_Pair_Cancel_Rule());
-    e.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
-    e.AddRule(Factorize::Bitwise::Get_Or_Absorb_Rule());
+    e.AddRule(Factorize::Bitwise::Get_XorAnd_Rule());
+    e.AddRule(Factorize::Bitwise::Get_XorPairCancel_Rule());
+    e.AddRule(Factorize::Bitwise::Get_AndAbsorb_Rule());
+    e.AddRule(Factorize::Bitwise::Get_OrAbsorb_Rule());
     e.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 
     return e;
@@ -104,9 +104,9 @@ inline RuleEngine BuildFactorizeBitwise() {
 inline RuleEngine BuildFactorizeArithmetic() {
     RuleEngine e;
 
-    e.AddRule(Factorize::Arithmetic::Get_Add_Linear_Multiplicity_Rule());
-    e.AddRule(Factorize::Arithmetic::Get_Add_CommonFactor_Rule());
-    e.AddRule(Factorize::Arithmetic::Get_Mul_CombineConstants_Rule());
+    e.AddRule(Factorize::Arithmetic::Get_AddLinearMultiplicity_Rule());
+    e.AddRule(Factorize::Arithmetic::Get_AddCommonFactor_Rule());
+    e.AddRule(Factorize::Arithmetic::Get_MulCombineConstants_Rule());
 
     return e;
 }

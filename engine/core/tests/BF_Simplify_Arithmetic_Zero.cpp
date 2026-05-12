@@ -15,7 +15,7 @@ int TestAddZero_Nested() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
     auto x = V("x");
 
     BF_TEST(Rewrite(engine, (x + 0) + 0) == x);
@@ -28,7 +28,7 @@ int TestAddZero_AllZerosBecomeConstZero() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
     auto r = Rewrite(engine, C(0) + 0 + 0);
 
     BF_TEST(EqualChunkValue(r, 0u));
@@ -41,7 +41,7 @@ int TestAddZero_CanonicalOrderRegression() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Add_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, y + 0 + x);
@@ -59,7 +59,7 @@ int TestMulZero_Nested() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Mul_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_MulZero_Rule());
     auto x = V("x");
     auto r = Rewrite(engine, (x * 0) * x);
 
@@ -73,7 +73,7 @@ int TestMulZero_DominanceWithMixedInputs() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Mul_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_MulZero_Rule());
     auto x = V("x");
     auto y = V("y");
     auto r = Rewrite(engine, x * y * 0);
@@ -87,7 +87,7 @@ int TestSubZero_Basic() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Sub_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_SubZero_Rule());
     auto x = V("x");
 
     BF_TEST(Rewrite(engine, x - 0) == x);
@@ -99,7 +99,7 @@ int TestSubZero_LeftZeroBecomesNeg() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Sub_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_SubZero_Rule());
     auto x = V("x");
     auto r = Rewrite(engine, C(0) - x);
 
@@ -114,7 +114,7 @@ int TestModZero_GuardThrows() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Mod_Zero_Guard_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_ModZeroGuard_Rule());
     auto x = V("x");
 
     bool thrown = false;
@@ -134,7 +134,7 @@ int TestModZero_GuardLeftZeroStaysMod() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Mod_Zero_Guard_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_ModZeroGuard_Rule());
     auto x = V("x");
     auto expr = C(0) % x;
 
@@ -147,7 +147,7 @@ int TestShiftZero_Basic() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Shift_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_ShiftZero_Rule());
     auto x = V("x");
 
     for (OpType op : {OpType::Shl, OpType::Shr}) {
@@ -163,7 +163,7 @@ int TestShiftZero_GuardLeftZeroStaysShift() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Shift_Zero_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_ShiftZero_Rule());
     auto x = V("x");
 
     for (OpType op : {OpType::Shl, OpType::Shr}) {
@@ -178,8 +178,8 @@ int TestRotateModuloBitwidth_FullWidthBecomesIdentity() {
     MakeExprStore(64);
 
     RuleEngine engine;
-    engine.AddRule(Normalize::Bitwise::Get_Rotate_ModuloBitWidth_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Zero_Rule());
+    engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
     auto x = V("x");
 
     for (OpType op : {OpType::RotL, OpType::RotR}) {
@@ -195,8 +195,8 @@ int TestRotateModuloBitwidth_GuardNonConstAmount() {
     MakeExprStore(32);
 
     RuleEngine engine;
-    engine.AddRule(Normalize::Bitwise::Get_Rotate_ModuloBitWidth_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Zero_Rule());
+    engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
     auto x = V("x");
     auto n = V("n");
     auto expr = x.RotR(n);
@@ -210,8 +210,8 @@ int TestRotateModuloBitwidth_Property_ConstantAmounts() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Bitwise::Get_Rotate_ModuloBitWidth_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Zero_Rule());
+    engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
     auto x = V("x");
 
     for (uint32_t amount = 0; amount < 128; ++amount) {
@@ -238,8 +238,8 @@ int TestRotateModuloBitwidth_CanonicalOrderRegression() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Normalize::Bitwise::Get_Rotate_ModuloBitWidth_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Rotate_Zero_Rule());
+    engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
     auto x = V("x");
     auto y = V("y");
 

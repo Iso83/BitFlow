@@ -1,4 +1,3 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
@@ -7,23 +6,19 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static RuleEngine MakeEngine() {
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    return engine;
-}
-
 int TestXorFlatten() {
     MakeExprStore(32);
+    const auto rule = Normalize::Get_Flatten_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto x = V("x");
     auto y = V("y");
     auto z = V("z");
 
-    auto r = Rewrite(engine, (x ^ y) ^ z);
+    BF_SAFE_REWRITE(r, Rewrite(engine, (x ^ y) ^ z));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 3);
@@ -37,19 +32,22 @@ int TestXorFlatten() {
 
 int TestNotNotDoesNotFlatten() {
     MakeExprStore(32);
+    const auto rule = Normalize::Get_Flatten_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto x = V("x");
 
-    auto r = Rewrite(engine, -(-x)); // of ~(~x) indien bitwise-not
+    BF_SAFE_REWRITE(r, Rewrite(engine, -(-x)));
 
-    BF_TEST(Op(r) == OpType::Neg); // of Not
+    BF_TEST(Op(r) == OpType::Neg);
     BF_TEST(InputSize(r) == 1);
 
     auto inner = Input(r, 0);
 
-    BF_TEST(Op(inner) == OpType::Neg); // of Not
+    BF_TEST(Op(inner) == OpType::Neg);
     BF_TEST(InputSize(inner) == 1);
     BF_TEST(Input(inner, 0) == x);
 

@@ -75,7 +75,7 @@ int TestXorFoldAllConstZero() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_Fold_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorFold_Rule());
 
     auto r = Rewrite(engine, True() ^ True());
 

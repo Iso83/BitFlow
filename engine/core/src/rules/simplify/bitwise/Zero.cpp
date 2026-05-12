@@ -8,7 +8,7 @@ namespace BitFlow::Core::Rules::Simplify::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static ExprId Rewrite_Remove_Zero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_RemoveZero(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
 
@@ -29,8 +29,8 @@ static ExprId Rewrite_Remove_Zero(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-Rule Get_Xor_Zero_Rule() {
-    return Rule{Xor_Zero, &Match_Zero<OpType::Xor>, &Rewrite_Remove_Zero, {Normalize::Flatten}};
+Rule Get_XorZero_Rule() {
+    return Rule{XorZero, &Match_Zero<OpType::Xor>, &Rewrite_RemoveZero, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

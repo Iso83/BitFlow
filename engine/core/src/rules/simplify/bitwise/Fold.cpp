@@ -9,7 +9,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_And_Fold(const ExprStore* store, ExprId id) {
+static bool Match_AndFold(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::And)
         return false;
@@ -20,7 +20,7 @@ static bool Match_And_Fold(const ExprStore* store, ExprId id) {
     return true;
 }
 
-static bool Match_Or_Fold(const ExprStore* store, ExprId id) {
+static bool Match_OrFold(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Or)
         return false;
@@ -31,7 +31,7 @@ static bool Match_Or_Fold(const ExprStore* store, ExprId id) {
     return true;
 }
 
-static bool Match_Xor_Fold(const ExprStore* store, ExprId id) {
+static bool Match_XorFold(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Xor)
         return false;
@@ -52,7 +52,7 @@ static bool Match_Xor_Fold(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_And_Fold(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndFold(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
 
@@ -76,7 +76,7 @@ static ExprId Rewrite_And_Fold(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_Or_Fold(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrFold(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
 
@@ -100,7 +100,7 @@ static ExprId Rewrite_Or_Fold(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_Xor_Fold(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorFold(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     Types::ExprChunk acc = 0;
@@ -140,16 +140,16 @@ static ExprId Rewrite_Xor_Fold(ExprStore* store, ExprId id) {
 }
 #pragma endregion
 
-Rule Get_And_Fold_Rule() {
-    return Rule{And_Fold, &Match_And_Fold, &Rewrite_And_Fold, {Normalize::Flatten}};
+Rule Get_AndFold_Rule() {
+    return Rule{AndFold, &Match_AndFold, &Rewrite_AndFold, {Normalize::Flatten}};
 }
 
-Rule Get_Or_Fold_Rule() {
-    return Rule{Or_Fold, &Match_Or_Fold, &Rewrite_Or_Fold, {Normalize::Flatten}};
+Rule Get_OrFold_Rule() {
+    return Rule{OrFold, &Match_OrFold, &Rewrite_OrFold, {Normalize::Flatten}};
 }
 
-Rule Get_Xor_Fold_Rule() {
-    return Rule{Xor_Fold, &Match_Xor_Fold, &Rewrite_Xor_Fold, {Normalize::Flatten}};
+Rule Get_XorFold_Rule() {
+    return Rule{XorFold, &Match_XorFold, &Rewrite_XorFold, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

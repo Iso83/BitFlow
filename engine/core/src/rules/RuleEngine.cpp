@@ -77,10 +77,11 @@ ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root) const {
 void CollectDependenciesRecursive(const std::vector<Rule>& rules, const std::unordered_map<RuleKey, size_t>& indices,
                                   const Rule& rule, std::unordered_set<RuleKey>& out) {
 
-    if (!out.insert(rule.key).second)
-        return;
-
     for (const auto& dep : rule.deps) {
+
+        if (!out.insert(dep).second)
+            continue;
+
         const auto it = indices.find(dep);
 
         if (it == indices.end())
@@ -116,6 +117,9 @@ DependencyValidationResult RuleEngine::ValidateMinimalDependencies(const Rule& t
 
     // --- extra ---
     for (const auto& rule : m_rules) {
+        if (rule.key == testingRule.key)
+            continue;
+
         if (!required.contains(rule.key)) {
             result.valid = false;
             result.extra.push_back(rule.key);

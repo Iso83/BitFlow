@@ -13,8 +13,8 @@ int TestXorAndReduction_Basic() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_And_Reduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
 
     auto x = V("x");
     auto y = V("y");
@@ -37,8 +37,8 @@ int TestXorAndReduction_MultiArgXor() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_And_Reduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
 
     auto a = V("a");
     auto b = V("b");
@@ -69,8 +69,8 @@ int TestXorAndReduction_AndWithManyFactors() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_Xor_And_Reduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
 
     auto a = V("a");
     auto b = V("b");

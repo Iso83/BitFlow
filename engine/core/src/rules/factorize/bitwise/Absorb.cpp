@@ -8,7 +8,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_And_Absorb(const ExprStore* store, ExprId id) {
+static bool Match_AndAbsorb(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And || e.inputs.size() < 2)
@@ -29,7 +29,7 @@ static bool Match_And_Absorb(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_Or_Absorb(const ExprStore* store, ExprId id) {
+static bool Match_OrAbsorb(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or || e.inputs.size() < 2)
@@ -52,7 +52,7 @@ static bool Match_Or_Absorb(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_And_Absorb(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndAbsorb(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     _ASSERT(e.op == OpType::And);
@@ -73,7 +73,7 @@ static ExprId Rewrite_And_Absorb(ExprStore* store, ExprId id) {
     return id;
 }
 
-static ExprId Rewrite_Or_Absorb(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrAbsorb(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     _ASSERT(e.op == OpType::Or);
@@ -95,12 +95,12 @@ static ExprId Rewrite_Or_Absorb(ExprStore* store, ExprId id) {
 }
 #pragma endregion
 
-Rule Get_And_Absorb_Rule() {
-    return Rule{And_Absorb, &Match_And_Absorb, &Rewrite_And_Absorb, {Normalize::Flatten}};
+Rule Get_AndAbsorb_Rule() {
+    return Rule{AndAbsorb, &Match_AndAbsorb, &Rewrite_AndAbsorb, {Normalize::Flatten}};
 }
 
-Rule Get_Or_Absorb_Rule() {
-    return Rule{Or_Absorb, &Match_Or_Absorb, &Rewrite_Or_Absorb, {Normalize::Flatten}};
+Rule Get_OrAbsorb_Rule() {
+    return Rule{OrAbsorb, &Match_OrAbsorb, &Rewrite_OrAbsorb, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

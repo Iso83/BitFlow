@@ -12,7 +12,7 @@ static bool IsConstFalse(const ExprStore* store, ExprId id) {
     return e.op == OpType::Const && e.inputs.empty() && store->isFalse(id);
 }
 
-static bool Match_Rotate_ModuloBitWidth(const ExprStore* store, ExprId id) {
+static bool Match_RotateModulo(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::RotL && e.op != OpType::RotR)
@@ -28,7 +28,7 @@ static bool Match_Rotate_ModuloBitWidth(const ExprStore* store, ExprId id) {
     return e.bitWidth > 0 && amount.knownValue >= e.bitWidth;
 }
 
-static ExprId Rewrite_Rotate_ModuloBitWidth(ExprStore* store, ExprId id) {
+static ExprId Rewrite_RotateModulo(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     const Expr& amount = (*store)[e.inputs[1]];
 
@@ -40,8 +40,8 @@ static ExprId Rewrite_Rotate_ModuloBitWidth(ExprStore* store, ExprId id) {
     return store->create(op, {e.inputs[0], store->createConstant(reduced, bw).id}, bw).id;
 }
 
-Rule Get_Rotate_ModuloBitWidth_Rule() {
-    return Rule{Rotate_ModuloBitWidth, &Match_Rotate_ModuloBitWidth, &Rewrite_Rotate_ModuloBitWidth};
+Rule Get_RotateModulo_Rule() {
+    return Rule{RotateModulo, &Match_RotateModulo, &Rewrite_RotateModulo};
 }
 
 } // namespace BitFlow::Core::Rules::Normalize::Bitwise

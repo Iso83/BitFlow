@@ -8,7 +8,7 @@ namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_Add_Fold(const ExprStore* store, ExprId id) {
+static bool Match_AddFold(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Add)
         return false;
@@ -27,7 +27,7 @@ static bool Match_Add_Fold(const ExprStore* store, ExprId id) {
     return constCount >= 2;
 }
 
-static ExprId Rewrite_Add_Fold(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AddFold(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     Types::ExprChunk acc = 0;
@@ -64,8 +64,8 @@ static ExprId Rewrite_Add_Fold(ExprStore* store, ExprId id) {
     return store->create(OpType::Add, std::move(nonConst), e.bitWidth).id;
 }
 
-Rule Get_Add_Fold_Rule() {
-    return Rule{Add_Fold, &Match_Add_Fold, &Rewrite_Add_Fold, {Normalize::Flatten}};
+Rule Get_AddFold_Rule() {
+    return Rule{AddFold, &Match_AddFold, &Rewrite_AddFold, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

@@ -11,7 +11,7 @@ static RuleEngine MakeEngine() {
 
     RuleEngine engine;
     engine.Merge(BuildNormalize());
-    engine.AddRule(Factorize::Bitwise::Get_And_Absorb_Rule());
+    engine.AddRule(Factorize::Bitwise::Get_AndAbsorb_Rule());
     return engine;
 }
 

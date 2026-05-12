@@ -9,7 +9,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_Mul_One(const ExprStore* store, ExprId id) {
+static bool Match_MulOne(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Mul)
         return false;
@@ -23,7 +23,7 @@ static bool Match_Mul_One(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_Div_One(const ExprStore* store, ExprId id) {
+static bool Match_DivOne(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Div)
         return false;
@@ -37,7 +37,7 @@ static bool Match_Div_One(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_Mul_One(ExprStore* store, ExprId id) {
+static ExprId Rewrite_MulOne(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
@@ -57,18 +57,18 @@ static ExprId Rewrite_Mul_One(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_Div_One(ExprStore* store, ExprId id) {
+static ExprId Rewrite_DivOne(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     return e.inputs[0];
 }
 #pragma endregion
 
-Rule Get_Mul_One_Rule() {
-    return Rule{Mul_One, &Match_Mul_One, &Rewrite_Mul_One, {Normalize::Flatten}};
+Rule Get_MulOne_Rule() {
+    return Rule{MulOne, &Match_MulOne, &Rewrite_MulOne, {Normalize::Flatten}};
 }
 
-Rule Get_Div_One_Rule() {
-    return Rule{Div_One, &Match_Div_One, &Rewrite_Div_One, {Normalize::Flatten}};
+Rule Get_DivOne_Rule() {
+    return Rule{DivOne, &Match_DivOne, &Rewrite_DivOne, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

@@ -11,7 +11,7 @@ static RuleEngine MakeEngine() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_And_Zero_Dominance_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndZeroDominance_Rule());
     return engine;
 }
 

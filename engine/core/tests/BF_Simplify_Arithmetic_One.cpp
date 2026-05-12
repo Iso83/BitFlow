@@ -10,14 +10,14 @@ static RuleEngine MakeMultEngine() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Mul_One_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_MulOne_Rule());
     return engine;
 }
 
 static RuleEngine MakeDivEngine() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_Div_One_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_DivOne_Rule());
     return engine;
 }
 

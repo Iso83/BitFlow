@@ -55,7 +55,7 @@ static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTer
     return true;
 }
 
-static bool Match_Add_LinearMultiplicity(const ExprStore* store, ExprId id) {
+static bool Match_AddLinearMultiplicity(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Add || e.inputs.size() < 2)
@@ -76,7 +76,7 @@ static bool Match_Add_LinearMultiplicity(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_Add_LinearMultiplicity(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AddLinearMultiplicity(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
@@ -135,7 +135,7 @@ static ExprId Rewrite_Add_LinearMultiplicity(ExprStore* store, ExprId id) {
     return store->create(OpType::Add, std::move(normalizedAddTerms), e.bitWidth).id;
 }
 
-static bool Match_Add_CommonFactor(const ExprStore* store, ExprId id) {
+static bool Match_AddCommonFactor(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Add || e.inputs.size() < 2)
@@ -163,7 +163,7 @@ static bool Match_Add_CommonFactor(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_Add_CommonFactor(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     std::unordered_map<ExprId, int> factorFrequency;
@@ -247,18 +247,18 @@ static ExprId Rewrite_Add_CommonFactor(ExprStore* store, ExprId id) {
     return store->create(OpType::Add, std::move(finalAddTerms), e.bitWidth).id;
 }
 
-Rule Get_Add_Linear_Multiplicity_Rule() {
-    return Rule{Add_Linear_Multiplicity,
-                &Match_Add_LinearMultiplicity,
-                &Rewrite_Add_LinearMultiplicity,
+Rule Get_AddLinearMultiplicity_Rule() {
+    return Rule{AddLinearMultiplicity,
+                &Match_AddLinearMultiplicity,
+                &Rewrite_AddLinearMultiplicity,
                 {Normalize::Flatten, Normalize::Order}};
 }
 
-Rule Get_Add_CommonFactor_Rule() {
-    return Rule{Add_CommonFactor,
-                &Match_Add_CommonFactor,
-                &Rewrite_Add_CommonFactor,
-                {Normalize::Flatten, Normalize::Order, Add_Linear_Multiplicity}};
+Rule Get_AddCommonFactor_Rule() {
+    return Rule{AddCommonFactor,
+                &Match_AddCommonFactor,
+                &Rewrite_AddCommonFactor,
+                {Normalize::Flatten, Normalize::Order, AddLinearMultiplicity}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic

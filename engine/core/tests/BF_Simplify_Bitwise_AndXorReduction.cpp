@@ -12,7 +12,7 @@ static RuleEngine MakeEngine() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_And_Xor_Reduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
     return engine;
 }
 
