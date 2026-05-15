@@ -133,8 +133,8 @@ static bool Match_AddCommonFactor(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_AddLinearMultiplicity(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
-    const auto originalInputs = e.inputs;
-    const auto bitWidth = e.bitWidth;
+    const std::vector<ExprId> originalInputs = e.inputs;
+    const Types::BitWidth bitWidth = e.bitWidth;
 
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
@@ -279,11 +279,13 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
     if (sharedInnerTerms.size() < 2)
         return id;
 
+    const Types::BitWidth bitWidth = e.bitWidth;
+
     const ExprId innerAdd = sharedInnerTerms.size() == 1
                                 ? sharedInnerTerms[0]
-                                : store->create(OpType::Add, std::move(sharedInnerTerms), e.bitWidth).id;
+                                : store->create(OpType::Add, std::move(sharedInnerTerms), bitWidth).id;
 
-    const ExprId factored = store->create(OpType::Mul, {common, innerAdd}, e.bitWidth).id;
+    const ExprId factored = store->create(OpType::Mul, {common, innerAdd}, bitWidth).id;
 
     std::vector<ExprId> finalAddTerms;
     finalAddTerms.reserve(untouchedTerms.size() + 1);
@@ -296,7 +298,7 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
     if (finalAddTerms.size() == 1)
         return finalAddTerms[0];
 
-    return store->create(OpType::Add, std::move(finalAddTerms), e.bitWidth).id;
+    return store->create(OpType::Add, std::move(finalAddTerms), bitWidth).id;
 }
 #pragma endregion
 

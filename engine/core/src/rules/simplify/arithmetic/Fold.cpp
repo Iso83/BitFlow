@@ -52,6 +52,8 @@ static ExprId Rewrite_AddFold(ExprStore* store, ExprId id) {
     if (!hasConst)
         return id;
 
+    const Types::BitWidth bitWidth = e.bitWidth;
+
     if (acc != 0)
         nonConst.push_back(store->createConstant(acc, e.bitWidth).id);
 
@@ -61,7 +63,7 @@ static ExprId Rewrite_AddFold(ExprStore* store, ExprId id) {
     if (nonConst.size() == 1)
         return nonConst[0];
 
-    return store->create(OpType::Add, std::move(nonConst), e.bitWidth).id;
+    return store->create(OpType::Add, std::move(nonConst), bitWidth).id;
 }
 
 Rule Get_AddFold_Rule() {

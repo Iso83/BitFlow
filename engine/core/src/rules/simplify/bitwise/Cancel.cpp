@@ -192,8 +192,10 @@ static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
             terms.push_back(exprId);
     }
 
+    const Types::BitWidth bitWidth = e.bitWidth;
+
     if (hasConst && constParity != 0)
-        terms.push_back(store->createConstant(constParity, e.bitWidth).id);
+        terms.push_back(store->createConstant(constParity, bitWidth).id);
 
     std::sort(terms.begin(), terms.end(), [&](ExprId a, ExprId b) { return CompareExprCanonical(store, a, b) < 0; });
 
@@ -202,7 +204,7 @@ static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
     if (terms.size() == 1)
         return terms[0];
 
-    return store->create(OpType::Xor, std::move(terms), e.bitWidth).id;
+    return store->create(OpType::Xor, std::move(terms), bitWidth).id;
 }
 #pragma endregion
 

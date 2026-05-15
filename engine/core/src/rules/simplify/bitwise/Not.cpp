@@ -88,18 +88,20 @@ static ExprId Rewrite_Not(ExprStore* store, ExprId id) {
 
 static ExprId Rewrite_NotPushdown(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
+    const Types::BitWidth bitWidth = e.bitWidth;
     ExprId in = e.inputs[0];
     const Expr& exprIn = (*store)[in];
 
     OpType newOp = (exprIn.op == OpType::And) ? OpType::Or : OpType::And;
 
+    const std::vector<ExprId> inputs = exprIn.inputs;
     std::vector<ExprId> newInputs;
-    newInputs.reserve(exprIn.inputs.size());
+    newInputs.reserve(inputs.size());
 
-    for (auto child : exprIn.inputs)
-        newInputs.push_back(store->create(OpType::Not, {child}, e.bitWidth).id);
+    for (auto child : inputs)
+        newInputs.push_back(store->create(OpType::Not, {child}, bitWidth).id);
 
-    return store->create(newOp, std::move(newInputs), e.bitWidth).id;
+    return store->create(newOp, std::move(newInputs), bitWidth).id;
 }
 
 static ExprId Rewrite_NotXor(ExprStore* store, ExprId id) {
@@ -113,9 +115,11 @@ static ExprId Rewrite_NotXor(ExprStore* store, ExprId id) {
     for (auto child : exprIn.inputs)
         newInputs.push_back(child);
 
-    newInputs.push_back(store->makeTrue(e.bitWidth).id);
+    const Types::BitWidth bitWidth = e.bitWidth;
 
-    return store->create(OpType::Xor, std::move(newInputs), e.bitWidth).id;
+    newInputs.push_back(store->makeTrue(bitWidth).id);
+
+    return store->create(OpType::Xor, std::move(newInputs), bitWidth).id;
 }
 #pragma endregion
 

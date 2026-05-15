@@ -34,8 +34,8 @@ static bool Match_AndXorReduction(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_AndXorReduction(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
-    const auto inputs = e.inputs;
-    const auto bitWidth = e.bitWidth;
+    const std::vector<ExprId> inputs = e.inputs;
+    const Types::BitWidth bitWidth = e.bitWidth;
 
     for (size_t i = 0; i < inputs.size(); ++i) {
         const ExprId x = inputs[i];

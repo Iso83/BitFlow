@@ -88,14 +88,14 @@ static bool Match_XorAnd(const ExprStore* store, ExprId id) {
 }
 
 static ExprId Rewrite_XorAnd(ExprStore* store, ExprId id) {
-    const Expr expr = (*store)[id];
+    const Expr e = (*store)[id];
 
     const ExprId bestFactor = FindBestCommonFactor(store, id);
 
     std::vector<ExprId> termsToFactor;
-    termsToFactor.reserve(expr.inputs.size());
+    termsToFactor.reserve(e.inputs.size());
 
-    for (auto termId : expr.inputs) {
+    for (auto termId : e.inputs) {
         const Expr term = (*store)[termId];
 
         if (term.op != OpType::And || term.inputs.size() < 2)
@@ -145,20 +145,23 @@ static ExprId Rewrite_XorAnd(ExprStore* store, ExprId id) {
 
     ExprId xorExpr{};
 
+    const Types::BitWidth bitWidth = e.bitWidth;
+    const std::vector<ExprId> inputs = e.inputs;
+
     if (xorInputs.size() == 1) {
         xorExpr = xorInputs[0];
     } else {
-        xorExpr = store->create(OpType::Xor, std::move(xorInputs), expr.bitWidth).id;
+        xorExpr = store->create(OpType::Xor, std::move(xorInputs), bitWidth).id;
     }
 
-    ExprId factored = store->create(OpType::And, {bestFactor, xorExpr}, expr.bitWidth).id;
+    ExprId factored = store->create(OpType::And, {bestFactor, xorExpr}, bitWidth).id;
 
     std::vector<ExprId> finalInputs;
-    finalInputs.reserve(expr.inputs.size() - termsToFactor.size() + 1);
+    finalInputs.reserve(inputs.size() - termsToFactor.size() + 1);
 
     finalInputs.push_back(factored);
 
-    for (auto termId : expr.inputs) {
+    for (auto termId : inputs) {
         if (std::find(termsToFactor.begin(), termsToFactor.end(), termId) == termsToFactor.end()) {
             finalInputs.push_back(termId);
         }
@@ -167,7 +170,7 @@ static ExprId Rewrite_XorAnd(ExprStore* store, ExprId id) {
     if (finalInputs.size() == 1)
         return finalInputs[0];
 
-    return store->create(OpType::Xor, std::move(finalInputs), expr.bitWidth).id;
+    return store->create(OpType::Xor, std::move(finalInputs), bitWidth).id;
 }
 
 Rule Get_XorAnd_Rule() {

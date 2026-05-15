@@ -37,7 +37,10 @@ static ExprId Rewrite_RotateModulo(ExprStore* store, ExprId id) {
     if (reduced == 0)
         return e.inputs[0];
 
-    return store->create(e.op, {e.inputs[0], store->createConstant(reduced, e.bitWidth).id}, e.bitWidth).id;
+    const OpType op = e.op;
+    const ExprId in0 = e.inputs[0];
+    const Types::BitWidth bitWidth = e.bitWidth;
+    return store->create(op, {in0, store->createConstant(reduced, bitWidth).id}, bitWidth).id;
 }
 
 Rule Get_RotateModulo_Rule() {

@@ -48,9 +48,10 @@ static ExprId Rewrite_MulCombineConstants(ExprStore* store, ExprId id) {
         nonConst.push_back(a);
     }
 
+    const Types::BitWidth bitWidth = e.bitWidth;
     if (constCount > 1) {
-        nonConst.push_back(store->createConstant(product, e.bitWidth).id);
-        return store->create(OpType::Mul, std::move(nonConst), e.bitWidth).id;
+        nonConst.push_back(store->createConstant(product, bitWidth).id);
+        return store->create(OpType::Mul, std::move(nonConst), bitWidth).id;
     }
 
     _ASSERT(false);

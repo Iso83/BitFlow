@@ -41,20 +41,22 @@ static bool Match_XorNotReduction(const ExprStore* store, ExprId id) {
 
 static ExprId Rewrite_XorNotReduction(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
+    const std::vector<ExprId> inputs = e.inputs;
+    const Types::BitWidth bitWidth = e.bitWidth;
 
-    for (size_t i = 0; i < e.inputs.size(); ++i) {
-        const ExprId notX = e.inputs[i];
+    for (size_t i = 0; i < inputs.size(); ++i) {
+        const ExprId notX = inputs[i];
         const Expr& exprNotX = (*store)[notX];
         if (exprNotX.op != OpType::Not || exprNotX.inputs.size() != 1)
             continue;
 
         ExprId x = exprNotX.inputs[0];
 
-        for (size_t j = 0; j < e.inputs.size(); ++j) {
+        for (size_t j = 0; j < inputs.size(); ++j) {
             if (i == j)
                 continue;
 
-            const Expr& other = (*store)[e.inputs[j]];
+            const Expr& other = (*store)[inputs[j]];
             if (other.op != OpType::Xor)
                 continue;
 
@@ -76,16 +78,16 @@ static ExprId Rewrite_XorNotReduction(ExprStore* store, ExprId id) {
 
             ExprId yExpr;
             if (xorRemainder.empty())
-                yExpr = store->makeFalse(e.bitWidth).id;
+                yExpr = store->makeFalse(bitWidth).id;
             else if (xorRemainder.size() == 1)
                 yExpr = xorRemainder[0];
             else
-                yExpr = store->create(OpType::Xor, std::move(xorRemainder), e.bitWidth).id;
+                yExpr = store->create(OpType::Xor, std::move(xorRemainder), bitWidth).id;
 
             std::vector<ExprId> newInputs;
-            newInputs.reserve(e.inputs.size() + 1);
+            newInputs.reserve(inputs.size() + 1);
 
-            for (size_t k = 0; k < e.inputs.size(); ++k) {
+            for (size_t k = 0; k < inputs.size(); ++k) {
                 if (k == i) {
                     newInputs.push_back(yExpr);
                     newInputs.push_back(notX);
@@ -95,16 +97,16 @@ static ExprId Rewrite_XorNotReduction(ExprStore* store, ExprId id) {
                 if (k == j)
                     continue;
 
-                newInputs.push_back(e.inputs[k]);
+                newInputs.push_back(inputs[k]);
             }
 
             if (newInputs.empty())
-                return store->makeTrue(e.bitWidth).id;
+                return store->makeTrue(bitWidth).id;
 
             if (newInputs.size() == 1)
                 return newInputs[0];
 
-            return store->create(OpType::And, std::move(newInputs), e.bitWidth).id;
+            return store->create(OpType::And, std::move(newInputs), bitWidth).id;
         }
     }
 
