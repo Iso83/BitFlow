@@ -54,7 +54,7 @@ static ExprId Rewrite_Complement(ExprStore* store, ExprId id) {
 }
 
 Rule Get_Complement_Rule() {
-    return Rule{Complement, &Match_Complement, &Rewrite_Complement, {Normalize::Flatten, Idempotent}};
+    return Rule{Complement, &Match_Complement, &Rewrite_Complement, {Idempotent}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

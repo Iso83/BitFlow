@@ -23,6 +23,8 @@ inline RuleEngine BuildNormalize() {
 inline RuleEngine BuildSimplifyBitwise() {
     RuleEngine e;
 
+    e.Merge(BuildNormalize());
+
     // NOT
     e.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
     e.AddRule(Simplify::Bitwise::Get_Not_Rule());
@@ -54,10 +56,10 @@ inline RuleEngine BuildSimplifyBitwise() {
     e.AddRule(Simplify::Bitwise::Get_Complement_Rule());
 
     // Dominance
-    e.AddRule(Simplify::Bitwise::Get_AndZeroDominance_Rule());
+    e.AddRule(Simplify::Bitwise::Get_AndZero_Rule());
     e.AddRule(Simplify::Bitwise::Get_AndOneIdentity_Rule());
     e.AddRule(Simplify::Bitwise::Get_OrOneDominance_Rule());
-    e.AddRule(Simplify::Bitwise::Get_OrZeroIdentity_Rule());
+    e.AddRule(Simplify::Bitwise::Get_OrZero_Rule());
 
     return e;
 }
@@ -67,6 +69,8 @@ inline RuleEngine BuildSimplifyBitwise() {
 // =========================================================
 inline RuleEngine BuildSimplifyArithmetic() {
     RuleEngine e;
+
+    e.Merge(BuildNormalize());
 
     e.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
     e.AddRule(Simplify::Arithmetic::Get_SubZero_Rule());
@@ -89,6 +93,8 @@ inline RuleEngine BuildSimplifyArithmetic() {
 inline RuleEngine BuildFactorizeBitwise() {
     RuleEngine e;
 
+    e.Merge(BuildNormalize());
+
     e.AddRule(Factorize::Bitwise::Get_XorAnd_Rule());
     e.AddRule(Factorize::Bitwise::Get_XorPairCancel_Rule());
     e.AddRule(Factorize::Bitwise::Get_AndAbsorb_Rule());
@@ -104,6 +110,8 @@ inline RuleEngine BuildFactorizeBitwise() {
 inline RuleEngine BuildFactorizeArithmetic() {
     RuleEngine e;
 
+    e.Merge(BuildNormalize());
+
     e.AddRule(Factorize::Arithmetic::Get_AddLinearMultiplicity_Rule());
     e.AddRule(Factorize::Arithmetic::Get_AddCommonFactor_Rule());
     e.AddRule(Factorize::Arithmetic::Get_MulCombineConstants_Rule());
@@ -117,7 +125,6 @@ inline RuleEngine BuildFactorizeArithmetic() {
 inline RuleEngine BuildSimplifyFull() {
     RuleEngine e;
 
-    e.Merge(BuildNormalize());
     e.Merge(BuildSimplifyBitwise());
     e.Merge(BuildSimplifyArithmetic());
 
@@ -127,7 +134,6 @@ inline RuleEngine BuildSimplifyFull() {
 inline RuleEngine BuildFactorizeFull() {
     RuleEngine e;
 
-    e.Merge(BuildNormalize());
     e.Merge(BuildFactorizeBitwise());
     e.Merge(BuildFactorizeArithmetic());
 
@@ -137,7 +143,6 @@ inline RuleEngine BuildFactorizeFull() {
 inline RuleEngine BuildExplore() {
     RuleEngine e;
 
-    e.Merge(BuildNormalize());
     e.Merge(BuildSimplifyBitwise());
     e.Merge(BuildSimplifyArithmetic());
     e.Merge(BuildFactorizeBitwise());

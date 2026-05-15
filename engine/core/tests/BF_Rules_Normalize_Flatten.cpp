@@ -22,7 +22,6 @@ int TestXorFlatten() {
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 3);
-
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == x; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == y; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == z; }));

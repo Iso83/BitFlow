@@ -64,7 +64,7 @@ static ExprId Rewrite_DivOne(ExprStore* store, ExprId id) {
 #pragma endregion
 
 Rule Get_MulOne_Rule() {
-    return Rule{MulOne, &Match_MulOne, &Rewrite_MulOne, {Normalize::Flatten}};
+    return Rule{MulOne, &Match_MulOne, &Rewrite_MulOne, {Normalize::Order}};
 }
 
 Rule Get_DivOne_Rule() {

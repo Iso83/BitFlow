@@ -1,4 +1,3 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
@@ -9,48 +8,46 @@ using namespace BitFlow::Core::Rules;
 
 int TestXorNotReduction_Basic() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_XorNotReduction_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_XorNotReduction_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
 
-    auto r = Rewrite(engine, (a ^ b) & ~a);
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a ^ b) & ~a));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
-
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
-
     BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == a; }));
-
     return 0;
 }
 
 int TestXorNotReduction_MultiXorArgs() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_XorNotReduction_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_XorNotReduction_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
 
-    auto r = Rewrite(engine, ~a & (a ^ b ^ c));
-    auto out = ExprOf(r);
+    BF_SAFE_REWRITE(r, Rewrite(engine, ~a & (a ^ b ^ c)));
 
-    BF_TEST(out.op == OpType::And);
-
+    BF_TEST(Op(r) == OpType::And);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == a; }));
-
     BF_TEST(AnyInput(r, [&](ExprRef in) {
         if (Op(in) != OpType::Xor)
             return false;
@@ -64,29 +61,26 @@ int TestXorNotReduction_MultiXorArgs() {
 
 int TestXorNotReduction_IntegrationScenario() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_XorNotReduction_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_XorNotReduction_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
 
-    auto r = Rewrite(engine, (a ^ b) & c & (a ^ c));
-    auto out = ExprOf(r);
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a ^ b) & c & (a ^ c)));
 
-    BF_TEST(out.op == OpType::And);
-
+    BF_TEST(Op(r) == OpType::And);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));
-
     BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == a; }));
-
     BF_TEST(!AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Xor; }));
-
     return 0;
 }
 

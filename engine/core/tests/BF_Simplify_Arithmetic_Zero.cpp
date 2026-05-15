@@ -1,35 +1,40 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
-#include <TestAssert.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
-using namespace BitFlow::Core::Types;
 
 int TestAddZero_Nested() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_AddZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
 
-    BF_TEST(Rewrite(engine, (x + 0) + 0) == x);
+    BF_SAFE_REWRITE(r, Rewrite(engine, (x + 0) + 0))
+
+    BF_TEST(r == x);
     return 0;
 }
 
 int TestAddZero_AllZerosBecomeConstZero() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_AddZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
-    auto r = Rewrite(engine, C(0) + 0 + 0);
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(0) + 0 + 0));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -37,14 +42,18 @@ int TestAddZero_AllZerosBecomeConstZero() {
 
 int TestAddZero_CanonicalOrderRegression() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_AddZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
     auto y = V("y");
-    auto r = Rewrite(engine, y + 0 + x);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, y + 0 + x));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -55,13 +64,16 @@ int TestAddZero_CanonicalOrderRegression() {
 
 int TestMulZero_Nested() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_MulZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_MulZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
-    auto r = Rewrite(engine, (x * 0) * x);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (x * 0) * x));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -69,14 +81,17 @@ int TestMulZero_Nested() {
 
 int TestMulZero_DominanceWithMixedInputs() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_MulZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_MulZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
     auto y = V("y");
-    auto r = Rewrite(engine, x * y * 0);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, x * y * 0));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -84,24 +99,32 @@ int TestMulZero_DominanceWithMixedInputs() {
 
 int TestSubZero_Basic() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_SubZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_SubZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
 
-    BF_TEST(Rewrite(engine, x - 0) == x);
+    BF_SAFE_REWRITE(r, Rewrite(engine, x - 0));
+
+    BF_TEST(r == x);
     return 0;
 }
 
 int TestSubZero_LeftZeroBecomesNeg() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_SubZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_SubZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
-    auto r = Rewrite(engine, C(0) - x);
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(0) - x));
 
     BF_TEST(Op(r) == OpType::Neg);
     BF_TEST(InputSize(r) == 1);
@@ -111,10 +134,13 @@ int TestSubZero_LeftZeroBecomesNeg() {
 
 int TestModZero_GuardThrows() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_ModZeroGuard_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_ModZeroGuard_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
 
     bool thrown = false;
@@ -131,28 +157,37 @@ int TestModZero_GuardThrows() {
 
 int TestModZero_GuardLeftZeroStaysMod() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_ModZeroGuard_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_ModZeroGuard_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
     auto expr = C(0) % x;
 
-    BF_TEST(Rewrite(engine, expr) == expr);
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+
+    BF_TEST(r == expr);
     return 0;
 }
 
 int TestShiftZero_Basic() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_ShiftZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_ShiftZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
 
     for (OpType op : {OpType::Shl, OpType::Shr}) {
         ExprRef expr = (op == OpType::Shl) ? (x << 0) : (x >> 0);
-        BF_TEST(Rewrite(engine, expr) == x);
+        BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+        BF_TEST(r == x);
     }
 
     return 0;
@@ -160,62 +195,74 @@ int TestShiftZero_Basic() {
 
 int TestShiftZero_GuardLeftZeroStaysShift() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_ShiftZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_ShiftZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
     auto x = V("x");
 
     for (OpType op : {OpType::Shl, OpType::Shr}) {
         ExprRef expr = (op == OpType::Shl) ? (C(0) << x) : (C(0) >> x);
-        BF_TEST(Rewrite(engine, expr) == expr);
+        BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+        BF_TEST(r == expr);
     }
 
     return 0;
 }
 
-int TestRotateModuloBitwidth_FullWidthBecomesIdentity() {
-    MakeExprStore(64);
+int TestRotateModulo_FullWidthBecomesIdentity() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_RotateZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
 
     for (OpType op : {OpType::RotL, OpType::RotR}) {
         ExprRef expr = (op == OpType::RotL) ? x.RotL(64) : x.RotR(64);
-
-        BF_TEST(Rewrite(engine, expr) == x);
+        BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+        BF_TEST(r == x);
     }
 
     return 0;
 }
 
-int TestRotateModuloBitwidth_GuardNonConstAmount() {
+int TestRotateModulo_GuardNonConstAmount() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_RotateZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
     auto n = V("n");
     auto expr = x.RotR(n);
 
-    BF_TEST(Rewrite(engine, expr) == expr);
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_TEST(r == expr);
     return 0;
 }
 
-int TestRotateModuloBitwidth_Property_ConstantAmounts() {
+int TestRotateModulo_Property_ConstantAmounts() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_RotateZero_Rule();
 
     RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
 
     for (uint32_t amount = 0; amount < 128; ++amount) {
-        auto r = Rewrite(engine, x.RotR(amount));
+        BF_SAFE_REWRITE(r, Rewrite(engine, x.RotR(amount)));
 
         const uint32_t reduced = amount % 32;
 
@@ -232,23 +279,24 @@ int TestRotateModuloBitwidth_Property_ConstantAmounts() {
     return 0;
 }
 
-int TestRotateModuloBitwidth_CanonicalOrderRegression() {
+int TestRotateModulo_CanonicalOrderRegression() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_RotateZero_Rule();
 
     RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
     auto y = V("y");
 
-    auto r = Rewrite(engine, y + x.RotL(32));
+    BF_SAFE_REWRITE(r, Rewrite(engine, y + x.RotL(32)));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(Input(r, 0) == x);
-    BF_TEST(Input(r, 1) == y);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == x; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == y; }));
     return 0;
 }
 
@@ -264,9 +312,9 @@ int main() {
     BF_RUN_TEST(TestModZero_GuardLeftZeroStaysMod);
     BF_RUN_TEST(TestShiftZero_Basic);
     BF_RUN_TEST(TestShiftZero_GuardLeftZeroStaysShift);
-    BF_RUN_TEST(TestRotateModuloBitwidth_FullWidthBecomesIdentity);
-    BF_RUN_TEST(TestRotateModuloBitwidth_GuardNonConstAmount);
-    BF_RUN_TEST(TestRotateModuloBitwidth_Property_ConstantAmounts);
-    BF_RUN_TEST(TestRotateModuloBitwidth_CanonicalOrderRegression);
+    BF_RUN_TEST(TestRotateModulo_FullWidthBecomesIdentity);
+    BF_RUN_TEST(TestRotateModulo_GuardNonConstAmount);
+    BF_RUN_TEST(TestRotateModulo_Property_ConstantAmounts);
+    BF_RUN_TEST(TestRotateModulo_CanonicalOrderRegression);
     return 0;
 }

@@ -1,4 +1,3 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
@@ -7,20 +6,18 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static RuleEngine MakeEngine() {
+int Test_And_ZeroDominance() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_AndZero_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_AndZeroDominance_Rule());
-    return engine;
-}
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
-int Test_And_ZeroDominance() {
-    MakeExprStore(32);
-
-    RuleEngine engine = MakeEngine();
     auto a = V("a");
-    auto r = Rewrite(engine, a & 0);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, a & 0));
 
     BF_TEST(IsFalse(r));
     return 0;
@@ -28,11 +25,17 @@ int Test_And_ZeroDominance() {
 
 int Test_And_OneIdentity_Multi() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_AndOneIdentity_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto a = V("a");
     auto b = V("b");
-    auto r = Rewrite(engine, a & True() & b);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, a & True() & b));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
@@ -43,10 +46,15 @@ int Test_And_OneIdentity_Multi() {
 
 int Test_Or_OneDominance() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_OrOneDominance_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto a = V("a");
-    auto r = Rewrite(engine, a | True());
+    BF_SAFE_REWRITE(r, Rewrite(engine, a | True()));
 
     BF_TEST(IsTrue(r));
     return 0;
@@ -54,11 +62,17 @@ int Test_Or_OneDominance() {
 
 int Test_Or_ZeroIdentity_Multi() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_OrZero_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto a = V("a");
     auto b = V("b");
-    auto r = Rewrite(engine, a | False() | b);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, a | False() | b));
 
     BF_TEST(Op(r) == OpType::Or);
     BF_TEST(InputSize(r) == 2);

@@ -1,41 +1,40 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
 using namespace BitFlow::Testing;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static RuleEngine MakeMultEngine() {
+int TestMulOne_Nested() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_MulOne_Rule();
+
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_MulOne_Rule());
-    return engine;
-}
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
-static RuleEngine MakeDivEngine() {
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_DivOne_Rule());
-    return engine;
-}
-
-int TestMulOne_Nested() {
-    MakeExprStore(32);
-
-    RuleEngine engine = MakeMultEngine();
     auto x = V("x");
 
-    BF_TEST(Rewrite(engine, (x * 1) * 1) == x);
+    BF_SAFE_REWRITE(r, Rewrite(engine, (x * 1) * 1));
+
+    BF_TEST(r == x);
     return 0;
 }
 
 int TestMulOne_AllOnesBecomeConstOne() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_MulOne_Rule();
 
-    RuleEngine engine = MakeMultEngine();
-    auto r = Rewrite(engine, C(1) * 1 * 1);
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(1) * 1 * 1));
 
     BF_TEST(EqualChunkValue(r, 1u));
     return 0;
@@ -43,11 +42,17 @@ int TestMulOne_AllOnesBecomeConstOne() {
 
 int TestMulOne_CanonicalOrderRegression() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_MulOne_Rule();
 
-    RuleEngine engine = MakeMultEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
     auto y = V("y");
-    auto r = Rewrite(engine, y * 1 * x);
+    BF_SAFE_REWRITE(r, Rewrite(engine, y * 1 * x));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -58,22 +63,36 @@ int TestMulOne_CanonicalOrderRegression() {
 
 int TestDivOne_Basic() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_DivOne_Rule();
 
-    RuleEngine engine = MakeDivEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
 
-    BF_TEST(Rewrite(engine, x / 1) == x);
+    BF_SAFE_REWRITE(r, Rewrite(engine, x / 1));
+
+    BF_TEST(r == x);
     return 0;
 }
 
 int TestDivOne_GuardLeftOneStaysDiv() {
     MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_DivOne_Rule();
 
-    RuleEngine engine = MakeDivEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
     auto expr = C(1) / x;
 
-    BF_TEST(Rewrite(engine, expr) == expr);
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+
+    BF_TEST(r == expr);
     return 0;
 }
 

@@ -4,6 +4,11 @@
 
 namespace BitFlow::Core::Expression {
 
+inline bool IsConstFalse(const ExprStore* store, Ids::ExprId id) {
+    const Expr& e = (*store)[id];
+    return e.op == OpType::Const && store->isFalse(id);
+}
+
 #pragma region Matching
 inline bool ContainsExpr(const ExprStore* store, Ids::ExprId id, Ids::ExprId target) {
     if (id == target)
@@ -28,8 +33,7 @@ template <OpType Op> inline bool Match_Zero(const ExprStore* store, Ids::ExprId 
         return false;
 
     for (auto in : e.inputs) {
-        const Expr& exprIn = (*store)[in];
-        if (exprIn.op == OpType::Const && store->isFalse(in))
+        if (IsConstFalse(store, in))
             return true;
     }
 

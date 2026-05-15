@@ -34,42 +34,48 @@ static bool Match_AndXorReduction(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_AndXorReduction(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
-    for (size_t i = 0; i < e.inputs.size(); ++i) {
-        const Expr& x = (*store)[e.inputs[i]];
+    const auto inputs = e.inputs;
+    const auto bitWidth = e.bitWidth;
 
-        for (size_t j = 0; j < e.inputs.size(); ++j) {
+    for (size_t i = 0; i < inputs.size(); ++i) {
+        const ExprId x = inputs[i];
+
+        for (size_t j = 0; j < inputs.size(); ++j) {
             if (i == j)
                 continue;
 
-            const Expr& other = (*store)[e.inputs[j]];
+            const Expr& other = (*store)[inputs[j]];
             if (other.op != OpType::Xor || other.inputs.size() != 2)
                 continue;
 
             ExprId y;
-            if (other.inputs[0] == e.inputs[i])
+
+            if (other.inputs[0] == x)
                 y = other.inputs[1];
-            else if (other.inputs[1] == e.inputs[i])
+            else if (other.inputs[1] == x)
                 y = other.inputs[0];
             else
                 continue;
 
-            std::vector<ExprId> newInputs;
-            newInputs.reserve(e.inputs.size());
+            const ExprId notY = store->create(OpType::Not, {y}, bitWidth).id;
 
-            for (size_t k = 0; k < e.inputs.size(); ++k) {
+            std::vector<ExprId> newInputs;
+            newInputs.reserve(inputs.size());
+
+            for (size_t k = 0; k < inputs.size(); ++k) {
                 if (k == j)
                     continue;
 
                 if (k == i) {
-                    newInputs.push_back(e.inputs[i]);
-                    newInputs.push_back(store->create(OpType::Not, {y}, e.bitWidth).id);
+                    newInputs.push_back(x);
+                    newInputs.push_back(notY);
                     continue;
                 }
 
-                newInputs.push_back(e.inputs[k]);
+                newInputs.push_back(inputs[k]);
             }
 
-            return store->create(OpType::And, std::move(newInputs), e.bitWidth).id;
+            return store->create(OpType::And, std::move(newInputs), bitWidth).id;
         }
     }
 
@@ -78,8 +84,7 @@ static ExprId Rewrite_AndXorReduction(ExprStore* store, ExprId id) {
 }
 
 Rule Get_AndXorReduction_Rule() {
-    return Rule{
-        AndXorReduction, &Match_AndXorReduction, &Rewrite_AndXorReduction, {Normalize::Flatten, Normalize::Order}};
+    return Rule{AndXorReduction, &Match_AndXorReduction, &Rewrite_AndXorReduction, {Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

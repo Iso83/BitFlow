@@ -8,7 +8,7 @@
 
 namespace BitFlow::Testing {
 
-#define BF_VALIDATE_ENGINE(engine, rule) BF_TEST(PrintDependencyValidation(engine.ValidateMinimalDependencies(rule)))
+#define BF_VALIDATE_ENGINE(engine, rule) BF_TEST(PrintDependencyValidation(engine.AnalyzeDependencies(rule)))
 
 inline bool PrintDependencyValidation(const Core::Rules::DependencyValidationResult& result) {
 
@@ -29,6 +29,13 @@ inline bool PrintDependencyValidation(const Core::Rules::DependencyValidationRes
         std::cout << "\nExtra:\n";
 
         for (const auto& key : result.extra)
+            std::cout << " - " << key.value << "\n";
+    }
+
+    if (!result.redundant.empty()) {
+        std::cout << "\nRedundant:\n";
+
+        for (const auto& key : result.redundant)
             std::cout << " - " << key.value << "\n";
     }
 

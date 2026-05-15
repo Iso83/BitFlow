@@ -53,6 +53,11 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core/expression BF_ExprUtils USE_CORE_PRINT)
 
 
+    bf_add_module_test(BitFlowCore core/rules BF_Rule USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core/rules BF_RuleEngine USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core/rules BF_RulePipeline USE_CORE_PRINT)
+    
+    
     bf_add_module_test(BitFlowCore core/rules/factorize/arithmetic BF_Factorize_Arithmetic_CombineConstants USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/factorize/arithmetic BF_Factorize_Arithmetic_CommonFactor USE_CORE_PRINT)
 
@@ -74,6 +79,7 @@ if(BF_BUILD_TESTS)
 
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_AndXorReduction USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Cancel USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Cancel_Integration USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Complement USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Dominance USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Fold USE_CORE_PRINT)

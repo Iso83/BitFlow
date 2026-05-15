@@ -41,19 +41,32 @@ ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id) const {
 }
 
 ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id) const {
-    Expr& e = store->get(id);
+    const Expr& e = (*store)[id];
+
+    const OpType op = e.op;
+    const Types::BitWidth bitWidth = e.bitWidth;
+    const std::vector<ExprId> inputs = e.inputs;
+
+    std::vector<ExprId> newInputs;
+    newInputs.reserve(inputs.size());
 
     bool changed = false;
 
-    for (auto& child : e.inputs) {
+    for (ExprId child : inputs) {
         ExprId newChild = ApplyRecursive(store, child);
-        if (newChild != child) {
-            child = newChild;
+
+        if (newChild != child)
             changed = true;
-        }
+
+        newInputs.push_back(newChild);
     }
 
-    return ApplyOnce(store, id);
+    ExprId current = id;
+
+    if (changed)
+        current = store->create(op, std::move(newInputs), bitWidth).id;
+
+    return ApplyOnce(store, current);
 }
 
 ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root) const {
@@ -74,13 +87,17 @@ ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root) const {
     return current;
 }
 
-void CollectDependenciesRecursive(const std::vector<Rule>& rules, const std::unordered_map<RuleKey, size_t>& indices,
-                                  const Rule& rule, std::unordered_set<RuleKey>& out) {
+static void CollectDependenciesRecursive(const std::vector<Rule>& rules,
+                                         const std::unordered_map<RuleKey, size_t>& indices, const Rule& rule,
+                                         std::unordered_set<RuleKey>& out, std::unordered_set<RuleKey>& visited) {
+
+    // prevent cycles / duplicate walks
+    if (!visited.insert(rule.key).second)
+        return;
 
     for (const auto& dep : rule.deps) {
 
-        if (!out.insert(dep).second)
-            continue;
+        out.insert(dep);
 
         const auto it = indices.find(dep);
 
@@ -89,12 +106,13 @@ void CollectDependenciesRecursive(const std::vector<Rule>& rules, const std::uno
 
         const Rule& depRule = rules[it->second];
 
-        CollectDependenciesRecursive(rules, indices, depRule, out);
+        CollectDependenciesRecursive(rules, indices, depRule, out, visited);
     }
 }
 
-DependencyValidationResult RuleEngine::ValidateMinimalDependencies(const Rule& testingRule) const {
+DependencyValidationResult RuleEngine::AnalyzeDependencies(const Rule& testingRule) const {
     DependencyValidationResult result(testingRule.key);
+    result.valid = true;
 
     std::unordered_map<RuleKey, size_t> indices;
 
@@ -103,26 +121,65 @@ DependencyValidationResult RuleEngine::ValidateMinimalDependencies(const Rule& t
     for (size_t i = 0; i < m_rules.size(); ++i)
         indices.emplace(m_rules[i].key, i);
 
+    // =====================================================
+    // Collect full recursive dependency graph
+    // =====================================================
+
     std::unordered_set<RuleKey> required;
+    std::unordered_set<RuleKey> visited;
 
-    CollectDependenciesRecursive(m_rules, indices, testingRule, required);
+    CollectDependenciesRecursive(m_rules, indices, testingRule, required, visited);
 
-    // --- missing ---
+    // =====================================================
+    // Missing
+    // =====================================================
+
     for (const auto& key : required) {
+
         if (!m_present.contains(key)) {
             result.valid = false;
             result.missing.push_back(key);
         }
     }
 
-    // --- extra ---
-    for (const auto& rule : m_rules) {
-        if (rule.key == testingRule.key)
-            continue;
+    // =====================================================
+    // Redundant direct dependencies
+    // =====================================================
 
-        if (!required.contains(rule.key)) {
-            result.valid = false;
-            result.extra.push_back(rule.key);
+    for (const auto& depA : testingRule.deps) {
+
+        for (const auto& depB : testingRule.deps) {
+
+            if (depA == depB)
+                continue;
+
+            const auto it = indices.find(depB);
+
+            if (it == indices.end())
+                continue;
+
+            const Rule& depRule = m_rules[it->second];
+
+            std::unordered_set<RuleKey> nested;
+            std::unordered_set<RuleKey> nestedVisited;
+
+            CollectDependenciesRecursive(m_rules, indices, depRule, nested, nestedVisited);
+
+            if (nested.contains(depA)) {
+
+#ifdef _DEBUG
+                std::cerr << "Redundant dependency detected\n"
+                          << " Rule      : " << testingRule.key.value << "\n"
+                          << " Dependency: " << depA.value << "\n"
+                          << " Via       : " << depB.value << "\n";
+#endif
+
+                if (std::find(result.redundant.begin(), result.redundant.end(), depA) == result.redundant.end()) {
+
+                    result.valid = false;
+                    result.redundant.push_back(depA);
+                }
+            }
         }
     }
 

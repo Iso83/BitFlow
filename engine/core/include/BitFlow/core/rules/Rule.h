@@ -119,8 +119,8 @@ Rule Get_XorAndReduction_Rule();
 inline constexpr RuleKey XorNotReduction{"CORE.SIMPLIFY.BITWISE.XOR_NOT_REDUCTION"};
 Rule Get_XorNotReduction_Rule();
 
-inline constexpr RuleKey AndZeroDominance{"CORE.SIMPLIFY.BITWISE.AND_ZERO_DOMINANCE"};
-Rule Get_AndZeroDominance_Rule();
+inline constexpr RuleKey AndZero{"CORE.SIMPLIFY.BITWISE.AND_ZERO_DOMINANCE"};
+Rule Get_AndZero_Rule();
 
 inline constexpr RuleKey AndOneIdentity{"CORE.SIMPLIFY.BITWISE.AND_ONE_IDENTITY"};
 Rule Get_AndOneIdentity_Rule();
@@ -128,8 +128,8 @@ Rule Get_AndOneIdentity_Rule();
 inline constexpr RuleKey OrOneDominance{"CORE.SIMPLIFY.BITWISE.OR_ONE_DOMINANCE"};
 Rule Get_OrOneDominance_Rule();
 
-inline constexpr RuleKey OrZeroIdentity{"CORE.SIMPLIFY.BITWISE.OR_ZERO_IDENTITY"};
-Rule Get_OrZeroIdentity_Rule();
+inline constexpr RuleKey OrZero{"CORE.SIMPLIFY.BITWISE.OR_ZERO_IDENTITY"};
+Rule Get_OrZero_Rule();
 } // namespace Simplify::Bitwise
 
 namespace Factorize::Arithmetic {

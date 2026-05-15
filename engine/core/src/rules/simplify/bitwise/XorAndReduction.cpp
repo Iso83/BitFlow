@@ -110,10 +110,7 @@ static ExprId Rewrite_XorAndReduction(ExprStore* store, ExprId id) {
 }
 
 Rule Get_XorAndReduction_Rule() {
-    return Rule{XorAndReduction,
-                &Match_XorAndReduction,
-                &Rewrite_XorAndReduction,
-                {Normalize::Flatten, Normalize::Order, AndXorReduction}};
+    return Rule{XorAndReduction, &Match_XorAndReduction, &Rewrite_XorAndReduction, {AndXorReduction}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

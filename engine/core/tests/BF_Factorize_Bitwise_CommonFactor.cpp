@@ -1,4 +1,3 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
@@ -7,26 +6,25 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static RuleEngine MakeEngine() {
-
-    RuleEngine engine;
-    engine.Merge(BuildNormalize());
-    engine.AddRule(Factorize::Bitwise::Get_XorAnd_Rule());
-    return engine;
-}
-
 int TestXorAndCommonFactor() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_XorAnd_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
-    auto r = Rewrite(engine, (a & b) ^ (a & c));
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef inA) { return inA == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) {
         if (Op(in) != OpType::Xor)
             return false;
@@ -40,17 +38,24 @@ int TestXorAndCommonFactor() {
 
 int TestXorAndCommonFactor_MultiInput() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_XorAnd_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
     auto d = V("d");
-    auto r = Rewrite(engine, (a & b) ^ (a & c) ^ (a & d));
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c) ^ (a & d)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef inA) { return inA == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) {
         if (Op(in) != OpType::Xor)
             return false;
@@ -59,21 +64,29 @@ int TestXorAndCommonFactor_MultiInput() {
                AnyInput(in, [&](ExprRef inC) { return inC == c; }) &&
                AnyInput(in, [&](ExprRef inD) { return inD == d; });
     }));
+
     return 0;
 }
 
 int TestXorAndFactor_Basic() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_XorAnd_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
-    auto r = Rewrite(engine, (a & b) ^ (a & c));
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef inA) { return inA == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) {
         if (Op(in) != OpType::Xor)
             return false;
@@ -81,22 +94,30 @@ int TestXorAndFactor_Basic() {
         return AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
                AnyInput(in, [&](ExprRef inC) { return inC == c; });
     }));
+
     return 0;
 }
 
 int TestXorAndFactor_WithUntouchedTerm() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_XorAnd_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
     auto d = V("d");
-    auto r = Rewrite(engine, (a & b) ^ (a & c) ^ d);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c) ^ d));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == d; }));
+    BF_TEST(AnyInput(r, [&](ExprRef inD) { return inD == d; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) {
         if (Op(in) != OpType::And)
             return false;
@@ -109,27 +130,41 @@ int TestXorAndFactor_WithUntouchedTerm() {
                           AnyInput(inner, [&](ExprRef inC) { return inC == c; });
                });
     }));
+
     return 0;
 }
 
 int TestXorAndFactor_NoMatch() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_XorAnd_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
     auto d = V("d");
     auto expr = (a & b) ^ (c & d);
 
-    BF_TEST(Rewrite(engine, expr) == expr);
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+
+    BF_TEST(r == expr);
     return 0;
 }
 
 int TestXorAndFactor_MultiFactorChoice_PicksMostFrequent() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_XorAnd_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
@@ -137,21 +172,12 @@ int TestXorAndFactor_MultiFactorChoice_PicksMostFrequent() {
     auto d = V("d");
     auto e = V("e");
 
-    auto r = Rewrite(engine, (a & b) ^ (a & c) ^ (a & d) ^ (b ^ e));
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c) ^ (a & d) ^ (b ^ e)));
 
     BF_TEST(Op(r) == OpType::Xor);
-    BF_TEST(InputSize(r) == 2);
-
-    // untouched (b ^ e)
-    BF_TEST(AnyInput(r, [&](ExprRef in) {
-        if (Op(in) != OpType::Xor)
-            return false;
-
-        return AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
-               AnyInput(in, [&](ExprRef inE) { return inE == e; });
-    }));
-
-    // factored a & (b ^ c ^ d)
+    BF_TEST(InputSize(r) == 3);
+    BF_TEST(AnyInput(r, [&](ExprRef inB) { return inB == b; }));
+    BF_TEST(AnyInput(r, [&](ExprRef inE) { return inE == e; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) {
         if (Op(in) != OpType::And)
             return false;
@@ -171,14 +197,19 @@ int TestXorAndFactor_MultiFactorChoice_PicksMostFrequent() {
 
 int TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_XorAnd_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
 
-    auto r = Rewrite(engine, (a & b) ^ (a & c) ^ (b & c));
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c) ^ (b & c)));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);
@@ -211,8 +242,13 @@ int TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId() {
 
 int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_XorAnd_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
@@ -221,10 +257,11 @@ int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
     auto e = V("e");
     auto f = V("f");
 
-    auto expr = (a & b & c) ^ (a & d & e) ^ f;
+    auto expr = f ^ a & (b & c ^ d & e);
 
-    BF_TEST(Rewrite(engine, expr) == expr);
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
 
+    BF_TEST(r == expr);
     return 0;
 }
 

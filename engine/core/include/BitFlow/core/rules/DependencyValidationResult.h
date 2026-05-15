@@ -12,6 +12,7 @@ struct DependencyValidationResult {
 
     std::vector<RuleKey> missing;
     std::vector<RuleKey> extra;
+    std::vector<RuleKey> redundant;
 
     explicit DependencyValidationResult(RuleKey r) : rule(r) {}
 };

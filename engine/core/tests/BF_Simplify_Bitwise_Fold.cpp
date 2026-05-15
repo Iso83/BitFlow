@@ -1,4 +1,3 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
@@ -7,27 +6,24 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static RuleEngine MakeEngine() {
-
-    RuleEngine engine;
-    engine.Merge(BuildNormalize());
-    engine.Merge(BuildSimplifyBitwise());
-    return engine;
-}
-
 int TestAndFold() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_AndFold_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
 
     {
-        auto r = Rewrite(engine, x & True() & True());
+        BF_SAFE_REWRITE(r, Rewrite(engine, x & True() & True()));
         BF_TEST(r == x);
     }
 
     {
-        auto r = Rewrite(engine, x & False() & True());
+        BF_SAFE_REWRITE(r, Rewrite(engine, x & False() & True()));
         BF_TEST(IsFalse(r));
     }
 
@@ -36,19 +32,22 @@ int TestAndFold() {
 
 int TestOrFold() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_OrFold_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
 
     {
-        auto r = Rewrite(engine, x | False() | False());
-
+        BF_SAFE_REWRITE(r, Rewrite(engine, x | False() | False()));
         BF_TEST(r == x);
     }
 
     {
-        auto r = Rewrite(engine, x | True() | False());
-
+        BF_SAFE_REWRITE(r, Rewrite(engine, x | True() | False()));
         BF_TEST(IsTrue(r));
     }
 
@@ -57,27 +56,31 @@ int TestOrFold() {
 
 int TestXorFold() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_XorFold_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto x = V("x");
-    auto r = Rewrite(engine, x ^ True() ^ True());
 
-    // true ^ true = false
-    // x ^ false = x
+    BF_SAFE_REWRITE(r, Rewrite(engine, x ^ True() ^ True()));
 
     BF_TEST(r == x);
-
     return 0;
 }
 
 int TestXorFoldAllConstZero() {
     MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_XorFold_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Bitwise::Get_XorFold_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
-    auto r = Rewrite(engine, True() ^ True());
+    BF_SAFE_REWRITE(r, Rewrite(engine, True() ^ True()));
 
     BF_TEST(IsFalse(r));
 

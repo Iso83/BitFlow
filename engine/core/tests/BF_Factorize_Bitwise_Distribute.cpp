@@ -1,4 +1,3 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
@@ -7,24 +6,20 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static RuleEngine MakeEngine() {
+int TestAndOverXor() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_Distribute_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
-    return engine;
-}
-
-int TestAndOverXor() {
-    MakeExprStore(32);
-
-    RuleEngine engine = MakeEngine();
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
 
-    auto r = Rewrite(engine, a & (b ^ c));
+    BF_SAFE_REWRITE(r, Rewrite(engine, a & (b ^ c)));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);
@@ -50,15 +45,19 @@ int TestAndOverXor() {
 
 int TestAndOverXor_Multi() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_Distribute_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
     auto d = V("d");
 
-    auto r = Rewrite(engine, a & (b ^ c ^ d));
+    BF_SAFE_REWRITE(r, Rewrite(engine, a & (b ^ c ^ d)));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 3);
@@ -92,15 +91,19 @@ int TestAndOverXor_Multi() {
 
 int TestAndMultipleOthers() {
     MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_Distribute_Rule();
 
-    RuleEngine engine = MakeEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
     auto c = V("c");
     auto d = V("d");
 
-    auto r = Rewrite(engine, a & b & (c ^ d));
+    BF_SAFE_REWRITE(r, Rewrite(engine, a & b & (c ^ d)));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);

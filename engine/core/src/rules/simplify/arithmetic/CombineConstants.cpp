@@ -32,7 +32,7 @@ static ExprId Rewrite_CombineConstants(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     const Expr& lhs = (*store)[e.inputs[0]];
-    const Expr& rhs = (*store)[e.inputs[0]];
+    const Expr& rhs = (*store)[e.inputs[1]];
 
     switch (e.op) {
     case OpType::Add:
@@ -47,14 +47,14 @@ static ExprId Rewrite_CombineConstants(ExprStore* store, ExprId id) {
             return id;
         }
 
-        return store->createConstant((lhs.knownValue / rhs.knownValue) & e.fullMask(e.bitWidth)).id;
+        return store->createConstant((lhs.knownValue / rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
     case OpType::Mod:
         if (rhs.knownValue == 0) {
             _ASSERT(false);
             return id;
         }
 
-        return store->createConstant((lhs.knownValue % rhs.knownValue) & e.fullMask(e.bitWidth)).id;
+        return store->createConstant((lhs.knownValue % rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
     default: {
         _ASSERT(false);
         return id;
@@ -63,7 +63,7 @@ static ExprId Rewrite_CombineConstants(ExprStore* store, ExprId id) {
 }
 
 Rule Get_CombineConstants_Rule() {
-    return Rule{CombineConstants, &Match_CombineConstants, &Rewrite_CombineConstants, {Normalize::Flatten}};
+    return Rule{CombineConstants, &Match_CombineConstants, &Rewrite_CombineConstants, {Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

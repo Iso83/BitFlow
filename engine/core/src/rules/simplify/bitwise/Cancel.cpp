@@ -211,11 +211,11 @@ Rule Get_AndCancel_Rule() {
 }
 
 Rule Get_OrCancel_Rule() {
-    return Rule{OrCancel, &Match_OrCancel, &Rewrite_OrCancel, {Normalize::Flatten}};
+    return Rule{OrCancel, &Match_OrCancel, &Rewrite_OrCancel, {Normalize::Order}};
 }
 
 Rule Get_XorCancel_Rule() {
-    return Rule{XorCancel, &Match_XorCancel, &Rewrite_XorCancel, {Normalize::Flatten, Normalize::Order, XorZero}};
+    return Rule{XorCancel, &Match_XorCancel, &Rewrite_XorCancel, {Normalize::Order, XorZero}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

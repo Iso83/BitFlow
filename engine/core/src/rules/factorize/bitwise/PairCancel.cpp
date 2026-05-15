@@ -133,10 +133,7 @@ static ExprId Rewrite_XorPairCancel(ExprStore* store, ExprId id) {
 }
 
 Rule Get_XorPairCancel_Rule() {
-    return Rule{XorPairCancel,
-                &Match_XorPairCancel,
-                &Rewrite_XorPairCancel,
-                {Normalize::Flatten, Simplify::Bitwise::XorCancel}};
+    return Rule{XorPairCancel, &Match_XorPairCancel, &Rewrite_XorPairCancel, {Simplify::Bitwise::XorCancel}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

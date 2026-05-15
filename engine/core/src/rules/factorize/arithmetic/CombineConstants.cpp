@@ -58,10 +58,7 @@ static ExprId Rewrite_MulCombineConstants(ExprStore* store, ExprId id) {
 }
 
 Rule Get_MulCombineConstants_Rule() {
-    return Rule{MulCombineConstants,
-                &Match_MulCombineConstants,
-                &Rewrite_MulCombineConstants,
-                {AddLinearMultiplicity, AddCommonFactor, Normalize::Flatten, Normalize::Order}};
+    return Rule{MulCombineConstants, &Match_MulCombineConstants, &Rewrite_MulCombineConstants, {AddCommonFactor}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic

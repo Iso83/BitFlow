@@ -1,4 +1,3 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
@@ -7,77 +6,53 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static RuleEngine MakeArithmeticEngine() {
+int TestFactorize_CombineNestedMulConstants() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_MulCombineConstants_Rule();
 
     RuleEngine engine;
-    engine.Merge(BuildNormalize());
-    engine.Merge(BuildSimplifyArithmetic());
-    engine.Merge(BuildFactorizeArithmetic());
-    return engine;
-}
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Factorize::Arithmetic::Get_AddLinearMultiplicity_Rule());
+    engine.AddRule(Factorize::Arithmetic::Get_AddCommonFactor_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
-static bool HasCoeffBaseMul(const ExprStore* store, ExprId id, ExprId base, uint32_t coeff) {
-    const Expr& e = (*store)[id];
-    if (e.op != OpType::Mul)
-        return false;
-
-    bool hasBase = false;
-    bool hasCoeff = false;
-    for (auto in : e.inputs) {
-        const Expr& exprIn = (*store)[in];
-        if (in == base)
-            hasBase = true;
-        if (exprIn.op == OpType::Const && exprIn.knownValue == coeff)
-            hasCoeff = true;
-    }
-
-    return hasBase && hasCoeff;
-}
-
-static bool HasCoeffBaseMul(ExprRef e, ExprRef base, uint32_t coeff) {
-    if (e.store != base.store)
-        return false;
-
-    return HasCoeffBaseMul(e.store, e.id, base.id, coeff);
-}
-
-int TestLinearMultiplicity_BasicAndMixed() {
-    MakeExprStore(32);
-
-    RuleEngine engine = MakeArithmeticEngine();
     auto a = V("a");
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(3) * (a * 2)));
 
-    BF_TEST(HasCoeffBaseMul(Rewrite(engine, a + a), a, 2u));
-    BF_TEST(HasCoeffBaseMul(Rewrite(engine, a + a + a), a, 3u));
-    BF_TEST(HasCoeffBaseMul(Rewrite(engine, a + (a * 2)), a, 3u));
-    BF_TEST(HasCoeffBaseMul(Rewrite(engine, (a * 2) + a), a, 3u));
-    BF_TEST(HasCoeffBaseMul(Rewrite(engine, (a * 2) + (a * 3)), a, 5u));
-    BF_TEST(HasCoeffBaseMul(Rewrite(engine, (a * 1) + (a * 2)), a, 3u));
+    BF_TEST(Op(r) == OpType::Mul);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 6u); }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     return 0;
 }
 
-int TestLinearMultiplicity_Guards() {
+int TestSimplify_CombineMulConstants_NonAdjacent() {
     MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_MulCombineConstants_Rule();
 
-    RuleEngine engine = MakeArithmeticEngine();
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Factorize::Arithmetic::Get_AddLinearMultiplicity_Rule());
+    engine.AddRule(Factorize::Arithmetic::Get_AddCommonFactor_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
     auto a = V("a");
-    auto b = V("b");
-    auto c = V("c");
 
-    auto expr1 = a + (a * b); // symbolic coefficient -> reject
-    BF_TEST(Rewrite(engine, expr1) == expr1);
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(2) * a * 3));
 
-    auto expr2 = (a << 1) + a; // normalize/simplify may rewrite
-    BF_TEST(Rewrite(engine, expr2) != expr2);
-
-    auto expr3 = (a * b) + (a * c); // common factor extraction
-    BF_TEST(Rewrite(engine, expr3) != expr3);
-
+    BF_TEST(Op(r) == OpType::Mul);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == a);
+    BF_TEST(EqualChunkValue(Input(r, 1), 6u));
     return 0;
 }
 
 int main() {
-    BF_RUN_TEST(TestLinearMultiplicity_BasicAndMixed);
-    BF_RUN_TEST(TestLinearMultiplicity_Guards);
+    BF_RUN_TEST(TestFactorize_CombineNestedMulConstants);
+    BF_RUN_TEST(TestSimplify_CombineMulConstants_NonAdjacent);
     return 0;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <compare>
 #include <cstdint>
 #include <type_traits>
 
@@ -31,11 +32,12 @@ template <typename Tag, typename ValueT = std::uint32_t> class StrongId {
     friend constexpr bool operator!=(StrongId lhs, StrongId rhs) {
         return !(lhs == rhs);
     }
+
+    friend constexpr auto operator<=>(StrongId lhs, StrongId rhs) = default;
 };
 } // namespace BitFlow::Core::Ids
 
 namespace std {
-
 template <typename Tag, typename ValueT> struct hash<BitFlow::Core::Ids::StrongId<Tag, ValueT>> {
     size_t operator()(const BitFlow::Core::Ids::StrongId<Tag, ValueT>& id) const noexcept {
         return std::hash<ValueT>{}(id.value());

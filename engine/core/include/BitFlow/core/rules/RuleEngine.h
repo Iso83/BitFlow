@@ -35,6 +35,10 @@ class RuleEngine {
             AddRule(rule);
     }
 
+    const std::vector<Rule>& Rules() const {
+        return m_rules;
+    }
+
     Ids::ExprId ApplyOnce(Expression::ExprStore* store, Ids::ExprId id) const;
     Ids::ExprId ApplyRecursive(Expression::ExprStore* store, Ids::ExprId id) const;
     Ids::ExprId Rewrite(Expression::ExprStore* store, Ids::ExprId root) const;
@@ -43,7 +47,7 @@ class RuleEngine {
         m_debugCallback = std::move(cb);
     }
 
-    DependencyValidationResult ValidateMinimalDependencies(const Rule& testingRule) const;
+    DependencyValidationResult AnalyzeDependencies(const Rule& testingRule) const;
 
   private:
     void ValidateDependencies() const;

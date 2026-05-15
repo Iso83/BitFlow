@@ -1,4 +1,3 @@
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
@@ -7,23 +6,18 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-static RuleEngine MakeEngine() {
+int TestAddFold() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_AddFold_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
-    engine.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
-    return engine;
-}
-
-int TestAddFold() {
-    MakeExprStore(32);
-
-    RuleEngine engine = MakeEngine();
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
 
     auto x = V("x");
 
-    auto r = Rewrite(engine, x + 10 + 20);
+    BF_SAFE_REWRITE(r, Rewrite(engine, x + 10 + 20));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);

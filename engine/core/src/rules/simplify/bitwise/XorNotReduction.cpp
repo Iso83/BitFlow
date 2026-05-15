@@ -113,10 +113,7 @@ static ExprId Rewrite_XorNotReduction(ExprStore* store, ExprId id) {
 }
 
 Rule Get_XorNotReduction_Rule() {
-    return Rule{XorNotReduction,
-                &Match_XorNotReduction,
-                &Rewrite_XorNotReduction,
-                {Normalize::Flatten, Normalize::Order, AndXorReduction}};
+    return Rule{XorNotReduction, &Match_XorNotReduction, &Rewrite_XorNotReduction, {AndXorReduction}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

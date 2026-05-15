@@ -34,10 +34,10 @@ static ExprId Rewrite_RotateModulo(ExprStore* store, ExprId id) {
 
     const Types::ExprChunk reduced = amount.knownValue % e.bitWidth;
 
-    OpType op = e.op;
-    Types::BitWidth bw = e.bitWidth;
+    if (reduced == 0)
+        return e.inputs[0];
 
-    return store->create(op, {e.inputs[0], store->createConstant(reduced, bw).id}, bw).id;
+    return store->create(e.op, {e.inputs[0], store->createConstant(reduced, e.bitWidth).id}, e.bitWidth).id;
 }
 
 Rule Get_RotateModulo_Rule() {
