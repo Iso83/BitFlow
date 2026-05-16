@@ -15,7 +15,7 @@ function(bf_add_module_test target folder name)
 
     target_include_directories(${name} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/tests/common
+        ${PROJECT_SOURCE_DIR}/tests/common
     )
 
     if(BF_TEST_USE_CORE_PRINT)
