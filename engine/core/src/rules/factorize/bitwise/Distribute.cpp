@@ -74,7 +74,7 @@ static ExprId Rewrite_Distribute_And_Over_Xor(ExprStore* store, ExprId id) {
     }
 
     if (!foundXor) {
-        _ASSERT(false);
+        BF_CORE_ASSERT(false);
         return id;
     }
 

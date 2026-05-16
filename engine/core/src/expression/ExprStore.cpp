@@ -15,7 +15,7 @@ ExprStore::ExprStore() {
 }
 
 [[nodiscard]] ExprRef ExprStore::create(OpType op, std::initializer_list<ExprId> in, Types::BitWidth bitWidth) {
-    _ASSERT(bitWidth > 0);
+    BF_CORE_ASSERT(bitWidth > 0);
 
     const auto id = createId();
     const auto index = toIndex(id);
@@ -50,7 +50,7 @@ ExprStore::ExprStore() {
 }
 
 [[nodiscard]] ExprRef ExprStore::create(OpType op, std::vector<ExprId>&& in, Types::BitWidth bitWidth) {
-    _ASSERT(bitWidth > 0);
+    BF_CORE_ASSERT(bitWidth > 0);
 
     const auto id = createId();
     const auto index = toIndex(id);

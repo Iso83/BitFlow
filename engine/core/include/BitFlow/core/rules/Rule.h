@@ -66,6 +66,9 @@ Rule Get_NegNeg_Rule();
 inline constexpr RuleKey AddFold{"CORE.SIMPLIFY.ARITHMETIC.ADD_FOLD"};
 Rule Get_AddFold_Rule();
 
+inline constexpr RuleKey SubConstFold{"CORE.SIMPLIFY.ARITHMETIC.SUB_CONSTANT_FOLD"};
+Rule Get_SubConstFold_Rule();
+
 inline constexpr RuleKey CombineConstants{"CORE.SIMPLIFY.ARITHMETIC.COMBINE_CONSTANTS"};
 Rule Get_CombineConstants_Rule();
 } // namespace Simplify::Arithmetic

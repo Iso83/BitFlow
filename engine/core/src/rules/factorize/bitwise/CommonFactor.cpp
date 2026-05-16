@@ -48,7 +48,7 @@ static ExprId FindBestCommonFactor(const ExprStore* store, ExprId id) {
     }
 
     if (!hasBest) {
-        _ASSERT(false);
+        BF_CORE_ASSERT(false);
         return id;
     }
 
@@ -110,7 +110,7 @@ static ExprId Rewrite_XorAnd(ExprStore* store, ExprId id) {
     }
 
     if (termsToFactor.size() < 2) {
-        _ASSERT(false);
+        BF_CORE_ASSERT(false);
         return id;
     }
 

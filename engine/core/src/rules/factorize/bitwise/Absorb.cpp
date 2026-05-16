@@ -55,7 +55,7 @@ static bool Match_OrAbsorb(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_AndAbsorb(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
-    _ASSERT(e.op == OpType::And);
+    BF_CORE_ASSERT(e.op == OpType::And);
 
     for (auto a : e.inputs) {
         for (auto b : e.inputs) {
@@ -69,14 +69,14 @@ static ExprId Rewrite_AndAbsorb(ExprStore* store, ExprId id) {
         }
     }
 
-    _ASSERT(false);
+    BF_CORE_ASSERT(false);
     return id;
 }
 
 static ExprId Rewrite_OrAbsorb(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
-    _ASSERT(e.op == OpType::Or);
+    BF_CORE_ASSERT(e.op == OpType::Or);
 
     for (auto a : e.inputs) {
         for (auto b : e.inputs) {
@@ -90,7 +90,7 @@ static ExprId Rewrite_OrAbsorb(ExprStore* store, ExprId id) {
         }
     }
 
-    _ASSERT(false);
+    BF_CORE_ASSERT(false);
     return id;
 }
 #pragma endregion

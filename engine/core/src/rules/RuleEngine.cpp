@@ -83,7 +83,7 @@ ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root) const {
         current = next;
     }
 
-    _ASSERT(false && "Rewrite did not converge");
+    BF_CORE_ASSERT(false && "Rewrite did not converge");
     return current;
 }
 

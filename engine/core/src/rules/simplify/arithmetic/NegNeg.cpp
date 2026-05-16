@@ -19,10 +19,10 @@ static bool Match_NegNeg(const ExprStore* store, ExprId id) {
 
 static ExprId Rewrite_NegNeg(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
-    _ASSERT(e.op == OpType::Neg && e.inputs.size() == 1);
+    BF_CORE_ASSERT(e.op == OpType::Neg && e.inputs.size() == 1);
 
     const Expr& e2 = (*store)[e.inputs[0]];
-    _ASSERT(e2.op == OpType::Neg && e2.inputs.size() == 1);
+    BF_CORE_ASSERT(e2.op == OpType::Neg && e2.inputs.size() == 1);
 
     return e2.inputs[0];
 }

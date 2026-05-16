@@ -92,7 +92,7 @@ static ExprId Rewrite_XorPairCancel(ExprStore* store, ExprId id) {
     }
 
     if (!hasCommon) {
-        _ASSERT(false);
+        BF_CORE_ASSERT(false);
         return id;
     }
 

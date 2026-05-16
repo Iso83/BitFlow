@@ -30,7 +30,7 @@ static bool Match_MulCombineConstants(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_MulCombineConstants(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
-    _ASSERT(e.op == OpType::Mul);
+    BF_CORE_ASSERT(e.op == OpType::Mul);
 
     Types::ExprChunk product = 1;
     int constCount = 0;
@@ -54,7 +54,7 @@ static ExprId Rewrite_MulCombineConstants(ExprStore* store, ExprId id) {
         return store->create(OpType::Mul, std::move(nonConst), bitWidth).id;
     }
 
-    _ASSERT(false);
+    BF_CORE_ASSERT(false);
     return id;
 }
 

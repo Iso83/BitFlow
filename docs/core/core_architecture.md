@@ -170,39 +170,58 @@ BuildFactorizeBitwise()
 ```
 
 ---
-# Rewrite Transformations
-## Normalize
+
+# BitFlow Core Rules Reference
+
+This document provides an overview of the built-in rewrite rules available in the BitFlow Core engine.
+Rules are grouped by namespace and listed in the same order as the internal rule registry.
+
+---
+
+# Normalize
+
 ### CORE.NORMALIZE.FLATTEN
-Flattens associative operations into a single node.
 
-| Step    | Expression      |
-| ------- | --------------- |
-| Input   | $$a + (b + c)$$ |
-| Rewrite | $$a + b + c$$   |
+Flattens associative expressions into a single node structure.
+This improves canonicalization and simplifies later rewrite matching.
+
+| Step    | Expression            |
+| ------- | --------------------- |
+| Input   | $$(a + b) + c$$       |
+| Rewrite | $$a + b + c$$         |
 
 ---
+
 ### CORE.NORMALIZE.ORDER
-Canonical input ordering for deterministic graph structure.
 
-| Step    | Expression     |
-| ------- | -------------- |
-| Input   | $$b \oplus a$$ |
-| Rewrite | $$a \oplus b$$ |
+Sorts commutative inputs into a deterministic order.
+This ensures structurally equivalent expressions share the same layout.
+
+| Step    | Expression            |
+| ------- | --------------------- |
+| Input   | $$b + a$$             |
+| Rewrite | $$a + b$$             |
 
 ---
-## Normalize.Bitwise
+
+# Normalize::Bitwise
+
 ### CORE.NORMALIZE.BITWISE.ROTATE_MODULO
-Normalizes rotate amounts modulo bit-width.
 
-| Step    | Expression               |
-| ------- | ------------------------ |
-| Input   | $$\mathrm{rotl}(x, 32)$$ |
-| Rewrite | $$\mathrm{rotl}(x, 0)$$  |
+Normalizes rotate amounts using the active bit width.
+
+| Step    | Expression            |
+| ------- | --------------------- |
+| Input   | $$rotl(x, 32)$$       |
+| Rewrite | $$rotl(x, 0)$$        |
 
 ---
-# Simplify
-## Simplify.Arithmetic
+
+# Simplify::Arithmetic
+
 ### CORE.SIMPLIFY.ARITHMETIC.ADD_ZERO
+
+Removes additive zero terms.
 
 | Step    | Expression |
 | ------- | ---------- |
@@ -210,23 +229,87 @@ Normalizes rotate amounts modulo bit-width.
 | Rewrite | $$x$$      |
 
 ---
+
 ### CORE.SIMPLIFY.ARITHMETIC.MUL_ONE
 
-| Step    | Expression    |
-| ------- | ------------- |
+Removes multiplicative identity terms.
+
+| Step    | Expression |
+| ------- | ---------- |
 | Input   | $$x \cdot 1$$ |
-| Rewrite | $$x$$         |
+| Rewrite | $$x$$      |
 
 ---
+
 ### CORE.SIMPLIFY.ARITHMETIC.MUL_ZERO
 
-| Step    | Expression    |
-| ------- | ------------- |
+Reduces multiplication by zero to zero.
+
+| Step    | Expression |
+| ------- | ---------- |
 | Input   | $$x \cdot 0$$ |
-| Rewrite | $$0$$         |
+| Rewrite | $$0$$      |
 
 ---
+
+### CORE.SIMPLIFY.ARITHMETIC.SUB_ZERO
+
+Removes subtraction by zero.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x - 0$$  |
+| Rewrite | $$x$$      |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.DIV_ONE
+
+Removes division by one.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x / 1$$  |
+| Rewrite | $$x$$      |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.MOD_ZERO_GUARD
+
+Protects modulo operations against invalid simplifications involving zero divisors.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \bmod 0$$ |
+| Rewrite | $$x \bmod 0$$ |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.SHIFT_ZERO
+
+Removes shifts by zero.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x << 0$$ |
+| Rewrite | $$x$$      |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.ROTATE_ZERO
+
+Removes rotations by zero.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$rotl(x, 0)$$ |
+| Rewrite | $$x$$      |
+
+---
+
 ### CORE.SIMPLIFY.ARITHMETIC.NEG_NEG
+
+Eliminates nested negation.
 
 | Step    | Expression |
 | ------- | ---------- |
@@ -234,112 +317,350 @@ Normalizes rotate amounts modulo bit-width.
 | Rewrite | $$x$$      |
 
 ---
-### CORE.SIMPLIFY.ARITHMETIC.COMBINE_CONSTANTS
-Combines constants inside arithmetic chains.
 
-| Step    | Expression    |
-| ------- | ------------- |
-| Input   | $$x + 2 + 3$$ |
-| Rewrite | $$x + 5$$     |
+### CORE.SIMPLIFY.ARITHMETIC.ADD_FOLD
+
+Combines multiple constant terms inside additive expressions into a single constant value.
+This helps normalize arithmetic expressions into a more stable canonical form.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x + 10 + 20$$ |
+| Rewrite | $$x + 30$$ |
 
 ---
-## Simplify.Bitwise
+
+### CORE.SIMPLIFY.ARITHMETIC.SUB_CONSTANT_FOLD
+
+Moves subtraction of constant values into additive constant groups.
+This simplifies arithmetic chains and improves canonicalization of affine expressions.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(x + 8) - 1$$ |
+| Rewrite | $$x + 7$$ |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.COMBINE_CONSTANTS
+
+Merges arithmetic constant chains into a reduced form.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$2 + 3 + 4$$ |
+| Rewrite | $$9$$      |
+
+---
+
+# Simplify::Bitwise
+
+### CORE.SIMPLIFY.BITWISE.XOR_ZERO
+
+Removes XOR with zero.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \oplus 0$$ |
+| Rewrite | $$x$$      |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.AND_FOLD
+
+Combines constant AND terms.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land 255 \land 15$$ |
+| Rewrite | $$x \land 15$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.OR_FOLD
+
+Combines constant OR terms.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \lor 1 \lor 2$$ |
+| Rewrite | $$x \lor 3$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.XOR_FOLD
+
+Combines constant XOR terms.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \oplus 1 \oplus 1$$ |
+| Rewrite | $$x$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.AND_CANCEL
+
+Cancels duplicate AND terms where possible.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land x$$ |
+| Rewrite | $$x$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.OR_CANCEL
+
+Cancels duplicate OR terms where possible.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \lor x$$ |
+| Rewrite | $$x$$ |
+
+---
+
 ### CORE.SIMPLIFY.BITWISE.XOR_CANCEL
 
-| Step | Expression |
-|---|---|
-| Input | $$x \oplus x$$ |
+Cancels duplicate XOR pairs.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \oplus x$$ |
 | Rewrite | $$0$$ |
 
 ---
+
+### CORE.SIMPLIFY.BITWISE.NOT
+
+Simplifies nested NOT operations.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\sim(\sim x)$$ |
+| Rewrite | $$x$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.NOT_PUSHDOWN
+
+Pushes NOT operators deeper into expressions.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\sim(x \land y)$$ |
+| Rewrite | $$\sim x \lor \sim y$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.NOT_XOR
+
+Normalizes NOT/XOR relationships.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\sim(x \oplus y)$$ |
+| Rewrite | $$(\sim x) \oplus y$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.IDEMPOTENT
+
+Simplifies idempotent bitwise patterns.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \lor x$$ |
+| Rewrite | $$x$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.AND_IDEMPOTENT
+
+Simplifies repeated AND terms.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land x$$ |
+| Rewrite | $$x$$ |
+
+---
+
 ### CORE.SIMPLIFY.BITWISE.COMPLEMENT
 
-| Step    | Expression         |
-| ------- | ------------------ |
-| Input   | $$x \land \neg x$$ |
-| Rewrite | $$0$$              |
+Simplifies complement patterns.
 
-| Step    | Expression        |
-| ------- | ----------------- |
-| Input   | $$x \lor \neg x$$ |
-| Rewrite | $$\mathrm{true}$$ |
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land \sim x$$ |
+| Rewrite | $$0$$ |
 
 ---
+
 ### CORE.SIMPLIFY.BITWISE.AND_XOR_REDUCTION
-Transforms AND/XOR reduction patterns into a reduced canonical form.
 
-| Step    | Expression               |
-| ------- | ------------------------ |
-| Input   | $$x \land (x \oplus y)$$ |
-| Rewrite | $$x \land \neg y$$       |
-#### Notes
-- Requires normalized operand ordering
-- Commonly triggered after `CORE.NORMALIZE.ORDER`
-- Reduces XOR dependency chains
+Reduces mixed AND/XOR combinations into simpler forms.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(x \oplus y) \land x$$ |
+| Rewrite | $$x \land \sim y$$ |
 
 ---
+
 ### CORE.SIMPLIFY.BITWISE.XOR_AND_REDUCTION
 
-| Step    | Expression               |
-| ------- | ------------------------ |
+Reduces XOR expressions involving masked terms.
+
+| Step    | Expression |
+| ------- | ---------- |
 | Input   | $$x \oplus (x \land y)$$ |
-| Rewrite | $$x \land \neg y$$       |
+| Rewrite | $$x \land \sim y$$ |
 
 ---
-# Factorize
-## Factorize.Arithmetic
+
+### CORE.SIMPLIFY.BITWISE.XOR_NOT_REDUCTION
+
+Simplifies XOR expressions involving complements.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \oplus \sim x$$ |
+| Rewrite | $$-1$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.AND_ZERO_DOMINANCE
+
+Applies AND dominance with zero.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land 0$$ |
+| Rewrite | $$0$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.AND_ONE_IDENTITY
+
+Removes all-ones masks where possible.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land -1$$ |
+| Rewrite | $$x$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.OR_ONE_DOMINANCE
+
+Applies OR dominance with all-ones values.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \lor -1$$ |
+| Rewrite | $$-1$$ |
+
+---
+
+### CORE.SIMPLIFY.BITWISE.OR_ZERO_IDENTITY
+
+Removes OR with zero.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \lor 0$$ |
+| Rewrite | $$x$$ |
+
+---
+
+# Factorize::Arithmetic
+
 ### CORE.FACTORIZE.ARITHMETIC.ADD_LINEAR_MULTIPLICITY
-Combines repeated additive linear terms.
 
-| Step    | Expression    |
-| ------- | ------------- |
-| Input   | $$a + a$$     |
-| Rewrite | $$a \cdot 2$$ |
+Converts repeated additive terms into multiplicative form.
 
-| Step    | Expression                    |
-| ------- | ----------------------------- |
-| Input   | $$a + a \cdot 2 + a \cdot 3$$ |
-| Rewrite | $$a \cdot 6$$                 |
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x + x + x$$ |
+| Rewrite | $$3 \cdot x$$ |
 
 ---
+
 ### CORE.FACTORIZE.ARITHMETIC.ADD_COMMON_FACTOR
-Extracts common multiplicative factors.
 
-| Step    | Expression                    |
-| ------- | ----------------------------- |
-| Input   | $$(a \cdot b) + (a \cdot c)$$ |
-| Rewrite | $$a \cdot (b + c)$$           |
+Extracts shared multiplicative factors from additions.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$a \cdot x + b \cdot x$$ |
+| Rewrite | $$(a + b) \cdot x$$ |
 
 ---
+
 ### CORE.FACTORIZE.ARITHMETIC.MUL_COMBINE_CONSTANTS
-Combines multiplicative constants.
 
-| Step    | Expression            |
-| ------- | --------------------- |
-| Input   | $$x \cdot 2 \cdot 3$$ |
-| Rewrite | $$x \cdot 6$$         |
+Combines constant multiplication chains.
 
----
-## Factorize.Bitwise
-### CORE.FACTORIZE.BITWISE.AND_ABSORB
-
-| Step    | Expression             |
-| ------- | ---------------------- |
-| Input   | $$x \land (x \lor y)$$ |
-| Rewrite | $$x$$                  |
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$2 \cdot 3 \cdot x$$ |
+| Rewrite | $$6 \cdot x$$ |
 
 ---
-### CORE.FACTORIZE.BITWISE.OR_ABSORB
 
-| Step    | Expression             |
-| ------- | ---------------------- |
-| Input   | $$x \lor (x \land y)$$ |
-| Rewrite | $$x$$                  |
+# Factorize::Bitwise
+
+### CORE.FACTORIZE.BITWISE.XOR_AND
+
+Extracts common XOR/AND structures into reduced forms.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(x \land y) \oplus (x \land z)$$ |
+| Rewrite | $$x \land (y \oplus z)$$ |
 
 ---
+
 ### CORE.FACTORIZE.BITWISE.XOR_PAIR_CANCEL
 
-| Step    | Expression                       |
-| ------- | -------------------------------- |
-| Input   | $$a \oplus b \oplus a \oplus b$$ |
-| Rewrite | $$0$$                            |
+Cancels duplicated XOR factor pairs.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \oplus y \oplus x$$ |
+| Rewrite | $$y$$ |
+
+---
+
+### CORE.FACTORIZE.BITWISE.AND_ABSORB
+
+Applies absorption rules for AND expressions.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land (x \lor y)$$ |
+| Rewrite | $$x$$ |
+
+---
+
+### CORE.FACTORIZE.BITWISE.OR_ABSORB
+
+Applies absorption rules for OR expressions.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \lor (x \land y)$$ |
+| Rewrite | $$x$$ |
+
+---
+
+### CORE.FACTORIZE.BITWISE.DISTRIBUTE
+
+Distributes bitwise expressions into expanded form.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land (y \oplus z)$$ |
+| Rewrite | $$(x \land y) \oplus (x \land z)$$ |

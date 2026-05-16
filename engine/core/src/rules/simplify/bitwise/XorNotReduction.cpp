@@ -110,7 +110,7 @@ static ExprId Rewrite_XorNotReduction(ExprStore* store, ExprId id) {
         }
     }
 
-    _ASSERT(false);
+    BF_CORE_ASSERT(false);
     return id;
 }
 

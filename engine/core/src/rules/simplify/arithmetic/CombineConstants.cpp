@@ -43,20 +43,20 @@ static ExprId Rewrite_CombineConstants(ExprStore* store, ExprId id) {
         return store->createConstant((lhs.knownValue * rhs.knownValue) & e.fullMask(e.bitWidth)).id;
     case OpType::Div:
         if (rhs.knownValue == 0) {
-            _ASSERT(false);
+            BF_CORE_ASSERT(false);
             return id;
         }
 
         return store->createConstant((lhs.knownValue / rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
     case OpType::Mod:
         if (rhs.knownValue == 0) {
-            _ASSERT(false);
+            BF_CORE_ASSERT(false);
             return id;
         }
 
         return store->createConstant((lhs.knownValue % rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
     default: {
-        _ASSERT(false);
+        BF_CORE_ASSERT(false);
         return id;
     }
     }

@@ -2,6 +2,7 @@
 
 #include <BitFlow/core/expression/Expr.h>
 #include <BitFlow/core/expression/ExprRef.h>
+#include <BitFlow/core/helper/Debug.h>
 
 namespace BitFlow::Core::Rules {
 class RuleEngine;
@@ -68,7 +69,7 @@ class ExprStore {
     [[nodiscard]] bool isFalse(Ids::ExprId id) const {
         const Expr& e = get(id);
 
-        _ASSERT(e.op == OpType::Const && e.inputs.empty());
+        BF_CORE_ASSERT(e.op == OpType::Const && e.inputs.empty());
 
         return e.knownValue == 0;
     }
@@ -78,7 +79,7 @@ class ExprStore {
     [[nodiscard]] bool isTrue(Ids::ExprId id) const {
         const Expr& e = get(id);
 
-        _ASSERT(e.op == OpType::Const && e.inputs.empty());
+        BF_CORE_ASSERT(e.op == OpType::Const && e.inputs.empty());
 
         return e.knownValue == Expr::fullMask(e.bitWidth);
     }

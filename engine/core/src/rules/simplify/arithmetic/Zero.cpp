@@ -107,7 +107,7 @@ static ExprId Rewrite_ModZeroGuard(ExprStore* store, ExprId id) {
 static ExprId Rewrite_ShiftZero(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
-    _ASSERT(store->isFalse(e.inputs[1]));
+    BF_CORE_ASSERT(store->isFalse(e.inputs[1]));
 
     return e.inputs[0];
 }
@@ -115,7 +115,7 @@ static ExprId Rewrite_ShiftZero(ExprStore* store, ExprId id) {
 static ExprId Rewrite_RotateZero(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
-    _ASSERT(store->isFalse(e.inputs[1]));
+    BF_CORE_ASSERT(store->isFalse(e.inputs[1]));
 
     return e.inputs[0];
 }

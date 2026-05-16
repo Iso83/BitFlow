@@ -105,7 +105,7 @@ static ExprId Rewrite_XorAndReduction(ExprStore* store, ExprId id) {
         }
     }
 
-    _ASSERT(false);
+    BF_CORE_ASSERT(false);
     return id;
 }
 

@@ -82,7 +82,7 @@ static ExprId Rewrite_Not(ExprStore* store, ExprId id) {
     if (exprIn.op == OpType::Const)
         return store->invertConst(in).id;
 
-    _ASSERT(false);
+    BF_CORE_ASSERT(false);
     return id;
 }
 
