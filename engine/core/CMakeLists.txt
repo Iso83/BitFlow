@@ -24,6 +24,10 @@ target_include_directories(BitFlowCore PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+set_target_properties(BitFlowCore PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
 set_property(TARGET BitFlowCore PROPERTY FOLDER "engine/core")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/BitFlow/core

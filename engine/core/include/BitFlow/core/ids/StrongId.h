@@ -2,6 +2,7 @@
 
 #include <compare>
 #include <cstdint>
+#include <functional>
 #include <type_traits>
 
 namespace BitFlow::Core::Ids {

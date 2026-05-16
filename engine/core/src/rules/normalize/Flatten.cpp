@@ -30,7 +30,7 @@ static ExprId Rewrite_Flatten(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (!Expression::IsCommutative(e.op)) {
-        _ASSERT(false);
+        BF_CORE_ASSERT(false);
         return id;
     }
 

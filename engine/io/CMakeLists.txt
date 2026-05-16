@@ -29,6 +29,10 @@ target_include_directories(BitFlowIO PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+set_target_properties(BitFlowIO PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
 set_property(TARGET BitFlowIO PROPERTY FOLDER "engine/io")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/BitFlow/io
