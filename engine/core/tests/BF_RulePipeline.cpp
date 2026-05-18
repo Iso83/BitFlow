@@ -1,7 +1,9 @@
 #include <BitFlow/core/rules/RulePipeline.h>
+#include <ExprTestUtils.h>
 #include <RuleTestHelpers.h>
 
 using namespace BitFlow::Testing;
+using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
 static bool ValidatePipelineContainsDependencies(const RuleEngine& engine, const Rule& rule) {
@@ -90,11 +92,21 @@ int TestRulePipeline_NoRedundantDirectDependencies() {
     return 0;
 }
 
+int TestRulePipeline_Explore() {
+    MakeExprStore(32);
+
+    RuleEngine engine = BuildExplore();
+    auto x = V("x");
+    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(4) * x));
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestBuildNormalize_ValidateDependencies);
     BF_RUN_TEST(TestBuildSimplifyBitwise_ValidateDependencies);
     BF_RUN_TEST(TestBuildSimplifyFull_ValidateDependencies);
     BF_RUN_TEST(TestBuildExplore_ValidateDependencies);
     BF_RUN_TEST(TestRulePipeline_NoRedundantDirectDependencies);
+    BF_RUN_TEST(TestRulePipeline_Explore);
     return 0;
 }

@@ -43,13 +43,19 @@ int TestExprLatex_Xor() {
 
 int TestExprLatex_Rotl() {
     MakeExprStore(32);
-    BF_TEST(ToLatex(Parse("rotl(a + b, 3)")) == "\\operatorname{rotl}(a + b, 3)");
+    BF_TEST(ToLatex(Parse("(a + b) <<< 3")) == "\\operatorname{rotl}(a + b, 3)");
     return 0;
 }
 
 int TestExprLatex_RoundTripStructure() {
     MakeExprStore(32);
     BF_TEST(!ToLatex(Parse("~a ^ (b + 3) << 2")).empty());
+    return 0;
+}
+
+int TestExprLatex_Pow() {
+    MakeExprStore(32);
+    BF_TEST(ToLatex(Parse("(a + b) ** (b + 3)")) == "(a + b)^{b + 3}");
     return 0;
 }
 
@@ -61,5 +67,6 @@ int main() {
     BF_RUN_TEST(TestExprLatex_Xor);
     BF_RUN_TEST(TestExprLatex_Rotl);
     BF_RUN_TEST(TestExprLatex_RoundTripStructure);
+    BF_RUN_TEST(TestExprLatex_Pow);
     return 0;
 }

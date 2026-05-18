@@ -9,7 +9,7 @@ using namespace BitFlow::Core::Expression;
 int TestEvaluate_PureConstantExpression() {
     MakeExprStore(32);
 
-    EvalResult r = EvaluateConstant(C(0xABCD1234));
+    EvalResult r = EvaluateConstant(C(0xABCD1234), bitWidth);
 
     BF_TEST(r.status == EvalStatus::Success);
     BF_TEST(EqualChunkValue(r.value, 0xABCD1234ULL));
@@ -54,6 +54,78 @@ int TestEvaluate_BitWidthVariations_8_16_32_64() {
 
     BF_TEST(r64.status == EvalStatus::Success);
     BF_TEST(EqualChunkValue(r64.value, 0xFFFF1234ULL));
+    return 0;
+}
+
+int TestPowConst() {
+    MakeExprStore(32);
+
+    auto expr = C(2).Pow(C(8));
+
+    auto r = EvaluateConstant(expr, bitWidth);
+
+    BF_TEST(r.status == EvalStatus::Success);
+    BF_TEST(EqualChunkValue(r.value, 256));
+    return 0;
+}
+
+int TestPowZeroExponent() {
+    MakeExprStore(32);
+
+    auto expr = C(7).Pow(C(0));
+
+    auto r = EvaluateConstant(expr, bitWidth);
+
+    BF_TEST(r.status == EvalStatus::Success);
+    BF_TEST(EqualChunkValue(r.value, 1));
+    return 0;
+}
+
+int TestPowOneExponent() {
+    MakeExprStore(32);
+
+    auto expr = C(9).Pow(C(1));
+
+    auto r = EvaluateConstant(expr, bitWidth);
+
+    BF_TEST(r.status == EvalStatus::Success);
+    BF_TEST(EqualChunkValue(r.value, 9));
+    return 0;
+}
+
+int TestPowZeroBase() {
+    MakeExprStore(32);
+
+    auto expr = C(0).Pow(C(5));
+
+    auto r = EvaluateConstant(expr, bitWidth);
+
+    BF_TEST(r.status == EvalStatus::Success);
+    BF_TEST(EqualChunkValue(r.value, 0));
+    return 0;
+}
+
+int TestPowBitWidthMasking() {
+    MakeExprStore(8);
+
+    auto expr = C(2).Pow(C(8));
+
+    auto r = EvaluateConstant(expr, bitWidth);
+
+    BF_TEST(r.status == EvalStatus::Success);
+    BF_TEST(EqualChunkValue(r.value, 0));
+    return 0;
+}
+
+int TestPowNestedExpression() {
+    MakeExprStore(32);
+
+    auto expr = (C(2) + C(1)).Pow(C(3));
+
+    auto r = EvaluateConstant(expr, bitWidth);
+
+    BF_TEST(r.status == EvalStatus::Success);
+    BF_TEST(EqualChunkValue(r.value, 27));
     return 0;
 }
 
@@ -190,6 +262,15 @@ int main() {
     BF_RUN_TEST(TestEvaluate_PureConstantExpression);
     BF_RUN_TEST(TestEvaluate_NestedExpression);
     BF_RUN_TEST(TestEvaluate_BitWidthVariations_8_16_32_64);
+
+    BF_RUN_TEST(TestPowConst);
+    BF_RUN_TEST(TestPowZeroExponent);
+    BF_RUN_TEST(TestPowOneExponent);
+    BF_RUN_TEST(TestPowZeroBase);
+    BF_RUN_TEST(TestPowBitWidthMasking);
+    BF_RUN_TEST(TestPowNestedExpression);
+    BF_RUN_TEST(TestPowNestedExpression);
+
     BF_RUN_TEST(TestEvaluate_ShiftRotateEdgeCases);
     BF_RUN_TEST(TestEvaluate_DivisionModuloByZero);
     BF_RUN_TEST(TestEvaluate_NotConstantCases);

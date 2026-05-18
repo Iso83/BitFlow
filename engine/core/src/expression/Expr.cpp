@@ -1,10 +1,9 @@
 #pragma once
 
 #include <BitFlow/core/expression/Expr.h>
-#include <BitFlow/core/expression/ExprStore.h>
+#include <BitFlow/core/helper/Exception.h>
 #include <iostream>
 #include <sstream>
-#include <stdexcept>
 
 namespace BitFlow::Core::Expression {
 
@@ -14,7 +13,7 @@ void ExprDebug::SanityCheck() const {
     if (!m_store) {
         std::cerr << "[DebugExpr] sanity check failed: null store" << std::endl;
 
-        throw std::runtime_error("DebugExpr sanity check failed: null store");
+        BF_THROW("DebugExpr sanity check failed: null store");
     }
 
     if (m_store->m_generation != m_generation) {
@@ -27,7 +26,7 @@ void ExprDebug::SanityCheck() const {
 
         std::cerr << ss.str() << std::endl;
 
-        throw std::runtime_error(ss.str());
+        BF_THROW(ss.str());
     }
 }
 

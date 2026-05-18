@@ -1,4 +1,5 @@
 #include <BitFlow/core/expression/OpInfo.h>
+#include <BitFlow/core/helper/Exception.h>
 
 namespace BitFlow::Core::Expression {
 
@@ -7,6 +8,8 @@ static constexpr OpInfo g_not{90, Associativity::Right, "~", false, true};
 static constexpr OpInfo g_neg{90, Associativity::Right, "-", false, true};
 
 static constexpr OpInfo g_mul{80, Associativity::Left, "*", true, false};
+
+static constexpr OpInfo g_pow{85, Associativity::Right, "**", true, false};
 
 static constexpr OpInfo g_div{80, Associativity::Left, "/", true, false};
 
@@ -19,6 +22,10 @@ static constexpr OpInfo g_sub{70, Associativity::Left, "-", true, false};
 static constexpr OpInfo g_shl{60, Associativity::Left, "<<", true, false};
 
 static constexpr OpInfo g_shr{60, Associativity::Left, ">>", true, false};
+
+static constexpr OpInfo g_rotl(60, Associativity::Left, "<<<", true, false);
+
+static constexpr OpInfo g_rotr(60, Associativity::Left, ">>>", true, false);
 
 static constexpr OpInfo g_and{50, Associativity::Left, "&", true, false};
 
@@ -43,6 +50,9 @@ const OpInfo* GetOpInfo(OpType op) {
     case OpType::Mod:
         return &g_mod;
 
+    case OpType::Pow:
+        return &g_pow;
+
     case OpType::Add:
         return &g_add;
 
@@ -55,6 +65,12 @@ const OpInfo* GetOpInfo(OpType op) {
     case OpType::Shr:
         return &g_shr;
 
+    case OpType::RotL:
+        return &g_rotl;
+
+    case OpType::RotR:
+        return &g_rotr;
+
     case OpType::And:
         return &g_and;
 
@@ -65,11 +81,13 @@ const OpInfo* GetOpInfo(OpType op) {
         return &g_or;
 
     default:
-        return nullptr;
+        BF_CORE_THROW("Missing OpInfo for OpType");
     }
 }
 
 bool RequiresParentheses(OpType parent, OpType child, bool isRightChild) {
+    if (child == OpType::Var || child == OpType::Const)
+        return false;
 
     const OpInfo* p = GetOpInfo(parent);
     const OpInfo* c = GetOpInfo(child);

@@ -108,12 +108,12 @@ static bool Match_AddCommonFactor(const ExprStore* store, ExprId id) {
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {
         const Expr& lhs = (*store)[e.inputs[i]];
-        if (lhs.op != OpType::Mul || lhs.inputs.size() != 2)
+        if (lhs.op != OpType::Mul || lhs.inputs.size() < 2)
             continue;
 
         for (size_t j = i + 1; j < e.inputs.size(); ++j) {
             const Expr& rhs = (*store)[e.inputs[j]];
-            if (rhs.op != OpType::Mul || rhs.inputs.size() != 2)
+            if (rhs.op != OpType::Mul || rhs.inputs.size() < 2)
                 continue;
 
             for (ExprId l : lhs.inputs) {
@@ -221,11 +221,11 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
     for (ExprId termId : e.inputs) {
         const Expr& term = (*store)[termId];
 
-        if (term.op != OpType::Mul || term.inputs.size() != 2)
+        if (term.op != OpType::Mul || term.inputs.size() < 2)
             continue;
 
-        factorFrequency[term.inputs[0]]++;
-        factorFrequency[term.inputs[1]]++;
+        for (ExprId factorId : term.inputs)
+            factorFrequency[factorId]++;
     }
 
     ExprId common;
@@ -235,7 +235,7 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
     for (ExprId termId : e.inputs) {
         const Expr& term = (*store)[termId];
 
-        if (term.op != OpType::Mul || term.inputs.size() != 2)
+        if (term.op != OpType::Mul || term.inputs.size() < 2)
             continue;
 
         for (ExprId factorId : term.inputs) {
@@ -261,14 +261,26 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
     for (ExprId termId : e.inputs) {
         const Expr& term = (*store)[termId];
 
-        if (term.op == OpType::Mul && term.inputs.size() == 2) {
-            if (term.inputs[0] == common) {
-                sharedInnerTerms.push_back(term.inputs[1]);
-                continue;
+        if (term.op == OpType::Mul && term.inputs.size() >= 2) {
+            bool hasCommonFactor = false;
+            std::vector<ExprId> remainingFactors;
+            remainingFactors.reserve(term.inputs.size());
+
+            for (ExprId factorId : term.inputs) {
+                if (!hasCommonFactor && factorId == common) {
+                    hasCommonFactor = true;
+                    continue;
+                }
+                remainingFactors.push_back(factorId);
             }
 
-            if (term.inputs[1] == common) {
-                sharedInnerTerms.push_back(term.inputs[0]);
+            if (hasCommonFactor) {
+                if (remainingFactors.empty())
+                    sharedInnerTerms.push_back(store->createConstant(1, e.bitWidth).id);
+                else if (remainingFactors.size() == 1)
+                    sharedInnerTerms.push_back(remainingFactors[0]);
+                else
+                    sharedInnerTerms.push_back(store->create(OpType::Mul, std::move(remainingFactors), e.bitWidth).id);
                 continue;
             }
         }

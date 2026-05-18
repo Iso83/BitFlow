@@ -94,7 +94,7 @@ int TestExprParser_ParsesUnaryAndBinaryMinus() {
 int TestExprParser_ParsesRotrCall() {
     MakeExprStore(32);
 
-    auto root = Parse("rotr(a, 3)").root;
+    auto root = Parse("a >>> 3").root;
 
     BF_TEST(Op(root) == OpType::RotR);
     BF_TEST(InputSize(root) == 2);
@@ -106,12 +106,28 @@ int TestExprParser_ParsesRotrCall() {
 int TestExprParser_ParsesRotlCall() {
     MakeExprStore(32);
 
-    auto root = Parse("rotl(x + y, 5)").root;
+    auto root = Parse("(x + y) <<< 5").root;
 
     BF_TEST(Op(root) == OpType::RotL);
     BF_TEST(InputSize(root) == 2);
     BF_TEST(Op(Input(root, 0)) == OpType::Add);
     BF_TEST(Op(Input(root, 1)) == OpType::Const);
+    return 0;
+}
+
+int TestExprParser_ParsesPowCall() {
+    MakeExprStore(32);
+
+    auto root = Parse("a ** 7").root;
+
+    BF_TEST(Op(root) == OpType::Pow);
+    BF_TEST(InputSize(root) == 2);
+
+    BF_TEST(Op(Input(root, 0)) == OpType::Var);
+
+    auto rhs = Input(root, 1);
+    BF_TEST(Op(rhs) == OpType::Const);
+    BF_TEST(EqualChunkValue(rhs, 7));
     return 0;
 }
 
@@ -169,6 +185,7 @@ int main() {
     BF_RUN_TEST(TestExprParser_ParsesUnaryAndBinaryMinus);
     BF_RUN_TEST(TestExprParser_ParsesRotrCall);
     BF_RUN_TEST(TestExprParser_ParsesRotlCall);
+    BF_RUN_TEST(TestExprParser_ParsesPowCall);
     BF_RUN_TEST(TestExprParser_MixedExpressionShape);
     BF_RUN_TEST(TestExprParser_ShiftOperators);
     BF_RUN_TEST(TestExprParser_RoundTrip_ToString);

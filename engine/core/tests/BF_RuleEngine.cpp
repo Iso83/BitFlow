@@ -98,12 +98,14 @@ int TestDebugCallback() {
     BF_VALIDATE_ENGINE(engine, Simplify::Bitwise::Get_XorCancel_Rule());
 
     bool called = false;
+    bool validCallback = true;
 
     engine.SetDebugCallback([&](auto before, auto after, auto key) {
         called = true;
-
-        BF_TEST(before != after);
-        BF_TEST(key == Simplify::Bitwise::XorCancel);
+        if (before == after)
+            validCallback = false;
+        if (!(key == Simplify::Bitwise::XorCancel))
+            validCallback = false;
     });
 
     auto x = V("x");
@@ -111,6 +113,7 @@ int TestDebugCallback() {
     BF_SAFE_REWRITE(r, Rewrite(engine, x ^ x));
 
     BF_TEST(called);
+    BF_TEST(validCallback);
     BF_TEST(IsFalse(r));
 
     return 0;

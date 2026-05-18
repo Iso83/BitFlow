@@ -57,6 +57,10 @@ ExprRef ExprRef::operator%(ExprRef rhs) const {
     return store->create(OpType::Mod, {id, rhs.id}, std::max(BitWidth(), rhs.BitWidth()));
 }
 
+ExprRef ExprRef::Pow(ExprRef exp) const {
+    return store->create(OpType::Pow, {id, exp.id}, BitWidth());
+}
+
 ExprRef ExprRef::operator<<(ExprRef rhs) const {
     return store->create(OpType::Shl, {id, rhs.id}, BitWidth());
 }
@@ -103,6 +107,10 @@ ExprRef ExprRef::operator/(Types::ExprChunk rhs) const {
 
 ExprRef ExprRef::operator%(Types::ExprChunk rhs) const {
     return *this % Const(rhs, BitWidth());
+}
+
+ExprRef ExprRef::Pow(Types::ExprChunk exp) const {
+    return Pow(Const(exp, BitWidth()));
 }
 
 ExprRef ExprRef::operator<<(Types::ExprChunk rhs) const {

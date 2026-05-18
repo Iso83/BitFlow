@@ -1,6 +1,7 @@
 #include <BitFlow/core/bitvector/BitVector.h>
+#include <BitFlow/core/helper/Debug.h>
+#include <BitFlow/core/helper/Exception.h>
 #include <algorithm>
-#include <stdexcept>
 
 namespace BitFlow::Core::BitVector {
 
@@ -16,7 +17,7 @@ static Types::ExprChunk MaskChunk(Types::BitWidth bits) {
 
 static void EnsureSameBitWidth(const bf_uint& lhs, const bf_uint& rhs) {
     if (lhs.BitWidth() != rhs.BitWidth())
-        throw std::invalid_argument("bf_uint width mismatch");
+        BF_CORE_THROW_INVALID_ARGS("bf_uint width mismatch");
 }
 
 bf_uint::bf_uint(Types::BitWidth bw) : m_bw(bw) {
@@ -292,6 +293,29 @@ bf_uint bf_uint::operator%(const bf_uint& rhs) const {
     bf_uint rem = (*this) - prod;
     rem.Normalize();
     return rem;
+}
+
+bf_uint bf_uint::Pow(const Types::ExprChunk& rhs) const {
+    bf_uint result(1, m_bw);
+
+    if (rhs == 0)
+        return result;
+
+    bf_uint base = *this;
+    Types::ExprChunk exp = rhs;
+
+    while (exp > 0) {
+        if (exp & 1)
+            result *= base;
+
+        exp >>= 1;
+
+        if (exp != 0)
+            base *= base;
+    }
+
+    result.Normalize();
+    return result;
 }
 #pragma endregion
 

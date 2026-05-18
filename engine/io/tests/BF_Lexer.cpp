@@ -9,15 +9,15 @@ using BitFlow::IO::Lexer::Token;
 using BitFlow::IO::Lexer::TokenKind;
 
 int TestLexer_AllTokenTypes() {
-    const std::string input = "foo 12 0x2A ( ) , + - * / % & | ^ ~";
+    const std::string input = "foo 12 0x2A ( ) , + - * / % & | ^ ~ ** <<< >>>";
     const std::vector<Token> tokens = BitFlow::IO::Lexer::Tokenize(input);
 
     const std::vector<TokenKind> expected = {
         TokenKind::Identifier, TokenKind::DecimalLiteral, TokenKind::HexLiteral, TokenKind::LeftParen,
         TokenKind::RightParen, TokenKind::Comma,          TokenKind::Plus,       TokenKind::Minus,
         TokenKind::Star,       TokenKind::Slash,          TokenKind::Percent,    TokenKind::Ampersand,
-        TokenKind::Pipe,       TokenKind::Caret,          TokenKind::Tilde,      TokenKind::EndOfInput,
-    };
+        TokenKind::Pipe,       TokenKind::Caret,          TokenKind::Tilde,      TokenKind::Pow,
+        TokenKind::RotLeft,    TokenKind::RotRight,       TokenKind::EndOfInput};
 
     BF_TEST(tokens.size() == expected.size());
     for (std::size_t i = 0; i < expected.size(); ++i)

@@ -1,11 +1,11 @@
 #include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/OpInfo.h>
 #include <BitFlow/io/ExprParser.h>
+#include <BitFlow/io/helper/Exception.h>
 #include <BitFlow/io/lexer/Lexer.h>
 #include <BitFlow/io/lexer/Token.h>
 #include <BitFlow/io/lexer/TokenKind.h>
 #include <cstdint>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -17,8 +17,8 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::IO::Lexer;
 
-static std::runtime_error ParseErrorAt(const std::string& message, const Token& token) {
-    return std::runtime_error(message + " at position " + std::to_string(token.span.begin));
+static IOException ParseErrorAt(const std::string& message, const Token& token) {
+    return IOException(message + " at position " + std::to_string(token.span.begin));
 }
 
 class PrattParser {
@@ -36,7 +36,7 @@ class PrattParser {
 
     ExprId ParseExpressionRoot() {
         if (m_tokens.empty())
-            throw std::runtime_error("Internal parser error: empty token stream");
+            BF_IO_THROW("Internal parser error: empty token stream");
 
         const Token& first = Current();
         if (first.kind == TokenKind::Error)
@@ -106,6 +106,12 @@ class PrattParser {
         case TokenKind::ShiftRight:
             return OpType::Shr;
 
+        case TokenKind::RotLeft:
+            return OpType::RotL;
+
+        case TokenKind::RotRight:
+            return OpType::RotR;
+
         case TokenKind::Ampersand:
             return OpType::And;
 
@@ -115,8 +121,11 @@ class PrattParser {
         case TokenKind::Pipe:
             return OpType::Or;
 
+        case TokenKind::Pow:
+            return OpType::Pow;
+
         default:
-            throw std::runtime_error("TokenToOp: unsupported TokenKind");
+            BF_IO_THROW("TokenToOp: unsupported TokenKind");
         }
     }
 
@@ -147,9 +156,12 @@ class PrattParser {
             case TokenKind::Minus:
             case TokenKind::ShiftLeft:
             case TokenKind::ShiftRight:
+            case TokenKind::RotLeft:
+            case TokenKind::RotRight:
             case TokenKind::Ampersand:
             case TokenKind::Caret:
             case TokenKind::Pipe:
+            case TokenKind::Pow:
                 break;
 
             default:
@@ -193,16 +205,16 @@ class PrattParser {
             const OpInfo* info = GetOpInfo(OpType::Not);
 
             if (!info)
-                throw std::runtime_error("Missing OpInfo for Not");
+                BF_IO_THROW("Missing OpInfo for Not");
 
             ExprId inner = ParseExpression(info->precedence);
             return m_store->create(OpType::Not, {inner}).id;
         }
         case TokenKind::Minus: {
-            const OpInfo* info = GetOpInfo(OpType::Not);
+            const OpInfo* info = GetOpInfo(OpType::Neg);
 
             if (!info)
-                throw std::runtime_error("Missing OpInfo for Not");
+                BF_IO_THROW("Missing OpInfo for Not");
 
             ExprId inner = ParseExpression(info->precedence);
             return m_store->create(OpType::Neg, {inner}).id;
@@ -241,16 +253,10 @@ class PrattParser {
         if (!Consume(TokenKind::RightParen))
             throw ParseErrorAt("Expected ')' after function call arguments", Current());
 
-        if (identifier.text == "rotl") {
+        if (identifier.text == "pow") {
             if (args.size() != 2)
-                throw ParseErrorAt("Function rotl expects exactly 2 arguments", identifier);
-            return m_store->create(OpType::RotL, {args[0], args[1]}).id;
-        }
-
-        if (identifier.text == "rotr") {
-            if (args.size() != 2)
-                throw ParseErrorAt("Function rotr expects exactly 2 arguments", identifier);
-            return m_store->create(OpType::RotR, {args[0], args[1]}).id;
+                throw ParseErrorAt("Function pow expects exactly 2 arguments", identifier);
+            return m_store->create(OpType::Pow, {args[0], args[1]}).id;
         }
 
         throw ParseErrorAt("Unknown function: " + identifier.text, identifier);

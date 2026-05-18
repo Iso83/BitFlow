@@ -31,6 +31,8 @@ struct ExprRef {
     [[nodiscard]] ExprRef operator/(ExprRef rhs) const;
     [[nodiscard]] ExprRef operator%(ExprRef rhs) const;
 
+    [[nodiscard]] ExprRef Pow(ExprRef rhs) const;
+
     [[nodiscard]] ExprRef operator<<(ExprRef rhs) const;
     [[nodiscard]] ExprRef operator>>(ExprRef rhs) const;
     [[nodiscard]] ExprRef RotL(ExprRef rhs) const;
@@ -45,6 +47,8 @@ struct ExprRef {
     [[nodiscard]] ExprRef operator*(Types::ExprChunk rhs) const;
     [[nodiscard]] ExprRef operator/(Types::ExprChunk rhs) const;
     [[nodiscard]] ExprRef operator%(Types::ExprChunk rhs) const;
+
+    [[nodiscard]] ExprRef Pow(Types::ExprChunk exp) const;
 
     [[nodiscard]] ExprRef operator<<(Types::ExprChunk rhs) const;
     [[nodiscard]] ExprRef operator>>(Types::ExprChunk rhs) const;

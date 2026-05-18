@@ -1,8 +1,8 @@
 #pragma once
 
+#include <BitFlow/core/helper/Exception.h>
 #include <BitFlow/core/rules/RuleKey.h>
 #include <iostream>
-#include <stdexcept>
 #include <string>
 
 namespace BitFlow::Core::Rules {
@@ -17,7 +17,7 @@ inline std::string ToString(RuleKey key) {
     std::cerr << full << std::endl;
 #endif
 
-    throw std::runtime_error(full);
+    BF_CORE_THROW(full);
 }
 
 } // namespace BitFlow::Core::Rules

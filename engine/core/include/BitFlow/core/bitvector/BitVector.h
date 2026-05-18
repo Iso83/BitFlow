@@ -61,6 +61,7 @@ class bf_uint {
     bf_uint operator*(const bf_uint& rhs) const;
     bf_uint operator/(const bf_uint& rhs) const;
     bf_uint operator%(const bf_uint& rhs) const;
+    bf_uint Pow(const Types::ExprChunk& rhs) const;
 
     // compound arithmetic
     bf_uint& operator+=(const bf_uint& rhs);

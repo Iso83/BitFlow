@@ -21,6 +21,7 @@ enum class OpType {
     Mul,
     Div,
     Mod,
+    Pow,
 
     // --- Shifts ---
     Shl,

@@ -342,6 +342,66 @@ This simplifies arithmetic chains and improves canonicalization of affine expres
 
 ---
 
+### CORE.SIMPLIFY.ARITHMETIC.SUB_ADD_SELF_CANCEL
+
+Removes a matching term from an additive expression when it is immediately subtracted afterwards.
+This simplifies expressions by eliminating redundant additive/subtractive pairs.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(a + b + c) - b$$ |
+| Rewrite | $$a + c$$ |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.SUB_MUL_LINEAR_CANCEL
+
+Reduces multiplicative linear terms when one matching base term is subtracted.
+The rule decreases the multiplicative coefficient by one while preserving remaining factors.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \cdot 5 - x$$ |
+| Rewrite | $$x \cdot 4$$ |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.MUL_DIV_CONSTANT_REDUCTION
+
+Reduces multiplicative constant factors before division when the division can be resolved exactly.
+This simplifies arithmetic expressions by folding divisible constant coefficients inside multiplication chains.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \cdot 12 \div 3$$ |
+| Rewrite | $$x \cdot 4$$ |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.MUL_TO_POW
+
+Rewrites repeated multiplicative factors into power expressions.
+This reduces duplicated multiplication chains into a more compact exponential form.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \cdot x$$ |
+| Rewrite | $$x^2$$ |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.COMBINE_MUL_POW
+
+Combines multiplicative power expressions with matching bases by adding their exponents.
+This normalizes exponential multiplication chains into a single power expression.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \cdot x^2$$ |
+| Rewrite | $$x^3$$ |
+
+---
+
 ### CORE.SIMPLIFY.ARITHMETIC.COMBINE_CONSTANTS
 
 Merges arithmetic constant chains into a reduced form.

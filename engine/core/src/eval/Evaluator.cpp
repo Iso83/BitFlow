@@ -128,6 +128,21 @@ EvalResult EvaluateConstant(const ExprStore* store, const Expr* node, Types::Bit
         return MakeSuccess(std::move(acc));
     }
 
+    case OpType::Pow: {
+        if (node->inputs.size() != 2)
+            return Make(EvalStatus::UnsupportedOp, bitWidth);
+
+        auto a = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
+        if (a.status != EvalStatus::Success)
+            return a;
+
+        auto b = EvaluateConstant(store, &(*store)[node->inputs[1]], bitWidth);
+        if (b.status != EvalStatus::Success)
+            return b;
+
+        return MakeSuccess(a.value.Pow(b.value.ToChunk()));
+    }
+
     case OpType::Shl:
     case OpType::Shr:
     case OpType::RotL:

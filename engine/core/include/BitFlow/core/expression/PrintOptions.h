@@ -3,7 +3,7 @@
 namespace BitFlow::Core::Expression {
 
 struct PrintOptions {
-    bool rotAsFunction = true;
+    bool powAsFunction = true;
 
     // --- structure ---
     bool explicitGroups = false;
@@ -15,8 +15,8 @@ struct PrintOptions {
     bool showOpTypes = false;
 
     // --- fluent helpers ---
-    PrintOptions& RotAsFunction(bool v = true) {
-        rotAsFunction = v;
+    PrintOptions& PowAsFunction(bool v = true) {
+        powAsFunction = v;
         return *this;
     }
 

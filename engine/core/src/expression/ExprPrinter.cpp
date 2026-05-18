@@ -33,6 +33,9 @@ static const char* OpTypeName(OpType op) {
     case OpType::Mod:
         return "Mod";
 
+    case OpType::Pow:
+        return "Pow";
+
     case OpType::Shl:
         return "Shl";
     case OpType::Shr:
@@ -198,9 +201,9 @@ static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& ou
         return;
     }
 
-    if (e.op == OpType::RotL || e.op == OpType::RotR) {
-        if (options.rotAsFunction) {
-            out << (e.op == OpType::RotL ? "rotl(" : "rotr(");
+    if (e.op == OpType::Pow) {
+        if (options.powAsFunction) {
+            out << "pow(";
 
             Print(store, e.inputs[0], out, names, options, 0, false, OpType::Var);
 
@@ -215,39 +218,11 @@ static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& ou
 
             return;
         }
-
-        const int currentPrecedence = 40;
-
-        bool wrapSelf = options.explicitGroups;
-
-        if (!wrapSelf) {
-            if (currentPrecedence < parentPrecedence)
-                wrapSelf = true;
-            else if (isRightChild && currentPrecedence == parentPrecedence)
-                wrapSelf = NeedsParensForRightChild(parentOp, e.op);
-        }
-
-        if (wrapSelf)
-            out << "(";
-
-        Print(store, e.inputs[0], out, names, options, currentPrecedence, false, e.op);
-
-        out << (e.op == OpType::RotL ? " <<< " : " >>> ");
-
-        Print(store, e.inputs[1], out, names, options, currentPrecedence, true, e.op);
-
-        if (wrapSelf)
-            out << ")";
-
-        if (options.showBitWidth)
-            out << ":" << e.bitWidth;
-
-        return;
     }
 
     const OpInfo* info = GetOpInfo(e.op);
 
-    const int currentPrecedence = info ? info->precedence : 0;
+    const int currentPrecedence = info->precedence;
 
     bool wrapSelf = options.explicitGroups;
 

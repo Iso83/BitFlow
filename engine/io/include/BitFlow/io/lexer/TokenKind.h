@@ -27,6 +27,11 @@ enum class TokenKind {
 
     ShiftLeft,  // <<
     ShiftRight, // >>
+
+    RotLeft,  // <<<
+    RotRight, // >>>
+
+    Pow // **
 };
 
 } // namespace BitFlow::IO::Lexer

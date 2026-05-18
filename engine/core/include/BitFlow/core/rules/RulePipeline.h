@@ -83,6 +83,11 @@ inline RuleEngine BuildSimplifyArithmetic() {
     e.AddRule(Simplify::Arithmetic::Get_NegNeg_Rule());
     e.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
     e.AddRule(Simplify::Arithmetic::Get_SubConstFold_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_SubAddSelfCancel_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_SubMulLinearCancel_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_MulDivConstantReduction_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_CombineMulPow_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_MulToPow_Rule());
     e.AddRule(Simplify::Arithmetic::Get_CombineConstants_Rule());
 
     return e;

@@ -1,8 +1,8 @@
 #include <BitFlow/core/expression/Expr.h>
 #include <BitFlow/core/expression/OpInfo.h>
 #include <BitFlow/io/ExprLatex.h>
-#include <BitFlow/io/helper/Exception.h>
 #include <sstream>
+#include <BitFlow/io/helper/Exception.h>
 
 namespace BitFlow::IO {
 
@@ -59,16 +59,68 @@ static bool NeedsParens(const ExprStore* store, ExprId parent, ExprId child, boo
     return RequiresParentheses(p.op, c.op, isRightChild);
 }
 
+static void WriteLatex(std::ostringstream& out, const ExprStore* store, ExprId id, const ExprNameMap* names);
+
+static void WriteUnary(std::ostringstream& out, const ExprStore* store, ExprId parent, ExprId inner,
+                       const ExprNameMap* names, const std::string& symbol, bool trailingSpace = false) {
+
+    out << symbol;
+
+    if (trailingSpace)
+        out << " ";
+
+    const bool parens = NeedsParens(store, parent, inner, false);
+
+    if (parens)
+        out << "(";
+
+    WriteLatex(out, store, inner, names);
+
+    if (parens)
+        out << ")";
+}
+
+static void WriteBinaryFunction(std::ostringstream& out, const ExprStore* store, ExprId parent, ExprId lhs, ExprId rhs,
+                                const ExprNameMap* names, const std::string& name) {
+
+    out << name << "(";
+
+    bool lhsParens = NeedsParens(store, parent, lhs, false);
+
+    if (lhsParens)
+        out << "(";
+
+    WriteLatex(out, store, lhs, names);
+
+    if (lhsParens)
+        out << ")";
+
+    out << ", ";
+
+    bool rhsParens = NeedsParens(store, parent, rhs, true);
+
+    if (rhsParens)
+        out << "(";
+
+    WriteLatex(out, store, rhs, names);
+
+    if (rhsParens)
+        out << ")";
+
+    out << ")";
+}
+
 static void WriteLatex(std::ostringstream& out, const ExprStore* store, ExprId id, const ExprNameMap* names) {
 
     const Expr& expr = (*store)[id];
 
     switch (expr.op) {
+
     case OpType::Const:
         out << expr.knownValue;
         return;
 
-    case OpType::Var:
+    case OpType::Var: {
         if (names) {
             auto it = names->find(id);
 
@@ -80,64 +132,23 @@ static void WriteLatex(std::ostringstream& out, const ExprStore* store, ExprId i
 
         out << "v" << id.value();
         return;
-
-    case OpType::Not: {
-        out << OpToLatex(expr.op) << " ";
-
-        const ExprId inner = expr.inputs[0];
-
-        const bool parens = NeedsParens(store, id, inner, false);
-
-        if (parens)
-            out << "(";
-
-        WriteLatex(out, store, inner, names);
-
-        if (parens)
-            out << ")";
-
-        return;
     }
 
-    case OpType::Neg: {
-        out << "-";
-
-        const ExprId inner = expr.inputs[0];
-
-        const bool parens = NeedsParens(store, id, inner, false);
-
-        if (parens)
-            out << "(";
-
-        WriteLatex(out, store, inner, names);
-
-        if (parens)
-            out << ")";
-
+    case OpType::Not:
+        WriteUnary(out, store, id, expr.inputs[0], names, OpToLatex(expr.op), true);
         return;
-    }
+
+    case OpType::Neg:
+        WriteUnary(out, store, id, expr.inputs[0], names, "-");
+        return;
 
     case OpType::RotL:
-    case OpType::RotR: {
-        out << "\\operatorname{";
-
-        if (expr.op == OpType::RotL)
-            out << "rotl";
-        else
-            out << "rotr";
-
-        out << "}(";
-
-        WriteLatex(out, store, expr.inputs[0], names);
-
-        out << ", ";
-
-        WriteLatex(out, store, expr.inputs[1], names);
-
-        out << ")";
-
+        WriteBinaryFunction(out, store, id, expr.inputs[0], expr.inputs[1], names, "\\operatorname{rotl}");
         return;
-    }
+
+    case OpType::RotR:
+        WriteBinaryFunction(out, store, id, expr.inputs[0], expr.inputs[1], names, "\\operatorname{rotr}");
+        return;
 
     case OpType::Pow: {
         const ExprId base = expr.inputs[0];

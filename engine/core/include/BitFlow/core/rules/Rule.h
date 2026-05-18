@@ -69,6 +69,21 @@ Rule Get_AddFold_Rule();
 inline constexpr RuleKey SubConstFold{"CORE.SIMPLIFY.ARITHMETIC.SUB_CONSTANT_FOLD"};
 Rule Get_SubConstFold_Rule();
 
+inline constexpr RuleKey SubAddSelfCancel{"CORE.SIMPLIFY.ARITHMETIC.SUB_ADD_SELF_CANCEL"};
+Rule Get_SubAddSelfCancel_Rule();
+
+inline constexpr RuleKey SubMulLinearCancel{"CORE.SIMPLIFY.ARITHMETIC.SUB_MUL_LINEAR_CANCEL"};
+Rule Get_SubMulLinearCancel_Rule();
+
+inline constexpr RuleKey MulDivConstantReduction{"CORE.SIMPLIFY.ARITHMETIC.MUL_DIV_CONSTANT_REDUCTION"};
+Rule Get_MulDivConstantReduction_Rule();
+
+inline constexpr RuleKey MulToPow{"CORE.SIMPLIFY.ARITHMETIC.MUL_TO_POW"};
+Rule Get_MulToPow_Rule();
+
+inline constexpr RuleKey CombineMulPow{"CORE.SIMPLIFY.ARITHMETIC.COMBINE_MUL_POW"};
+Rule Get_CombineMulPow_Rule();
+
 inline constexpr RuleKey CombineConstants{"CORE.SIMPLIFY.ARITHMETIC.COMBINE_CONSTANTS"};
 Rule Get_CombineConstants_Rule();
 } // namespace Simplify::Arithmetic

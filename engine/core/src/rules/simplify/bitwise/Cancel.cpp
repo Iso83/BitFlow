@@ -10,6 +10,14 @@ namespace BitFlow::Core::Rules::Simplify::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
+static size_t FindEquivalentIndex(const ExprStore* store, const std::vector<ExprId>& reps, ExprId id) {
+    for (size_t i = 0; i < reps.size(); ++i) {
+        if (CompareExprCanonical(store, reps[i], id) == 0)
+            return i;
+    }
+    return reps.size();
+}
+
 #pragma region Match
 static bool Match_AndCancel(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
@@ -64,7 +72,8 @@ static bool Match_XorCancel(const ExprStore* store, Ids::ExprId id) {
     if (e.inputs.size() < 2)
         return false;
 
-    std::unordered_map<Ids::ExprId, size_t> counts{};
+    std::vector<ExprId> reps;
+    std::vector<size_t> repCounts;
 
     bool hasZero = false;
     bool hasCancelablePair = false;
@@ -86,11 +95,15 @@ static bool Match_XorCancel(const ExprStore* store, Ids::ExprId id) {
             continue;
         }
 
-        auto& count = counts[in];
-        count++;
-
-        if (count >= 2)
-            hasCancelablePair = true;
+        const size_t idx = FindEquivalentIndex(store, reps, in);
+        if (idx == reps.size()) {
+            reps.push_back(in);
+            repCounts.push_back(1);
+        } else {
+            repCounts[idx]++;
+            if (repCounts[idx] >= 2)
+                hasCancelablePair = true;
+        }
     }
 
     if (hasZero)
@@ -168,7 +181,9 @@ static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
     Types::ExprChunk constParity = 0;
     bool hasConst = false;
 
-    std::unordered_map<ExprId, int> counts;
+    std::vector<ExprId> reps;
+    std::vector<int> counts;
+    reps.reserve(e.inputs.size());
     counts.reserve(e.inputs.size());
 
     for (ExprId inId : e.inputs) {
@@ -178,18 +193,23 @@ static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
             constParity ^= in.knownValue;
             hasConst = true;
         } else {
-            counts[inId]++;
+            const size_t idx = FindEquivalentIndex(store, reps, inId);
+            if (idx == reps.size()) {
+                reps.push_back(inId);
+                counts.push_back(1);
+            } else
+                counts[idx]++;
         }
     }
 
     constParity &= mask;
 
     std::vector<ExprId> terms;
-    terms.reserve(counts.size() + 1);
+    terms.reserve(reps.size() + 1);
 
-    for (const auto& [exprId, count] : counts) {
-        if (count & 1)
-            terms.push_back(exprId);
+    for (size_t i = 0; i < reps.size(); ++i) {
+        if (counts[i] & 1)
+            terms.push_back(reps[i]);
     }
 
     const Types::BitWidth bitWidth = e.bitWidth;

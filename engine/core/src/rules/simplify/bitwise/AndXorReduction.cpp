@@ -10,7 +10,6 @@ using namespace BitFlow::Core::Expression;
 
 static bool Match_AndXorReduction(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
-
     if (e.op != OpType::And)
         return false;
 
@@ -20,11 +19,13 @@ static bool Match_AndXorReduction(const ExprStore* store, ExprId id) {
                 continue;
 
             const Expr& exprB = (*store)[b];
-            if (exprB.op != OpType::Xor || exprB.inputs.size() != 2)
+            if (exprB.op != OpType::Xor)
                 continue;
 
-            if (exprB.inputs[0] == a || exprB.inputs[1] == a)
-                return true;
+            for (auto xorIn : exprB.inputs) {
+                if (xorIn == a)
+                    return true;
+            }
         }
     }
 
@@ -33,7 +34,6 @@ static bool Match_AndXorReduction(const ExprStore* store, ExprId id) {
 
 static ExprId Rewrite_AndXorReduction(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
-
     const std::vector<ExprId> inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
 
@@ -45,37 +45,43 @@ static ExprId Rewrite_AndXorReduction(ExprStore* store, ExprId id) {
                 continue;
 
             const Expr& other = (*store)[inputs[j]];
-            if (other.op != OpType::Xor || other.inputs.size() != 2)
+            if (other.op != OpType::Xor || other.inputs.size() < 2)
                 continue;
 
-            ExprId y;
-
-            if (other.inputs[0] == x)
-                y = other.inputs[1];
-            else if (other.inputs[1] == x)
-                y = other.inputs[0];
-            else
-                continue;
-
-            const ExprId notY = store->create(OpType::Not, {y}, bitWidth).id;
-
-            std::vector<ExprId> newInputs;
-            newInputs.reserve(inputs.size());
-
-            for (size_t k = 0; k < inputs.size(); ++k) {
-                if (k == j)
+            for (size_t xi = 0; xi < other.inputs.size(); ++xi) {
+                if (other.inputs[xi] != x)
                     continue;
 
-                if (k == i) {
-                    newInputs.push_back(x);
-                    newInputs.push_back(notY);
-                    continue;
+                std::vector<ExprId> xorRemainder;
+                xorRemainder.reserve(other.inputs.size() - 1);
+
+                for (size_t ri = 0; ri < other.inputs.size(); ++ri) {
+                    if (ri != xi)
+                        xorRemainder.push_back(other.inputs[ri]);
                 }
 
-                newInputs.push_back(inputs[k]);
-            }
+                const ExprId y = xorRemainder.size() == 1
+                                     ? xorRemainder[0]
+                                     : store->create(OpType::Xor, std::move(xorRemainder), bitWidth).id;
+                const ExprId notY = store->create(OpType::Not, {y}, bitWidth).id;
 
-            return store->create(OpType::And, std::move(newInputs), bitWidth).id;
+                std::vector<ExprId> newInputs;
+                newInputs.reserve(inputs.size());
+
+                for (size_t k = 0; k < inputs.size(); ++k) {
+                    if (k == j)
+                        continue;
+
+                    if (k == i) {
+                        newInputs.push_back(x);
+                        newInputs.push_back(notY);
+                    } else {
+                        newInputs.push_back(inputs[k]);
+                    }
+                }
+
+                return store->create(OpType::And, std::move(newInputs), bitWidth).id;
+            }
         }
     }
 

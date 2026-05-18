@@ -1,5 +1,5 @@
 #include <BitFlow/core/expression/ExprStore.h>
-#include <stdexcept>
+#include <BitFlow/core/helper/Exception.h>
 
 namespace BitFlow::Core::Expression {
 
@@ -36,7 +36,7 @@ ExprStore::ExprStore() {
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
     if (m_nextDebugSlot >= m_debugExprs.size())
-        throw std::runtime_error(
+        BF_THROW(
             "ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper addresses must remain stable.");
 
     auto& debugExpr = m_debugExprs[m_nextDebugSlot++];
@@ -71,7 +71,7 @@ ExprStore::ExprStore() {
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
     if (m_nextDebugSlot >= m_debugExprs.size())
-        throw std::runtime_error(
+        BF_THROW(
             "ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper addresses must remain stable.");
 
     auto& debugExpr = m_debugExprs[m_nextDebugSlot++];
@@ -109,7 +109,7 @@ ExprStore::ExprStore() {
     const Expr& e = get(id);
 
     if (e.op != OpType::Const)
-        throw std::runtime_error("ExprStore::invertConst expects Const");
+        BF_CORE_THROW("ExprStore::invertConst expects Const");
 
     const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
     const Types::ExprChunk value = (~e.knownValue) & mask;
@@ -145,8 +145,8 @@ ExprStore::ExprStore() {
 [[nodiscard]] Expr& ExprStore::MakeDebugExpr(ExprId id) {
 
     if (m_nextDebugSlot >= m_debugExprs.size())
-        throw std::runtime_error("ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper "
-                                 "addresses must remain stable.");
+        BF_THROW(
+            "ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper addresses must remain stable.");
 
     auto& debugExpr = m_debugExprs[m_nextDebugSlot++];
     debugExpr.m_store = this;

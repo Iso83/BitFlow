@@ -92,7 +92,7 @@ inline bool EqualChunkValue(const Core::Expression::ExprRef e, const Core::Types
 
 inline Core::Eval::EvalResult EvaluateConstant(const Core::Expression::ExprRef root,
                                                Core::Types::BitWidth bitWidth = Core::Types::ExprChunkBits) {
-    _ASSERT(root.IsValid());
+    assert(root.IsValid());
     return Core::Eval::EvaluateConstant(root.store, &(*root.store)[root], bitWidth);
 }
 
@@ -112,6 +112,7 @@ inline bool IsFullyConstant(const Core::Expression::ExprRef root) {
 
 #define MakeExprStore(bw)                                                                                              \
     BitFlow::Core::Expression::ExprStore store;                                                                        \
+    const BitFlow::Core::Types::BitWidth bitWidth(bw);                                                                 \
     auto C = [&](uint64_t v) { return store.createConstant(v, bw); };                                                  \
     BitFlow::Core::Expression::ExprNameMap names;                                                                      \
     auto V = [&](const std::string name = "") {                                                                        \

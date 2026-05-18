@@ -80,28 +80,28 @@ int TestToString_ExplicitGroupsWrapEverything() {
     return 0;
 }
 
-int TestToString_RotlAsFunction() {
+int TestToString_PowAsFunction() {
     MakeExprStore(32);
 
     auto a = V("a");
 
     PrintOptions opts;
-    opts.RotAsFunction(true);
+    opts.PowAsFunction(true);
 
-    BF_TEST(ToString(a.RotL(C(3)), opts) == "rotl(a, 3)");
+    BF_TEST(ToString(a.Pow(C(3)), opts) == "pow(a, 3)");
 
     return 0;
 }
 
-int TestToString_RotlAsInfix() {
+int TestToString_PowAsInfix() {
     MakeExprStore(32);
 
     auto a = V("a");
 
     PrintOptions opts;
-    opts.RotAsFunction(false);
+    opts.PowAsFunction(false);
 
-    BF_TEST(ToString(a.RotL(C(3)), opts) == "a <<< 3");
+    BF_TEST(ToString(a.Pow(C(3)), opts) == "a ** 3");
 
     return 0;
 }
@@ -180,8 +180,8 @@ int main() {
     BF_RUN_TEST(TestToString_AddsParensForRightAssociativeCases);
     BF_RUN_TEST(TestToString_PrintsUnaryOperators);
     BF_RUN_TEST(TestToString_ExplicitGroupsWrapEverything);
-    BF_RUN_TEST(TestToString_RotlAsFunction);
-    BF_RUN_TEST(TestToString_RotlAsInfix);
+    BF_RUN_TEST(TestToString_PowAsFunction);
+    BF_RUN_TEST(TestToString_PowAsInfix);
     BF_RUN_TEST(TestToString_ShowExprIds);
     BF_RUN_TEST(TestToString_ShowBitWidth);
     BF_RUN_TEST(TestToString_ShowOpTypes);
