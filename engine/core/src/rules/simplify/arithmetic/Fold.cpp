@@ -222,7 +222,7 @@ static ExprId Rewrite_SubConstFold(ExprStore* store, ExprId id) {
     const Types::BitWidth bitWidth = e.bitWidth;
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
-    Types::ExprChunk acc = 0;
+    Types::ExprChunk lhsConst = 0;
 
     std::vector<ExprId> newInputs;
     newInputs.reserve(lhs.inputs.size());
@@ -233,7 +233,7 @@ static ExprId Rewrite_SubConstFold(ExprStore* store, ExprId id) {
         const Expr& in = (*store)[inId];
 
         if (in.op == OpType::Const) {
-            acc = (acc + in.knownValue) & mask;
+            lhsConst = (lhsConst + in.knownValue) & mask;
             changed = true;
         } else
             newInputs.push_back(inId);
@@ -242,18 +242,32 @@ static ExprId Rewrite_SubConstFold(ExprStore* store, ExprId id) {
     if (!changed)
         return id;
 
-    acc = (acc - rhs.knownValue) & mask;
-
-    if (acc != 0)
-        newInputs.push_back(store->createConstant(acc, bitWidth).id);
+    const Types::ExprChunk delta = (lhsConst - rhs.knownValue) & mask;
 
     if (newInputs.empty())
-        return store->createConstant(0, bitWidth).id;
+        return store->createConstant(delta, bitWidth).id;
 
-    if (newInputs.size() == 1)
-        return newInputs[0];
+    auto makeNonConst = [&]() -> ExprId {
+        if (newInputs.size() == 1)
+            return newInputs[0];
 
-    return store->create(OpType::Add, std::move(newInputs), bitWidth).id;
+        return store->create(OpType::Add, std::move(newInputs), bitWidth).id;
+    };
+
+    if (delta == 0)
+        return makeNonConst();
+
+    const Types::ExprChunk positiveLimit = mask >> 1;
+
+    if (delta <= positiveLimit) {
+        newInputs.push_back(store->createConstant(delta, bitWidth).id);
+        return store->create(OpType::Add, std::move(newInputs), bitWidth).id;
+    }
+
+    const ExprId nonConst = makeNonConst();
+    const Types::ExprChunk subtrahend = (rhs.knownValue - lhsConst) & mask;
+
+    return store->create(OpType::Sub, {nonConst, store->createConstant(subtrahend, bitWidth).id}, bitWidth).id;
 }
 
 static ExprId Rewrite_SubAddSelfCancel(ExprStore* store, ExprId id) {
@@ -285,9 +299,10 @@ static ExprId Rewrite_SubAddSelfCancel(ExprStore* store, ExprId id) {
 
 static ExprId Rewrite_SubMulLinearCancel(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
+    const Types::BitWidth bitWidth = e.bitWidth;
     const Expr& lhs = (*store)[e.inputs[0]];
     const ExprId rhsId = e.inputs[1];
-    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
+    const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
     Types::ExprChunk coeff = 1;
     bool removedBase = false;
@@ -312,11 +327,11 @@ static ExprId Rewrite_SubMulLinearCancel(ExprStore* store, ExprId id) {
 
     coeff = (coeff - 1) & mask;
     if (coeff == 0)
-        return store->createConstant(0, e.bitWidth).id;
+        return store->createConstant(0, bitWidth).id;
     if (coeff == 1)
         return rhsId;
 
-    const ExprId coeffId = store->createConstant(coeff, e.bitWidth).id;
+    const ExprId coeffId = store->createConstant(coeff, bitWidth).id;
     std::vector<ExprId> mulInputs;
     mulInputs.reserve(otherFactors.size() + 2);
     mulInputs.push_back(rhsId);
@@ -326,7 +341,7 @@ static ExprId Rewrite_SubMulLinearCancel(ExprStore* store, ExprId id) {
 
     if (mulInputs.size() == 1)
         return mulInputs[0];
-    return store->create(OpType::Mul, std::move(mulInputs), e.bitWidth).id;
+    return store->create(OpType::Mul, std::move(mulInputs), bitWidth).id;
 }
 
 static ExprId Rewrite_MulDivConstantReduction(ExprStore* store, ExprId id) {
@@ -400,23 +415,25 @@ static ExprId Rewrite_MulToPow(ExprStore* store, ExprId id) {
 
 static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
+
+    const std::vector<ExprId> inputs = e.inputs;
     const Types::BitWidth bw = e.bitWidth;
 
-    std::vector<bool> consumed(e.inputs.size(), false);
+    std::vector<bool> consumed(inputs.size(), false);
     std::vector<ExprId> newInputs;
 
-    for (std::size_t i = 0; i < e.inputs.size(); ++i) {
+    for (std::size_t i = 0; i < inputs.size(); ++i) {
         if (consumed[i])
             continue;
 
-        const Expr& a = (*store)[e.inputs[i]];
+        const Expr& a = (*store)[inputs[i]];
         bool combined = false;
 
-        for (std::size_t j = i + 1; j < e.inputs.size(); ++j) {
+        for (std::size_t j = i + 1; j < inputs.size(); ++j) {
             if (consumed[j])
                 continue;
 
-            const Expr& b = (*store)[e.inputs[j]];
+            const Expr& b = (*store)[inputs[j]];
 
             ExprId baseId{};
             Types::ExprChunk expA = 1;

@@ -36,11 +36,11 @@ static ExprId Rewrite_CombineConstants(ExprStore* store, ExprId id) {
 
     switch (e.op) {
     case OpType::Add:
-        return store->createConstant((lhs.knownValue + rhs.knownValue) & e.fullMask(e.bitWidth)).id;
+        return store->createConstant((lhs.knownValue + rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
     case OpType::Sub:
-        return store->createConstant((lhs.knownValue - rhs.knownValue) & e.fullMask(e.bitWidth)).id;
+        return store->createConstant((lhs.knownValue - rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
     case OpType::Mul:
-        return store->createConstant((lhs.knownValue * rhs.knownValue) & e.fullMask(e.bitWidth)).id;
+        return store->createConstant((lhs.knownValue * rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
     case OpType::Div:
         if (rhs.knownValue == 0) {
             BF_CORE_ASSERT(false);

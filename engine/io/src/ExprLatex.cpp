@@ -21,16 +21,16 @@ static std::string OpToLatex(OpType op) {
         return "\\cdot";
 
     case OpType::Div:
-        return "/";
+        return "\\frac";
 
     case OpType::Mod:
         return "\\bmod";
 
     case OpType::And:
-        return "\\mathbin{\\&}";
+        return "\\land";
 
     case OpType::Or:
-        return "|";
+        return "\\lor";
 
     case OpType::Xor:
         return "\\oplus";
@@ -55,6 +55,13 @@ static bool NeedsParens(const ExprStore* store, ExprId parent, ExprId child, boo
 
     if ((p.op == OpType::Shl || p.op == OpType::Shr) && (c.op == OpType::Add || c.op == OpType::Sub))
         return true;
+
+    if ((p.op == OpType::And || p.op == OpType::Or || p.op == OpType::Xor) &&
+        (c.op == OpType::Add || c.op == OpType::Sub))
+        return true;
+
+    if ((p.op == OpType::Mul || p.op == OpType::Div) && c.op == OpType::Div)
+        return false;
 
     return RequiresParentheses(p.op, c.op, isRightChild);
 }
@@ -143,15 +150,23 @@ static void WriteLatex(std::ostringstream& out, const ExprStore* store, ExprId i
         const ExprId base = expr.inputs[0];
         const ExprId exponent = expr.inputs[1];
 
-        const bool baseParens = NeedsParens(store, id, base, false);
+        const Expr& baseExpr = (*store)[base];
 
-        if (baseParens)
-            out << "(";
+        if (baseExpr.op == OpType::Div) {
+            out << "\\left(";
+            WriteLatex(out, store, base, names);
+            out << "\\right)";
+        } else {
+            const bool baseParens = NeedsParens(store, id, base, false);
 
-        WriteLatex(out, store, base, names);
+            if (baseParens)
+                out << "(";
 
-        if (baseParens)
-            out << ")";
+            WriteLatex(out, store, base, names);
+
+            if (baseParens)
+                out << ")";
+        }
 
         out << "^{";
         WriteLatex(out, store, exponent, names);
@@ -164,33 +179,36 @@ static void WriteLatex(std::ostringstream& out, const ExprStore* store, ExprId i
         break;
     }
 
-    if (expr.inputs.size() != 2)
+    if (expr.inputs.empty())
         BF_IO_THROW("Unsupported expression shape in ToLatex");
 
-    const ExprId left = expr.inputs[0];
-    const ExprId right = expr.inputs[1];
+    if (expr.op == OpType::Div) {
+        if (expr.inputs.size() != 2)
+            BF_IO_THROW("Unsupported expression shape in ToLatex");
 
-    const bool leftParens = NeedsParens(store, id, left, false);
+        out << "\\frac{";
+        WriteLatex(out, store, expr.inputs[0], names);
+        out << "}{";
+        WriteLatex(out, store, expr.inputs[1], names);
+        out << "}";
+        return;
+    }
 
-    const bool rightParens = NeedsParens(store, id, right, true);
+    for (std::size_t i = 0; i < expr.inputs.size(); ++i) {
+        if (i > 0)
+            out << " " << OpToLatex(expr.op) << " ";
 
-    if (leftParens)
-        out << "(";
+        const ExprId input = expr.inputs[i];
+        const bool parens = NeedsParens(store, id, input, i > 0);
 
-    WriteLatex(out, store, left, names);
+        if (parens)
+            out << "(";
 
-    if (leftParens)
-        out << ")";
+        WriteLatex(out, store, input, names);
 
-    out << " " << OpToLatex(expr.op) << " ";
-
-    if (rightParens)
-        out << "(";
-
-    WriteLatex(out, store, right, names);
-
-    if (rightParens)
-        out << ")";
+        if (parens)
+            out << ")";
+    }
 
     return;
 }

@@ -17,7 +17,13 @@ static bool Match_AndFold(const ExprStore* store, ExprId id) {
     if (e.inputs.size() < 2)
         return false;
 
-    return true;
+    for (auto in : e.inputs) {
+        const Expr& exprIn = (*store)[in];
+        if (exprIn.op == OpType::Const)
+            return true;
+    }
+
+    return false;
 }
 
 static bool Match_OrFold(const ExprStore* store, ExprId id) {
@@ -28,7 +34,13 @@ static bool Match_OrFold(const ExprStore* store, ExprId id) {
     if (e.inputs.size() < 2)
         return false;
 
-    return true;
+    for (auto in : e.inputs) {
+        const Expr& exprIn = (*store)[in];
+        if (exprIn.op == OpType::Const)
+            return true;
+    }
+
+    return false;
 }
 
 static bool Match_XorFold(const ExprStore* store, ExprId id) {

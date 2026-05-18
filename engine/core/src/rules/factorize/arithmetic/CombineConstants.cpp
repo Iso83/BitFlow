@@ -32,6 +32,8 @@ static ExprId Rewrite_MulCombineConstants(ExprStore* store, ExprId id) {
 
     BF_CORE_ASSERT(e.op == OpType::Mul);
 
+    const Types::BitWidth bitWidth = e.bitWidth;
+    const Types::ExprChunk mask = Expr::fullMask(bitWidth);
     Types::ExprChunk product = 1;
     int constCount = 0;
     std::vector<ExprId> nonConst;
@@ -41,16 +43,24 @@ static ExprId Rewrite_MulCombineConstants(ExprStore* store, ExprId id) {
         const Expr& exprA = (*store)[a];
         if (exprA.op == OpType::Const) {
             ++constCount;
-            product *= static_cast<Types::ExprChunk>(exprA.knownValue);
+            product = (product * static_cast<Types::ExprChunk>(exprA.knownValue)) & mask;
             continue;
         }
 
         nonConst.push_back(a);
     }
 
-    const Types::BitWidth bitWidth = e.bitWidth;
     if (constCount > 1) {
-        nonConst.push_back(store->createConstant(product, bitWidth).id);
+        const ExprId productId = store->createConstant(product, bitWidth).id;
+
+        if (nonConst.empty())
+            return productId;
+
+        nonConst.push_back(productId);
+
+        if (nonConst.size() == 1)
+            return nonConst[0];
+
         return store->create(OpType::Mul, std::move(nonConst), bitWidth).id;
     }
 

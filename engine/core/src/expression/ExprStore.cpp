@@ -36,7 +36,7 @@ ExprStore::ExprStore() {
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
     if (m_nextDebugSlot >= m_debugExprs.size())
-        BF_THROW(
+        BF_CORE_THROW(
             "ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper addresses must remain stable.");
 
     auto& debugExpr = m_debugExprs[m_nextDebugSlot++];
@@ -71,7 +71,7 @@ ExprStore::ExprStore() {
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
     if (m_nextDebugSlot >= m_debugExprs.size())
-        BF_THROW(
+        BF_CORE_THROW(
             "ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper addresses must remain stable.");
 
     auto& debugExpr = m_debugExprs[m_nextDebugSlot++];
@@ -145,7 +145,7 @@ ExprStore::ExprStore() {
 [[nodiscard]] Expr& ExprStore::MakeDebugExpr(ExprId id) {
 
     if (m_nextDebugSlot >= m_debugExprs.size())
-        BF_THROW(
+        BF_CORE_THROW(
             "ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper addresses must remain stable.");
 
     auto& debugExpr = m_debugExprs[m_nextDebugSlot++];
