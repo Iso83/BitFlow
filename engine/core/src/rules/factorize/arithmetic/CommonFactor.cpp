@@ -386,16 +386,20 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
 
 static ExprId Rewrite_CommonFactorCancel_PowTerms(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
+    const Types::BitWidth bitWidth = e.bitWidth;
     const Expr& lhs = (*store)[e.inputs[0]];
     const Expr& rhs = (*store)[e.inputs[1]];
 
-    std::vector<bool> lhsConsumed(lhs.inputs.size(), false);
-    std::vector<bool> rhsConsumed(rhs.inputs.size(), false);
+    const std::vector<ExprId> lhsInputs = lhs.inputs;
+    const std::vector<ExprId> rhsInputs = rhs.inputs;
+
+    std::vector<bool> lhsConsumed(lhsInputs.size(), false);
+    std::vector<bool> rhsConsumed(rhsInputs.size(), false);
 
     bool anyCanceled = false;
 
-    for (size_t i = 0; i < lhs.inputs.size(); ++i) {
-        const ExprId lhsFactorId = lhs.inputs[i];
+    for (size_t i = 0; i < lhsInputs.size(); ++i) {
+        const ExprId lhsFactorId = lhsInputs[i];
         const Expr& lhsFactor = (*store)[lhsFactorId];
         if (lhsFactor.op != OpType::Pow || lhsFactor.inputs.size() != 2)
             continue;
@@ -404,11 +408,11 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(ExprStore* store, ExprId id) {
         if (lhsExp.op != OpType::Const)
             continue;
 
-        for (size_t j = 0; j < rhs.inputs.size(); ++j) {
+        for (size_t j = 0; j < rhsInputs.size(); ++j) {
             if (rhsConsumed[j])
                 continue;
 
-            const ExprId rhsFactorId = rhs.inputs[j];
+            const ExprId rhsFactorId = rhsInputs[j];
             const Expr& rhsFactor = (*store)[rhsFactorId];
             if (rhsFactor.op != OpType::Pow || rhsFactor.inputs.size() != 2)
                 continue;
@@ -430,26 +434,26 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(ExprStore* store, ExprId id) {
     if (!anyCanceled)
         return id;
 
-    auto buildProduct = [&](const Expr& mulExpr, const std::vector<bool>& consumed) -> ExprId {
+    auto buildProduct = [&](const std::vector<ExprId> mulExprInputs, const std::vector<bool>& consumed) -> ExprId {
         std::vector<ExprId> remaining;
-        remaining.reserve(mulExpr.inputs.size());
+        remaining.reserve(mulExprInputs.size());
 
-        for (size_t k = 0; k < mulExpr.inputs.size(); ++k) {
+        for (size_t k = 0; k < mulExprInputs.size(); ++k) {
             if (!consumed[k])
-                remaining.push_back(mulExpr.inputs[k]);
+                remaining.push_back(mulExprInputs[k]);
         }
 
         if (remaining.empty())
-            return store->createConstant(1, e.bitWidth).id;
+            return store->createConstant(1, bitWidth).id;
         if (remaining.size() == 1)
             return remaining[0];
-        return store->create(OpType::Mul, std::move(remaining), e.bitWidth).id;
+        return store->create(OpType::Mul, std::move(remaining), bitWidth).id;
     };
 
-    const ExprId newLhs = buildProduct(lhs, lhsConsumed);
-    const ExprId newRhs = buildProduct(rhs, rhsConsumed);
+    const ExprId newLhs = buildProduct(lhsInputs, lhsConsumed);
+    const ExprId newRhs = buildProduct(rhsInputs, rhsConsumed);
 
-    return store->create(OpType::Div, {newLhs, newRhs}, e.bitWidth).id;
+    return store->create(OpType::Div, {newLhs, newRhs}, bitWidth).id;
 }
 #pragma endregion
 

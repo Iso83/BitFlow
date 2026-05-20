@@ -484,8 +484,8 @@ static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
 
             const bool aNeg = (a.op == OpType::Neg && a.inputs.size() == 1);
             const bool bNeg = (b.op == OpType::Neg && b.inputs.size() == 1);
-            const ExprId aId = aNeg ? a.inputs[0] : e.inputs[i];
-            const ExprId bId = bNeg ? b.inputs[0] : e.inputs[j];
+            const ExprId aId = aNeg ? a.inputs[0] : inputs[i];
+            const ExprId bId = bNeg ? b.inputs[0] : inputs[j];
             const Expr& aa = (*store)[aId];
             const Expr& bb = (*store)[bId];
 
@@ -546,7 +546,7 @@ static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
 
         if (!combined && !consumed[i]) {
             consumed[i] = true;
-            newInputs.push_back(e.inputs[i]);
+            newInputs.push_back(inputs[i]);
         }
     }
 

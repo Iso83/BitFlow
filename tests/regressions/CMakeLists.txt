@@ -13,6 +13,6 @@ set_target_properties(BitFlowREGRESSIONS PROPERTIES
 set_property(TARGET BitFlowREGRESSIONS PROPERTY FOLDER "tests/regressions")
 
 if(BF_BUILD_TESTS)
-    bf_add_module_test(BitFlowREGRESSIONS regressions BF_Reg_Web)
+    bf_add_module_test(BitFlowREGRESSIONS regressions BF_Reg_RewriteStress)
     bf_add_module_test(BitFlowREGRESSIONS regressions BF_Reg_ExprPrinter)
 endif()
