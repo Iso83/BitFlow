@@ -82,17 +82,41 @@ static bool Match_SubMulLinearCancel(const ExprStore* store, ExprId id) {
     if (lhs.op != OpType::Mul || lhs.inputs.size() < 2)
         return false;
 
-    const ExprId rhsId = e.inputs[1];
-    bool hasBase = false;
-    bool hasConst = false;
-    for (ExprId inId : lhs.inputs) {
-        const Expr& in = (*store)[inId];
-        if (in.op == OpType::Const)
-            hasConst = true;
-        if (CompareExprCanonical(store, inId, rhsId) == 0)
-            hasBase = true;
+    auto decomposeMulLinear = [&](ExprId exprId, ExprId& baseOut, Types::ExprChunk& coeffOut) -> bool {
+        const Expr& expr = (*store)[exprId];
+        if (expr.op != OpType::Mul || expr.inputs.size() < 2)
+            return false;
+
+        bool hasBase = false;
+        bool hasConst = false;
+        coeffOut = 1;
+        for (ExprId inId : expr.inputs) {
+            const Expr& in = (*store)[inId];
+            if (in.op == OpType::Const) {
+                coeffOut *= in.knownValue;
+                hasConst = true;
+            } else if (!hasBase) {
+                baseOut = inId;
+                hasBase = true;
+            } else
+                return false;
+        }
+        return hasBase && hasConst;
+    };
+
+    ExprId lhsBase{};
+    Types::ExprChunk lhsCoeff{};
+    if (!decomposeMulLinear(e.inputs[0], lhsBase, lhsCoeff))
+        return false;
+
+    const Expr& rhs = (*store)[e.inputs[1]];
+    if (rhs.op == OpType::Mul) {
+        ExprId rhsBase{};
+        Types::ExprChunk rhsCoeff{};
+        return decomposeMulLinear(e.inputs[1], rhsBase, rhsCoeff) && CompareExprCanonical(store, lhsBase, rhsBase) == 0;
     }
-    return hasBase && hasConst;
+
+    return CompareExprCanonical(store, lhsBase, e.inputs[1]) == 0;
 }
 
 static bool Match_MulDivConstantReduction(const ExprStore* store, ExprId id) {
@@ -143,28 +167,34 @@ static bool Match_MulPowCombine(const ExprStore* store, ExprId id) {
         for (std::size_t j = i + 1; j < e.inputs.size(); ++j) {
             const Expr& b = (*store)[e.inputs[j]];
 
+            const ExprId aId = (a.op == OpType::Neg && a.inputs.size() == 1) ? a.inputs[0] : e.inputs[i];
+            const ExprId bId = (b.op == OpType::Neg && b.inputs.size() == 1) ? b.inputs[0] : e.inputs[j];
+
+            const Expr& aa = (*store)[aId];
+            const Expr& bb = (*store)[bId];
+
             // x * pow(x, n)
-            if (b.op == OpType::Pow && b.inputs.size() == 2) {
-                const Expr& exp = (*store)[b.inputs[1]];
-                if (exp.op == OpType::Const && CompareExprCanonical(store, e.inputs[i], b.inputs[0]) == 0)
+            if (bb.op == OpType::Pow && bb.inputs.size() == 2) {
+                const Expr& exp = (*store)[bb.inputs[1]];
+                if (exp.op == OpType::Const && CompareExprCanonical(store, aId, bb.inputs[0]) == 0)
                     return true;
             }
 
             // pow(x, n) * x
-            if (a.op == OpType::Pow && a.inputs.size() == 2) {
-                const Expr& exp = (*store)[a.inputs[1]];
-                if (exp.op == OpType::Const && CompareExprCanonical(store, a.inputs[0], e.inputs[j]) == 0)
+            if (aa.op == OpType::Pow && aa.inputs.size() == 2) {
+                const Expr& exp = (*store)[aa.inputs[1]];
+                if (exp.op == OpType::Const && CompareExprCanonical(store, aa.inputs[0], bId) == 0)
                     return true;
             }
 
             // pow(x, a) * pow(x, b)
-            if (a.op == OpType::Pow && b.op == OpType::Pow && a.inputs.size() == 2 && b.inputs.size() == 2) {
+            if (aa.op == OpType::Pow && bb.op == OpType::Pow && aa.inputs.size() == 2 && bb.inputs.size() == 2) {
 
-                const Expr& expA = (*store)[a.inputs[1]];
-                const Expr& expB = (*store)[b.inputs[1]];
+                const Expr& expA = (*store)[aa.inputs[1]];
+                const Expr& expB = (*store)[bb.inputs[1]];
 
                 if (expA.op == OpType::Const && expB.op == OpType::Const &&
-                    CompareExprCanonical(store, a.inputs[0], b.inputs[0]) == 0)
+                    CompareExprCanonical(store, aa.inputs[0], bb.inputs[0]) == 0)
                     return true;
             }
         }
@@ -301,43 +331,53 @@ static ExprId Rewrite_SubMulLinearCancel(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
     const Expr& lhs = (*store)[e.inputs[0]];
-    const ExprId rhsId = e.inputs[1];
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
-    Types::ExprChunk coeff = 1;
-    bool removedBase = false;
-    std::vector<ExprId> otherFactors;
-    otherFactors.reserve(lhs.inputs.size());
-
-    for (ExprId inId : lhs.inputs) {
-        const Expr& in = (*store)[inId];
-        if (!removedBase && CompareExprCanonical(store, inId, rhsId) == 0) {
-            removedBase = true;
-            continue;
+    auto decomposeMulLinear = [&](ExprId exprId, ExprId& baseOut, Types::ExprChunk& coeffOut) -> bool {
+        const Expr& expr = (*store)[exprId];
+        if (expr.op != OpType::Mul || expr.inputs.size() < 2)
+            return false;
+        bool hasBase = false;
+        bool hasConst = false;
+        coeffOut = 1;
+        for (ExprId inId : expr.inputs) {
+            const Expr& in = (*store)[inId];
+            if (in.op == OpType::Const) {
+                coeffOut = (coeffOut * in.knownValue) & mask;
+                hasConst = true;
+            } else if (!hasBase) {
+                baseOut = inId;
+                hasBase = true;
+            } else
+                return false;
         }
+        return hasBase && hasConst;
+    };
 
-        if (in.op == OpType::Const)
-            coeff = (coeff * in.knownValue) & mask;
-        else
-            otherFactors.push_back(inId);
-    }
-
-    if (!removedBase)
+    ExprId lhsBase{};
+    Types::ExprChunk lhsCoeff{};
+    if (!decomposeMulLinear(e.inputs[0], lhsBase, lhsCoeff))
         return id;
 
-    coeff = (coeff - 1) & mask;
+    Types::ExprChunk rhsCoeff = 1;
+    const Expr& rhs = (*store)[e.inputs[1]];
+    if (rhs.op == OpType::Mul) {
+        ExprId rhsBase{};
+        if (!decomposeMulLinear(e.inputs[1], rhsBase, rhsCoeff) || CompareExprCanonical(store, lhsBase, rhsBase) != 0)
+            return id;
+    } else if (CompareExprCanonical(store, lhsBase, e.inputs[1]) != 0)
+        return id;
+
+    Types::ExprChunk coeff = (lhsCoeff - rhsCoeff) & mask;
     if (coeff == 0)
-        return store->createConstant(0, bitWidth).id;
+        return store->zeroId();
+    if (coeff == mask)
+        return store->create(OpType::Neg, {lhsBase}, bitWidth).id;
     if (coeff == 1)
-        return rhsId;
+        return lhsBase;
 
     const ExprId coeffId = store->createConstant(coeff, bitWidth).id;
-    std::vector<ExprId> mulInputs;
-    mulInputs.reserve(otherFactors.size() + 2);
-    mulInputs.push_back(rhsId);
-    for (ExprId f : otherFactors)
-        mulInputs.push_back(f);
-    mulInputs.push_back(coeffId);
+    std::vector<ExprId> mulInputs{lhsBase, coeffId};
 
     if (mulInputs.size() == 1)
         return mulInputs[0];
@@ -421,6 +461,7 @@ static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
 
     std::vector<bool> consumed(inputs.size(), false);
     std::vector<ExprId> newInputs;
+    bool negateResult = false;
 
     for (std::size_t i = 0; i < inputs.size(); ++i) {
         if (consumed[i])
@@ -441,39 +482,45 @@ static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
 
             bool match = false;
 
-            // x * pow(x, n)
-            if (b.op == OpType::Pow && b.inputs.size() == 2 &&
-                CompareExprCanonical(store, e.inputs[i], b.inputs[0]) == 0) {
+            const bool aNeg = (a.op == OpType::Neg && a.inputs.size() == 1);
+            const bool bNeg = (b.op == OpType::Neg && b.inputs.size() == 1);
+            const ExprId aId = aNeg ? a.inputs[0] : e.inputs[i];
+            const ExprId bId = bNeg ? b.inputs[0] : e.inputs[j];
+            const Expr& aa = (*store)[aId];
+            const Expr& bb = (*store)[bId];
 
-                const Expr& exp = (*store)[b.inputs[1]];
+            // x * pow(x, n)
+            if (bb.op == OpType::Pow && bb.inputs.size() == 2 && CompareExprCanonical(store, aId, bb.inputs[0]) == 0) {
+
+                const Expr& exp = (*store)[bb.inputs[1]];
                 if (exp.op == OpType::Const) {
-                    baseId = e.inputs[i];
+                    baseId = aId;
                     expB = exp.knownValue;
                     match = true;
                 }
             }
 
             // pow(x,n) * x
-            else if (a.op == OpType::Pow && a.inputs.size() == 2 &&
-                     CompareExprCanonical(store, a.inputs[0], e.inputs[j]) == 0) {
+            else if (aa.op == OpType::Pow && aa.inputs.size() == 2 &&
+                     CompareExprCanonical(store, aa.inputs[0], bId) == 0) {
 
-                const Expr& exp = (*store)[a.inputs[1]];
+                const Expr& exp = (*store)[aa.inputs[1]];
                 if (exp.op == OpType::Const) {
-                    baseId = a.inputs[0];
+                    baseId = aa.inputs[0];
                     expA = exp.knownValue;
                     match = true;
                 }
             }
 
             // pow(x,a) * pow(x,b)
-            else if (a.op == OpType::Pow && b.op == OpType::Pow && a.inputs.size() == 2 && b.inputs.size() == 2 &&
-                     CompareExprCanonical(store, a.inputs[0], b.inputs[0]) == 0) {
+            else if (aa.op == OpType::Pow && bb.op == OpType::Pow && aa.inputs.size() == 2 && bb.inputs.size() == 2 &&
+                     CompareExprCanonical(store, aa.inputs[0], bb.inputs[0]) == 0) {
 
-                const Expr& ea = (*store)[a.inputs[1]];
-                const Expr& eb = (*store)[b.inputs[1]];
+                const Expr& ea = (*store)[aa.inputs[1]];
+                const Expr& eb = (*store)[bb.inputs[1]];
 
                 if (ea.op == OpType::Const && eb.op == OpType::Const) {
-                    baseId = a.inputs[0];
+                    baseId = aa.inputs[0];
                     expA = ea.knownValue;
                     expB = eb.knownValue;
                     match = true;
@@ -485,6 +532,7 @@ static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
 
             consumed[i] = true;
             consumed[j] = true;
+            negateResult ^= (aNeg ^ bNeg);
 
             const Types::ExprChunk sum = (expA + expB) & Expr::fullMask(bw);
 
@@ -505,10 +553,25 @@ static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
     if (newInputs.empty())
         return store->createConstant(1, bw).id;
 
-    if (newInputs.size() == 1)
-        return newInputs[0];
+    for (std::size_t i = 0; i < inputs.size(); ++i) {
+        if (consumed[i])
+            continue;
 
-    return store->create(OpType::Mul, std::move(newInputs), bw).id;
+        const Expr& in = (*store)[inputs[i]];
+        if (in.op == OpType::Neg && in.inputs.size() == 1) {
+            negateResult = !negateResult;
+            newInputs.push_back(in.inputs[0]);
+        } else
+            newInputs.push_back(inputs[i]);
+    }
+
+    if (newInputs.size() == 1)
+        return negateResult ? store->create(OpType::Neg, {newInputs[0]}, bw).id : newInputs[0];
+
+    ExprId result = store->create(OpType::Mul, std::move(newInputs), bw).id;
+    if (negateResult)
+        return store->create(OpType::Neg, {result}, bw).id;
+    return result;
 }
 #pragma endregion
 

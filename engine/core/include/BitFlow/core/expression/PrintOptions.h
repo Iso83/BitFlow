@@ -3,7 +3,7 @@
 namespace BitFlow::Core::Expression {
 
 struct PrintOptions {
-    bool powAsFunction = true;
+    bool powAsFunction = false;
 
     // --- structure ---
     bool explicitGroups = false;

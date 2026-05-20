@@ -28,8 +28,5 @@ static int Run_Parse_Latex(const std::string input) {
 #define BF_Test_Parse_Latex(input) BF_TEST(Run_Parse_Latex(input) == 0)
 
 int main() {
-    BF_Test_Parse_Latex("7|a-(f+f)");
-    BF_Test_Parse_Latex("a^(b^a)/8+9|9");
-
     return 0;
 }

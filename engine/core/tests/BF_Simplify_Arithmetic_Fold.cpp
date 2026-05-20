@@ -195,7 +195,7 @@ int TestSubMulLinearCancel_ToZero() {
     return 0;
 }
 
-int TestSubMulLinearCancel_WithExtraFactors() {
+int TestSubMulLinearCancel_PowCoefficientCancel() {
     MakeExprStore(32);
     const auto rule = Simplify::Arithmetic::Get_SubMulLinearCancel_Rule();
 
@@ -205,17 +205,25 @@ int TestSubMulLinearCancel_WithExtraFactors() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    auto x = V("x");
-    auto y = V("y");
+    auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * y * 3 - x));
+    BF_SAFE_REWRITE(r, Rewrite(engine, a.Pow(5) * C(2) - C(3) * a.Pow(5)));
 
-    BF_TEST(Op(r) == OpType::Mul);
-    BF_TEST(InputSize(r) == 3);
+    BF_TEST(Op(r) == OpType::Neg);
+    BF_TEST(InputSize(r) == 1);
 
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == x; }));
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == y; }));
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 2u); }));
+    ExprRef powExpr = Input(r, 0);
+
+    BF_TEST(Op(powExpr) == OpType::Pow);
+    BF_TEST(InputSize(powExpr) == 2);
+
+    ExprRef base = Input(powExpr, 0);
+    ExprRef exp = Input(powExpr, 1);
+
+    BF_TEST(base == a);
+
+    BF_TEST(Op(exp) == OpType::Const);
+    BF_TEST(ExprOf(exp).knownValue == 5);
 
     return 0;
 }
@@ -535,6 +543,37 @@ int TestCombineMulPow_MixedFactors() {
     return 0;
 }
 
+int TestMulPow_NegativeExponentChain() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_CombineMulPow_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, a * -(a.Pow(4))));
+
+    BF_TEST(Op(r) == OpType::Neg);
+    BF_TEST(InputSize(r) == 1);
+
+    ExprRef powExpr = Input(r, 0);
+    BF_TEST(Op(powExpr) == OpType::Pow);
+    BF_TEST(InputSize(powExpr) == 2);
+
+    ExprRef base = Input(powExpr, 0);
+    BF_TEST(base == a);
+
+    ExprRef exp = Input(powExpr, 1);
+    BF_TEST(Op(exp) == OpType::Const);
+    BF_TEST(ExprOf(exp).knownValue == 5);
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAddFold);
     BF_RUN_TEST(TestSubConstFold);
@@ -547,7 +586,7 @@ int main() {
     BF_RUN_TEST(TestSubMulLinearCancel);
     BF_RUN_TEST(TestSubMulLinearCancel_ToBase);
     BF_RUN_TEST(TestSubMulLinearCancel_ToZero);
-    BF_RUN_TEST(TestSubMulLinearCancel_WithExtraFactors);
+    BF_RUN_TEST(TestSubMulLinearCancel_PowCoefficientCancel);
 
     BF_RUN_TEST(TestMulDivConstantReduction);
     BF_RUN_TEST(TestMulDivConstantReduction_ToBase);
@@ -562,6 +601,7 @@ int main() {
     BF_RUN_TEST(TestCombineMulPow_PowAndBase);
     BF_RUN_TEST(TestCombineMulPow_TwoPows);
     BF_RUN_TEST(TestCombineMulPow_MixedFactors);
+    BF_RUN_TEST(TestMulPow_NegativeExponentChain);
 
     return 0;
 }

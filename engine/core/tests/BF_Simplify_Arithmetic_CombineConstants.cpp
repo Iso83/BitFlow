@@ -56,6 +56,11 @@ int TestSimplify_ConstCombine_Basic() {
         BF_SAFE_REWRITE(r, Rewrite(engine, C(8) / 2));
         BF_TEST(EqualChunkValue(r, 4u));
     }
+    {
+        auto in = C(2) / 3;
+        BF_SAFE_REWRITE(r, Rewrite(engine, in));
+        BF_TEST(r == in);
+    }
     return 0;
 }
 

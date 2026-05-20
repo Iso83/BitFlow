@@ -19,7 +19,7 @@ static bool Match_AndFold(const ExprStore* store, ExprId id) {
 
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
-        if (exprIn.op == OpType::Const)
+        if (exprIn.op == OpType::Const && (store->isFalse(in) || store->isTrue(in)))
             return true;
     }
 
@@ -36,7 +36,7 @@ static bool Match_OrFold(const ExprStore* store, ExprId id) {
 
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
-        if (exprIn.op == OpType::Const)
+        if (exprIn.op == OpType::Const && (store->isTrue(in) || store->isFalse(in)))
             return true;
     }
 

@@ -77,6 +77,9 @@ static bool NeedsParensForRightChild(OpType parentOp, OpType childOp) {
     if (parentOp == OpType::And || parentOp == OpType::Or || parentOp == OpType::Xor)
         return false;
 
+    if (parentOp == OpType::Shl || parentOp == OpType::Shr)
+        return childOp == OpType::Add || childOp == OpType::Sub;
+
     return true;
 }
 
@@ -227,7 +230,10 @@ static void Print(const ExprStore* store, Ids::ExprId id, std::ostringstream& ou
     bool wrapSelf = options.explicitGroups;
 
     if (!wrapSelf) {
-        if (currentPrecedence < parentPrecedence)
+        if (isRightChild && (parentOp == OpType::Shl || parentOp == OpType::Shr) &&
+            (e.op == OpType::Add || e.op == OpType::Sub))
+            wrapSelf = true;
+        else if (currentPrecedence < parentPrecedence)
             wrapSelf = true;
         else if (isRightChild && currentPrecedence == parentPrecedence)
             wrapSelf = NeedsParensForRightChild(parentOp, e.op);

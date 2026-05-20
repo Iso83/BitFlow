@@ -25,7 +25,18 @@ static bool Match_CombineConstants(const ExprStore* store, ExprId id) {
     if (!IsSupportedOp(e.op) || e.inputs.size() != 2)
         return false;
 
-    return (*store)[e.inputs[0]].op == OpType::Const && (*store)[e.inputs[1]].op == OpType::Const;
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const Expr& rhs = (*store)[e.inputs[1]];
+    if (lhs.op != OpType::Const || rhs.op != OpType::Const)
+        return false;
+
+    if (e.op == OpType::Div) {
+        if (rhs.knownValue == 0)
+            return false;
+        return (lhs.knownValue % rhs.knownValue) == 0;
+    }
+
+    return true;
 }
 
 static ExprId Rewrite_CombineConstants(ExprStore* store, ExprId id) {

@@ -659,6 +659,17 @@ Extracts shared multiplicative factors from additions.
 
 ---
 
+### CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL_POW_TERMS
+
+Cancels identical power terms that appear in both numerator and denominator.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\frac{a^5 \cdot 2}{3 \cdot a^5}$$ |
+| Rewrite | $$\frac{2}{3}$$ |
+
+---
+
 ### CORE.FACTORIZE.ARITHMETIC.MUL_COMBINE_CONSTANTS
 
 Combines constant multiplication chains.

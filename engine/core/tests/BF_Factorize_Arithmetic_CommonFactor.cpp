@@ -113,6 +113,40 @@ int TestAddLinearMultiplicity_PreservesPassthroughTerms() {
     return 0;
 }
 
+static int TestAddLinearMultiplicity_Chain() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_AddLinearMultiplicity_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, a - C(4) + a + a));
+
+    BF_TEST(Op(r) == OpType::Sub);
+    BF_TEST(InputSize(r) == 2);
+
+    ExprRef lhs = Input(r, 0);
+    ExprRef rhs = Input(r, 1);
+
+    // rhs => 4
+    BF_TEST(Op(rhs) == OpType::Const);
+    BF_TEST(ExprOf(rhs).knownValue == 4);
+
+    // lhs => 3 * a
+    BF_TEST(Op(lhs) == OpType::Mul);
+    BF_TEST(InputSize(lhs) == 2);
+    BF_TEST(CountExpr(lhs, a) == 1);
+    BF_TEST(CountInput(lhs, [](ExprRef x) { return Op(x) == OpType::Const; }) == 1);
+    BF_TEST(AnyInput(lhs, [](ExprRef x) { return Op(x) == OpType::Const && ExprOf(x).knownValue == 3; }));
+
+    return 0;
+}
+
 int TestAddCommonFactor_Basic() {
     MakeExprStore(32);
     const auto rule = Factorize::Arithmetic::Get_AddCommonFactor_Rule();
@@ -187,15 +221,40 @@ int TestAddCommonFactor_PartialFactorization() {
     return 0;
 }
 
+int TestCommonFactorCancel_PowTerms_Basic() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_CommonFactorCancel_PowTerms_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, ((a ^ C(5)) * C(2)) / (C(3) * (a ^ C(5)))));
+
+    BF_TEST(Op(r) == OpType::Div);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(AnyInput(Input(r, 0), [](ExprRef in) { return EqualChunkValue(in, 2u); }) ||
+            EqualChunkValue(Input(r, 0), 2u));
+    BF_TEST(AnyInput(Input(r, 1), [](ExprRef in) { return EqualChunkValue(in, 3u); }) ||
+            EqualChunkValue(Input(r, 1), 3u));
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAddLinearMultiplicity_Basic);
     BF_RUN_TEST(TestAddLinearMultiplicity_ImplicitAndExplicitCoeff);
     BF_RUN_TEST(TestAddLinearMultiplicity_MergesMultipleTerms);
     BF_RUN_TEST(TestAddLinearMultiplicity_PreservesPassthroughTerms);
+    BF_RUN_TEST(TestAddLinearMultiplicity_Chain);
 
     BF_RUN_TEST(TestAddCommonFactor_Basic);
     BF_RUN_TEST(TestAddCommonFactor_CommutativeMulOperands);
     BF_RUN_TEST(TestAddCommonFactor_PartialFactorization);
+    BF_RUN_TEST(TestCommonFactorCancel_PowTerms_Basic);
 
     return 0;
 }

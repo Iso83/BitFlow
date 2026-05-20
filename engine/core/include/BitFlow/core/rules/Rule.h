@@ -157,6 +157,9 @@ Rule Get_AddLinearMultiplicity_Rule();
 inline constexpr RuleKey AddCommonFactor{"CORE.FACTORIZE.ARITHMETIC.ADD_COMMON_FACTOR"};
 Rule Get_AddCommonFactor_Rule();
 
+inline constexpr RuleKey CommonFactorCancel_PowTerms{"CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL_POW_TERMS"};
+Rule Get_CommonFactorCancel_PowTerms_Rule();
+
 inline constexpr RuleKey MulCombineConstants{"CORE.FACTORIZE.ARITHMETIC.MUL_COMBINE_CONSTANTS"};
 Rule Get_MulCombineConstants_Rule();
 } // namespace Factorize::Arithmetic

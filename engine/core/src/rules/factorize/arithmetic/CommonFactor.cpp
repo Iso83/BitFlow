@@ -28,6 +28,9 @@ static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTer
     if (term.op == OpType::Const)
         return false;
 
+    if (term.op == OpType::Sub)
+        return false;
+
     if (term.op != OpType::Mul) {
         out.base = termId;
         out.coeff = 1;
@@ -81,7 +84,7 @@ static bool Match_AddLinearMultiplicity(const ExprStore* store, ExprId id) {
         const Expr& term = (*store)[inputId];
 
         // implicit coeff = 1
-        if (term.op != OpType::Mul && term.op != OpType::Const) {
+        if (term.op != OpType::Mul && term.op != OpType::Const && term.op != OpType::Sub) {
 
             if (++baseTermCounts[inputId] >= 2)
                 return true;
@@ -90,8 +93,18 @@ static bool Match_AddLinearMultiplicity(const ExprStore* store, ExprId id) {
         }
 
         LinearTerm linear{};
-        if (!DecomposeLinearTerm(store, inputId, linear, e.bitWidth))
+        if (!DecomposeLinearTerm(store, inputId, linear, e.bitWidth)) {
+            const Expr& maybeSub = (*store)[inputId];
+            if (maybeSub.op == OpType::Sub && maybeSub.inputs.size() == 2) {
+                const Expr& subLhs = (*store)[maybeSub.inputs[0]];
+                const Expr& subRhs = (*store)[maybeSub.inputs[1]];
+                if (subLhs.op != OpType::Const && subRhs.op == OpType::Const) {
+                    if (++baseTermCounts[maybeSub.inputs[0]] >= 2)
+                        return true;
+                }
+            }
             continue;
+        }
 
         if (++baseTermCounts[linear.base] >= 2)
             return true;
@@ -127,6 +140,47 @@ static bool Match_AddCommonFactor(const ExprStore* store, ExprId id) {
 
     return false;
 }
+
+static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+
+    if (e.op != OpType::Div || e.inputs.size() != 2)
+        return false;
+
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const Expr& rhs = (*store)[e.inputs[1]];
+
+    if (lhs.op != OpType::Mul || rhs.op != OpType::Mul)
+        return false;
+
+    for (ExprId lhsFactorId : lhs.inputs) {
+        const Expr& lhsFactor = (*store)[lhsFactorId];
+        if (lhsFactor.op != OpType::Pow || lhsFactor.inputs.size() != 2)
+            continue;
+
+        const Expr& lhsExp = (*store)[lhsFactor.inputs[1]];
+        if (lhsExp.op != OpType::Const)
+            continue;
+
+        for (ExprId rhsFactorId : rhs.inputs) {
+            const Expr& rhsFactor = (*store)[rhsFactorId];
+            if (rhsFactor.op != OpType::Pow || rhsFactor.inputs.size() != 2)
+                continue;
+
+            if (lhsFactor.inputs[0] != rhsFactor.inputs[0])
+                continue;
+
+            const Expr& rhsExp = (*store)[rhsFactor.inputs[1]];
+            if (rhsExp.op != OpType::Const)
+                continue;
+
+            if (lhsExp.knownValue == rhsExp.knownValue)
+                return true;
+        }
+    }
+
+    return false;
+}
 #pragma endregion
 
 #pragma region Rewrite
@@ -145,12 +199,13 @@ static ExprId Rewrite_AddLinearMultiplicity(ExprStore* store, ExprId id) {
 
     std::vector<ExprId> passthroughTerms;
     passthroughTerms.reserve(originalInputs.size());
+    Types::ExprChunk pendingSubConst = 0;
 
     for (ExprId inputId : originalInputs) {
         const Expr& term = (*store)[inputId];
 
         // implicit coeff = 1
-        if (term.op != OpType::Mul && term.op != OpType::Const) {
+        if (term.op != OpType::Mul && term.op != OpType::Const && term.op != OpType::Sub) {
             AddCoeff(coeffByBaseId, baseOrder, inputId, 1, mask);
             continue;
         }
@@ -158,6 +213,15 @@ static ExprId Rewrite_AddLinearMultiplicity(ExprStore* store, ExprId id) {
         LinearTerm linear{};
 
         if (!DecomposeLinearTerm(store, inputId, linear, bitWidth)) {
+            if (term.op == OpType::Sub && term.inputs.size() == 2) {
+                const Expr& subLhs = (*store)[term.inputs[0]];
+                const Expr& subRhs = (*store)[term.inputs[1]];
+                if (subLhs.op != OpType::Const && subRhs.op == OpType::Const) {
+                    AddCoeff(coeffByBaseId, baseOrder, term.inputs[0], 1, mask);
+                    pendingSubConst = (pendingSubConst + subRhs.knownValue) & mask;
+                    continue;
+                }
+            }
             passthroughTerms.push_back(inputId);
             continue;
         }
@@ -187,11 +251,8 @@ static ExprId Rewrite_AddLinearMultiplicity(ExprStore* store, ExprId id) {
     for (ExprId termId : passthroughTerms)
         normalizedAddTerms.push_back(termId);
 
-    if (normalizedAddTerms.empty())
-        return store->createConstant(0, bitWidth).id;
-
     // no-op detection
-    if (normalizedAddTerms.size() == originalInputs.size()) {
+    if (pendingSubConst == 0 && normalizedAddTerms.size() == originalInputs.size()) {
 
         bool identical = true;
 
@@ -206,10 +267,20 @@ static ExprId Rewrite_AddLinearMultiplicity(ExprStore* store, ExprId id) {
             return id;
     }
 
-    if (normalizedAddTerms.size() == 1)
-        return normalizedAddTerms[0];
+    ExprId addResult;
 
-    return store->create(OpType::Add, std::move(normalizedAddTerms), bitWidth).id;
+    if (normalizedAddTerms.empty())
+        addResult = store->zeroId();
+    else if (normalizedAddTerms.size() == 1)
+        addResult = normalizedAddTerms[0];
+    else
+        addResult = store->create(OpType::Add, std::move(normalizedAddTerms), bitWidth).id;
+
+    if (pendingSubConst != 0)
+        return store->create(OpType::Sub, {addResult, store->createConstant(pendingSubConst, bitWidth).id}, bitWidth)
+            .id;
+
+    return addResult;
 }
 
 static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
@@ -312,6 +383,74 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
 
     return store->create(OpType::Add, std::move(finalAddTerms), bitWidth).id;
 }
+
+static ExprId Rewrite_CommonFactorCancel_PowTerms(ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const Expr& rhs = (*store)[e.inputs[1]];
+
+    std::vector<bool> lhsConsumed(lhs.inputs.size(), false);
+    std::vector<bool> rhsConsumed(rhs.inputs.size(), false);
+
+    bool anyCanceled = false;
+
+    for (size_t i = 0; i < lhs.inputs.size(); ++i) {
+        const ExprId lhsFactorId = lhs.inputs[i];
+        const Expr& lhsFactor = (*store)[lhsFactorId];
+        if (lhsFactor.op != OpType::Pow || lhsFactor.inputs.size() != 2)
+            continue;
+
+        const Expr& lhsExp = (*store)[lhsFactor.inputs[1]];
+        if (lhsExp.op != OpType::Const)
+            continue;
+
+        for (size_t j = 0; j < rhs.inputs.size(); ++j) {
+            if (rhsConsumed[j])
+                continue;
+
+            const ExprId rhsFactorId = rhs.inputs[j];
+            const Expr& rhsFactor = (*store)[rhsFactorId];
+            if (rhsFactor.op != OpType::Pow || rhsFactor.inputs.size() != 2)
+                continue;
+
+            if (lhsFactor.inputs[0] != rhsFactor.inputs[0])
+                continue;
+
+            const Expr& rhsExp = (*store)[rhsFactor.inputs[1]];
+            if (rhsExp.op != OpType::Const || lhsExp.knownValue != rhsExp.knownValue)
+                continue;
+
+            lhsConsumed[i] = true;
+            rhsConsumed[j] = true;
+            anyCanceled = true;
+            break;
+        }
+    }
+
+    if (!anyCanceled)
+        return id;
+
+    auto buildProduct = [&](const Expr& mulExpr, const std::vector<bool>& consumed) -> ExprId {
+        std::vector<ExprId> remaining;
+        remaining.reserve(mulExpr.inputs.size());
+
+        for (size_t k = 0; k < mulExpr.inputs.size(); ++k) {
+            if (!consumed[k])
+                remaining.push_back(mulExpr.inputs[k]);
+        }
+
+        if (remaining.empty())
+            return store->createConstant(1, e.bitWidth).id;
+        if (remaining.size() == 1)
+            return remaining[0];
+        return store->create(OpType::Mul, std::move(remaining), e.bitWidth).id;
+    };
+
+    const ExprId newLhs = buildProduct(lhs, lhsConsumed);
+    const ExprId newRhs = buildProduct(rhs, rhsConsumed);
+
+    return store->create(OpType::Div, {newLhs, newRhs}, e.bitWidth).id;
+}
 #pragma endregion
 
 Rule Get_AddLinearMultiplicity_Rule() {
@@ -321,6 +460,13 @@ Rule Get_AddLinearMultiplicity_Rule() {
 
 Rule Get_AddCommonFactor_Rule() {
     return Rule{AddCommonFactor, &Match_AddCommonFactor, &Rewrite_AddCommonFactor, {AddLinearMultiplicity}};
+}
+
+Rule Get_CommonFactorCancel_PowTerms_Rule() {
+    return Rule{CommonFactorCancel_PowTerms,
+                &Match_CommonFactorCancel_PowTerms,
+                &Rewrite_CommonFactorCancel_PowTerms,
+                {Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic
