@@ -54,8 +54,10 @@ auto simplified = Rewrite(engine, expr);
 ## Documentation
 
 Core architecture documentation can be found here:
-
 - [core_architecture.md](docs/core/core_architecture.md)
+
+A separate web-based demo and Docker deployment project is available here:
+- [BitFlow.DotNet](https://github.com/Iso83/BitFlow.DotNet)
 
 ## Goals
 
@@ -64,13 +66,8 @@ The long-term goal of BitFlow is to provide a clean and extensible symbolic tran
 - optimization research
 - symbolic simplification
 - bit-vector analysis
-- educational visualization tools
-- web-based expression rewriting demos
 
 Future plans include:
-- Blazor-based visualization tooling
-- REST API support
-- graph visualization
 - advanced rewrite systems
 - improved expression storage and memory management
 - larger integer backends

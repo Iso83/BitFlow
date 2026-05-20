@@ -14,6 +14,8 @@ namespace BitFlow::Core::Rules {
 
 class RuleEngine {
   public:
+    int maxIterations = 64;
+
     using DebugCallback = std::function<void(Ids::ExprId before, Ids::ExprId after, RuleKey key)>;
 
   private:

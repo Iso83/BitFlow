@@ -46,8 +46,8 @@ int TestSimplify_CombineMulConstants_NonAdjacent() {
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(Input(r, 0) == a);
-    BF_TEST(EqualChunkValue(Input(r, 1), 6u));
+    BF_TEST(EqualChunkValue(Input(r, 0), 6u));
+    BF_TEST(Input(r, 1) == a);
     return 0;
 }
 

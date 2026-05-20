@@ -48,21 +48,35 @@ inline int CompareExprCanonical(const ExprStore* store, Ids::ExprId a, Ids::Expr
     const Expr& exprA = (*store)[a];
     const Expr& exprB = (*store)[b];
 
+    // --- constants first ---
+    if (exprA.op == OpType::Const && exprB.op != OpType::Const)
+        return -1;
+
+    if (exprA.op != OpType::Const && exprB.op == OpType::Const)
+        return 1;
+
+    // --- variables second ---
+    if (exprA.op == OpType::Var && exprB.op != OpType::Var)
+        return -1;
+
+    if (exprA.op != OpType::Var && exprB.op == OpType::Var)
+        return 1;
+
     // --- op type ---
     if (exprA.op != exprB.op)
         return static_cast<int>((OpType)exprA.op) < static_cast<int>((OpType)exprB.op) ? -1 : 1;
 
-    // --- variables ---
-    if (exprA.op == Expression::OpType::Var)
-        return a.value() < b.value() ? -1 : 1;
-
     // --- constants ---
-    if (exprA.op == Expression::OpType::Const) {
+    if (exprA.op == OpType::Const) {
         if (exprA.knownValue != exprB.knownValue)
             return exprA.knownValue < exprB.knownValue ? -1 : 1;
 
         return 0;
     }
+
+    // --- variables ---
+    if (exprA.op == OpType::Var)
+        return a.value() < b.value() ? -1 : 1;
 
     // --- arity ---
     if (exprA.inputs.size() != exprB.inputs.size())
@@ -70,10 +84,10 @@ inline int CompareExprCanonical(const ExprStore* store, Ids::ExprId a, Ids::Expr
 
     // --- recursive compare ---
     for (size_t i = 0; i < exprA.inputs.size(); ++i) {
-        const int inputCmp = CompareExprCanonical(store, exprA.inputs[i], exprB.inputs[i]);
+        const int cmp = CompareExprCanonical(store, exprA.inputs[i], exprB.inputs[i]);
 
-        if (inputCmp != 0)
-            return inputCmp;
+        if (cmp != 0)
+            return cmp;
     }
 
     return 0;

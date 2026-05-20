@@ -44,8 +44,8 @@ int TestAddLinearMultiplicity_Basic() {
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(Input(r, 0) == a);
-    BF_TEST(EqualChunkValue(Input(r, 1), 2u));
+    BF_TEST(EqualChunkValue(Input(r, 0), 2u));
+    BF_TEST(Input(r, 1) == a);
     return 0;
 }
 
@@ -65,8 +65,8 @@ int TestAddLinearMultiplicity_ImplicitAndExplicitCoeff() {
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(Input(r, 0) == a);
-    BF_TEST(EqualChunkValue(Input(r, 1), 3u));
+    BF_TEST(EqualChunkValue(Input(r, 0), 3u));
+    BF_TEST(Input(r, 1) == a);
     return 0;
 }
 
@@ -86,8 +86,8 @@ int TestAddLinearMultiplicity_MergesMultipleTerms() {
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(Input(r, 0) == a);
-    BF_TEST(EqualChunkValue(Input(r, 1), 6u));
+    BF_TEST(EqualChunkValue(Input(r, 0), 6u));
+    BF_TEST(Input(r, 1) == a);
     return 0;
 }
 

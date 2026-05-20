@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 project(BitFlow LANGUAGES C CXX)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 option(BF_EXPR_LIFETIME_CHECKS
     "Enable Expr lifetime validation instrumentation"
     OFF)
@@ -11,11 +15,9 @@ option(BF_BUILD_TESTS
 if(BF_BUILD_TESTS)
     enable_testing()
     include(cmake/BitFlowTests.cmake)
-endif()
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+    add_subdirectory(tests/regressions)
+endif()
 
 add_subdirectory(engine/core)
 add_subdirectory(engine/io)

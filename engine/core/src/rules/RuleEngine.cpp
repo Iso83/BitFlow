@@ -72,8 +72,6 @@ ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id) const {
 ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root) const {
     ExprId current = root;
 
-    constexpr int maxIterations = 64;
-
     for (int i = 0; i < maxIterations; ++i) {
         ExprId next = ApplyRecursive(store, current);
 
@@ -83,8 +81,7 @@ ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root) const {
         current = next;
     }
 
-    BF_CORE_ASSERT(false && "Rewrite did not converge");
-    return current;
+    BF_RULE_ERROR("Rewrite did not converge after " + std::to_string(maxIterations) + " iterations");
 }
 
 static void CollectDependenciesRecursive(const std::vector<Rule>& rules,

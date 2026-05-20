@@ -223,7 +223,7 @@ int TestExprLatex_RewrittenNaryXor() {
 
     BF_SAFE_REWRITE(r, Rewrite(engine, a ^ b ^ (a + C(8))));
 
-    BF_TEST(ToLatex(r, names) == "a \\oplus b \\oplus (a + 8)");
+    BF_TEST(ToLatex(r, names) == "a \\oplus b \\oplus (8 + a)");
 
     return 0;
 }
