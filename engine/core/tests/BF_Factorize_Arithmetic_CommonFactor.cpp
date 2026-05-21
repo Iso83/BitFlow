@@ -259,8 +259,8 @@ int TestCommonFactorCancel_PowTerms_ExponentDifference() {
     auto a = V("a");
     auto exp3 = C(3);
 
-    // (a^8 * 2) / (3 * a^5)
-    // => (2 * a^3) / 3
+    // (a**8 * 2) / (3 * a**5)
+    // => (2 * a**3) / 3
 
     BF_SAFE_REWRITE(r, Rewrite(engine, ((a.Pow(8) * C(2)) / (C(3) * a.Pow(5)))));
 
@@ -284,7 +284,7 @@ int TestCommonFactorCancel_PowTerms_ExponentDifference() {
     // lhs should contain constant 2
     BF_TEST(AnyInput(lhs, [](ExprRef in) { return EqualChunkValue(in, 2u); }));
 
-    // lhs should contain a^3
+    // lhs should contain a**3
     BF_TEST(AnyInput(lhs, [&](ExprRef in) { return IsPow(in, a, 3u); }));
 
     return 0;

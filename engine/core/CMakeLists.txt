@@ -84,6 +84,7 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_Fold USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_NegNeg USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_One USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_SubNeg USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_Zero USE_CORE_PRINT)
 
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_AndXorReduction USE_CORE_PRINT)

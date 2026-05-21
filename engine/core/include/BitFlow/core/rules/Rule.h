@@ -63,6 +63,9 @@ Rule Get_RotateZero_Rule();
 inline constexpr RuleKey NegNeg{"CORE.SIMPLIFY.ARITHMETIC.NEG_NEG"};
 Rule Get_NegNeg_Rule();
 
+inline constexpr RuleKey SubNeg{"CORE.SIMPLIFY.ARITHMETIC.SUB_NEG"};
+Rule Get_SubNeg_Rule();
+
 inline constexpr RuleKey AddFold{"CORE.SIMPLIFY.ARITHMETIC.ADD_FOLD"};
 Rule Get_AddFold_Rule();
 

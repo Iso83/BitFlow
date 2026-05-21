@@ -318,6 +318,17 @@ Eliminates nested negation.
 
 ---
 
+### CORE.SIMPLIFY.ARITHMETIC.SUB_NEG
+
+Eliminates subtraction of a negated value.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x - (-y)$$ |
+| Rewrite | $$x + y$$ |
+
+---
+
 ### CORE.SIMPLIFY.ARITHMETIC.ADD_FOLD
 
 Combines multiple constant terms inside additive expressions into a single constant value.

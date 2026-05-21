@@ -28,7 +28,7 @@ static ExprId Rewrite_NegNeg(ExprStore* store, ExprId id) {
 }
 
 Rule Get_NegNeg_Rule() {
-    return Rule{NegNeg, &Match_NegNeg, &Rewrite_NegNeg, {Normalize::Flatten}};
+    return Rule{NegNeg, &Match_NegNeg, &Rewrite_NegNeg};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic
