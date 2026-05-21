@@ -9,7 +9,7 @@ using namespace BitFlow::Core::Expression;
 
 static bool IsNotOf(const ExprStore* store, ExprId a, ExprId b) {
     const Expr& exprA = (*store)[a];
-    return exprA.op == OpType::Not && exprA.inputs.size() == 1 && exprA.inputs[0] == b;
+    return exprA.op == OpType::Not && exprA.inputs.size() == 1 && store->structuralEquivalent(exprA.inputs[0], b);
 }
 
 static bool Match_Complement(const ExprStore* store, ExprId id) {

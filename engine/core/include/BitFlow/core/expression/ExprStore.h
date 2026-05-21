@@ -109,6 +109,18 @@ class ExprStore {
     }
 #pragma endregion
 
+#pragma endregion Equivalence
+    [[nodiscard]] bool structuralEquivalent(Ids::ExprId a, Ids::ExprId b) const;
+    [[nodiscard]] inline bool structuralEquivalent(ExprRef a, ExprRef b) const {
+        return structuralEquivalent(a.id, b.id);
+    }
+
+    [[nodiscard]] bool equalConstValue(Ids::ExprId a, Ids::ExprId b) const;
+    [[nodiscard]] inline bool equalConstValue(ExprRef a, ExprRef b) const {
+        return equalConstValue(a.id, b.id);
+    }
+#pragma endregion
+
   private:
 #pragma region Internal
     void ensureCapacity(size_t size) {

@@ -105,6 +105,71 @@ int TestContains_ReturnsFalseAfterRemove() {
     return 0;
 }
 
+int Test_StructuralEquivalent_CommutativeOrder() {
+    MakeExprStore(32);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+
+    auto lhs = a + b + c;
+    auto rhs = c + a + b;
+
+    BF_TEST(store.structuralEquivalent(lhs.id, rhs.id));
+
+    return 0;
+}
+
+int Test_StructuralEquivalent_NonCommutativeOrder() {
+    MakeExprStore(32);
+
+    auto a = V("a");
+    auto b = V("b");
+
+    auto lhs = a - b;
+    auto rhs = b - a;
+
+    BF_TEST(!store.structuralEquivalent(lhs.id, rhs.id));
+
+    return 0;
+}
+
+int Test_StructuralEquivalent_DuplicateInputs() {
+    MakeExprStore(32);
+
+    auto a = V("a");
+    auto b = V("b");
+
+    auto lhs = a + a + b;
+    auto rhs = a + b + b;
+
+    BF_TEST(!store.structuralEquivalent(lhs.id, rhs.id));
+
+    return 0;
+}
+
+int Test_EqualConstValue_DifferentBitWidths() {
+    MakeExprStore(128);
+
+    auto a = store.createConstant(3, 2);
+    auto b = store.createConstant(3, 128);
+
+    BF_TEST(store.equalConstValue(a, b));
+
+    return 0;
+}
+
+int Test_EqualConstValue_DifferentValues() {
+    MakeExprStore(128);
+
+    auto a = store.createConstant(3, 32);
+    auto b = store.createConstant(4, 128);
+
+    BF_TEST(!store.equalConstValue(a, b));
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestMakeFalse_CreatesFalseConstant);
     BF_RUN_TEST(TestMakeTrue_CreatesTrueConstant);
@@ -113,6 +178,13 @@ int main() {
     BF_RUN_TEST(TestRemove_RemovesExprFromStore);
     BF_RUN_TEST(TestRemove_RejectsDoubleRemove);
     BF_RUN_TEST(TestContains_ReturnsFalseAfterRemove);
+
+    BF_RUN_TEST(Test_StructuralEquivalent_CommutativeOrder);
+    BF_RUN_TEST(Test_StructuralEquivalent_NonCommutativeOrder);
+    BF_RUN_TEST(Test_StructuralEquivalent_DuplicateInputs);
+
+    BF_RUN_TEST(Test_EqualConstValue_DifferentBitWidths);
+    BF_RUN_TEST(Test_EqualConstValue_DifferentValues);
 
     return 0;
 }

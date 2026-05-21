@@ -147,7 +147,7 @@ static bool Match_MulToPow(const ExprStore* store, ExprId id) {
 
     for (std::size_t i = 0; i < e.inputs.size(); ++i) {
         for (std::size_t j = i + 1; j < e.inputs.size(); ++j) {
-            if (CompareExprCanonical(store, e.inputs[i], e.inputs[j]) == 0)
+            if (store->structuralEquivalent(e.inputs[i], e.inputs[j]))
                 return true;
         }
     }
@@ -176,14 +176,14 @@ static bool Match_MulPowCombine(const ExprStore* store, ExprId id) {
             // x * pow(x, n)
             if (bb.op == OpType::Pow && bb.inputs.size() == 2) {
                 const Expr& exp = (*store)[bb.inputs[1]];
-                if (exp.op == OpType::Const && CompareExprCanonical(store, aId, bb.inputs[0]) == 0)
+                if (exp.op == OpType::Const && store->structuralEquivalent(aId, bb.inputs[0]))
                     return true;
             }
 
             // pow(x, n) * x
             if (aa.op == OpType::Pow && aa.inputs.size() == 2) {
                 const Expr& exp = (*store)[aa.inputs[1]];
-                if (exp.op == OpType::Const && CompareExprCanonical(store, aa.inputs[0], bId) == 0)
+                if (exp.op == OpType::Const && store->structuralEquivalent(aa.inputs[0], bId))
                     return true;
             }
 
@@ -194,7 +194,7 @@ static bool Match_MulPowCombine(const ExprStore* store, ExprId id) {
                 const Expr& expB = (*store)[bb.inputs[1]];
 
                 if (expA.op == OpType::Const && expB.op == OpType::Const &&
-                    CompareExprCanonical(store, aa.inputs[0], bb.inputs[0]) == 0)
+                    store->structuralEquivalent(aa.inputs[0], bb.inputs[0]))
                     return true;
             }
         }
@@ -490,7 +490,7 @@ static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
             const Expr& bb = (*store)[bId];
 
             // x * pow(x, n)
-            if (bb.op == OpType::Pow && bb.inputs.size() == 2 && CompareExprCanonical(store, aId, bb.inputs[0]) == 0) {
+            if (bb.op == OpType::Pow && bb.inputs.size() == 2 && store->structuralEquivalent(aId, bb.inputs[0])) {
 
                 const Expr& exp = (*store)[bb.inputs[1]];
                 if (exp.op == OpType::Const) {
@@ -501,8 +501,7 @@ static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
             }
 
             // pow(x,n) * x
-            else if (aa.op == OpType::Pow && aa.inputs.size() == 2 &&
-                     CompareExprCanonical(store, aa.inputs[0], bId) == 0) {
+            else if (aa.op == OpType::Pow && aa.inputs.size() == 2 && store->structuralEquivalent(aa.inputs[0], bId)) {
 
                 const Expr& exp = (*store)[aa.inputs[1]];
                 if (exp.op == OpType::Const) {
@@ -514,7 +513,7 @@ static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
 
             // pow(x,a) * pow(x,b)
             else if (aa.op == OpType::Pow && bb.op == OpType::Pow && aa.inputs.size() == 2 && bb.inputs.size() == 2 &&
-                     CompareExprCanonical(store, aa.inputs[0], bb.inputs[0]) == 0) {
+                     store->structuralEquivalent(aa.inputs[0], bb.inputs[0])) {
 
                 const Expr& ea = (*store)[aa.inputs[1]];
                 const Expr& eb = (*store)[bb.inputs[1]];

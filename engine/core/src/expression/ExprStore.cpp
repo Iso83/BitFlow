@@ -1,3 +1,4 @@
+#include <BitFlow/core/expression/ExprRefUtils.h>
 #include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/helper/Exception.h>
 
@@ -144,6 +145,113 @@ ExprStore::ExprStore() {
         return false;
 
     return m_alive[index];
+}
+#pragma endregion
+
+void CollectEquivalentInputs(const ExprStore& store, ExprId id, OpType op, std::vector<ExprId>& out) {
+    const Expr& e = store[id];
+
+    if (e.op == op && IsAssociative(op)) {
+        for (ExprId input : e.inputs)
+            CollectEquivalentInputs(store, input, op, out);
+
+        return;
+    }
+
+    out.push_back(id);
+}
+
+#pragma region Equivalence
+[[nodiscard]] bool ExprStore::structuralEquivalent(ExprId a, ExprId b) const {
+    // fast path
+    if (a == b)
+        return true;
+
+    const Expr& ea = (*this)[a];
+    const Expr& eb = (*this)[b];
+
+    // basic structure
+    if (ea.op != eb.op)
+        return false;
+
+    if (ea.bitWidth != eb.bitWidth)
+        return false;
+
+    if (ea.inputs.size() != eb.inputs.size())
+        return false;
+
+    // constants
+    if (ea.op == OpType::Const)
+        return equalConstValue(a, b);
+
+    // variables
+    if (ea.op == OpType::Var)
+        return false;
+
+    // no children
+    if (ea.inputs.empty())
+        return true;
+
+    const bool commutative = IsCommutative(ea.op);
+    const bool associative = IsAssociative(ea.op);
+
+    // ordered compare
+    if (!commutative) {
+        for (size_t i = 0; i < ea.inputs.size(); ++i) {
+            if (!structuralEquivalent(ea.inputs[i], eb.inputs[i]))
+                return false;
+        }
+
+        return true;
+    }
+
+    std::vector<ExprId> lhsInputs;
+    std::vector<ExprId> rhsInputs;
+
+    if (associative) {
+        CollectEquivalentInputs(*this, a, ea.op, lhsInputs);
+        CollectEquivalentInputs(*this, b, eb.op, rhsInputs);
+    } else {
+        lhsInputs = ea.inputs;
+        rhsInputs = eb.inputs;
+    }
+
+    if (lhsInputs.size() != rhsInputs.size())
+        return false;
+
+    // unordered compare for commutative ops
+    std::vector<bool> matched(rhsInputs.size(), false);
+
+    for (ExprId lhsInput : lhsInputs) {
+        bool found = false;
+
+        for (size_t j = 0; j < rhsInputs.size(); ++j) {
+            if (matched[j])
+                continue;
+
+            if (!structuralEquivalent(lhsInput, rhsInputs[j]))
+                continue;
+
+            matched[j] = true;
+            found = true;
+            break;
+        }
+
+        if (!found)
+            return false;
+    }
+
+    return true;
+}
+
+[[nodiscard]] bool ExprStore::equalConstValue(ExprId a, ExprId b) const {
+    const Expr& ea = get(a);
+    const Expr& eb = get(b);
+
+    BF_CORE_ASSERT(ea.op == OpType::Const);
+    BF_CORE_ASSERT(eb.op == OpType::Const);
+
+    return EqualChunkValue(this, a, eb.knownValue);
 }
 #pragma endregion
 

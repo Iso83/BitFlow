@@ -170,7 +170,7 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
             if (rhsFactor.op != OpType::Pow || rhsFactor.inputs.size() != 2)
                 continue;
 
-            if (lhsFactor.inputs[0] != rhsFactor.inputs[0])
+            if (!store->structuralEquivalent(lhsFactor.inputs[0], rhsFactor.inputs[0]))
                 continue;
 
             const Expr& rhsExp = (*store)[rhsFactor.inputs[1]];
@@ -349,7 +349,7 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
             remainingFactors.reserve(term.inputs.size());
 
             for (ExprId factorId : term.inputs) {
-                if (!hasCommonFactor && factorId == common) {
+                if (!hasCommonFactor && store->structuralEquivalent(factorId, common)) {
                     hasCommonFactor = true;
                     continue;
                 }
@@ -443,7 +443,7 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(ExprStore* store, ExprId id) {
             if (rhsFactor.op != OpType::Pow || rhsFactor.inputs.size() != 2)
                 continue;
 
-            if (lhsBaseId != rhsFactor.inputs[0])
+            if (!store->structuralEquivalent(lhsBaseId, rhsFactor.inputs[0]))
                 continue;
 
             const Expr& rhsExp = (*store)[rhsFactor.inputs[1]];

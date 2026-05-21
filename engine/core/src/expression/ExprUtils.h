@@ -11,13 +11,13 @@ inline bool IsConstFalse(const ExprStore* store, Ids::ExprId id) {
 
 #pragma region Matching
 inline bool ContainsExpr(const ExprStore* store, Ids::ExprId id, Ids::ExprId target) {
-    if (id == target)
+    if (store->structuralEquivalent(id, target))
         return true;
 
     const Expr& e = (*store)[id];
 
     for (auto in : e.inputs) {
-        if (in == target)
+        if (store->structuralEquivalent(in, target))
             return true;
     }
 

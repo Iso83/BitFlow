@@ -9,6 +9,15 @@ namespace BitFlow::Core::Rules::Factorize::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
+static bool ContainsStructurallyEquivalent(const ExprStore* store, const std::vector<ExprId>& ids, ExprId target) {
+    for (ExprId id : ids) {
+        if (store->structuralEquivalent(id, target))
+            return true;
+    }
+
+    return false;
+}
+
 static bool Match_XorPairCancel(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
 
@@ -25,14 +34,14 @@ static bool Match_XorPairCancel(const ExprStore* store, ExprId id) {
         if (exprIn.op != OpType::Xor || exprIn.inputs.size() < 2)
             continue;
 
-        std::unordered_map<ExprId, bool> seenInChild;
+        std::vector<ExprId> seenInChild;
         seenInChild.reserve(exprIn.inputs.size());
 
         for (auto term : exprIn.inputs) {
-            if (seenInChild[term])
+            if (ContainsStructurallyEquivalent(store, seenInChild, term))
                 continue;
 
-            seenInChild[term] = true;
+            seenInChild.push_back(term);
             childCounts[term]++;
 
             if (childCounts[term] >= 2)
@@ -54,14 +63,14 @@ static ExprId Rewrite_XorPairCancel(ExprStore* store, ExprId id) {
         if (exprIn.op != OpType::Xor || exprIn.inputs.size() < 2)
             continue;
 
-        std::unordered_map<ExprId, bool> seenInChild;
+        std::vector<ExprId> seenInChild;
         seenInChild.reserve(exprIn.inputs.size());
 
         for (auto term : exprIn.inputs) {
-            if (seenInChild[term])
+            if (ContainsStructurallyEquivalent(store, seenInChild, term))
                 continue;
 
-            seenInChild[term] = true;
+            seenInChild.push_back(term);
             childCounts[term]++;
 
             if (!firstSeen.count(term))
@@ -110,7 +119,7 @@ static ExprId Rewrite_XorPairCancel(ExprStore* store, ExprId id) {
             residual.reserve(exprIn.inputs.size());
 
             for (auto term : exprIn.inputs) {
-                if (term != commonId)
+                if (!store->structuralEquivalent(term, commonId))
                     residual.push_back(term);
             }
 
