@@ -178,6 +178,50 @@ int TestExprParser_RoundTrip_ToString() {
     return 0;
 }
 
+int TestExprParser_UnaryChain_NormalizationAndRoundTrip() {
+    MakeExprStore(32);
+
+    {
+        auto p = Parse("s---d+++4");
+        BF_TEST(BitFlow::IO::ToString(p.root, p.names) == "s - d + 4");
+    }
+
+    {
+        auto p = Parse("---a");
+        BF_TEST(BitFlow::IO::ToString(p.root, p.names) == "-a");
+    }
+
+    {
+        auto p = Parse("+++a");
+        BF_TEST(BitFlow::IO::ToString(p.root, p.names) == "a");
+    }
+
+    {
+        auto p = Parse("-+-a");
+        BF_TEST(BitFlow::IO::ToString(p.root, p.names) == "a");
+    }
+
+    {
+        auto p = Parse("a---b");
+        BF_TEST(BitFlow::IO::ToString(p.root, p.names) == "a - b");
+    }
+
+    {
+        auto p = Parse("a++++b");
+        BF_TEST(BitFlow::IO::ToString(p.root, p.names) == "a + b");
+    }
+
+    {
+        auto p1 = Parse("s---d+++4");
+        auto s = BitFlow::IO::ToString(p1.root, p1.names);
+
+        auto p2 = Parse(s);
+        BF_TEST(BitFlow::IO::ToString(p2.root, p2.names) == "s - d + 4");
+    }
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestExprParser_Precedence_MulBeforeAdd);
     BF_RUN_TEST(TestExprParser_Precedence_AddBeforeShift);
@@ -189,5 +233,6 @@ int main() {
     BF_RUN_TEST(TestExprParser_MixedExpressionShape);
     BF_RUN_TEST(TestExprParser_ShiftOperators);
     BF_RUN_TEST(TestExprParser_RoundTrip_ToString);
+    BF_RUN_TEST(TestExprParser_UnaryChain_NormalizationAndRoundTrip);
     return 0;
 }

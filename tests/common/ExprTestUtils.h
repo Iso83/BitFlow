@@ -1,10 +1,8 @@
 #pragma once
 
 #include <BitFlow/core/eval/Evaluator.h>
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/ids/ExprId.h>
+#include <BitFlow/core/expression/ExprRefUtils.h>
 #include <BitFlow/core/rules/RuleEngine.h>
-#include <cassert>
 #include <cstdint>
 #include <iostream>
 
@@ -79,17 +77,6 @@ inline bool EqualChunkValue(const Core::BitVector::bf_uint& a, const Core::Types
     return EqualChunkValue(a, Core::BitVector::bf_uint(b, Core::Types::ExprChunkBits));
 }
 
-inline bool EqualChunkValue(const Core::Expression::ExprStore* store, const Core::Ids::ExprId id,
-                            const Core::Types::ExprChunk& value) {
-    const Core::Expression::Expr& expr = (*store)[id];
-
-    return expr.op == Core::Expression::OpType::Const && expr.inputs.empty() && expr.knownValue == value;
-}
-
-inline bool EqualChunkValue(const Core::Expression::ExprRef e, const Core::Types::ExprChunk& value) {
-    return EqualChunkValue(e.store, e.id, value);
-}
-
 inline Core::Eval::EvalResult EvaluateConstant(const Core::Expression::ExprRef root,
                                                Core::Types::BitWidth bitWidth = Core::Types::ExprChunkBits) {
     assert(root.IsValid());
@@ -157,6 +144,18 @@ inline bool Contains(const std::string& s, const char* text) {
 
 inline bool Contains(const std::string& s, char ch) {
     return s.find(ch) != std::string::npos;
+}
+
+inline bool IsPow(const Core::Expression::ExprRef& e, const Core::Expression::ExprRef& base,
+                  const Core::Expression::ExprRef& exponent) {
+    return Op(e) == Core::Expression::OpType::Pow && InputSize(e) == 2 && Input(e, 0) == base &&
+           Input(e, 1) == exponent;
+}
+
+inline bool IsPow(const Core::Expression::ExprRef& e, const Core::Expression::ExprRef& base,
+                  Core::Types::ExprChunk exponent) {
+    return Op(e) == Core::Expression::OpType::Pow && InputSize(e) == 2 && Input(e, 0) == base &&
+           EqualChunkValue(Input(e, 1), exponent);
 }
 
 } // namespace BitFlow::Testing

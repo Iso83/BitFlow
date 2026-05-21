@@ -80,7 +80,8 @@ class PrattParser {
 
     static bool IsPrefixToken(TokenKind kind) {
         return kind == TokenKind::Identifier || kind == TokenKind::DecimalLiteral || kind == TokenKind::HexLiteral ||
-               kind == TokenKind::LeftParen || kind == TokenKind::Tilde || kind == TokenKind::Minus;
+               kind == TokenKind::LeftParen || kind == TokenKind::Tilde || kind == TokenKind::Plus ||
+               kind == TokenKind::Minus;
     }
 
     static OpType TokenToOp(TokenKind kind) {
@@ -192,6 +193,27 @@ class PrattParser {
         return left;
     }
 
+    ExprId ParseSignedPrefixExpression(bool isNegative) {
+        while (Current().kind == TokenKind::Plus || Current().kind == TokenKind::Minus) {
+            if (Current().kind == TokenKind::Minus)
+                isNegative = !isNegative;
+
+            Advance();
+        }
+
+        const OpInfo* info = GetOpInfo(OpType::Neg);
+
+        if (!info)
+            BF_IO_THROW("Missing OpInfo for Neg");
+
+        ExprId inner = ParseExpression(info->precedence);
+
+        if (!isNegative)
+            return inner;
+
+        return m_store->create(OpType::Neg, {inner}).id;
+    }
+
     ExprId ParsePrefix(const Token& token) {
         switch (token.kind) {
         case TokenKind::Identifier:
@@ -210,15 +232,10 @@ class PrattParser {
             ExprId inner = ParseExpression(info->precedence);
             return m_store->create(OpType::Not, {inner}).id;
         }
-        case TokenKind::Minus: {
-            const OpInfo* info = GetOpInfo(OpType::Neg);
-
-            if (!info)
-                BF_IO_THROW("Missing OpInfo for Not");
-
-            ExprId inner = ParseExpression(info->precedence);
-            return m_store->create(OpType::Neg, {inner}).id;
-        }
+        case TokenKind::Plus:
+            return ParseSignedPrefixExpression(false);
+        case TokenKind::Minus:
+            return ParseSignedPrefixExpression(true);
         default:
             throw ParseErrorAt("Expected expression", token);
         }

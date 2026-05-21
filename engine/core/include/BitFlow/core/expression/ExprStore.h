@@ -19,6 +19,7 @@ class ExprStore {
     friend BitFlow::IO::PrattParser;
 
   private:
+#pragma region Storage
     using ValueType = Ids::ExprId::ValueType;
 
     ValueType m_nextId{1};
@@ -38,11 +39,13 @@ class ExprStore {
     std::vector<Expr> m_nodes{};
 #endif
     std::vector<bool> m_alive{};
+#pragma endregion
 
   public:
     ExprStore();
     ~ExprStore() = default;
 
+#pragma region Constants
     [[nodiscard]] inline Ids::ExprId zeroId() const noexcept {
         return m_zero;
     }
@@ -51,16 +54,7 @@ class ExprStore {
         return ExprRef(const_cast<ExprStore*>(this), m_zero);
     }
 
-    [[nodiscard]] ExprRef create(OpType op, std::initializer_list<Ids::ExprId> in,
-                                 Types::BitWidth bitWidth = Types::ExprChunkBits);
-    [[nodiscard]] ExprRef create(OpType op, std::vector<Ids::ExprId>&& in,
-                                 Types::BitWidth bitWidth = Types::ExprChunkBits);
-
     [[nodiscard]] ExprRef createConstant(Types::ExprChunk value, Types::BitWidth bitWidth = Types::ExprChunkBits);
-
-    [[nodiscard]] ExprRef createVariable(Types::BitWidth bitWidth = Types::ExprChunkBits) {
-        return create(OpType::Var, {}, bitWidth);
-    }
 
     [[nodiscard]] ExprRef makeFalse(Types::BitWidth bitWidth = Types::ExprChunkBits) {
         return createConstant(Types::ExprChunk{0}, bitWidth);
@@ -85,13 +79,48 @@ class ExprStore {
     }
 
     [[nodiscard]] ExprRef invertConst(Ids::ExprId id);
+#pragma endregion
 
+#pragma region Create
+    [[nodiscard]] ExprRef create(OpType op, std::initializer_list<Ids::ExprId> in,
+                                 Types::BitWidth bitWidth = Types::ExprChunkBits);
+
+    [[nodiscard]] ExprRef create(OpType op, std::vector<Ids::ExprId>&& in,
+                                 Types::BitWidth bitWidth = Types::ExprChunkBits);
+
+    [[nodiscard]] ExprRef createVariable(Types::BitWidth bitWidth = Types::ExprChunkBits) {
+        return create(OpType::Var, {}, bitWidth);
+    }
+#pragma endregion
+
+#pragma region Query
     [[nodiscard]] bool remove(ExprRef ref);
 
     [[nodiscard]] bool contains(ExprRef ref) const;
+#pragma endregion
+
+#pragma region Operators
+    [[nodiscard]] const Expr& operator[](Ids::ExprId id) const {
+        return get(id);
+    }
+
+    [[nodiscard]] const Expr& operator[](ExprRef ref) const {
+        return get(ref.id);
+    }
+#pragma endregion
 
   private:
-#pragma region ExprAccess
+#pragma region Internal
+    void ensureCapacity(size_t size) {
+#ifdef BF_EXPR_LIFETIME_CHECKS
+        m_generation++;
+#endif
+        m_nodes.resize(size);
+        m_alive.resize(size, false);
+    }
+
+    [[nodiscard]] Ids::ExprId createId();
+
 #ifdef BF_EXPR_LIFETIME_CHECKS
     [[nodiscard]] Expr& MakeDebugExpr(Ids::ExprId id);
 #endif
@@ -104,6 +133,10 @@ class ExprStore {
 #endif
     }
 
+    [[nodiscard]] static size_t toIndex(Ids::ExprId id) {
+        return static_cast<size_t>(id.value());
+    }
+
     [[nodiscard]] const Expr& get(Ids::ExprId id) const {
 #ifdef BF_EXPR_LIFETIME_CHECKS
         return const_cast<ExprStore*>(this)->MakeDebugExpr(id);
@@ -112,30 +145,6 @@ class ExprStore {
 #endif
     }
 #pragma endregion
-
-  public:
-    [[nodiscard]] const Expr& operator[](Ids::ExprId id) const {
-        return get(id);
-    }
-
-    [[nodiscard]] const Expr& operator[](ExprRef ref) const {
-        return get(ref.id);
-    }
-
-  private:
-    [[nodiscard]] Ids::ExprId createId();
-
-    [[nodiscard]] static size_t toIndex(Ids::ExprId id) {
-        return static_cast<size_t>(id.value());
-    }
-
-    void ensureCapacity(size_t size) {
-#ifdef BF_EXPR_LIFETIME_CHECKS
-        m_generation++;
-#endif
-        m_nodes.resize(size);
-        m_alive.resize(size, false);
-    }
 };
 
 } // namespace BitFlow::Core::Expression

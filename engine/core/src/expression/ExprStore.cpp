@@ -14,6 +14,42 @@ ExprStore::ExprStore() {
     m_zero = createConstant(0, Types::BitWidth{1}).id;
 }
 
+#pragma region Constants
+[[nodiscard]] ExprRef ExprStore::createConstant(Types::ExprChunk value, Types::BitWidth bitWidth) {
+    auto ref = create(OpType::Const, {}, bitWidth);
+
+    Expr& expr = get(ref.id);
+    expr.knownMask = Expr::fullMask(bitWidth);
+    expr.knownValue = value;
+
+    return ref;
+}
+
+[[nodiscard]] ExprRef ExprStore::makeTrue(Types::BitWidth bitWidth) {
+    auto ref = create(OpType::Const, {}, bitWidth);
+
+    Expr& expr = get(ref.id);
+    auto mask = Expr::fullMask(bitWidth);
+    expr.knownMask = mask;
+    expr.knownValue = mask;
+
+    return ref;
+}
+
+[[nodiscard]] ExprRef ExprStore::invertConst(ExprId id) {
+    const Expr& e = get(id);
+
+    if (e.op != OpType::Const)
+        BF_CORE_THROW("ExprStore::invertConst expects Const");
+
+    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
+    const Types::ExprChunk value = (~e.knownValue) & mask;
+
+    return createConstant(value, e.bitWidth);
+}
+#pragma endregion
+
+#pragma region Create
 [[nodiscard]] ExprRef ExprStore::create(OpType op, std::initializer_list<ExprId> in, Types::BitWidth bitWidth) {
     BF_CORE_ASSERT(bitWidth > 0);
 
@@ -83,40 +119,9 @@ ExprStore::ExprStore() {
 
     return ExprRef(this, id);
 }
+#pragma endregion
 
-[[nodiscard]] ExprRef ExprStore::createConstant(Types::ExprChunk value, Types::BitWidth bitWidth) {
-    auto ref = create(OpType::Const, {}, bitWidth);
-
-    Expr& expr = get(ref.id);
-    expr.knownMask = Expr::fullMask(bitWidth);
-    expr.knownValue = value;
-
-    return ref;
-}
-
-[[nodiscard]] ExprRef ExprStore::makeTrue(Types::BitWidth bitWidth) {
-    auto ref = create(OpType::Const, {}, bitWidth);
-
-    Expr& expr = get(ref.id);
-    auto mask = Expr::fullMask(bitWidth);
-    expr.knownMask = mask;
-    expr.knownValue = mask;
-
-    return ref;
-}
-
-[[nodiscard]] ExprRef ExprStore::invertConst(ExprId id) {
-    const Expr& e = get(id);
-
-    if (e.op != OpType::Const)
-        BF_CORE_THROW("ExprStore::invertConst expects Const");
-
-    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
-    const Types::ExprChunk value = (~e.knownValue) & mask;
-
-    return createConstant(value, e.bitWidth);
-}
-
+#pragma region Query
 [[nodiscard]] bool ExprStore::remove(ExprRef ref) {
     if (!contains(ref))
         return false;
@@ -140,6 +145,21 @@ ExprStore::ExprStore() {
 
     return m_alive[index];
 }
+#pragma endregion
+
+#pragma region Internal
+[[nodiscard]] ExprId ExprStore::createId() {
+    ValueType value{};
+
+    if (!m_freeIds.empty()) {
+        value = m_freeIds.back();
+        m_freeIds.pop_back();
+    } else {
+        value = m_nextId++;
+    }
+
+    return ExprId{value};
+}
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
 [[nodiscard]] Expr& ExprStore::MakeDebugExpr(ExprId id) {
@@ -157,18 +177,6 @@ ExprStore::ExprStore() {
     return debugExpr;
 }
 #endif
-
-[[nodiscard]] ExprId ExprStore::createId() {
-    ValueType value{};
-
-    if (!m_freeIds.empty()) {
-        value = m_freeIds.back();
-        m_freeIds.pop_back();
-    } else {
-        value = m_nextId++;
-    }
-
-    return ExprId{value};
-}
+#pragma endregion
 
 } // namespace BitFlow::Core::Expression

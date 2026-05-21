@@ -44,6 +44,10 @@ if(BF_EXPR_LIFETIME_CHECKS)
     target_compile_definitions(BitFlowCore PUBLIC BF_EXPR_LIFETIME_CHECKS)
 endif()
 
+if(BF_TEST_CATCH_EXCEPTIONS)
+    target_compile_definitions(BitFlowCore PUBLIC BF_TEST_CATCH_EXCEPTIONS)
+endif()
+
 if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core/bitvector BF_BitVector USE_CORE_PRINT)
 
@@ -52,6 +56,7 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core/expression BF_Expr USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/expression BF_ExprPrinter USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/expression BF_ExprRef USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core/expression BF_ExprRefUtils USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/expression BF_ExprStore USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/expression BF_OpType USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/expression BF_ExprUtils USE_CORE_PRINT)

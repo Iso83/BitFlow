@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/expression/ExprRefUtils.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
 #include <vector>
@@ -155,6 +156,7 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
 
     for (ExprId lhsFactorId : lhs.inputs) {
         const Expr& lhsFactor = (*store)[lhsFactorId];
+
         if (lhsFactor.op != OpType::Pow || lhsFactor.inputs.size() != 2)
             continue;
 
@@ -164,6 +166,7 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
 
         for (ExprId rhsFactorId : rhs.inputs) {
             const Expr& rhsFactor = (*store)[rhsFactorId];
+
             if (rhsFactor.op != OpType::Pow || rhsFactor.inputs.size() != 2)
                 continue;
 
@@ -174,13 +177,21 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
             if (rhsExp.op != OpType::Const)
                 continue;
 
+            // equal or reducible exponents
             if (lhsExp.knownValue == rhsExp.knownValue)
+                return true;
+
+            if (lhsExp.knownValue > rhsExp.knownValue)
+                return true;
+
+            if (rhsExp.knownValue > lhsExp.knownValue)
                 return true;
         }
     }
 
     return false;
 }
+
 #pragma endregion
 
 #pragma region Rewrite
@@ -386,7 +397,9 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
 
 static ExprId Rewrite_CommonFactorCancel_PowTerms(ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
+
     const Types::BitWidth bitWidth = e.bitWidth;
+
     const Expr& lhs = (*store)[e.inputs[0]];
     const Expr& rhs = (*store)[e.inputs[1]];
 
@@ -396,62 +409,117 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(ExprStore* store, ExprId id) {
     std::vector<bool> lhsConsumed(lhsInputs.size(), false);
     std::vector<bool> rhsConsumed(rhsInputs.size(), false);
 
+    std::vector<ExprId> lhsExtraFactors;
+    std::vector<ExprId> rhsExtraFactors;
+
     bool anyCanceled = false;
 
     for (size_t i = 0; i < lhsInputs.size(); ++i) {
+
+        if (lhsConsumed[i])
+            continue;
+
         const ExprId lhsFactorId = lhsInputs[i];
         const Expr& lhsFactor = (*store)[lhsFactorId];
+
         if (lhsFactor.op != OpType::Pow || lhsFactor.inputs.size() != 2)
             continue;
 
+        const ExprId lhsBaseId = lhsFactor.inputs[0];
+
         const Expr& lhsExp = (*store)[lhsFactor.inputs[1]];
+
         if (lhsExp.op != OpType::Const)
             continue;
 
         for (size_t j = 0; j < rhsInputs.size(); ++j) {
+
             if (rhsConsumed[j])
                 continue;
 
             const ExprId rhsFactorId = rhsInputs[j];
             const Expr& rhsFactor = (*store)[rhsFactorId];
+
             if (rhsFactor.op != OpType::Pow || rhsFactor.inputs.size() != 2)
                 continue;
 
-            if (lhsFactor.inputs[0] != rhsFactor.inputs[0])
+            if (lhsBaseId != rhsFactor.inputs[0])
                 continue;
 
             const Expr& rhsExp = (*store)[rhsFactor.inputs[1]];
-            if (rhsExp.op != OpType::Const || lhsExp.knownValue != rhsExp.knownValue)
+
+            if (rhsExp.op != OpType::Const)
                 continue;
+
+            const Types::ExprChunk lhsValue = lhsExp.knownValue;
+            const Types::ExprChunk rhsValue = rhsExp.knownValue;
 
             lhsConsumed[i] = true;
             rhsConsumed[j] = true;
+
             anyCanceled = true;
-            break;
+
+            // same exponent => fully cancel
+            if (lhsValue == rhsValue)
+                break;
+
+            if (lhsValue > rhsValue) {
+
+                const Types::ExprChunk diff = lhsValue - rhsValue;
+
+                const ExprId diffId = store->createConstant(diff, bitWidth).id;
+
+                lhsExtraFactors.push_back(store->create(OpType::Pow, {lhsBaseId, diffId}, bitWidth).id);
+
+                break;
+            }
+
+            if (rhsValue > lhsValue) {
+
+                const Types::ExprChunk diff = rhsValue - lhsValue;
+
+                const ExprId diffId = store->createConstant(diff, bitWidth).id;
+
+                rhsExtraFactors.push_back(store->create(OpType::Pow, {lhsBaseId, diffId}, bitWidth).id);
+
+                break;
+            }
         }
     }
 
     if (!anyCanceled)
         return id;
 
-    auto buildProduct = [&](const std::vector<ExprId> mulExprInputs, const std::vector<bool>& consumed) -> ExprId {
+    auto buildProduct = [&](const std::vector<ExprId>& mulExprInputs, const std::vector<bool>& consumed,
+                            const std::vector<ExprId>& extras) -> ExprId {
         std::vector<ExprId> remaining;
-        remaining.reserve(mulExprInputs.size());
+
+        remaining.reserve(mulExprInputs.size() + extras.size());
 
         for (size_t k = 0; k < mulExprInputs.size(); ++k) {
             if (!consumed[k])
                 remaining.push_back(mulExprInputs[k]);
         }
 
+        for (ExprId extraId : extras)
+            remaining.push_back(extraId);
+
         if (remaining.empty())
             return store->createConstant(1, bitWidth).id;
+
         if (remaining.size() == 1)
             return remaining[0];
+
         return store->create(OpType::Mul, std::move(remaining), bitWidth).id;
     };
 
-    const ExprId newLhs = buildProduct(lhsInputs, lhsConsumed);
-    const ExprId newRhs = buildProduct(rhsInputs, rhsConsumed);
+    const ExprId newLhs = buildProduct(lhsInputs, lhsConsumed, lhsExtraFactors);
+
+    const ExprId newRhs = buildProduct(rhsInputs, rhsConsumed, rhsExtraFactors);
+
+    // fully reduced
+    if (EqualChunkValue(store, newRhs, 1u))
+        return newLhs;
 
     return store->create(OpType::Div, {newLhs, newRhs}, bitWidth).id;
 }

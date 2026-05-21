@@ -233,7 +233,7 @@ int TestCommonFactorCancel_PowTerms_Basic() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, ((a ^ C(5)) * C(2)) / (C(3) * (a ^ C(5)))));
+    BF_SAFE_REWRITE(r, Rewrite(engine, ((a.Pow(5) * C(2)) / (C(3) * a.Pow(5)))));
 
     BF_TEST(Op(r) == OpType::Div);
     BF_TEST(InputSize(r) == 2);
@@ -241,6 +241,52 @@ int TestCommonFactorCancel_PowTerms_Basic() {
             EqualChunkValue(Input(r, 0), 2u));
     BF_TEST(AnyInput(Input(r, 1), [](ExprRef in) { return EqualChunkValue(in, 3u); }) ||
             EqualChunkValue(Input(r, 1), 3u));
+    return 0;
+}
+
+int TestCommonFactorCancel_PowTerms_ExponentDifference() {
+    MakeExprStore(32);
+
+    const auto rule = Factorize::Arithmetic::Get_CommonFactorCancel_PowTerms_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto exp3 = C(3);
+
+    // (a^8 * 2) / (3 * a^5)
+    // => (2 * a^3) / 3
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, ((a.Pow(8) * C(2)) / (C(3) * a.Pow(5)))));
+
+    BF_TEST(Op(r) == OpType::Div);
+    BF_TEST(InputSize(r) == 2);
+
+    const ExprRef lhs = Input(r, 0);
+    const ExprRef rhs = Input(r, 1);
+
+    // denominator should be exactly 3
+    BF_TEST(EqualChunkValue(rhs, 3u));
+
+    // lhs should be multiplication
+    BF_TEST(Op(lhs) == OpType::Mul);
+    BF_TEST(InputSize(lhs) == 2);
+
+    // old powers must be gone
+    BF_TEST(CountExpr(r, a.Pow(8)) == 0);
+    BF_TEST(CountExpr(r, a.Pow(5)) == 0);
+
+    // lhs should contain constant 2
+    BF_TEST(AnyInput(lhs, [](ExprRef in) { return EqualChunkValue(in, 2u); }));
+
+    // lhs should contain a^3
+    BF_TEST(AnyInput(lhs, [&](ExprRef in) { return IsPow(in, a, 3u); }));
+
     return 0;
 }
 
@@ -255,6 +301,7 @@ int main() {
     BF_RUN_TEST(TestAddCommonFactor_CommutativeMulOperands);
     BF_RUN_TEST(TestAddCommonFactor_PartialFactorization);
     BF_RUN_TEST(TestCommonFactorCancel_PowTerms_Basic);
+    BF_RUN_TEST(TestCommonFactorCancel_PowTerms_ExponentDifference);
 
     return 0;
 }
