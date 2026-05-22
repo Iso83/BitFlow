@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
 #include <unordered_set>
@@ -50,7 +51,8 @@ static bool Match_AndIdempotent(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_Idempotent(ExprStore* store, ExprId id) {
+static ExprId Rewrite_Idempotent(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     std::vector<ExprId> unique;
@@ -73,7 +75,8 @@ static ExprId Rewrite_Idempotent(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(unique), e.bitWidth).id;
 }
 
-static ExprId Rewrite_AndIdempotent(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndIdempotent(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     std::unordered_set<ExprId> seen;

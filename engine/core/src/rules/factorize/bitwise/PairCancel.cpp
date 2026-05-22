@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
 #include <vector>
@@ -52,7 +53,8 @@ static bool Match_XorPairCancel(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_XorPairCancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorPairCancel(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     std::unordered_map<ExprId, int> childCounts;

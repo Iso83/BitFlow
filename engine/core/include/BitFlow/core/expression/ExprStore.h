@@ -6,7 +6,8 @@
 
 namespace BitFlow::Core::Rules {
 class RuleEngine;
-}
+class RewriteContext;
+} // namespace BitFlow::Core::Rules
 
 namespace BitFlow::IO {
 class PrattParser;
@@ -15,8 +16,9 @@ class PrattParser;
 namespace BitFlow::Core::Expression {
 
 class ExprStore {
-    friend Rules::RuleEngine;
-    friend BitFlow::IO::PrattParser;
+    friend class Rules::RuleEngine;
+    friend class Rules::RewriteContext;
+    friend class BitFlow::IO::PrattParser;
 
   private:
 #pragma region Storage
@@ -156,6 +158,9 @@ class ExprStore {
         return m_nodes[toIndex(id)];
 #endif
     }
+
+    void replace(Ids::ExprId oldId, Ids::ExprId newId) {}
+    void release(Ids::ExprId oldId) {}
 #pragma endregion
 };
 

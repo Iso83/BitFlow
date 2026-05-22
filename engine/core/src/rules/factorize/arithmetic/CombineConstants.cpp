@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
@@ -27,7 +28,8 @@ static bool Match_MulCombineConstants(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_MulCombineConstants(ExprStore* store, ExprId id) {
+static ExprId Rewrite_MulCombineConstants(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     BF_CORE_ASSERT(e.op == OpType::Mul);

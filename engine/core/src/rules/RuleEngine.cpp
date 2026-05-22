@@ -1,6 +1,7 @@
 #include "expression/ExprUtils.h"
 #include "rules/RuleDiagnostics.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/RuleEngine.h>
 
 namespace BitFlow::Core::Rules {
@@ -22,12 +23,14 @@ ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id) const {
     if (!m_validated)
         ValidateDependencies();
 
+    RewriteContext ctx(store);
+
     for (const Rule& r : m_rules) {
         if (!r.match(store, id))
             continue;
 
         const ExprId before = id;
-        const ExprId after = r.rewrite(store, id);
+        const ExprId after = r.rewrite(ctx, id);
 
         if (after != before) {
             if (m_debugCallback)

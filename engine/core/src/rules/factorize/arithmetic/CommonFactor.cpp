@@ -1,6 +1,7 @@
 #include "expression/ExprUtils.h"
 
 #include <BitFlow/core/expression/ExprRefUtils.h>
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
 #include <vector>
@@ -195,7 +196,8 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AddLinearMultiplicity(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AddLinearMultiplicity(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const std::vector<ExprId> originalInputs = e.inputs;
@@ -294,7 +296,8 @@ static ExprId Rewrite_AddLinearMultiplicity(ExprStore* store, ExprId id) {
     return addResult;
 }
 
-static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     std::unordered_map<ExprId, int> factorFrequency;
@@ -395,7 +398,8 @@ static ExprId Rewrite_AddCommonFactor(ExprStore* store, ExprId id) {
     return store->create(OpType::Add, std::move(finalAddTerms), bitWidth).id;
 }
 
-static ExprId Rewrite_CommonFactorCancel_PowTerms(ExprStore* store, ExprId id) {
+static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const Types::BitWidth bitWidth = e.bitWidth;

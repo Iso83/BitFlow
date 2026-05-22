@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <unordered_map>
 #include <vector>
@@ -87,7 +88,8 @@ static bool Match_XorAnd(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_XorAnd(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorAnd(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr e = (*store)[id];
 
     const ExprId bestFactor = FindBestCommonFactor(store, id);

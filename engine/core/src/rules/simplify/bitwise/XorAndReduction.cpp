@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
@@ -35,7 +36,8 @@ static bool Match_XorAndReduction(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_XorAndReduction(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorAndReduction(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const std::vector<ExprId> inputs = e.inputs;

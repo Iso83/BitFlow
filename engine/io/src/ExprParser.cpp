@@ -62,6 +62,14 @@ class PrattParser {
         return m_tokens[m_pos];
     }
 
+    const Token& PeekToken(std::size_t offset = 0) const {
+        const std::size_t idx = m_pos + offset;
+        if (idx >= m_tokens.size())
+            return m_tokens.back();
+
+        return m_tokens[idx];
+    }
+
     const Token& Advance() {
         const std::size_t idx = m_pos;
         if (m_pos < m_tokens.size())
@@ -82,6 +90,17 @@ class PrattParser {
         return kind == TokenKind::Identifier || kind == TokenKind::DecimalLiteral || kind == TokenKind::HexLiteral ||
                kind == TokenKind::LeftParen || kind == TokenKind::Tilde || kind == TokenKind::Plus ||
                kind == TokenKind::Minus;
+    }
+
+    static bool IsInfixOperandStart(const Token& token) {
+        return IsPrefixToken(token.kind);
+    }
+
+    bool IsMulAliasXToken(const Token& token) const {
+        if (token.kind != TokenKind::Identifier || token.text != "x")
+            return false;
+
+        return IsInfixOperandStart(PeekToken(1));
     }
 
     static OpType TokenToOp(TokenKind kind) {
@@ -149,6 +168,8 @@ class PrattParser {
             if (lookahead.kind == TokenKind::Error)
                 throw ParseErrorAt(lookahead.text, lookahead);
 
+            bool isMulAliasX = false;
+
             switch (lookahead.kind) {
             case TokenKind::Star:
             case TokenKind::Slash:
@@ -166,10 +187,14 @@ class PrattParser {
                 break;
 
             default:
-                return left;
+                if (!IsMulAliasXToken(lookahead))
+                    return left;
+
+                isMulAliasX = true;
+                break;
             }
 
-            const OpType op = TokenToOp(lookahead.kind);
+            const OpType op = isMulAliasX ? OpType::Mul : TokenToOp(lookahead.kind);
 
             const OpInfo* info = GetOpInfo(op);
 

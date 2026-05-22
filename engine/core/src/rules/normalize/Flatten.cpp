@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <utility>
 
@@ -26,7 +27,8 @@ static bool Match_Flatten(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_Flatten(ExprStore* store, ExprId id) {
+static ExprId Rewrite_Flatten(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     if (!Expression::IsCommutative(e.op)) {

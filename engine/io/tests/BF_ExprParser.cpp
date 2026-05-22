@@ -164,6 +164,33 @@ int TestExprParser_ShiftOperators() {
     return 0;
 }
 
+int TestExprParser_ParsesLetterXAsMultiplicationInfix() {
+    MakeExprStore(32);
+
+    auto root = Parse("a x b").root;
+
+    BF_TEST(Op(root) == OpType::Mul);
+    BF_TEST(Op(Input(root, 0)) == OpType::Var);
+    BF_TEST(Op(Input(root, 1)) == OpType::Var);
+    return 0;
+}
+
+int TestExprParser_ParsesVariableNamedX() {
+    MakeExprStore(32);
+
+    auto parsed = Parse("x + x1");
+
+    BF_TEST(Op(parsed.root) == OpType::Add);
+    BF_TEST(parsed.names.size() == 2);
+
+    auto lhs = Input(parsed.root, 0);
+    auto rhs = Input(parsed.root, 1);
+
+    BF_TEST(parsed.names[lhs.id] == "x");
+    BF_TEST(parsed.names[rhs.id] == "x1");
+    return 0;
+}
+
 int TestExprParser_RoundTrip_ToString() {
     MakeExprStore(32);
 
@@ -232,6 +259,8 @@ int main() {
     BF_RUN_TEST(TestExprParser_ParsesPowCall);
     BF_RUN_TEST(TestExprParser_MixedExpressionShape);
     BF_RUN_TEST(TestExprParser_ShiftOperators);
+    BF_RUN_TEST(TestExprParser_ParsesLetterXAsMultiplicationInfix);
+    BF_RUN_TEST(TestExprParser_ParsesVariableNamedX);
     BF_RUN_TEST(TestExprParser_RoundTrip_ToString);
     BF_RUN_TEST(TestExprParser_UnaryChain_NormalizationAndRoundTrip);
     return 0;

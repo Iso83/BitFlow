@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
@@ -54,7 +55,8 @@ static bool Match_Distribute_And_Over_Xor(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_Distribute_And_Over_Xor(ExprStore* store, ExprId id) {
+static ExprId Rewrite_Distribute_And_Over_Xor(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;

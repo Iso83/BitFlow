@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
@@ -205,7 +206,8 @@ static bool Match_MulPowCombine(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AddFold(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     Types::ExprChunk acc = 0;
@@ -243,7 +245,8 @@ static ExprId Rewrite_AddFold(ExprStore* store, ExprId id) {
     return store->create(OpType::Add, std::move(nonConst), bitWidth).id;
 }
 
-static ExprId Rewrite_SubConstFold(ExprStore* store, ExprId id) {
+static ExprId Rewrite_SubConstFold(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const Expr& lhs = (*store)[e.inputs[0]];
@@ -300,7 +303,8 @@ static ExprId Rewrite_SubConstFold(ExprStore* store, ExprId id) {
     return store->create(OpType::Sub, {nonConst, store->createConstant(subtrahend, bitWidth).id}, bitWidth).id;
 }
 
-static ExprId Rewrite_SubAddSelfCancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Expr& lhs = (*store)[e.inputs[0]];
     const ExprId rhsId = e.inputs[1];
@@ -327,7 +331,8 @@ static ExprId Rewrite_SubAddSelfCancel(ExprStore* store, ExprId id) {
     return store->create(OpType::Add, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_SubMulLinearCancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_SubMulLinearCancel(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
     const Expr& lhs = (*store)[e.inputs[0]];
@@ -384,7 +389,8 @@ static ExprId Rewrite_SubMulLinearCancel(ExprStore* store, ExprId id) {
     return store->create(OpType::Mul, std::move(mulInputs), bitWidth).id;
 }
 
-static ExprId Rewrite_MulDivConstantReduction(ExprStore* store, ExprId id) {
+static ExprId Rewrite_MulDivConstantReduction(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Expr& lhs = (*store)[e.inputs[0]];
     const Expr& rhs = (*store)[e.inputs[1]];
@@ -416,7 +422,8 @@ static ExprId Rewrite_MulDivConstantReduction(ExprStore* store, ExprId id) {
     return store->create(OpType::Mul, std::move(newMulInputs), bitWidth).id;
 }
 
-static ExprId Rewrite_MulToPow(ExprStore* store, ExprId id) {
+static ExprId Rewrite_MulToPow(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const std::vector<ExprId> inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -453,7 +460,8 @@ static ExprId Rewrite_MulToPow(ExprStore* store, ExprId id) {
     return store->create(OpType::Mul, std::move(newInputs), bitWidth).id;
 }
 
-static ExprId Rewrite_MulPowCombine(ExprStore* store, ExprId id) {
+static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const std::vector<ExprId> inputs = e.inputs;

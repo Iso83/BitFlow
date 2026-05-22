@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
@@ -64,7 +65,8 @@ static bool Match_XorFold(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AndFold(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndFold(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
 
@@ -88,7 +90,8 @@ static ExprId Rewrite_AndFold(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_OrFold(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrFold(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
 
@@ -112,7 +115,8 @@ static ExprId Rewrite_OrFold(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_XorFold(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorFold(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     Types::ExprChunk acc = 0;

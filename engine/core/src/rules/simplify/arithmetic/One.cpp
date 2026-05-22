@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
@@ -37,7 +38,8 @@ static bool Match_DivOne(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_MulOne(ExprStore* store, ExprId id) {
+static ExprId Rewrite_MulOne(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
     newInputs.reserve(e.inputs.size());
@@ -57,7 +59,8 @@ static ExprId Rewrite_MulOne(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_DivOne(ExprStore* store, ExprId id) {
+static ExprId Rewrite_DivOne(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     return e.inputs[0];
 }

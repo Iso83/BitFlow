@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
@@ -43,7 +44,8 @@ static bool Match_OrOneDominance(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AndOneIdentity(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndOneIdentity(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
@@ -64,7 +66,8 @@ static ExprId Rewrite_AndOneIdentity(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_OrOneDominance(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrOneDominance(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     return store->makeTrue(e.bitWidth).id;

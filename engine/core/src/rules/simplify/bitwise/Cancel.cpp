@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <algorithm>
 #include <unordered_map>
@@ -121,7 +122,8 @@ static bool Match_XorCancel(const ExprStore* store, Ids::ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AndCancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndCancel(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
@@ -147,7 +149,8 @@ static ExprId Rewrite_AndCancel(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_OrCancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrCancel(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
@@ -173,7 +176,8 @@ static ExprId Rewrite_OrCancel(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_XorCancel(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorCancel(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);

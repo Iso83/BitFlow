@@ -1,6 +1,7 @@
 #include "expression/ExprUtils.h"
 #include "rules/RuleDiagnostics.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <stdexcept>
 #include <vector>
@@ -30,7 +31,8 @@ template <OpType Op> static bool Match_RightZero(const ExprStore* store, ExprId 
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AddZero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AddZero(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
@@ -55,7 +57,8 @@ static ExprId Rewrite_AddZero(ExprStore* store, ExprId id) {
     return store->create(OpType::Add, std::move(newInputs), bitWidth).id;
 }
 
-static ExprId Rewrite_MulZero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_MulZero(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     if (e.bitWidth == 0)
@@ -64,7 +67,8 @@ static ExprId Rewrite_MulZero(ExprStore* store, ExprId id) {
     return store->makeFalse(e.bitWidth).id;
 }
 
-static ExprId Rewrite_SubZero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_SubZero(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
@@ -91,7 +95,8 @@ static ExprId Rewrite_SubZero(ExprStore* store, ExprId id) {
     return store->create(OpType::Sub, std::move(newInputs), bitWidth).id;
 }
 
-static ExprId Rewrite_ModZeroGuard(ExprStore* store, ExprId id) {
+static ExprId Rewrite_ModZeroGuard(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     const auto inputs = e.inputs;
@@ -104,7 +109,8 @@ static ExprId Rewrite_ModZeroGuard(ExprStore* store, ExprId id) {
     return id;
 }
 
-static ExprId Rewrite_ShiftZero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_ShiftZero(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     BF_CORE_ASSERT(store->isFalse(e.inputs[1]));
@@ -112,7 +118,8 @@ static ExprId Rewrite_ShiftZero(ExprStore* store, ExprId id) {
     return e.inputs[0];
 }
 
-static ExprId Rewrite_RotateZero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_RotateZero(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     BF_CORE_ASSERT(store->isFalse(e.inputs[1]));

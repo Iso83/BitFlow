@@ -9,16 +9,18 @@ struct ExprStore;
 } // namespace BitFlow::Core::Expression
 
 namespace BitFlow::Core::Rules {
+class RewriteContext;
+
 struct Rule {
     RuleKey key;
 
     bool (*match)(const Expression::ExprStore*, Ids::ExprId);
-    Ids::ExprId (*rewrite)(Expression::ExprStore*, Ids::ExprId);
+    Ids::ExprId (*rewrite)(RewriteContext&, Ids::ExprId);
 
     std::vector<RuleKey> deps{};
 
     Rule(RuleKey k, bool (*m)(const Expression::ExprStore*, Ids::ExprId),
-         Ids::ExprId (*r)(Expression::ExprStore*, Ids::ExprId), std::vector<RuleKey> d = {})
+         Ids::ExprId (*r)(RewriteContext&, Ids::ExprId), std::vector<RuleKey> d = {})
         : key(std::move(k)), match(m), rewrite(r), deps(std::move(d)) {}
 };
 

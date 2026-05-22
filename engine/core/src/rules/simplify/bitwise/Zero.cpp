@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
@@ -43,13 +44,15 @@ static bool Match_OrZero(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AndZero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndZero(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     return store->makeFalse(e.bitWidth).id;
 }
 
-static ExprId Rewrite_OrZero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrZero(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     std::vector<ExprId> newInputs;
@@ -70,7 +73,8 @@ static ExprId Rewrite_OrZero(ExprStore* store, ExprId id) {
     return store->create(e.op, std::move(newInputs), e.bitWidth).id;
 }
 
-static ExprId Rewrite_XorZero(ExprStore* store, ExprId id) {
+static ExprId Rewrite_XorZero(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     std::vector<ExprId> newInputs;
 

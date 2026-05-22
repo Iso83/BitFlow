@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Simplify::Arithmetic {
@@ -17,7 +18,8 @@ static bool Match_NegNeg(const ExprStore* store, ExprId id) {
     return in.op == OpType::Neg && in.inputs.size() == 1;
 }
 
-static ExprId Rewrite_NegNeg(ExprStore* store, ExprId id) {
+static ExprId Rewrite_NegNeg(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     BF_CORE_ASSERT(e.op == OpType::Neg && e.inputs.size() == 1);
 

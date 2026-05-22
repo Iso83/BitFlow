@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Simplify::Bitwise {
@@ -31,7 +32,8 @@ static bool Match_Complement(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_Complement(ExprStore* store, ExprId id) {
+static ExprId Rewrite_Complement(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     for (size_t i = 0; i < e.inputs.size(); ++i) {

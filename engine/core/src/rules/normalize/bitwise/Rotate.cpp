@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Normalize::Bitwise {
@@ -28,7 +29,8 @@ static bool Match_RotateModulo(const ExprStore* store, ExprId id) {
     return e.bitWidth > 0 && amount.knownValue >= e.bitWidth;
 }
 
-static ExprId Rewrite_RotateModulo(ExprStore* store, ExprId id) {
+static ExprId Rewrite_RotateModulo(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Expr& amount = (*store)[e.inputs[1]];
 

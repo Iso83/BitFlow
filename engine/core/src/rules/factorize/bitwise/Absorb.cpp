@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 
 namespace BitFlow::Core::Rules::Factorize::Bitwise {
@@ -52,7 +53,8 @@ static bool Match_OrAbsorb(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AndAbsorb(ExprStore* store, ExprId id) {
+static ExprId Rewrite_AndAbsorb(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     BF_CORE_ASSERT(e.op == OpType::And);
@@ -73,7 +75,8 @@ static ExprId Rewrite_AndAbsorb(ExprStore* store, ExprId id) {
     return id;
 }
 
-static ExprId Rewrite_OrAbsorb(ExprStore* store, ExprId id) {
+static ExprId Rewrite_OrAbsorb(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     BF_CORE_ASSERT(e.op == OpType::Or);

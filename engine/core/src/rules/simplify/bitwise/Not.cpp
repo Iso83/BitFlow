@@ -1,5 +1,6 @@
 #include "expression/ExprUtils.h"
 
+#include <BitFlow/core/rules/RewriteContext.h>
 #include <BitFlow/core/rules/Rule.h>
 #include <vector>
 
@@ -71,7 +72,8 @@ static bool Match_NotXor(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_Not(ExprStore* store, ExprId id) {
+static ExprId Rewrite_Not(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     ExprId in = e.inputs[0];
     const Expr& exprIn = (*store)[in];
@@ -86,7 +88,8 @@ static ExprId Rewrite_Not(ExprStore* store, ExprId id) {
     return id;
 }
 
-static ExprId Rewrite_NotPushdown(ExprStore* store, ExprId id) {
+static ExprId Rewrite_NotPushdown(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
     ExprId in = e.inputs[0];
@@ -104,7 +107,8 @@ static ExprId Rewrite_NotPushdown(ExprStore* store, ExprId id) {
     return store->create(newOp, std::move(newInputs), bitWidth).id;
 }
 
-static ExprId Rewrite_NotXor(ExprStore* store, ExprId id) {
+static ExprId Rewrite_NotXor(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     ExprId in = e.inputs[0];
     const Expr& exprIn = (*store)[in];
