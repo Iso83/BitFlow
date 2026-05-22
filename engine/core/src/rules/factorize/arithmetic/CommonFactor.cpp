@@ -193,6 +193,23 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
     return false;
 }
 
+static bool Match_SubCommonDenominator(const ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+    if (e.op != OpType::Sub || e.inputs.size() != 2)
+        return false;
+
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const Expr& rhs = (*store)[e.inputs[1]];
+
+    if (lhs.op != OpType::Div || rhs.op != OpType::Div)
+        return false;
+
+    if (lhs.inputs.size() != 2 || rhs.inputs.size() != 2)
+        return false;
+
+    return store->structuralEquivalent(lhs.inputs[1], rhs.inputs[1]);
+}
+
 #pragma endregion
 
 #pragma region Rewrite
@@ -527,6 +544,20 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id
 
     return store->create(OpType::Div, {newLhs, newRhs}, bitWidth).id;
 }
+
+static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr& e = (*store)[id];
+    const Types::BitWidth bitWidth = e.bitWidth;
+
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const ExprId denominator = lhs.inputs[1];
+
+    const Expr& rhs = (*store)[e.inputs[1]];
+
+    const ExprId numerator = store->create(OpType::Sub, {lhs.inputs[0], rhs.inputs[0]}, bitWidth).id;
+    return store->create(OpType::Div, {numerator, denominator}, bitWidth).id;
+}
 #pragma endregion
 
 Rule Get_AddLinearMultiplicity_Rule() {
@@ -543,6 +574,10 @@ Rule Get_CommonFactorCancel_PowTerms_Rule() {
                 &Match_CommonFactorCancel_PowTerms,
                 &Rewrite_CommonFactorCancel_PowTerms,
                 {Normalize::Order}};
+}
+
+Rule Get_SubCommonDenominator_Rule() {
+    return Rule{SubCommonDenominator, &Match_SubCommonDenominator, &Rewrite_SubCommonDenominator, {Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic

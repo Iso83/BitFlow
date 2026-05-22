@@ -681,6 +681,17 @@ Cancels identical power terms that appear in both numerator and denominator.
 
 ---
 
+### CORE.FACTORIZE.ARITHMETIC.SUB_COMMON_DENOMINATOR
+
+Extracts a shared denominator from subtraction of two divisions.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\frac{a}{c} - \frac{b}{c}$$ |
+| Rewrite | $$\frac{a - b}{c}$$ |
+
+---
+
 ### CORE.FACTORIZE.ARITHMETIC.MUL_COMBINE_CONSTANTS
 
 Combines constant multiplication chains.

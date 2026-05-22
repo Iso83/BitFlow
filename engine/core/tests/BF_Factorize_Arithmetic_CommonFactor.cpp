@@ -290,6 +290,117 @@ int TestCommonFactorCancel_PowTerms_ExponentDifference() {
     return 0;
 }
 
+int TestSubCommonDenominator() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_SubCommonDenominator_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(7) / C(8) - (C(5) / C(8))));
+
+    BF_TEST(Op(r) == OpType::Div);
+
+    ExprRef lhs = Input(r, 0);
+    ExprRef rhs = Input(r, 1);
+
+    BF_TEST(Op(lhs) == OpType::Sub);
+    BF_TEST(EqualChunkValue(rhs, 8u));
+    BF_TEST(EqualChunkValue(Input(lhs, 0), 7u));
+    BF_TEST(EqualChunkValue(Input(lhs, 1), 5u));
+
+    return 0;
+}
+
+int TestSubCommonDenominator_Variables() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_SubCommonDenominator_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a / c) - (b / c)));
+
+    BF_TEST(Op(r) == OpType::Div);
+
+    ExprRef lhs = Input(r, 0);
+    ExprRef rhs = Input(r, 1);
+
+    BF_TEST(Op(lhs) == OpType::Sub);
+
+    BF_TEST(rhs == c);
+    BF_TEST(Input(lhs, 0) == a);
+    BF_TEST(Input(lhs, 1) == b);
+
+    return 0;
+}
+
+int TestSubCommonDenominator_DifferentDenominator_NoRewrite() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_SubCommonDenominator_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+
+    auto expr = (a / c) - (b / d);
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr, &names));
+
+    BF_TEST(r == expr);
+
+    return 0;
+}
+
+int TestSubCommonDenominator_ComplexNumerator() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_SubCommonDenominator_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+    auto x = V("x");
+
+    auto term1 = (a + b);
+    auto term2 = (c * d);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (term1 / x) - (term2 / x)));
+
+    BF_TEST(Op(r) == OpType::Div);
+
+    ExprRef sub = Input(r, 0);
+
+    BF_TEST(Op(sub) == OpType::Sub);
+
+    BF_TEST(Input(sub, 0) == term1);
+    BF_TEST(Input(sub, 1) == term2);
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAddLinearMultiplicity_Basic);
     BF_RUN_TEST(TestAddLinearMultiplicity_ImplicitAndExplicitCoeff);
@@ -303,5 +414,9 @@ int main() {
     BF_RUN_TEST(TestCommonFactorCancel_PowTerms_Basic);
     BF_RUN_TEST(TestCommonFactorCancel_PowTerms_ExponentDifference);
 
+    BF_RUN_TEST(TestSubCommonDenominator);
+    BF_RUN_TEST(TestSubCommonDenominator_Variables);
+    BF_RUN_TEST(TestSubCommonDenominator_DifferentDenominator_NoRewrite);
+    BF_RUN_TEST(TestSubCommonDenominator_ComplexNumerator);
     return 0;
 }
