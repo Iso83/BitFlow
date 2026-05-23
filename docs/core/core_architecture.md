@@ -714,6 +714,22 @@ Combines constant multiplication chains.
 
 ---
 
+### CORE.FACTORIZE.ARITHMETIC.MUL_FRACTION_NUMERATOR
+
+Pushes multiplicative terms into a fraction numerator.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$2 \cdot \frac{3}{8}$$ |
+| Rewrite | $$\frac{2 \cdot 3}{8}$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\frac{a}{b} \cdot c$$ |
+| Rewrite | $$\frac{a \cdot c}{b}$$ |
+
+---
+
 # Factorize::Bitwise
 
 ### CORE.FACTORIZE.BITWISE.XOR_AND

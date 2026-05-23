@@ -114,6 +114,24 @@ int TestLexer_UnexpectedCharacterHasPosition() {
     return 0;
 }
 
+int TestLexer_ImplicitMultiplicationXBeforeIdentifierWithDigits() {
+    const std::vector<Token> tokens = BitFlow::IO::Lexer::Tokenize("5xx2+3");
+
+    BF_TEST(tokens.size() == 6);
+    BF_TEST(tokens[0].kind == TokenKind::DecimalLiteral);
+    BF_TEST(tokens[0].text == "5");
+    BF_TEST(tokens[1].kind == TokenKind::Star);
+    BF_TEST(tokens[1].text == "x");
+    BF_TEST(tokens[2].kind == TokenKind::Identifier);
+    BF_TEST(tokens[2].text == "x2");
+    BF_TEST(tokens[3].kind == TokenKind::Plus);
+    BF_TEST(tokens[4].kind == TokenKind::DecimalLiteral);
+    BF_TEST(tokens[4].text == "3");
+    BF_TEST(tokens[5].kind == TokenKind::EndOfInput);
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestLexer_AllTokenTypes);
     BF_RUN_TEST(TestLexer_WhitespaceIsSkipped);
@@ -122,5 +140,6 @@ int main() {
     BF_RUN_TEST(TestLexer_ShiftOperatorsLongestMatch);
     BF_RUN_TEST(TestLexer_InvalidInputProducesErrorToken);
     BF_RUN_TEST(TestLexer_UnexpectedCharacterHasPosition);
+    BF_RUN_TEST(TestLexer_ImplicitMultiplicationXBeforeIdentifierWithDigits);
     return 0;
 }

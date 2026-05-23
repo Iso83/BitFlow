@@ -9,9 +9,7 @@ using namespace BitFlow::Core::Rules;
 
 int Test_ArithmeticChain_Canonicalization() {
     MakeExprStore(32);
-
-    RuleEngine engine;
-    engine.Merge(BuildSimplifyArithmetic());
+    RuleEngine engine = BuildExplore();
 
     const auto a = V("a");
 
@@ -23,9 +21,7 @@ int Test_ArithmeticChain_Canonicalization() {
 
 int Test_ArithmeticChain_FractionMerge() {
     MakeExprStore(32);
-
-    RuleEngine engine;
-    engine.Merge(BuildSimplifyArithmetic());
+    RuleEngine engine = BuildExplore();
 
     BF_SAFE_REWRITE(r, Rewrite(engine, C(5) / 8 + C(3) / 8));
 
@@ -33,8 +29,19 @@ int Test_ArithmeticChain_FractionMerge() {
     return 0;
 }
 
+int Test_ArithmeticChain_FractionSubMul() {
+    MakeExprStore(32);
+    RuleEngine engine = BuildExplore();
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(5) / 8 - C(2) * C(3) / 8));
+
+    BF_TEST(ToString(r) == "-1 / 8");
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(Test_ArithmeticChain_Canonicalization);
     BF_RUN_TEST(Test_ArithmeticChain_FractionMerge);
+    BF_RUN_TEST(Test_ArithmeticChain_FractionSubMul);
     return 0;
 }

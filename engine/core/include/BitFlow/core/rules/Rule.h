@@ -173,6 +173,9 @@ Rule Get_SubCommonDenominator_Rule();
 
 inline constexpr RuleKey MulCombineConstants{"CORE.FACTORIZE.ARITHMETIC.MUL_COMBINE_CONSTANTS"};
 Rule Get_MulCombineConstants_Rule();
+
+inline constexpr RuleKey MulFractionNumerator{"CORE.FACTORIZE.ARITHMETIC.MUL_FRACTION_NUMERATOR"};
+Rule Get_MulFractionNumerator_Rule();
 } // namespace Factorize::Arithmetic
 
 namespace Factorize::Bitwise {

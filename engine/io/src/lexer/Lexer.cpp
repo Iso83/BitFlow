@@ -65,7 +65,8 @@ Token Lexer::NextToken() {
 
         if (IsOperandEndChar(prev) && IsOperandStartChar(next) &&
             !(std::isalpha(static_cast<unsigned char>(prev)) != 0 &&
-              std::isalpha(static_cast<unsigned char>(next)) != 0)) {
+              std::isalpha(static_cast<unsigned char>(next)) != 0) &&
+            !(IsIdentifierStart(prev) && IsIdentifierPart(next))) {
             const std::size_t begin = m_pos;
             Advance(1);
             return Token{TokenKind::Star, "x", SourceSpan{begin, begin + 1}, std::nullopt, std::nullopt};

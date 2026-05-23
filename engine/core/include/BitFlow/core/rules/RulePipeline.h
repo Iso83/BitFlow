@@ -125,6 +125,7 @@ inline RuleEngine BuildFactorizeArithmetic() {
     e.AddRule(Factorize::Arithmetic::Get_CommonFactorCancel_Rule());
     e.AddRule(Factorize::Arithmetic::Get_SubCommonDenominator_Rule());
     e.AddRule(Factorize::Arithmetic::Get_MulCombineConstants_Rule());
+    e.AddRule(Factorize::Arithmetic::Get_MulFractionNumerator_Rule());
 
     return e;
 }
