@@ -165,6 +165,9 @@ Rule Get_AddCommonFactor_Rule();
 inline constexpr RuleKey CommonFactorCancel_PowTerms{"CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL_POW_TERMS"};
 Rule Get_CommonFactorCancel_PowTerms_Rule();
 
+inline constexpr RuleKey CommonFactorCancel{"CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL"};
+Rule Get_CommonFactorCancel_Rule();
+
 inline constexpr RuleKey SubCommonDenominator{"CORE.FACTORIZE.ARITHMETIC.SUB_COMMON_DENOMINATOR"};
 Rule Get_SubCommonDenominator_Rule();
 

@@ -681,6 +681,17 @@ Cancels identical power terms that appear in both numerator and denominator.
 
 ---
 
+### CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL
+
+Cancels common multiplicative factors that appear in both numerator and denominator.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\frac{a \cdot b \cdot 2}{b \cdot 3}$$ |
+| Rewrite | $$\frac{a \cdot 2}{3}$$ |
+
+---
+
 ### CORE.FACTORIZE.ARITHMETIC.SUB_COMMON_DENOMINATOR
 
 Extracts a shared denominator from subtraction of two divisions.

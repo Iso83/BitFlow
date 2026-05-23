@@ -210,6 +210,31 @@ static bool Match_SubCommonDenominator(const ExprStore* store, ExprId id) {
     return store->structuralEquivalent(lhs.inputs[1], rhs.inputs[1]);
 }
 
+static bool Match_CommonFactorCancel(const ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+    if (e.op != OpType::Sub || e.inputs.size() != 2)
+        return false;
+
+    const Expr& rhs = (*store)[e.inputs[1]];
+    if (rhs.op != OpType::Mul || rhs.inputs.size() < 2)
+        return false;
+
+    for (size_t i = 0; i < rhs.inputs.size(); ++i) {
+        const Expr& maybeDiv = (*store)[rhs.inputs[i]];
+        if (maybeDiv.op != OpType::Div || maybeDiv.inputs.size() != 2)
+            continue;
+
+        for (size_t j = 0; j < rhs.inputs.size(); ++j) {
+            if (i == j)
+                continue;
+            if (store->structuralEquivalent(maybeDiv.inputs[1], rhs.inputs[j]))
+                return true;
+        }
+    }
+
+    return false;
+}
+
 #pragma endregion
 
 #pragma region Rewrite
@@ -558,6 +583,45 @@ static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
     const ExprId numerator = store->create(OpType::Sub, {lhs.inputs[0], rhs.inputs[0]}, bitWidth).id;
     return store->create(OpType::Div, {numerator, denominator}, bitWidth).id;
 }
+
+static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr& e = (*store)[id];
+    const Types::BitWidth bitWidth = e.bitWidth;
+    const std::vector<ExprId> eInputs = e.inputs;
+    const Expr& rhs = (*store)[e.inputs[1]];
+
+    for (size_t i = 0; i < rhs.inputs.size(); ++i) {
+        const Expr& maybeDiv = (*store)[rhs.inputs[i]];
+        if (maybeDiv.op != OpType::Div || maybeDiv.inputs.size() != 2)
+            continue;
+
+        for (size_t j = 0; j < rhs.inputs.size(); ++j) {
+            if (i == j)
+                continue;
+            if (!store->structuralEquivalent(maybeDiv.inputs[1], rhs.inputs[j]))
+                continue;
+
+            std::vector<ExprId> newFactors;
+            newFactors.reserve(rhs.inputs.size() - 1);
+            for (size_t k = 0; k < rhs.inputs.size(); ++k) {
+                if (k == i || k == j)
+                    continue;
+                newFactors.push_back(rhs.inputs[k]);
+            }
+            newFactors.push_back(maybeDiv.inputs[0]);
+
+            ExprId newRhs = store->createConstant(1, bitWidth).id;
+            if (!newFactors.empty())
+                newRhs = (newFactors.size() == 1) ? newFactors[0]
+                                                  : store->create(OpType::Mul, std::move(newFactors), bitWidth).id;
+
+            return store->create(OpType::Sub, {eInputs[0], newRhs}, bitWidth).id;
+        }
+    }
+
+    return id;
+}
 #pragma endregion
 
 Rule Get_AddLinearMultiplicity_Rule() {
@@ -578,6 +642,10 @@ Rule Get_CommonFactorCancel_PowTerms_Rule() {
 
 Rule Get_SubCommonDenominator_Rule() {
     return Rule{SubCommonDenominator, &Match_SubCommonDenominator, &Rewrite_SubCommonDenominator, {Normalize::Order}};
+}
+
+Rule Get_CommonFactorCancel_Rule() {
+    return Rule{CommonFactorCancel, &Match_CommonFactorCancel, &Rewrite_CommonFactorCancel, {Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Arithmetic

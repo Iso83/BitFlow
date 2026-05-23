@@ -25,6 +25,16 @@ bool IsHexDigit(char ch) {
     return std::isxdigit(uch) != 0;
 }
 
+bool IsOperandEndChar(char ch) {
+    const unsigned char uch = static_cast<unsigned char>(ch);
+    return std::isalnum(uch) != 0 || ch == '_' || ch == ')';
+}
+
+bool IsOperandStartChar(char ch) {
+    const unsigned char uch = static_cast<unsigned char>(ch);
+    return std::isalnum(uch) != 0 || ch == '_' || ch == '(' || ch == '~' || ch == '+' || ch == '-';
+}
+
 std::optional<std::uint64_t> ParseUnsigned(const std::string& text, int base) {
     std::uint64_t value = 0;
     const char* begin = text.data();
@@ -48,6 +58,19 @@ Token Lexer::NextToken() {
 
     if (AtEnd())
         return Token{TokenKind::EndOfInput, {}, SourceSpan{m_pos, m_pos}, std::nullopt, std::nullopt};
+
+    if (Peek() == 'x' || Peek() == 'X') {
+        const char prev = m_pos > 0 ? m_input[m_pos - 1] : '\0';
+        const char next = Peek(1);
+
+        if (IsOperandEndChar(prev) && IsOperandStartChar(next) &&
+            !(std::isalpha(static_cast<unsigned char>(prev)) != 0 &&
+              std::isalpha(static_cast<unsigned char>(next)) != 0)) {
+            const std::size_t begin = m_pos;
+            Advance(1);
+            return Token{TokenKind::Star, "x", SourceSpan{begin, begin + 1}, std::nullopt, std::nullopt};
+        }
+    }
 
     if (IsIdentifierStart(Peek()))
         return ReadIdentifier();

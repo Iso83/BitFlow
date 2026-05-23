@@ -401,6 +401,27 @@ int TestSubCommonDenominator_ComplexNumerator() {
     return 0;
 }
 
+int TestCommonFactorCancel_SubDivMul() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_CommonFactorCancel_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(5) / C(8) - ((C(3) / C(8)) * C(8))));
+
+    BF_TEST(Op(r) == OpType::Sub);
+    BF_TEST(Op(Input(r, 0)) == OpType::Div);
+    BF_TEST(EqualChunkValue(Input(Input(r, 0), 0), 5u));
+    BF_TEST(EqualChunkValue(Input(Input(r, 0), 1), 8u));
+    BF_TEST(EqualChunkValue(Input(r, 1), 3u));
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestAddLinearMultiplicity_Basic);
     BF_RUN_TEST(TestAddLinearMultiplicity_ImplicitAndExplicitCoeff);
@@ -418,5 +439,6 @@ int main() {
     BF_RUN_TEST(TestSubCommonDenominator_Variables);
     BF_RUN_TEST(TestSubCommonDenominator_DifferentDenominator_NoRewrite);
     BF_RUN_TEST(TestSubCommonDenominator_ComplexNumerator);
+    BF_RUN_TEST(TestCommonFactorCancel_SubDivMul);
     return 0;
 }

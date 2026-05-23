@@ -175,6 +175,17 @@ int TestExprParser_ParsesLetterXAsMultiplicationInfix() {
     return 0;
 }
 
+int TestExprParser_ParsesLetterXAsMultiplicationWithoutSpaces() {
+    MakeExprStore(32);
+
+    auto root = Parse("2x3").root;
+
+    BF_TEST(Op(root) == OpType::Mul);
+    BF_TEST(Op(Input(root, 0)) == OpType::Const);
+    BF_TEST(Op(Input(root, 1)) == OpType::Const);
+    return 0;
+}
+
 int TestExprParser_ParsesVariableNamedX() {
     MakeExprStore(32);
 
@@ -260,6 +271,7 @@ int main() {
     BF_RUN_TEST(TestExprParser_MixedExpressionShape);
     BF_RUN_TEST(TestExprParser_ShiftOperators);
     BF_RUN_TEST(TestExprParser_ParsesLetterXAsMultiplicationInfix);
+    BF_RUN_TEST(TestExprParser_ParsesLetterXAsMultiplicationWithoutSpaces);
     BF_RUN_TEST(TestExprParser_ParsesVariableNamedX);
     BF_RUN_TEST(TestExprParser_RoundTrip_ToString);
     BF_RUN_TEST(TestExprParser_UnaryChain_NormalizationAndRoundTrip);

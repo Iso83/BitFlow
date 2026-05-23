@@ -100,3 +100,18 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core/rules/simplify/bitwise BF_Simplify_Bitwise_Zero USE_CORE_PRINT)
 
 endif()
+
+
+set(BITFLOW_DOC_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../docs/core/core_architecture.md
+)
+
+target_sources(BitFlowCore PRIVATE
+    ${BITFLOW_DOC_FILES}
+)
+
+if(MSVC)
+    source_group("doc"
+        FILES ${BITFLOW_DOC_FILES}
+    )
+endif()
