@@ -21,7 +21,20 @@ int Test_ArithmeticChain_Canonicalization() {
     return 0;
 }
 
+int Test_ArithmeticChain_FractionMerge() {
+    MakeExprStore(32);
+
+    RuleEngine engine;
+    engine.Merge(BuildSimplifyArithmetic());
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(5) / 8 + C(3) / 8));
+
+    BF_TEST(ToString(r) == "1");
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(Test_ArithmeticChain_Canonicalization);
+    BF_RUN_TEST(Test_ArithmeticChain_FractionMerge);
     return 0;
 }

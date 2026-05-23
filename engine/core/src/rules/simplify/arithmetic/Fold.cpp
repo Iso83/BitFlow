@@ -26,7 +26,32 @@ static bool Match_AddFold(const ExprStore* store, ExprId id) {
             constCount++;
     }
 
-    return constCount >= 2;
+    if (constCount >= 2)
+        return true;
+
+    for (std::size_t i = 0; i < e.inputs.size(); ++i) {
+        const Expr& lhs = (*store)[e.inputs[i]];
+        if (lhs.op != OpType::Div || lhs.inputs.size() != 2)
+            continue;
+
+        const Expr& lhsNum = (*store)[lhs.inputs[0]];
+        const Expr& lhsDen = (*store)[lhs.inputs[1]];
+        if (lhsNum.op != OpType::Const || lhsDen.op != OpType::Const || lhsDen.knownValue == 0)
+            continue;
+
+        for (std::size_t j = i + 1; j < e.inputs.size(); ++j) {
+            const Expr& rhs = (*store)[e.inputs[j]];
+            if (rhs.op != OpType::Div || rhs.inputs.size() != 2)
+                continue;
+
+            const Expr& rhsNum = (*store)[rhs.inputs[0]];
+            const Expr& rhsDen = (*store)[rhs.inputs[1]];
+            if (rhsNum.op == OpType::Const && rhsDen.op == OpType::Const && lhsDen.knownValue == rhsDen.knownValue)
+                return true;
+        }
+    }
+
+    return false;
 }
 
 static bool Match_SubConstFold(const ExprStore* store, ExprId id) {
@@ -209,16 +234,69 @@ static bool Match_MulPowCombine(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
+    const std::vector<ExprId> eInputs = e.inputs;
+    const Types::BitWidth bitWidth = e.bitWidth;
+    const Types::ExprChunk mask = Expr::fullMask(bitWidth);
+
+    // Combine fractions with the same constant denominator:
+    // (a / d) + (b / d) -> (a + b) / d
+    // and fold to constant when exact.
+    for (std::size_t i = 0; i < eInputs.size(); ++i) {
+        const Expr& lhs = (*store)[eInputs[i]];
+        if (lhs.op != OpType::Div || lhs.inputs.size() != 2)
+            continue;
+
+        const Expr& lhsNum = (*store)[lhs.inputs[0]];
+        const Expr& lhsDen = (*store)[lhs.inputs[1]];
+        if (lhsNum.op != OpType::Const || lhsDen.op != OpType::Const || lhsDen.knownValue == 0)
+            continue;
+
+        for (std::size_t j = i + 1; j < eInputs.size(); ++j) {
+            const Expr& rhs = (*store)[eInputs[j]];
+            if (rhs.op != OpType::Div || rhs.inputs.size() != 2)
+                continue;
+
+            const Expr& rhsNum = (*store)[rhs.inputs[0]];
+            const Expr& rhsDen = (*store)[rhs.inputs[1]];
+            if (rhsNum.op != OpType::Const || rhsDen.op != OpType::Const)
+                continue;
+            if (lhsDen.knownValue != rhsDen.knownValue)
+                continue;
+
+            const Types::ExprChunk den = lhsDen.knownValue;
+            const Types::ExprChunk sumNum = (lhsNum.knownValue + rhsNum.knownValue) & mask;
+
+            ExprId combined =
+                store
+                    ->create(OpType::Div,
+                             {store->createConstant(sumNum, bitWidth).id, store->createConstant(den, bitWidth).id},
+                             bitWidth)
+                    .id;
+            if (den != 0 && (sumNum % den) == 0)
+                combined = store->createConstant((sumNum / den) & mask, bitWidth).id;
+
+            std::vector<ExprId> newInputs;
+            newInputs.reserve(eInputs.size() - 1);
+            for (std::size_t k = 0; k < eInputs.size(); ++k) {
+                if (k == i || k == j)
+                    continue;
+                newInputs.push_back(eInputs[k]);
+            }
+            newInputs.push_back(combined);
+
+            if (newInputs.size() == 1)
+                return newInputs[0];
+            return store->create(OpType::Add, std::move(newInputs), bitWidth).id;
+        }
+    }
 
     Types::ExprChunk acc = 0;
     bool hasConst = false;
 
     std::vector<ExprId> nonConst;
-    nonConst.reserve(e.inputs.size());
+    nonConst.reserve(eInputs.size());
 
-    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
-
-    for (ExprId inId : e.inputs) {
+    for (ExprId inId : eInputs) {
         const Expr& in = (*store)[inId];
 
         if (in.op == OpType::Const) {
@@ -230,8 +308,6 @@ static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
 
     if (!hasConst)
         return id;
-
-    const Types::BitWidth bitWidth = e.bitWidth;
 
     if (acc != 0)
         nonConst.push_back(store->createConstant(acc, e.bitWidth).id);

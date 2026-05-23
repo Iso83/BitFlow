@@ -51,7 +51,14 @@ static ExprId Rewrite_CombineConstants(RewriteContext& ctx, ExprId id) {
     case OpType::Add:
         return store->createConstant((lhs.knownValue + rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
     case OpType::Sub:
-        return store->createConstant((lhs.knownValue - rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
+        if (lhs.knownValue >= rhs.knownValue)
+            return store->createConstant((lhs.knownValue - rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
+
+        return store
+            ->create(OpType::Neg,
+                     {store->createConstant((rhs.knownValue - lhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id},
+                     e.bitWidth)
+            .id;
     case OpType::Mul:
         return store->createConstant((lhs.knownValue * rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
     case OpType::Div:
