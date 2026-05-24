@@ -7,6 +7,19 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
+int TestModZero_GuardLeftZeroStaysMod() {
+    MakeExprStore(32);
+    RuleEngine engine = BuildExplore();
+
+    auto x = V("x");
+    auto expr = C(0) % x;
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+
+    BF_TEST(r == expr);
+    return 0;
+}
+
 int Test_ArithmeticChain_Canonicalization() {
     MakeExprStore(32);
     RuleEngine engine = BuildExplore();
@@ -40,6 +53,8 @@ int Test_ArithmeticChain_FractionSubMul() {
 }
 
 int main() {
+    BF_RUN_TEST(TestModZero_GuardLeftZeroStaysMod);
+
     BF_RUN_TEST(Test_ArithmeticChain_Canonicalization);
     BF_RUN_TEST(Test_ArithmeticChain_FractionMerge);
     BF_RUN_TEST(Test_ArithmeticChain_FractionSubMul);

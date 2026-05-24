@@ -59,8 +59,11 @@ Rule Get_DivOne_Rule();
 inline constexpr RuleKey DivSelf{"CORE.SIMPLIFY.ARITHMETIC.DIV_SELF"};
 Rule Get_DivSelf_Rule();
 
-inline constexpr RuleKey ModZeroGuard{"CORE.SIMPLIFY.ARITHMETIC.MOD_ZERO_GUARD"};
-Rule Get_ModZeroGuard_Rule();
+inline constexpr RuleKey ModOne{"CORE.SIMPLIFY.ARITHMETIC.MOD_ONE"};
+Rule Get_ModOne_Rule();
+
+inline constexpr RuleKey ModSelf{"CORE.SIMPLIFY.ARITHMETIC.MOD_SELF"};
+Rule Get_ModSelf_Rule();
 
 inline constexpr RuleKey ShiftZero{"CORE.SIMPLIFY.ARITHMETIC.SHIFT_ZERO"};
 Rule Get_ShiftZero_Rule();

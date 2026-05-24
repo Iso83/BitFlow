@@ -132,6 +132,41 @@ int TestDivSelf_DifferentInputsStayDiv() {
     return 0;
 }
 
+int TestModOne_Basic() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_ModOne_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto x = V("x");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, x % 1));
+
+    BF_TEST(EqualChunkValue(r, 0u));
+    return 0;
+}
+
+int TestModOne_GuardDifferentDivisorStaysMod() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_ModOne_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto x = V("x");
+    auto expr = x % 2;
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+
+    BF_TEST(r == expr);
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestMulOne_Nested);
     BF_RUN_TEST(TestMulOne_AllOnesBecomeConstOne);
@@ -140,5 +175,7 @@ int main() {
     BF_RUN_TEST(TestDivOne_GuardLeftOneStaysDiv);
     BF_RUN_TEST(TestDivSelf_Basic);
     BF_RUN_TEST(TestDivSelf_DifferentInputsStayDiv);
+    BF_RUN_TEST(TestModOne_Basic);
+    BF_RUN_TEST(TestModOne_GuardDifferentDivisorStaysMod);
     return 0;
 }

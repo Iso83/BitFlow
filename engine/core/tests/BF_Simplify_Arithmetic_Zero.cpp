@@ -168,9 +168,9 @@ int TestSubSelf_DifferentInputsStaySub() {
     return 0;
 }
 
-int TestModZero_GuardThrows() {
+int TestModSelf_Basic() {
     MakeExprStore(32);
-    const auto rule = Simplify::Arithmetic::Get_ModZeroGuard_Rule();
+    const auto rule = Simplify::Arithmetic::Get_ModSelf_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
@@ -179,21 +179,15 @@ int TestModZero_GuardThrows() {
 
     auto x = V("x");
 
-    bool thrown = false;
+    BF_SAFE_REWRITE(r, Rewrite(engine, x % x));
 
-    try {
-        Rewrite(engine, x % 0);
-    } catch (const std::exception&) {
-        thrown = true;
-    }
-
-    BF_TEST(thrown);
+    BF_TEST(EqualChunkValue(r, 0u));
     return 0;
 }
 
-int TestModZero_GuardLeftZeroStaysMod() {
+int TestModSelf_DifferentInputsStayMod() {
     MakeExprStore(32);
-    const auto rule = Simplify::Arithmetic::Get_ModZeroGuard_Rule();
+    const auto rule = Simplify::Arithmetic::Get_ModSelf_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
@@ -201,7 +195,8 @@ int TestModZero_GuardLeftZeroStaysMod() {
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto x = V("x");
-    auto expr = C(0) % x;
+    auto y = V("y");
+    auto expr = x % y;
 
     BF_SAFE_REWRITE(r, Rewrite(engine, expr));
 
@@ -346,8 +341,8 @@ int main() {
     BF_RUN_TEST(TestSubZero_LeftZeroBecomesNeg);
     BF_RUN_TEST(TestSubSelf_Basic);
     BF_RUN_TEST(TestSubSelf_DifferentInputsStaySub);
-    BF_RUN_TEST(TestModZero_GuardThrows);
-    BF_RUN_TEST(TestModZero_GuardLeftZeroStaysMod);
+    BF_RUN_TEST(TestModSelf_Basic);
+    BF_RUN_TEST(TestModSelf_DifferentInputsStayMod);
     BF_RUN_TEST(TestShiftZero_Basic);
     BF_RUN_TEST(TestShiftZero_GuardLeftZeroStaysShift);
     BF_RUN_TEST(TestRotateModulo_FullWidthBecomesIdentity);

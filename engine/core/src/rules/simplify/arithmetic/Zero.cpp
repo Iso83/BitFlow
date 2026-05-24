@@ -42,6 +42,18 @@ static bool Match_SubSelf(const ExprStore* store, ExprId id) {
     return e.inputs[0] == e.inputs[1];
 }
 
+static bool Match_ModSelf(const ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+
+    if (e.op != OpType::Mod)
+        return false;
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    return e.inputs[0] == e.inputs[1];
+}
+
 #pragma region Rewrite
 static ExprId Rewrite_AddZero(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
@@ -114,18 +126,11 @@ static ExprId Rewrite_SubSelf(RewriteContext& ctx, ExprId id) {
     return store->makeFalse(e.bitWidth).id;
 }
 
-static ExprId Rewrite_ModZeroGuard(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_ModSelf(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    const auto inputs = e.inputs;
-
-    for (size_t i = 1; i < inputs.size(); ++i) {
-        if (IsConstFalse(store, inputs[i]))
-            BF_RULE_ERROR("Modulo by zero detected in rewrite");
-    }
-
-    return id;
+    return store->makeFalse(e.bitWidth).id;
 }
 
 static ExprId Rewrite_ShiftZero(RewriteContext& ctx, ExprId id) {
@@ -163,8 +168,8 @@ Rule Get_SubSelf_Rule() {
     return Rule{SubSelf, &Match_SubSelf, &Rewrite_SubSelf, {Normalize::Flatten}};
 }
 
-Rule Get_ModZeroGuard_Rule() {
-    return Rule{ModZeroGuard, &Match_RightZero<OpType::Mod>, &Rewrite_ModZeroGuard, {Normalize::Flatten}};
+Rule Get_ModSelf_Rule() {
+    return Rule{ModSelf, &Match_ModSelf, &Rewrite_ModSelf, {Normalize::Flatten}};
 }
 
 Rule Get_ShiftZero_Rule() {

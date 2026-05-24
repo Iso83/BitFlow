@@ -296,14 +296,25 @@ Removes division of an expression by itself.
 
 ---
 
-### CORE.SIMPLIFY.ARITHMETIC.MOD_ZERO_GUARD
+### CORE.SIMPLIFY.ARITHMETIC.MOD_ONE
 
-Protects modulo operations against invalid simplifications involving zero divisors.
+Removes modulo by one.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$x \bmod 0$$ |
-| Rewrite | $$x \bmod 0$$ |
+| Input   | $$x \bmod 1$$ |
+| Rewrite | $$0$$      |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.MOD_SELF
+
+Removes modulo of an expression by itself.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \bmod x$$ |
+| Rewrite | $$0$$      |
 
 ---
 
