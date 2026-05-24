@@ -152,10 +152,10 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
     const Expr& lhs = (*store)[e.inputs[0]];
     const Expr& rhs = (*store)[e.inputs[1]];
 
-    if (lhs.op != OpType::Mul || rhs.op != OpType::Mul)
-        return false;
+    const std::vector<ExprId> lhsFactors = lhs.op == OpType::Mul ? lhs.inputs : std::vector<ExprId>{e.inputs[0]};
+    const std::vector<ExprId> rhsFactors = rhs.op == OpType::Mul ? rhs.inputs : std::vector<ExprId>{e.inputs[1]};
 
-    for (ExprId lhsFactorId : lhs.inputs) {
+    for (ExprId lhsFactorId : lhsFactors) {
         const Expr& lhsFactor = (*store)[lhsFactorId];
 
         if (lhsFactor.op != OpType::Pow || lhsFactor.inputs.size() != 2)
@@ -165,7 +165,7 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
         if (lhsExp.op != OpType::Const)
             continue;
 
-        for (ExprId rhsFactorId : rhs.inputs) {
+        for (ExprId rhsFactorId : rhsFactors) {
             const Expr& rhsFactor = (*store)[rhsFactorId];
 
             if (rhsFactor.op != OpType::Pow || rhsFactor.inputs.size() != 2)
@@ -196,6 +196,23 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
 static bool Match_SubCommonDenominator(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Sub || e.inputs.size() != 2)
+        return false;
+
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const Expr& rhs = (*store)[e.inputs[1]];
+
+    if (lhs.op != OpType::Div || rhs.op != OpType::Div)
+        return false;
+
+    if (lhs.inputs.size() != 2 || rhs.inputs.size() != 2)
+        return false;
+
+    return store->structuralEquivalent(lhs.inputs[1], rhs.inputs[1]);
+}
+
+static bool Match_AddCommonDenominator(const ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+    if (e.op != OpType::Add || e.inputs.size() != 2)
         return false;
 
     const Expr& lhs = (*store)[e.inputs[0]];
@@ -449,8 +466,8 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id
     const Expr& lhs = (*store)[e.inputs[0]];
     const Expr& rhs = (*store)[e.inputs[1]];
 
-    const std::vector<ExprId> lhsInputs = lhs.inputs;
-    const std::vector<ExprId> rhsInputs = rhs.inputs;
+    const std::vector<ExprId> lhsInputs = lhs.op == OpType::Mul ? lhs.inputs : std::vector<ExprId>{e.inputs[0]};
+    const std::vector<ExprId> rhsInputs = rhs.op == OpType::Mul ? rhs.inputs : std::vector<ExprId>{e.inputs[1]};
 
     std::vector<bool> lhsConsumed(lhsInputs.size(), false);
     std::vector<bool> rhsConsumed(rhsInputs.size(), false);
@@ -584,6 +601,20 @@ static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
     return store->create(OpType::Div, {numerator, denominator}, bitWidth).id;
 }
 
+static ExprId Rewrite_AddCommonDenominator(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr& e = (*store)[id];
+    const Types::BitWidth bitWidth = e.bitWidth;
+
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const ExprId denominator = lhs.inputs[1];
+
+    const Expr& rhs = (*store)[e.inputs[1]];
+
+    const ExprId numerator = store->create(OpType::Add, {lhs.inputs[0], rhs.inputs[0]}, bitWidth).id;
+    return store->create(OpType::Div, {numerator, denominator}, bitWidth).id;
+}
+
 static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
@@ -642,6 +673,10 @@ Rule Get_CommonFactorCancel_PowTerms_Rule() {
 
 Rule Get_SubCommonDenominator_Rule() {
     return Rule{SubCommonDenominator, &Match_SubCommonDenominator, &Rewrite_SubCommonDenominator, {Normalize::Order}};
+}
+
+Rule Get_AddCommonDenominator_Rule() {
+    return Rule{AddCommonDenominator, &Match_AddCommonDenominator, &Rewrite_AddCommonDenominator, {Normalize::Order}};
 }
 
 Rule Get_CommonFactorCancel_Rule() {

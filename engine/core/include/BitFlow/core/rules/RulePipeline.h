@@ -74,9 +74,11 @@ inline RuleEngine BuildSimplifyArithmetic() {
 
     e.AddRule(Simplify::Arithmetic::Get_AddZero_Rule());
     e.AddRule(Simplify::Arithmetic::Get_SubZero_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_SubSelf_Rule());
     e.AddRule(Simplify::Arithmetic::Get_MulOne_Rule());
     e.AddRule(Simplify::Arithmetic::Get_MulZero_Rule());
     e.AddRule(Simplify::Arithmetic::Get_DivOne_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_DivSelf_Rule());
     e.AddRule(Simplify::Arithmetic::Get_ModZeroGuard_Rule());
     e.AddRule(Simplify::Arithmetic::Get_ShiftZero_Rule());
     e.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
@@ -124,8 +126,10 @@ inline RuleEngine BuildFactorizeArithmetic() {
     e.AddRule(Factorize::Arithmetic::Get_CommonFactorCancel_PowTerms_Rule());
     e.AddRule(Factorize::Arithmetic::Get_CommonFactorCancel_Rule());
     e.AddRule(Factorize::Arithmetic::Get_SubCommonDenominator_Rule());
+    e.AddRule(Factorize::Arithmetic::Get_AddCommonDenominator_Rule());
     e.AddRule(Factorize::Arithmetic::Get_MulCombineConstants_Rule());
     e.AddRule(Factorize::Arithmetic::Get_MulFractionNumerator_Rule());
+    e.AddRule(Factorize::Arithmetic::Get_DivFractionNumerator_Rule());
 
     return e;
 }

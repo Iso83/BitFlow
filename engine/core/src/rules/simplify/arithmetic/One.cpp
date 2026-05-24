@@ -35,6 +35,17 @@ static bool Match_DivOne(const ExprStore* store, ExprId id) {
     const Expr& rhs = (*store)[e.inputs[1]];
     return rhs.op == OpType::Const && rhs.knownValue == 1;
 }
+
+static bool Match_DivSelf(const ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+    if (e.op != OpType::Div)
+        return false;
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    return e.inputs[0] == e.inputs[1];
+}
 #pragma endregion
 
 #pragma region Rewrite
@@ -64,6 +75,12 @@ static ExprId Rewrite_DivOne(RewriteContext& ctx, ExprId id) {
     const Expr& e = (*store)[id];
     return e.inputs[0];
 }
+
+static ExprId Rewrite_DivSelf(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr& e = (*store)[id];
+    return store->createConstant(1, e.bitWidth).id;
+}
 #pragma endregion
 
 Rule Get_MulOne_Rule() {
@@ -72,6 +89,10 @@ Rule Get_MulOne_Rule() {
 
 Rule Get_DivOne_Rule() {
     return Rule{DivOne, &Match_DivOne, &Rewrite_DivOne, {Normalize::Flatten}};
+}
+
+Rule Get_DivSelf_Rule() {
+    return Rule{DivSelf, &Match_DivSelf, &Rewrite_DivSelf, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

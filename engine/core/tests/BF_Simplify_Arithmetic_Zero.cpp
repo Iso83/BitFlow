@@ -132,6 +132,42 @@ int TestSubZero_LeftZeroBecomesNeg() {
     return 0;
 }
 
+int TestSubSelf_Basic() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_SubSelf_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto x = V("x");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, x - x));
+
+    BF_TEST(EqualChunkValue(r, 0u));
+    return 0;
+}
+
+int TestSubSelf_DifferentInputsStaySub() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_SubSelf_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto x = V("x");
+    auto y = V("y");
+
+    auto expr = x - y;
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+
+    BF_TEST(r == expr);
+    return 0;
+}
+
 int TestModZero_GuardThrows() {
     MakeExprStore(32);
     const auto rule = Simplify::Arithmetic::Get_ModZeroGuard_Rule();
@@ -308,6 +344,8 @@ int main() {
     BF_RUN_TEST(TestMulZero_DominanceWithMixedInputs);
     BF_RUN_TEST(TestSubZero_Basic);
     BF_RUN_TEST(TestSubZero_LeftZeroBecomesNeg);
+    BF_RUN_TEST(TestSubSelf_Basic);
+    BF_RUN_TEST(TestSubSelf_DifferentInputsStaySub);
     BF_RUN_TEST(TestModZero_GuardThrows);
     BF_RUN_TEST(TestModZero_GuardLeftZeroStaysMod);
     BF_RUN_TEST(TestShiftZero_Basic);

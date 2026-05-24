@@ -263,6 +263,17 @@ Removes subtraction by zero.
 
 ---
 
+### CORE.SIMPLIFY.ARITHMETIC.SUB_SELF
+
+Removes subtraction of an expression from itself.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x - x$$  |
+| Rewrite | $$0$$      |
+
+---
+
 ### CORE.SIMPLIFY.ARITHMETIC.DIV_ONE
 
 Removes division by one.
@@ -271,6 +282,17 @@ Removes division by one.
 | ------- | ---------- |
 | Input   | $$x / 1$$  |
 | Rewrite | $$x$$      |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.DIV_SELF
+
+Removes division of an expression by itself.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x / x$$  |
+| Rewrite | $$1$$      |
 
 ---
 
@@ -672,12 +694,17 @@ Extracts shared multiplicative factors from additions.
 
 ### CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL_POW_TERMS
 
-Cancels identical power terms that appear in both numerator and denominator.
+Cancels identical power terms and reduces power exponents that appear in both numerator and denominator.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$\frac{a^5 \cdot 2}{3 \cdot a^5}$$ |
 | Rewrite | $$\frac{2}{3}$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\frac{a^8 \cdot 2}{3 \cdot a^5}$$ |
+| Rewrite | $$\frac{a^3 \cdot 2}{3}$$ |
 
 ---
 
@@ -700,6 +727,17 @@ Extracts a shared denominator from subtraction of two divisions.
 | ------- | ---------- |
 | Input   | $$\frac{a}{c} - \frac{b}{c}$$ |
 | Rewrite | $$\frac{a - b}{c}$$ |
+
+---
+
+### CORE.FACTORIZE.ARITHMETIC.ADD_COMMON_DENOMINATOR
+
+Combines fractions with equal denominators.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$a / x + b / x$$ |
+| Rewrite | $$(a + b) / x$$ |
 
 ---
 
@@ -727,6 +765,17 @@ Pushes multiplicative terms into a fraction numerator.
 | ------- | ---------- |
 | Input   | $$\frac{a}{b} \cdot c$$ |
 | Rewrite | $$\frac{a \cdot c}{b}$$ |
+
+---
+
+### CORE.FACTORIZE.ARITHMETIC.DIV_FRACTION_NUMERATOR
+
+Moves multiplication inside a fraction numerator.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$a \cdot \frac{b}{x}$$ |
+| Rewrite | $$\frac{a \cdot b}{x}$$ |
 
 ---
 

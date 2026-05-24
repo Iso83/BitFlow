@@ -30,6 +30,18 @@ template <OpType Op> static bool Match_RightZero(const ExprStore* store, ExprId 
 }
 #pragma endregion
 
+static bool Match_SubSelf(const ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+
+    if (e.op != OpType::Sub)
+        return false;
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    return e.inputs[0] == e.inputs[1];
+}
+
 #pragma region Rewrite
 static ExprId Rewrite_AddZero(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
@@ -95,6 +107,13 @@ static ExprId Rewrite_SubZero(RewriteContext& ctx, ExprId id) {
     return store->create(OpType::Sub, std::move(newInputs), bitWidth).id;
 }
 
+static ExprId Rewrite_SubSelf(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr& e = (*store)[id];
+
+    return store->makeFalse(e.bitWidth).id;
+}
+
 static ExprId Rewrite_ModZeroGuard(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
@@ -138,6 +157,10 @@ Rule Get_MulZero_Rule() {
 
 Rule Get_SubZero_Rule() {
     return Rule{SubZero, &Match_Zero<OpType::Sub>, &Rewrite_SubZero, {Normalize::Flatten}};
+}
+
+Rule Get_SubSelf_Rule() {
+    return Rule{SubSelf, &Match_SubSelf, &Rewrite_SubSelf, {Normalize::Flatten}};
 }
 
 Rule Get_ModZeroGuard_Rule() {

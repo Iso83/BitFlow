@@ -290,6 +290,24 @@ int TestCommonFactorCancel_PowTerms_ExponentDifference() {
     return 0;
 }
 
+int TestCommonFactorCancel_PowTerms_DirectDivision() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_CommonFactorCancel_PowTerms_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, a.Pow(8) / a.Pow(5)));
+
+    BF_TEST(IsPow(r, a, 3u));
+    return 0;
+}
+
 int TestSubCommonDenominator() {
     MakeExprStore(32);
     const auto rule = Factorize::Arithmetic::Get_SubCommonDenominator_Rule();
@@ -401,6 +419,39 @@ int TestSubCommonDenominator_ComplexNumerator() {
     return 0;
 }
 
+int TestAddCommonDenominator() {
+    MakeExprStore(32);
+
+    const auto rule = Factorize::Arithmetic::Get_AddCommonDenominator_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto x = V("x");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a / x) + (b / x)));
+
+    BF_TEST(Op(r) == OpType::Div);
+
+    ExprRef numerator = Input(r, 0);
+    ExprRef denominator = Input(r, 1);
+
+    BF_TEST(Op(numerator) == OpType::Add);
+
+    BF_TEST(AnyInput(numerator, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(numerator, [&](ExprRef in) { return in == b; }));
+
+    BF_TEST(denominator == x);
+
+    return 0;
+}
+
 int TestCommonFactorCancel_SubDivMul() {
     MakeExprStore(32);
     const auto rule = Factorize::Arithmetic::Get_CommonFactorCancel_Rule();
@@ -434,11 +485,13 @@ int main() {
     BF_RUN_TEST(TestAddCommonFactor_PartialFactorization);
     BF_RUN_TEST(TestCommonFactorCancel_PowTerms_Basic);
     BF_RUN_TEST(TestCommonFactorCancel_PowTerms_ExponentDifference);
+    BF_RUN_TEST(TestCommonFactorCancel_PowTerms_DirectDivision);
 
     BF_RUN_TEST(TestSubCommonDenominator);
     BF_RUN_TEST(TestSubCommonDenominator_Variables);
     BF_RUN_TEST(TestSubCommonDenominator_DifferentDenominator_NoRewrite);
     BF_RUN_TEST(TestSubCommonDenominator_ComplexNumerator);
+    BF_RUN_TEST(TestAddCommonDenominator);
     BF_RUN_TEST(TestCommonFactorCancel_SubDivMul);
     return 0;
 }

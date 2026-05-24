@@ -50,8 +50,14 @@ Rule Get_MulZero_Rule();
 inline constexpr RuleKey SubZero{"CORE.SIMPLIFY.ARITHMETIC.SUB_ZERO"};
 Rule Get_SubZero_Rule();
 
+inline constexpr RuleKey SubSelf{"CORE.SIMPLIFY.ARITHMETIC.SUB_SELF"};
+Rule Get_SubSelf_Rule();
+
 inline constexpr RuleKey DivOne{"CORE.SIMPLIFY.ARITHMETIC.DIV_ONE"};
 Rule Get_DivOne_Rule();
+
+inline constexpr RuleKey DivSelf{"CORE.SIMPLIFY.ARITHMETIC.DIV_SELF"};
+Rule Get_DivSelf_Rule();
 
 inline constexpr RuleKey ModZeroGuard{"CORE.SIMPLIFY.ARITHMETIC.MOD_ZERO_GUARD"};
 Rule Get_ModZeroGuard_Rule();
@@ -171,11 +177,17 @@ Rule Get_CommonFactorCancel_Rule();
 inline constexpr RuleKey SubCommonDenominator{"CORE.FACTORIZE.ARITHMETIC.SUB_COMMON_DENOMINATOR"};
 Rule Get_SubCommonDenominator_Rule();
 
+inline constexpr RuleKey AddCommonDenominator{"CORE.FACTORIZE.ARITHMETIC.ADD_COMMON_DENOMINATOR"};
+Rule Get_AddCommonDenominator_Rule();
+
 inline constexpr RuleKey MulCombineConstants{"CORE.FACTORIZE.ARITHMETIC.MUL_COMBINE_CONSTANTS"};
 Rule Get_MulCombineConstants_Rule();
 
 inline constexpr RuleKey MulFractionNumerator{"CORE.FACTORIZE.ARITHMETIC.MUL_FRACTION_NUMERATOR"};
 Rule Get_MulFractionNumerator_Rule();
+
+inline constexpr RuleKey DivFractionNumerator{"CORE.FACTORIZE.ARITHMETIC.DIV_FRACTION_NUMERATOR"};
+Rule Get_DivFractionNumerator_Rule();
 } // namespace Factorize::Arithmetic
 
 namespace Factorize::Bitwise {
