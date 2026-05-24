@@ -131,6 +131,7 @@ inline RuleEngine BuildFactorizeArithmetic() {
     e.AddRule(Factorize::Arithmetic::Get_MulCombineConstants_Rule());
     e.AddRule(Factorize::Arithmetic::Get_MulFractionNumerator_Rule());
     e.AddRule(Factorize::Arithmetic::Get_DivFractionNumerator_Rule());
+    e.AddRule(Factorize::Arithmetic::Get_DivFractionDenominator_Rule());
 
     return e;
 }

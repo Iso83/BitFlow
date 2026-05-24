@@ -191,6 +191,9 @@ Rule Get_MulFractionNumerator_Rule();
 
 inline constexpr RuleKey DivFractionNumerator{"CORE.FACTORIZE.ARITHMETIC.DIV_FRACTION_NUMERATOR"};
 Rule Get_DivFractionNumerator_Rule();
+
+inline constexpr RuleKey DivFractionDenominator{"CORE.FACTORIZE.ARITHMETIC.DIV_FRACTION_DENOMINATOR"};
+Rule Get_DivFractionDenominator_Rule();
 } // namespace Factorize::Arithmetic
 
 namespace Factorize::Bitwise {

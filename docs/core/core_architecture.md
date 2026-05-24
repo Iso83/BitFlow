@@ -448,12 +448,29 @@ This normalizes exponential multiplication chains into a single power expression
 
 ### CORE.SIMPLIFY.ARITHMETIC.COMBINE_CONSTANTS
 
-Merges arithmetic constant chains into a reduced form.
+Evaluates arithmetic expressions when all participating terms are constant.
+
+This rule reduces constant-only arithmetic expressions into a canonical form.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$2 + 3 + 4$$ |
-| Rewrite | $$9$$      |
+| Rewrite | $$9$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$20 \div 4$$ |
+| Rewrite | $$5$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$20 \cdot 5$$ |
+| Rewrite | $$100$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$20 \bmod 6$$ |
+| Rewrite | $$2$$ |
 
 ---
 
@@ -593,12 +610,17 @@ Simplifies repeated AND terms.
 
 ### CORE.SIMPLIFY.BITWISE.COMPLEMENT
 
-Simplifies complement patterns.
+Simplifies complement patterns by resolving expressions that contain both a value and its complement.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \land \sim x$$ |
 | Rewrite | $$0$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \lor \sim x$$ |
+| Rewrite | $$true$$ |
 
 ---
 
@@ -787,6 +809,17 @@ Moves multiplication inside a fraction numerator.
 | ------- | ---------- |
 | Input   | $$a \cdot \frac{b}{x}$$ |
 | Rewrite | $$\frac{a \cdot b}{x}$$ |
+
+---
+
+### CORE.FACTORIZE.ARITHMETIC.DIV_FRACTION_DENOMINATOR
+
+Eliminates division by a fraction by moving the inner denominator into the numerator.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\frac{a}{\frac{b}{c}}$$ |
+| Rewrite | $$\frac{a \cdot c}{b}$$ |
 
 ---
 
