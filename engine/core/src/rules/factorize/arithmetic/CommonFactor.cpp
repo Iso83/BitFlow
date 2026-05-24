@@ -201,13 +201,25 @@ static bool Match_SubCommonDenominator(const ExprStore* store, ExprId id) {
     const Expr& lhs = (*store)[e.inputs[0]];
     const Expr& rhs = (*store)[e.inputs[1]];
 
-    if (lhs.op != OpType::Div || rhs.op != OpType::Div)
+    if (rhs.op != OpType::Div || rhs.inputs.size() != 2)
         return false;
 
-    if (lhs.inputs.size() != 2 || rhs.inputs.size() != 2)
+    if (lhs.op == OpType::Div && lhs.inputs.size() == 2)
+        return store->structuralEquivalent(lhs.inputs[1], rhs.inputs[1]);
+
+    if (lhs.op != OpType::Add || lhs.inputs.size() < 2)
         return false;
 
-    return store->structuralEquivalent(lhs.inputs[1], rhs.inputs[1]);
+    for (ExprId lhsTermId : lhs.inputs) {
+        const Expr& lhsTerm = (*store)[lhsTermId];
+        if (lhsTerm.op != OpType::Div || lhsTerm.inputs.size() != 2)
+            continue;
+
+        if (store->structuralEquivalent(lhsTerm.inputs[1], rhs.inputs[1]))
+            return true;
+    }
+
+    return false;
 }
 
 static bool Match_AddCommonDenominator(const ExprStore* store, ExprId id) {
@@ -593,12 +605,37 @@ static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
     const Types::BitWidth bitWidth = e.bitWidth;
 
     const Expr& lhs = (*store)[e.inputs[0]];
-    const ExprId denominator = lhs.inputs[1];
-
     const Expr& rhs = (*store)[e.inputs[1]];
+    const ExprId rhsDenominator = rhs.inputs[1];
 
-    const ExprId numerator = store->create(OpType::Sub, {lhs.inputs[0], rhs.inputs[0]}, bitWidth).id;
-    return store->create(OpType::Div, {numerator, denominator}, bitWidth).id;
+    if (lhs.op == OpType::Div && lhs.inputs.size() == 2) {
+        const ExprId numerator = store->create(OpType::Sub, {lhs.inputs[0], rhs.inputs[0]}, bitWidth).id;
+        return store->create(OpType::Div, {numerator, rhsDenominator}, bitWidth).id;
+    }
+
+    std::vector<ExprId> combinedAddTerms;
+    combinedAddTerms.reserve(lhs.inputs.size());
+    bool rewritten = false;
+
+    for (ExprId lhsTermId : lhs.inputs) {
+        const Expr& lhsTerm = (*store)[lhsTermId];
+
+        if (!rewritten && lhsTerm.op == OpType::Div && lhsTerm.inputs.size() == 2 &&
+            store->structuralEquivalent(lhsTerm.inputs[1], rhsDenominator)) {
+            const ExprId numerator = store->create(OpType::Sub, {lhsTerm.inputs[0], rhs.inputs[0]}, bitWidth).id;
+            const ExprId rewrittenDiv = store->create(OpType::Div, {numerator, rhsDenominator}, bitWidth).id;
+            combinedAddTerms.push_back(rewrittenDiv);
+            rewritten = true;
+            continue;
+        }
+
+        combinedAddTerms.push_back(lhsTermId);
+    }
+
+    if (!rewritten)
+        return id;
+
+    return store->create(OpType::Add, std::move(combinedAddTerms), bitWidth).id;
 }
 
 static ExprId Rewrite_AddCommonDenominator(RewriteContext& ctx, ExprId id) {

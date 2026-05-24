@@ -175,15 +175,18 @@ BuildFactorizeBitwise()
 
 This document provides an overview of the built-in rewrite rules available in the BitFlow Core engine.
 Rules are grouped by namespace and listed in the same order as the internal rule registry.
+Descriptions below reflect the actual `match(...)` and `rewrite(...)` behavior in rule implementations, with extra examples derived from existing Core CTests where available.
 
 ---
+
 
 # Normalize
 
 ### CORE.NORMALIZE.FLATTEN
 
-Flattens associative expressions into a single node structure.
-This improves canonicalization and simplifies later rewrite matching.
+Flattens associative operators (`+`, `*`, `AND`, `OR`, `XOR`) by pulling nested nodes with the same operator into one input list.
+This is a canonicalization prerequisite for many later rules that depend on scanning siblings in a single node.
+It does not reorder inputs by itself (ordering is handled by `CORE.NORMALIZE.ORDER`).
 
 | Step    | Expression            |
 | ------- | --------------------- |
@@ -194,8 +197,8 @@ This improves canonicalization and simplifies later rewrite matching.
 
 ### CORE.NORMALIZE.ORDER
 
-Sorts commutative inputs into a deterministic order.
-This ensures structurally equivalent expressions share the same layout.
+Sorts inputs of commutative operators into a deterministic canonical order.
+This guarantees structurally equivalent expressions serialize identically, improving cache hits and making pair-cancel/folding rules predictable.
 
 | Step    | Expression            |
 | ------- | --------------------- |
@@ -208,12 +211,18 @@ This ensures structurally equivalent expressions share the same layout.
 
 ### CORE.NORMALIZE.BITWISE.ROTATE_MODULO
 
-Normalizes rotate amounts using the active bit width.
+Normalizes rotate amounts modulo the expression bit-width.
+This keeps rotations canonical (`rot(x, w)` becomes `rot(x, 0)` for width `w`) and enables downstream `ROTATE_ZERO` elimination.
 
 | Step    | Expression            |
 | ------- | --------------------- |
 | Input   | $$rotl(x, 32)$$       |
 | Rewrite | $$rotl(x, 0)$$        |
+
+| Step    | Expression            |
+| ------- | --------------------- |
+| Input   | $$rotr(x, 40)$$       |
+| Rewrite | $$rotr(x, 8)$$        |
 
 ---
 
@@ -237,6 +246,11 @@ Removes multiplicative identity terms.
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \cdot 1$$ |
+| Rewrite | $$x$$      |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$1 \cdot 1 \cdot x$$ |
 | Rewrite | $$x$$      |
 
 ---
@@ -277,6 +291,11 @@ Removes subtraction of an expression from itself.
 ### CORE.SIMPLIFY.ARITHMETIC.DIV_ONE
 
 Removes division by one.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x / 1$$  |
+| Rewrite | $$x$$      |
 
 | Step    | Expression |
 | ------- | ---------- |
@@ -359,6 +378,11 @@ Eliminates subtraction of a negated value.
 | ------- | ---------- |
 | Input   | $$x - (-y)$$ |
 | Rewrite | $$x + y$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x - (-(a+b))$$ |
+| Rewrite | $$x + (a+b)$$ |
 
 ---
 
@@ -448,9 +472,8 @@ This normalizes exponential multiplication chains into a single power expression
 
 ### CORE.SIMPLIFY.ARITHMETIC.COMBINE_CONSTANTS
 
-Evaluates arithmetic expressions when all participating terms are constant.
-
-This rule reduces constant-only arithmetic expressions into a canonical form.
+Evaluates constant-only arithmetic subexpressions (`+`, `-`, `*`, `/`, `%`, shifts/rotates where applicable) inside the current bit-width domain.
+This is one of the key cleanup rules that collapses constant islands into a single literal and improves matchability of other simplifications.
 
 | Step    | Expression |
 | ------- | ---------- |
@@ -611,6 +634,7 @@ Simplifies repeated AND terms.
 ### CORE.SIMPLIFY.BITWISE.COMPLEMENT
 
 Simplifies complement patterns by resolving expressions that contain both a value and its complement.
+For bit-vectors this applies as `x & ~x = 0` and `x | ~x = all-ones` (width-aware full mask).
 
 | Step    | Expression |
 | ------- | ---------- |
@@ -644,6 +668,11 @@ Reduces XOR expressions involving masked terms.
 | Input   | $$x \oplus (x \land y)$$ |
 | Rewrite | $$x \land \sim y$$ |
 
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$y \oplus (y \land x)$$ |
+| Rewrite | $$y \land \sim x$$ |
+
 ---
 
 ### CORE.SIMPLIFY.BITWISE.XOR_NOT_REDUCTION
@@ -653,6 +682,11 @@ Simplifies XOR expressions involving complements.
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \oplus \sim x$$ |
+| Rewrite | $$-1$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\sim x \oplus x$$ |
 | Rewrite | $$-1$$ |
 
 ---
@@ -754,18 +788,24 @@ Cancels common multiplicative factors that appear in both numerator and denomina
 
 ### CORE.FACTORIZE.ARITHMETIC.SUB_COMMON_DENOMINATOR
 
-Extracts a shared denominator from subtraction of two divisions.
+Extracts a shared denominator from subtraction expressions, including denominators embedded inside additive chains.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$\frac{a}{c} - \frac{b}{c}$$ |
-| Rewrite | $$\frac{a - b}{c}$$ |
+| Rewrite | $$\frac{a-b}{c}$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$40 + \frac{5}{8} - \frac{3}{8}$$ |
+| Rewrite | $$40 + \frac{5-3}{8}$$ |
 
 ---
 
 ### CORE.FACTORIZE.ARITHMETIC.ADD_COMMON_DENOMINATOR
 
-Combines fractions with equal denominators.
+Combines fractions with equal denominators into a single fraction.
+This is primarily a structural normalization step that prepares arithmetic cancellation and constant folding passes.
 
 | Step    | Expression |
 | ------- | ---------- |
@@ -834,6 +874,11 @@ Extracts common XOR/AND structures into reduced forms.
 | Input   | $$(x \land y) \oplus (x \land z)$$ |
 | Rewrite | $$x \land (y \oplus z)$$ |
 
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \oplus (x \land y) \oplus (x \land z)$$ |
+| Rewrite | $$x \oplus (x \land (y \oplus z))$$ |
+
 ---
 
 ### CORE.FACTORIZE.BITWISE.XOR_PAIR_CANCEL
@@ -871,7 +916,8 @@ Applies absorption rules for OR expressions.
 
 ### CORE.FACTORIZE.BITWISE.DISTRIBUTE
 
-Distributes bitwise expressions into expanded form.
+Distributes bitwise forms when expansion improves downstream factoring/cancellation opportunities.
+Although mathematically inverse of factoring rules, pipeline ordering determines when expansion is preferable for canonical shape.
 
 | Step    | Expression |
 | ------- | ---------- |
