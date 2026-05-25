@@ -199,28 +199,22 @@ static bool Match_MulPowCombine(const ExprStore* store, ExprId id) {
             const Expr& aa = (*store)[aId];
             const Expr& bb = (*store)[bId];
 
-            // x * pow(x, n)
+            // x * pow(x, a)
             if (bb.op == OpType::Pow && bb.inputs.size() == 2) {
-                const Expr& exp = (*store)[bb.inputs[1]];
-                if (exp.op == OpType::Const && store->structuralEquivalent(aId, bb.inputs[0]))
+                if (store->structuralEquivalent(aId, bb.inputs[0]))
                     return true;
             }
 
-            // pow(x, n) * x
+            // pow(x, a) * x
             if (aa.op == OpType::Pow && aa.inputs.size() == 2) {
-                const Expr& exp = (*store)[aa.inputs[1]];
-                if (exp.op == OpType::Const && store->structuralEquivalent(aa.inputs[0], bId))
+                if (store->structuralEquivalent(aa.inputs[0], bId))
                     return true;
             }
 
             // pow(x, a) * pow(x, b)
             if (aa.op == OpType::Pow && bb.op == OpType::Pow && aa.inputs.size() == 2 && bb.inputs.size() == 2) {
 
-                const Expr& expA = (*store)[aa.inputs[1]];
-                const Expr& expB = (*store)[bb.inputs[1]];
-
-                if (expA.op == OpType::Const && expB.op == OpType::Const &&
-                    store->structuralEquivalent(aa.inputs[0], bb.inputs[0]))
+                if (store->structuralEquivalent(aa.inputs[0], bb.inputs[0]))
                     return true;
             }
         }
@@ -539,9 +533,10 @@ static ExprId Rewrite_MulToPow(RewriteContext& ctx, ExprId id) {
 static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-
     const std::vector<ExprId> inputs = e.inputs;
     const Types::BitWidth bw = e.bitWidth;
+    ExprId expAId = store->createConstant(1, bw).id;
+    ExprId expBId = store->createConstant(1, bw).id;
 
     std::vector<bool> consumed(inputs.size(), false);
     std::vector<ExprId> newInputs;
@@ -561,9 +556,6 @@ static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
             const Expr& b = (*store)[inputs[j]];
 
             ExprId baseId{};
-            Types::ExprChunk expA = 1;
-            Types::ExprChunk expB = 1;
-
             bool match = false;
 
             const bool aNeg = (a.op == OpType::Neg && a.inputs.size() == 1);
@@ -573,41 +565,28 @@ static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
             const Expr& aa = (*store)[aId];
             const Expr& bb = (*store)[bId];
 
-            // x * pow(x, n)
+            // x * pow(x, a)
             if (bb.op == OpType::Pow && bb.inputs.size() == 2 && store->structuralEquivalent(aId, bb.inputs[0])) {
-
-                const Expr& exp = (*store)[bb.inputs[1]];
-                if (exp.op == OpType::Const) {
-                    baseId = aId;
-                    expB = exp.knownValue;
-                    match = true;
-                }
+                baseId = aId;
+                expBId = bb.inputs[1];
+                match = true;
             }
 
-            // pow(x,n) * x
+            // pow(x,a) * x
             else if (aa.op == OpType::Pow && aa.inputs.size() == 2 && store->structuralEquivalent(aa.inputs[0], bId)) {
-
-                const Expr& exp = (*store)[aa.inputs[1]];
-                if (exp.op == OpType::Const) {
-                    baseId = aa.inputs[0];
-                    expA = exp.knownValue;
-                    match = true;
-                }
+                baseId = aa.inputs[0];
+                expAId = aa.inputs[1];
+                match = true;
             }
 
             // pow(x,a) * pow(x,b)
             else if (aa.op == OpType::Pow && bb.op == OpType::Pow && aa.inputs.size() == 2 && bb.inputs.size() == 2 &&
                      store->structuralEquivalent(aa.inputs[0], bb.inputs[0])) {
 
-                const Expr& ea = (*store)[aa.inputs[1]];
-                const Expr& eb = (*store)[bb.inputs[1]];
-
-                if (ea.op == OpType::Const && eb.op == OpType::Const) {
-                    baseId = aa.inputs[0];
-                    expA = ea.knownValue;
-                    expB = eb.knownValue;
-                    match = true;
-                }
+                baseId = aa.inputs[0];
+                expAId = aa.inputs[1];
+                expBId = bb.inputs[1];
+                match = true;
             }
 
             if (!match)
@@ -617,9 +596,15 @@ static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
             consumed[j] = true;
             negateResult ^= (aNeg ^ bNeg);
 
-            const Types::ExprChunk sum = (expA + expB) & Expr::fullMask(bw);
-
-            const ExprId expId = store->createConstant(sum, bw).id;
+            const Expr& expA = (*store)[expAId];
+            const Expr& expB = (*store)[expBId];
+            ExprId expId{};
+            if (expA.op == OpType::Const && expB.op == OpType::Const) {
+                const Types::ExprChunk sum = (expA.knownValue + expB.knownValue) & Expr::fullMask(bw);
+                expId = store->createConstant(sum, bw).id;
+            } else {
+                expId = store->create(OpType::Add, {expAId, expBId}, bw).id;
+            }
 
             newInputs.push_back(store->create(OpType::Pow, {baseId, expId}, bw).id);
 

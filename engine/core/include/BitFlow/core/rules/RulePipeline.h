@@ -76,7 +76,9 @@ inline RuleEngine BuildSimplifyArithmetic() {
     e.AddRule(Simplify::Arithmetic::Get_SubZero_Rule());
     e.AddRule(Simplify::Arithmetic::Get_SubSelf_Rule());
     e.AddRule(Simplify::Arithmetic::Get_MulOne_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_PowOne_Rule());
     e.AddRule(Simplify::Arithmetic::Get_MulZero_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_PowZero_Rule());
     e.AddRule(Simplify::Arithmetic::Get_DivOne_Rule());
     e.AddRule(Simplify::Arithmetic::Get_DivSelf_Rule());
     e.AddRule(Simplify::Arithmetic::Get_ModOne_Rule());

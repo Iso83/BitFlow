@@ -54,6 +54,17 @@ static bool Match_ModSelf(const ExprStore* store, ExprId id) {
     return e.inputs[0] == e.inputs[1];
 }
 
+static bool Match_PowZero(const ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+    if (e.op != OpType::Pow)
+        return false;
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    return IsConstFalse(store, e.inputs[1]);
+}
+
 #pragma region Rewrite
 static ExprId Rewrite_AddZero(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
@@ -133,6 +144,13 @@ static ExprId Rewrite_ModSelf(RewriteContext& ctx, ExprId id) {
     return store->makeFalse(e.bitWidth).id;
 }
 
+static ExprId Rewrite_PowZero(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr& e = (*store)[id];
+
+    return store->createConstant(1, e.bitWidth).id;
+}
+
 static ExprId Rewrite_ShiftZero(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
@@ -170,6 +188,10 @@ Rule Get_SubSelf_Rule() {
 
 Rule Get_ModSelf_Rule() {
     return Rule{ModSelf, &Match_ModSelf, &Rewrite_ModSelf, {Normalize::Flatten}};
+}
+
+Rule Get_PowZero_Rule() {
+    return Rule{PowZero, &Match_PowZero, &Rewrite_PowZero, {Normalize::Flatten}};
 }
 
 Rule Get_ShiftZero_Rule() {

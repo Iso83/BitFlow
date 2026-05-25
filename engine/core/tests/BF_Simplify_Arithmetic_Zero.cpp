@@ -114,6 +114,39 @@ int TestSubZero_Basic() {
     return 0;
 }
 
+int TestPowZero_Basic() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_PowZero_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto x = V("x");
+    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(0)));
+
+    BF_TEST(EqualChunkValue(r, 1u));
+    return 0;
+}
+
+int TestPowZero_GuardExponentOneStaysPow() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_PowZero_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto x = V("x");
+    auto expr = x.Pow(1);
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+
+    BF_TEST(r == expr);
+    return 0;
+}
+
 int TestSubZero_LeftZeroBecomesNeg() {
     MakeExprStore(32);
     const auto rule = Simplify::Arithmetic::Get_SubZero_Rule();
@@ -338,6 +371,8 @@ int main() {
     BF_RUN_TEST(TestMulZero_Nested);
     BF_RUN_TEST(TestMulZero_DominanceWithMixedInputs);
     BF_RUN_TEST(TestSubZero_Basic);
+    BF_RUN_TEST(TestPowZero_Basic);
+    BF_RUN_TEST(TestPowZero_GuardExponentOneStaysPow);
     BF_RUN_TEST(TestSubZero_LeftZeroBecomesNeg);
     BF_RUN_TEST(TestSubSelf_Basic);
     BF_RUN_TEST(TestSubSelf_DifferentInputsStaySub);

@@ -479,6 +479,45 @@ int TestCombineMulPow_PowAndBase() {
     return 0;
 }
 
+int TestCombineMulPow_PowAndBase_SymbolicExponent() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_CombineMulPow_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto x = V("x");
+    auto a = V("a");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(a) * x));
+
+    BF_TEST(Op(r) == OpType::Pow);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(Input(r, 0) == x);
+
+    ExprRef exp = Input(r, 1);
+    BF_TEST(Op(exp) == OpType::Add);
+    BF_TEST(InputSize(exp) == 2);
+
+    bool foundA = false;
+    bool foundOne = false;
+    for (BitFlow::Core::Ids::ExprId inId : ExprOf(exp).inputs) {
+        ExprRef in(exp.store, inId);
+        if (in == a)
+            foundA = true;
+        if (Op(in) == OpType::Const && ExprOf(in).knownValue == 1)
+            foundOne = true;
+    }
+
+    BF_TEST(foundA);
+    BF_TEST(foundOne);
+
+    return 0;
+}
+
 int TestCombineMulPow_TwoPows() {
     MakeExprStore(32);
     const auto rule = Simplify::Arithmetic::Get_CombineMulPow_Rule();
@@ -599,6 +638,7 @@ int main() {
 
     BF_RUN_TEST(TestCombineMulPow_BaseAndPow);
     BF_RUN_TEST(TestCombineMulPow_PowAndBase);
+    BF_RUN_TEST(TestCombineMulPow_PowAndBase_SymbolicExponent);
     BF_RUN_TEST(TestCombineMulPow_TwoPows);
     BF_RUN_TEST(TestCombineMulPow_MixedFactors);
     BF_RUN_TEST(TestMulPow_NegativeExponentChain);

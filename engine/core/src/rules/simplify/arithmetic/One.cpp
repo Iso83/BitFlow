@@ -36,6 +36,18 @@ static bool Match_DivOne(const ExprStore* store, ExprId id) {
     return rhs.op == OpType::Const && rhs.knownValue == 1;
 }
 
+static bool Match_PowOne(const ExprStore* store, ExprId id) {
+    const Expr& e = (*store)[id];
+    if (e.op != OpType::Pow)
+        return false;
+
+    if (e.inputs.size() != 2)
+        return false;
+
+    const Expr& rhs = (*store)[e.inputs[1]];
+    return rhs.op == OpType::Const && rhs.knownValue == 1;
+}
+
 static bool Match_DivSelf(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Div)
@@ -89,6 +101,12 @@ static ExprId Rewrite_DivOne(RewriteContext& ctx, ExprId id) {
     return e.inputs[0];
 }
 
+static ExprId Rewrite_PowOne(RewriteContext& ctx, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr& e = (*store)[id];
+    return e.inputs[0];
+}
+
 static ExprId Rewrite_DivSelf(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
@@ -109,6 +127,10 @@ Rule Get_MulOne_Rule() {
 
 Rule Get_DivOne_Rule() {
     return Rule{DivOne, &Match_DivOne, &Rewrite_DivOne, {Normalize::Flatten}};
+}
+
+Rule Get_PowOne_Rule() {
+    return Rule{PowOne, &Match_PowOne, &Rewrite_PowOne, {Normalize::Flatten}};
 }
 
 Rule Get_DivSelf_Rule() {

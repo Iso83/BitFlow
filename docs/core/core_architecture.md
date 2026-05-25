@@ -255,6 +255,22 @@ Removes multiplicative identity terms.
 
 ---
 
+### CORE.SIMPLIFY.ARITHMETIC.POW_ONE
+
+Removes exponent identity terms.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x^1$$ |
+| Rewrite | $$x$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\left(a+b\right)^1$$ |
+| Rewrite | $$a+b$$ |
+
+---
+
 ### CORE.SIMPLIFY.ARITHMETIC.MUL_ZERO
 
 Reduces multiplication by zero to zero.
@@ -263,6 +279,22 @@ Reduces multiplication by zero to zero.
 | ------- | ---------- |
 | Input   | $$x \cdot 0$$ |
 | Rewrite | $$0$$      |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.POW_ZERO
+
+Replaces non-zero powers with the multiplicative identity.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x^0$$ |
+| Rewrite | $$1$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\left(a+b\right)^0$$ |
+| Rewrite | $$1$$ |
 
 ---
 
@@ -460,13 +492,23 @@ This reduces duplicated multiplication chains into a more compact exponential fo
 
 ### CORE.SIMPLIFY.ARITHMETIC.COMBINE_MUL_POW
 
-Combines multiplicative power expressions with matching bases by adding their exponents.
+Combines multiplicative power expressions with matching bases by adding their exponents.  
 This normalizes exponential multiplication chains into a single power expression.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \cdot x^2$$ |
 | Rewrite | $$x^3$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x^a \cdot x$$ |
+| Rewrite | $$x^{a+1}$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x^a \cdot x^b$$ |
+| Rewrite | $$x^{a+b}$$ |
 
 ---
 

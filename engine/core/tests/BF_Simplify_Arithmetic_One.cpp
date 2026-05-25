@@ -78,6 +78,41 @@ int TestDivOne_Basic() {
     return 0;
 }
 
+int TestPowOne_Basic() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_PowOne_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto x = V("x");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(1)));
+
+    BF_TEST(r == x);
+    return 0;
+}
+
+int TestPowOne_GuardExponentTwoStaysPow() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_PowOne_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto x = V("x");
+    auto expr = x.Pow(2);
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+
+    BF_TEST(r == expr);
+    return 0;
+}
+
 int TestDivOne_GuardLeftOneStaysDiv() {
     MakeExprStore(32);
     const auto rule = Simplify::Arithmetic::Get_DivOne_Rule();
@@ -172,6 +207,8 @@ int main() {
     BF_RUN_TEST(TestMulOne_AllOnesBecomeConstOne);
     BF_RUN_TEST(TestMulOne_CanonicalOrderRegression);
     BF_RUN_TEST(TestDivOne_Basic);
+    BF_RUN_TEST(TestPowOne_Basic);
+    BF_RUN_TEST(TestPowOne_GuardExponentTwoStaysPow);
     BF_RUN_TEST(TestDivOne_GuardLeftOneStaysDiv);
     BF_RUN_TEST(TestDivSelf_Basic);
     BF_RUN_TEST(TestDivSelf_DifferentInputsStayDiv);

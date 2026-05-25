@@ -44,8 +44,14 @@ Rule Get_AddZero_Rule();
 inline constexpr RuleKey MulOne{"CORE.SIMPLIFY.ARITHMETIC.MUL_ONE"};
 Rule Get_MulOne_Rule();
 
+inline constexpr RuleKey PowOne{"CORE.SIMPLIFY.ARITHMETIC.POW_ONE"};
+Rule Get_PowOne_Rule();
+
 inline constexpr RuleKey MulZero{"CORE.SIMPLIFY.ARITHMETIC.MUL_ZERO"};
 Rule Get_MulZero_Rule();
+
+inline constexpr RuleKey PowZero{"CORE.SIMPLIFY.ARITHMETIC.POW_ZERO"};
+Rule Get_PowZero_Rule();
 
 inline constexpr RuleKey SubZero{"CORE.SIMPLIFY.ARITHMETIC.SUB_ZERO"};
 Rule Get_SubZero_Rule();
