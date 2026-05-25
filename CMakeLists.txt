@@ -24,3 +24,4 @@ endif()
 
 add_subdirectory(engine/core)
 add_subdirectory(engine/io)
+add_subdirectory(engine/functions)

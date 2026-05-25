@@ -1,15 +1,7 @@
-#include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/expression/OpInfo.h>
 #include <BitFlow/io/ExprParser.h>
 #include <BitFlow/io/helper/Exception.h>
 #include <BitFlow/io/lexer/Lexer.h>
-#include <BitFlow/io/lexer/Token.h>
-#include <BitFlow/io/lexer/TokenKind.h>
-#include <cstdint>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 namespace BitFlow::IO {
 
@@ -27,12 +19,13 @@ class PrattParser {
     std::size_t m_pos = 0;
     std::unordered_map<std::string, ExprId> m_varIds;
     ExprStore* m_store;
+    IFunctionResolver* m_functions{};
 
   public:
     ExprNameMap m_idToName;
 
-    explicit PrattParser(ExprStore* store, const std::string& input)
-        : m_store(store), m_tokens(BitFlow::IO::Lexer::Tokenize(input)) {}
+    explicit PrattParser(ExprStore* store, const std::string& input, IFunctionResolver* functions = nullptr)
+        : m_store(store), m_functions(functions), m_tokens(BitFlow::IO::Lexer::Tokenize(input)) {}
 
     ExprId ParseExpressionRoot() {
         if (m_tokens.empty())
@@ -285,10 +278,12 @@ class PrattParser {
         if (!Consume(TokenKind::LeftParen))
             throw ParseErrorAt("Expected '(' after function name", Current());
 
-        std::vector<ExprId> args;
+        std::vector<ExprRef> args;
+
         if (Current().kind != TokenKind::RightParen) {
             do {
-                args.push_back(ParseExpression(0));
+                ExprId id = ParseExpression(0);
+                args.emplace_back(m_store, id);
             } while (Consume(TokenKind::Comma));
         }
 
@@ -298,10 +293,19 @@ class PrattParser {
         if (identifier.text == "pow") {
             if (args.size() != 2)
                 throw ParseErrorAt("Function pow expects exactly 2 arguments", identifier);
-            return m_store->create(OpType::Pow, {args[0], args[1]}).id;
+
+            return m_store->create(OpType::Pow, {args[0].id, args[1].id}).id;
         }
 
-        throw ParseErrorAt("Unknown function: " + identifier.text, identifier);
+        if (!m_functions || !m_functions->Contains(identifier.text))
+            throw ParseErrorAt("Unknown function: " + identifier.text, identifier);
+
+        ExprRef result = m_functions->Resolve({.store = m_store, .name = identifier.text, .args = args});
+
+        if (!result.IsValid() || result.store != m_store)
+            throw ParseErrorAt("Function returned invalid expression: " + identifier.text, identifier);
+
+        return result.id;
     }
 
     ExprId ParseLiteral(const Token& token) {
@@ -325,8 +329,8 @@ class PrattParser {
     }
 };
 
-ParseResult Parse(ExprStore* store, const std::string& input) {
-    PrattParser parser(store, input);
+ParseResult Parse(ExprStore* store, const std::string& input, IFunctionResolver* functions) {
+    PrattParser parser(store, input, functions);
 
     ParseResult result;
     result.root = ExprRef(store, parser.ParseExpressionRoot());

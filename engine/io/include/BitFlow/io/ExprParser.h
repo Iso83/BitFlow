@@ -1,7 +1,7 @@
 #pragma once
 
 #include <BitFlow/io/ExprPrinter.h>
-#include <string>
+#include <BitFlow/io/IFunctionResolver.h>
 
 namespace BitFlow::IO {
 
@@ -10,6 +10,6 @@ struct ParseResult {
     ExprNameMap names;
 };
 
-ParseResult Parse(Core::Expression::ExprStore* store, const std::string& input);
+ParseResult Parse(Core::Expression::ExprStore* store, const std::string& input, IFunctionResolver* functions = nullptr);
 
 } // namespace BitFlow::IO
