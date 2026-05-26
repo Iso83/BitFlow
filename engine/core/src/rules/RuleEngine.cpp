@@ -48,9 +48,9 @@ ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id) const {
 
     const OpType op = e.op;
     const Types::BitWidth bitWidth = e.bitWidth;
-    const std::vector<ExprId> inputs = e.inputs;
+    const ExprInputs inputs = e.inputs;
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(inputs.size());
 
     bool changed = false;

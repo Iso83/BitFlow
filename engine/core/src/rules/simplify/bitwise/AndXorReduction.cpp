@@ -36,7 +36,7 @@ static bool Match_AndXorReduction(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_AndXorReduction(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    const std::vector<ExprId> inputs = e.inputs;
+    const ExprInputs inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
 
     for (size_t i = 0; i < inputs.size(); ++i) {
@@ -54,7 +54,7 @@ static ExprId Rewrite_AndXorReduction(RewriteContext& ctx, ExprId id) {
                 if (other.inputs[xi] != x)
                     continue;
 
-                std::vector<ExprId> xorRemainder;
+                ExprInputs xorRemainder;
                 xorRemainder.reserve(other.inputs.size() - 1);
 
                 for (size_t ri = 0; ri < other.inputs.size(); ++ri) {
@@ -67,7 +67,7 @@ static ExprId Rewrite_AndXorReduction(RewriteContext& ctx, ExprId id) {
                                      : store->create(OpType::Xor, std::move(xorRemainder), bitWidth).id;
                 const ExprId notY = store->create(OpType::Not, {y}, bitWidth).id;
 
-                std::vector<ExprId> newInputs;
+                ExprInputs newInputs;
                 newInputs.reserve(inputs.size());
 
                 for (size_t k = 0; k < inputs.size(); ++k) {

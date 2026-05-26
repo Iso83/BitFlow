@@ -48,7 +48,7 @@ static ExprId Rewrite_AndOneIdentity(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {

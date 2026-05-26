@@ -11,7 +11,7 @@ namespace BitFlow::Core::Rules::Simplify::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static size_t FindEquivalentIndex(const ExprStore* store, const std::vector<ExprId>& reps, ExprId id) {
+static size_t FindEquivalentIndex(const ExprStore* store, const ExprInputs& reps, ExprId id) {
     for (size_t i = 0; i < reps.size(); ++i) {
         if (CompareExprCanonical(store, reps[i], id) == 0)
             return i;
@@ -73,7 +73,7 @@ static bool Match_XorCancel(const ExprStore* store, Ids::ExprId id) {
     if (e.inputs.size() < 2)
         return false;
 
-    std::vector<ExprId> reps;
+    ExprInputs reps;
     std::vector<size_t> repCounts;
 
     bool hasZero = false;
@@ -126,7 +126,7 @@ static ExprId Rewrite_AndCancel(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(e.inputs.size());
 
     std::unordered_map<ExprId, bool> seen;
@@ -153,7 +153,7 @@ static ExprId Rewrite_OrCancel(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(e.inputs.size());
 
     std::unordered_map<ExprId, bool> seen;
@@ -185,7 +185,7 @@ static ExprId Rewrite_XorCancel(RewriteContext& ctx, ExprId id) {
     Types::ExprChunk constParity = 0;
     bool hasConst = false;
 
-    std::vector<ExprId> reps;
+    ExprInputs reps;
     std::vector<int> counts;
     reps.reserve(e.inputs.size());
     counts.reserve(e.inputs.size());
@@ -208,7 +208,7 @@ static ExprId Rewrite_XorCancel(RewriteContext& ctx, ExprId id) {
 
     constParity &= mask;
 
-    std::vector<ExprId> terms;
+    ExprInputs terms;
     terms.reserve(reps.size() + 1);
 
     for (size_t i = 0; i < reps.size(); ++i) {

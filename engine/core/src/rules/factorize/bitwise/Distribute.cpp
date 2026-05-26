@@ -82,7 +82,7 @@ static ExprId Rewrite_Distribute_And_Over_Xor(RewriteContext& ctx, ExprId id) {
 
     const auto xorInputs = (*store)[xorNodeID].inputs;
 
-    std::vector<ExprId> others;
+    ExprInputs others;
     others.reserve(inputs.size());
 
     for (auto in : inputs) {
@@ -90,7 +90,7 @@ static ExprId Rewrite_Distribute_And_Over_Xor(RewriteContext& ctx, ExprId id) {
             others.push_back(in);
     }
 
-    std::vector<ExprId> distributed;
+    ExprInputs distributed;
     distributed.reserve(xorInputs.size());
 
     for (auto term : xorInputs) {

@@ -63,7 +63,7 @@ ExprRef FunctionRegistry::Invoke(const FunctionDefinition& def, ExprStore* store
 
     BF_CORE_ASSERT(store != nullptr);
 
-    std::vector<ExprId> ids;
+    ExprInputs ids;
     ids.reserve(args.size());
 
     for (const auto& arg : args) {

@@ -11,8 +11,8 @@ namespace BitFlow::Core::Rules::Factorize::Arithmetic {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static void AddCoeff(std::unordered_map<ExprId, Types::ExprChunk>& coeffByBaseId, std::vector<ExprId>& baseOrder,
-                     ExprId base, Types::ExprChunk coeff, Types::ExprChunk mask) {
+static void AddCoeff(std::unordered_map<ExprId, Types::ExprChunk>& coeffByBaseId, ExprInputs& baseOrder, ExprId base,
+                     Types::ExprChunk coeff, Types::ExprChunk mask) {
     if (coeffByBaseId.emplace(base, 0).second)
         baseOrder.push_back(base);
 
@@ -154,8 +154,8 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
     const Expr& lhs = (*store)[e.inputs[0]];
     const Expr& rhs = (*store)[e.inputs[1]];
 
-    const std::vector<ExprId> lhsFactors = lhs.op == OpType::Mul ? lhs.inputs : std::vector<ExprId>{e.inputs[0]};
-    const std::vector<ExprId> rhsFactors = rhs.op == OpType::Mul ? rhs.inputs : std::vector<ExprId>{e.inputs[1]};
+    const ExprInputs lhsFactors = lhs.op == OpType::Mul ? lhs.inputs : ExprInputs{e.inputs[0]};
+    const ExprInputs rhsFactors = rhs.op == OpType::Mul ? rhs.inputs : ExprInputs{e.inputs[1]};
 
     for (ExprId lhsFactorId : lhsFactors) {
         const Expr& lhsFactor = (*store)[lhsFactorId];
@@ -273,17 +273,17 @@ static ExprId Rewrite_AddLinearMultiplicity(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    const std::vector<ExprId> originalInputs = e.inputs;
+    const ExprInputs originalInputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
 
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
     std::unordered_map<ExprId, Types::ExprChunk> coeffByBaseId;
 
-    std::vector<ExprId> baseOrder;
+    ExprInputs baseOrder;
     baseOrder.reserve(originalInputs.size());
 
-    std::vector<ExprId> passthroughTerms;
+    ExprInputs passthroughTerms;
     passthroughTerms.reserve(originalInputs.size());
     Types::ExprChunk pendingSubConst = 0;
 
@@ -316,7 +316,7 @@ static ExprId Rewrite_AddLinearMultiplicity(RewriteContext& ctx, ExprId id) {
         AddCoeff(coeffByBaseId, baseOrder, linear.base, linear.coeff, mask);
     }
 
-    std::vector<ExprId> normalizedAddTerms;
+    ExprInputs normalizedAddTerms;
     normalizedAddTerms.reserve(baseOrder.size() + passthroughTerms.size());
 
     for (ExprId baseId : baseOrder) {
@@ -411,8 +411,8 @@ static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, ExprId id) {
     if (!hasCommon || bestFrequency < 2)
         return id;
 
-    std::vector<ExprId> sharedInnerTerms;
-    std::vector<ExprId> untouchedTerms;
+    ExprInputs sharedInnerTerms;
+    ExprInputs untouchedTerms;
 
     sharedInnerTerms.reserve(e.inputs.size());
     untouchedTerms.reserve(e.inputs.size());
@@ -422,7 +422,7 @@ static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, ExprId id) {
 
         if (term.op == OpType::Mul && term.inputs.size() >= 2) {
             bool hasCommonFactor = false;
-            std::vector<ExprId> remainingFactors;
+            ExprInputs remainingFactors;
             remainingFactors.reserve(term.inputs.size());
 
             for (ExprId factorId : term.inputs) {
@@ -458,7 +458,7 @@ static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, ExprId id) {
 
     const ExprId factored = store->create(OpType::Mul, {common, innerAdd}, bitWidth).id;
 
-    std::vector<ExprId> finalAddTerms;
+    ExprInputs finalAddTerms;
     finalAddTerms.reserve(untouchedTerms.size() + 1);
 
     for (ExprId termId : untouchedTerms)
@@ -481,14 +481,14 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id
     const Expr& lhs = (*store)[e.inputs[0]];
     const Expr& rhs = (*store)[e.inputs[1]];
 
-    const std::vector<ExprId> lhsInputs = lhs.op == OpType::Mul ? lhs.inputs : std::vector<ExprId>{e.inputs[0]};
-    const std::vector<ExprId> rhsInputs = rhs.op == OpType::Mul ? rhs.inputs : std::vector<ExprId>{e.inputs[1]};
+    const ExprInputs lhsInputs = lhs.op == OpType::Mul ? lhs.inputs : ExprInputs{e.inputs[0]};
+    const ExprInputs rhsInputs = rhs.op == OpType::Mul ? rhs.inputs : ExprInputs{e.inputs[1]};
 
     std::vector<bool> lhsConsumed(lhsInputs.size(), false);
     std::vector<bool> rhsConsumed(rhsInputs.size(), false);
 
-    std::vector<ExprId> lhsExtraFactors;
-    std::vector<ExprId> rhsExtraFactors;
+    ExprInputs lhsExtraFactors;
+    ExprInputs rhsExtraFactors;
 
     bool anyCanceled = false;
 
@@ -568,9 +568,9 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id
     if (!anyCanceled)
         return id;
 
-    auto buildProduct = [&](const std::vector<ExprId>& mulExprInputs, const std::vector<bool>& consumed,
-                            const std::vector<ExprId>& extras) -> ExprId {
-        std::vector<ExprId> remaining;
+    auto buildProduct = [&](const ExprInputs& mulExprInputs, const std::vector<bool>& consumed,
+                            const ExprInputs& extras) -> ExprId {
+        ExprInputs remaining;
 
         remaining.reserve(mulExprInputs.size() + extras.size());
 
@@ -616,7 +616,7 @@ static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
         return store->create(OpType::Div, {numerator, rhsDenominator}, bitWidth).id;
     }
 
-    std::vector<ExprId> combinedAddTerms;
+    ExprInputs combinedAddTerms;
     combinedAddTerms.reserve(lhs.inputs.size());
     bool rewritten = false;
 
@@ -659,7 +659,7 @@ static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
-    const std::vector<ExprId> eInputs = e.inputs;
+    const ExprInputs eInputs = e.inputs;
     const Expr& rhs = (*store)[e.inputs[1]];
 
     for (size_t i = 0; i < rhs.inputs.size(); ++i) {
@@ -673,7 +673,7 @@ static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, ExprId id) {
             if (!store->structuralEquivalent(maybeDiv.inputs[1], rhs.inputs[j]))
                 continue;
 
-            std::vector<ExprId> newFactors;
+            ExprInputs newFactors;
             newFactors.reserve(rhs.inputs.size() - 1);
             for (size_t k = 0; k < rhs.inputs.size(); ++k) {
                 if (k == i || k == j)

@@ -91,8 +91,8 @@ static bool Match_SubAddSelfCancel(const ExprStore* store, ExprId id) {
     if (lhs.op != OpType::Add)
         return false;
 
-    std::vector<ExprId> positives;
-    std::vector<ExprId> negatives;
+    ExprInputs positives;
+    ExprInputs negatives;
     auto collectTerms = [&](auto&& self, ExprId exprId, bool positive) -> void {
         const Expr& expr = (*store)[exprId];
         if (expr.op == OpType::Add) {
@@ -252,7 +252,7 @@ static bool Match_MulPowCombine(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    const std::vector<ExprId> eInputs = e.inputs;
+    const ExprInputs eInputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
@@ -293,7 +293,7 @@ static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
             if (den != 0 && (sumNum % den) == 0)
                 combined = store->createConstant((sumNum / den) & mask, bitWidth).id;
 
-            std::vector<ExprId> newInputs;
+            ExprInputs newInputs;
             newInputs.reserve(eInputs.size() - 1);
             for (std::size_t k = 0; k < eInputs.size(); ++k) {
                 if (k == i || k == j)
@@ -311,7 +311,7 @@ static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
     Types::ExprChunk acc = 0;
     bool hasConst = false;
 
-    std::vector<ExprId> nonConst;
+    ExprInputs nonConst;
     nonConst.reserve(eInputs.size());
 
     for (ExprId inId : eInputs) {
@@ -351,7 +351,7 @@ static ExprId Rewrite_SubConstFold(RewriteContext& ctx, ExprId id) {
 
     Types::ExprChunk lhsConst = 0;
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(lhs.inputs.size());
 
     bool changed = false;
@@ -402,8 +402,8 @@ static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
 
-    std::vector<ExprId> positives;
-    std::vector<ExprId> negatives;
+    ExprInputs positives;
+    ExprInputs negatives;
     auto collectTerms = [&](auto&& self, ExprId exprId, bool positive) -> void {
         const Expr& expr = (*store)[exprId];
         if (expr.op == OpType::Add) {
@@ -426,7 +426,7 @@ static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
 
     bool changed = false;
     std::vector<bool> negUsed(negatives.size(), false);
-    std::vector<ExprId> remainingPositives;
+    ExprInputs remainingPositives;
     for (ExprId posId : positives) {
         bool matched = false;
         for (std::size_t i = 0; i < negatives.size(); ++i) {
@@ -441,7 +441,7 @@ static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
             remainingPositives.push_back(posId);
     }
 
-    std::vector<ExprId> remainingNegatives;
+    ExprInputs remainingNegatives;
     for (std::size_t i = 0; i < negatives.size(); ++i) {
         if (!negUsed[i])
             remainingNegatives.push_back(negatives[i]);
@@ -450,7 +450,7 @@ static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
     if (!changed)
         return id;
 
-    auto buildAdd = [&](std::vector<ExprId>& terms) -> ExprId {
+    auto buildAdd = [&](ExprInputs& terms) -> ExprId {
         if (terms.empty())
             return store->createConstant(0, bitWidth).id;
         if (terms.size() == 1)
@@ -519,7 +519,7 @@ static ExprId Rewrite_SubMulLinearCancel(RewriteContext& ctx, ExprId id) {
         return lhsBase;
 
     const ExprId coeffId = store->createConstant(coeff, bitWidth).id;
-    std::vector<ExprId> mulInputs{lhsBase, coeffId};
+    ExprInputs mulInputs{lhsBase, coeffId};
 
     if (mulInputs.size() == 1)
         return mulInputs[0];
@@ -533,7 +533,7 @@ static ExprId Rewrite_MulDivConstantReduction(RewriteContext& ctx, ExprId id) {
     const Expr& rhs = (*store)[e.inputs[1]];
     const Types::BitWidth bitWidth = e.bitWidth;
 
-    std::vector<ExprId> newMulInputs;
+    ExprInputs newMulInputs;
     newMulInputs.reserve(lhs.inputs.size());
 
     bool reduced = false;
@@ -562,10 +562,10 @@ static ExprId Rewrite_MulDivConstantReduction(RewriteContext& ctx, ExprId id) {
 static ExprId Rewrite_MulToPow(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    const std::vector<ExprId> inputs = e.inputs;
+    const ExprInputs inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
     std::vector<bool> consumed(e.inputs.size(), false);
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(e.inputs.size());
 
     for (std::size_t i = 0; i < inputs.size(); ++i) {
@@ -600,13 +600,13 @@ static ExprId Rewrite_MulToPow(RewriteContext& ctx, ExprId id) {
 static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    const std::vector<ExprId> inputs = e.inputs;
+    const ExprInputs inputs = e.inputs;
     const Types::BitWidth bw = e.bitWidth;
     ExprId expAId = store->createConstant(1, bw).id;
     ExprId expBId = store->createConstant(1, bw).id;
 
     std::vector<bool> consumed(inputs.size(), false);
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     bool negateResult = false;
 
     for (std::size_t i = 0; i < inputs.size(); ++i) {

@@ -73,7 +73,7 @@ static ExprId Rewrite_AddZero(RewriteContext& ctx, ExprId id) {
     const auto inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(inputs.size());
 
     for (auto in : inputs) {
@@ -112,7 +112,7 @@ static ExprId Rewrite_SubZero(RewriteContext& ctx, ExprId id) {
     if (inputs.size() == 2 && IsConstFalse(store, inputs[0]))
         return store->create(OpType::Neg, {inputs[1]}, bitWidth).id;
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(inputs.size());
 
     newInputs.push_back(inputs[0]);

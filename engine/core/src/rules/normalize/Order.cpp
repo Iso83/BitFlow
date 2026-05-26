@@ -31,7 +31,7 @@ static ExprId Rewrite_Order(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    std::vector<ExprId> sorted = e.inputs;
+    ExprInputs sorted = e.inputs;
 
     std::sort(sorted.begin(), sorted.end(), [&](ExprId a, ExprId b) { return CanonicalExprLess(store, a, b); });
 

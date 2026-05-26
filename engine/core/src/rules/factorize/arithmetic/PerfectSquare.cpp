@@ -58,7 +58,7 @@ bool TryGetSquareRoot(const ExprStore* store, ExprId termId, ExprId& rootOut) {
     return false;
 }
 
-void ParseCrossTerm(const ExprStore* store, ExprId termId, Types::ExprChunk& coeffOut, std::vector<ExprId>& factorsOut,
+void ParseCrossTerm(const ExprStore* store, ExprId termId, Types::ExprChunk& coeffOut, ExprInputs& factorsOut,
                     Types::BitWidth bitWidth) {
     const Expr& term = (*store)[termId];
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
@@ -86,11 +86,11 @@ void ParseCrossTerm(const ExprStore* store, ExprId termId, Types::ExprChunk& coe
 }
 
 bool MatchCrossTermForRoots(const ExprStore* store, ExprId r1, ExprId r2, Types::ExprChunk observedCoeff,
-                            const std::vector<ExprId>& observedFactors, Types::BitWidth bitWidth, bool& negativeOut) {
+                            const ExprInputs& observedFactors, Types::BitWidth bitWidth, bool& negativeOut) {
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
     Types::ExprChunk expectedCoeff = 2 & mask;
-    std::vector<ExprId> expectedFactors;
+    ExprInputs expectedFactors;
 
     for (ExprId rootId : {r1, r2}) {
         const Expr& root = (*store)[rootId];
@@ -151,7 +151,7 @@ bool TryMatch(const ExprStore* store, ExprId id, ExprId& root1Out, ExprId& root2
 
             const size_t k = 3 - i - j;
             Types::ExprChunk coeff{};
-            std::vector<ExprId> factors;
+            ExprInputs factors;
             ParseCrossTerm(store, terms[k].id, coeff, factors, bitWidth);
 
             if (terms[k].negative)

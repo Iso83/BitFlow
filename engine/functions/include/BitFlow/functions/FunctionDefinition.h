@@ -9,7 +9,7 @@ namespace BitFlow::Functions {
 
 struct FunctionExpandContext {
     Core::Expression::ExprStore* store{};
-    std::span<const Core::Ids::ExprId> args{};
+    std::span<Core::Ids::ExprId> args{};
 };
 
 using ExpandFn = Core::Expression::ExprRef (*)(FunctionExpandContext& ctx);

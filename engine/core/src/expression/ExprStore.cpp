@@ -86,7 +86,7 @@ ExprStore::ExprStore() {
     return ExprRef(this, id);
 }
 
-[[nodiscard]] ExprRef ExprStore::create(OpType op, std::vector<ExprId>&& in, Types::BitWidth bitWidth) {
+[[nodiscard]] ExprRef ExprStore::create(OpType op, ExprInputs&& in, Types::BitWidth bitWidth) {
     BF_CORE_ASSERT(bitWidth > 0);
 
     const auto id = createId();
@@ -148,7 +148,7 @@ ExprStore::ExprStore() {
 }
 #pragma endregion
 
-void CollectEquivalentInputs(const ExprStore& store, ExprId id, OpType op, std::vector<ExprId>& out) {
+void CollectEquivalentInputs(const ExprStore& store, ExprId id, OpType op, ExprInputs& out) {
     const Expr& e = store[id];
 
     if (e.op == op && IsAssociative(op)) {
@@ -205,8 +205,8 @@ void CollectEquivalentInputs(const ExprStore& store, ExprId id, OpType op, std::
         return true;
     }
 
-    std::vector<ExprId> lhsInputs;
-    std::vector<ExprId> rhsInputs;
+    ExprInputs lhsInputs;
+    ExprInputs rhsInputs;
 
     if (associative) {
         CollectEquivalentInputs(*this, a, ea.op, lhsInputs);

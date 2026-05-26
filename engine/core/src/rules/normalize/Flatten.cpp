@@ -36,7 +36,7 @@ static ExprId Rewrite_Flatten(RewriteContext& ctx, ExprId id) {
         return id;
     }
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {

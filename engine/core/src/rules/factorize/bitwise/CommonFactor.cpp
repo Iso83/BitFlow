@@ -21,7 +21,7 @@ static ExprId FindBestCommonFactor(const ExprStore* store, ExprId id) {
         if (term.op != OpType::And || term.inputs.size() < 2)
             continue;
 
-        std::vector<ExprId> seen;
+        ExprInputs seen;
         seen.reserve(term.inputs.size());
 
         for (auto inId : term.inputs) {
@@ -70,7 +70,7 @@ static bool Match_XorAnd(const ExprStore* store, ExprId id) {
         if (term.op != OpType::And || term.inputs.size() < 2)
             continue;
 
-        std::vector<ExprId> seen;
+        ExprInputs seen;
         seen.reserve(term.inputs.size());
 
         for (auto inId : term.inputs) {
@@ -94,7 +94,7 @@ static ExprId Rewrite_XorAnd(RewriteContext& ctx, ExprId id) {
 
     const ExprId bestFactor = FindBestCommonFactor(store, id);
 
-    std::vector<ExprId> termsToFactor;
+    ExprInputs termsToFactor;
     termsToFactor.reserve(e.inputs.size());
 
     for (auto termId : e.inputs) {
@@ -116,13 +116,13 @@ static ExprId Rewrite_XorAnd(RewriteContext& ctx, ExprId id) {
         return id;
     }
 
-    std::vector<ExprId> xorInputs;
+    ExprInputs xorInputs;
     xorInputs.reserve(termsToFactor.size());
 
     for (auto termId : termsToFactor) {
         const Expr term = (*store)[termId];
 
-        std::vector<ExprId> rest;
+        ExprInputs rest;
         rest.reserve(term.inputs.size());
 
         bool removed = false;
@@ -148,7 +148,7 @@ static ExprId Rewrite_XorAnd(RewriteContext& ctx, ExprId id) {
     ExprId xorExpr{};
 
     const Types::BitWidth bitWidth = e.bitWidth;
-    const std::vector<ExprId> inputs = e.inputs;
+    const ExprInputs inputs = e.inputs;
 
     if (xorInputs.size() == 1) {
         xorExpr = xorInputs[0];
@@ -158,7 +158,7 @@ static ExprId Rewrite_XorAnd(RewriteContext& ctx, ExprId id) {
 
     ExprId factored = store->create(OpType::And, {bestFactor, xorExpr}, bitWidth).id;
 
-    std::vector<ExprId> finalInputs;
+    ExprInputs finalInputs;
     finalInputs.reserve(inputs.size() - termsToFactor.size() + 1);
 
     finalInputs.push_back(factored);

@@ -10,7 +10,7 @@ namespace BitFlow::Core::Rules::Factorize::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool ContainsStructurallyEquivalent(const ExprStore* store, const std::vector<ExprId>& ids, ExprId target) {
+static bool ContainsStructurallyEquivalent(const ExprStore* store, const ExprInputs& ids, ExprId target) {
     for (ExprId id : ids) {
         if (store->structuralEquivalent(id, target))
             return true;
@@ -35,7 +35,7 @@ static bool Match_XorPairCancel(const ExprStore* store, ExprId id) {
         if (exprIn.op != OpType::Xor || exprIn.inputs.size() < 2)
             continue;
 
-        std::vector<ExprId> seenInChild;
+        ExprInputs seenInChild;
         seenInChild.reserve(exprIn.inputs.size());
 
         for (auto term : exprIn.inputs) {
@@ -65,7 +65,7 @@ static ExprId Rewrite_XorPairCancel(RewriteContext& ctx, ExprId id) {
         if (exprIn.op != OpType::Xor || exprIn.inputs.size() < 2)
             continue;
 
-        std::vector<ExprId> seenInChild;
+        ExprInputs seenInChild;
         seenInChild.reserve(exprIn.inputs.size());
 
         for (auto term : exprIn.inputs) {
@@ -107,7 +107,7 @@ static ExprId Rewrite_XorPairCancel(RewriteContext& ctx, ExprId id) {
         return id;
     }
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(e.inputs.size());
 
     int matchedChildren = 0;
@@ -117,7 +117,7 @@ static ExprId Rewrite_XorPairCancel(RewriteContext& ctx, ExprId id) {
         if (exprIn.op == OpType::Xor && exprIn.inputs.size() >= 2 && ContainsExpr(store, in, commonId)) {
             matchedChildren++;
 
-            std::vector<ExprId> residual;
+            ExprInputs residual;
             residual.reserve(exprIn.inputs.size());
 
             for (auto term : exprIn.inputs) {

@@ -77,7 +77,7 @@ static bool Match_ModOne(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_MulOne(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {

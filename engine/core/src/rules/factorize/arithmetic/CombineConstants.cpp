@@ -38,7 +38,7 @@ static ExprId Rewrite_MulCombineConstants(RewriteContext& ctx, ExprId id) {
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
     Types::ExprChunk product = 1;
     int constCount = 0;
-    std::vector<ExprId> nonConst;
+    ExprInputs nonConst;
     nonConst.reserve(e.inputs.size());
 
     for (auto a : e.inputs) {

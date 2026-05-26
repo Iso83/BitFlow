@@ -97,8 +97,8 @@ static ExprId Rewrite_NotPushdown(RewriteContext& ctx, ExprId id) {
 
     OpType newOp = (exprIn.op == OpType::And) ? OpType::Or : OpType::And;
 
-    const std::vector<ExprId> inputs = exprIn.inputs;
-    std::vector<ExprId> newInputs;
+    const ExprInputs inputs = exprIn.inputs;
+    ExprInputs newInputs;
     newInputs.reserve(inputs.size());
 
     for (auto child : inputs)
@@ -113,7 +113,7 @@ static ExprId Rewrite_NotXor(RewriteContext& ctx, ExprId id) {
     ExprId in = e.inputs[0];
     const Expr& exprIn = (*store)[in];
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(exprIn.inputs.size() + 1);
 
     for (auto child : exprIn.inputs)

@@ -87,8 +87,7 @@ class ExprStore {
     [[nodiscard]] ExprRef create(OpType op, std::initializer_list<Ids::ExprId> in,
                                  Types::BitWidth bitWidth = Types::ExprChunkBits);
 
-    [[nodiscard]] ExprRef create(OpType op, std::vector<Ids::ExprId>&& in,
-                                 Types::BitWidth bitWidth = Types::ExprChunkBits);
+    [[nodiscard]] ExprRef create(OpType op, ExprInputs&& in, Types::BitWidth bitWidth = Types::ExprChunkBits);
 
     [[nodiscard]] ExprRef createVariable(Types::BitWidth bitWidth = Types::ExprChunkBits) {
         return create(OpType::Var, {}, bitWidth);

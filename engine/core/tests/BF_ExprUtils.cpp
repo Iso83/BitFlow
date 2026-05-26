@@ -87,7 +87,7 @@ static int TestMatchZero_NoZeroInput() {
 static int TestMakeXor_EmptyTerms() {
     MakeExprStore(32);
 
-    std::vector<ExprId> terms{};
+    ExprInputs terms{};
 
     auto out = store.create(OpType::Xor, std::move(terms), 32);
 
@@ -101,7 +101,7 @@ static int TestMakeXor_SingleTerm() {
 
     auto a = V("a");
 
-    std::vector<ExprId> terms{a.id};
+    ExprInputs terms{a.id};
 
     auto out = store.create(OpType::Xor, std::move(terms), 32);
 
@@ -116,7 +116,7 @@ static int TestMakeXor_MultipleTerms() {
     auto a = V("a");
     auto b = V("b");
 
-    std::vector<ExprId> terms{a.id, b.id};
+    ExprInputs terms{a.id, b.id};
 
     auto out = store.create(OpType::Xor, std::move(terms), 32);
 

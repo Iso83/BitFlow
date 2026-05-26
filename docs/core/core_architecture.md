@@ -52,7 +52,7 @@ Correct pattern:
 ```cpp
 const Expr& e = (*store)[id];
 
-const std::vector<ExprId> inputs = e.inputs;
+const ExprInputs inputs = e.inputs;
 const Types::BitWidth bitWidth = e.bitWidth;
 ```
 Avoid:

@@ -55,7 +55,7 @@ static ExprId Rewrite_OrZero(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
     newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {
@@ -76,7 +76,7 @@ static ExprId Rewrite_OrZero(RewriteContext& ctx, ExprId id) {
 static ExprId Rewrite_XorZero(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
 
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];

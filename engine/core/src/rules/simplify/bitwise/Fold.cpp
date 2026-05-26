@@ -68,7 +68,7 @@ static bool Match_XorFold(const ExprStore* store, ExprId id) {
 static ExprId Rewrite_AndFold(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
 
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
@@ -93,7 +93,7 @@ static ExprId Rewrite_AndFold(RewriteContext& ctx, ExprId id) {
 static ExprId Rewrite_OrFold(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    std::vector<ExprId> newInputs;
+    ExprInputs newInputs;
 
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
@@ -122,7 +122,7 @@ static ExprId Rewrite_XorFold(RewriteContext& ctx, ExprId id) {
     Types::ExprChunk acc = 0;
     bool hasConst = false;
 
-    std::vector<ExprId> nonConst;
+    ExprInputs nonConst;
     nonConst.reserve(e.inputs.size());
 
     const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);

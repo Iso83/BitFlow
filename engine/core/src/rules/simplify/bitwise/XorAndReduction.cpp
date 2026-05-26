@@ -40,7 +40,7 @@ static ExprId Rewrite_XorAndReduction(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    const std::vector<ExprId> inputs = e.inputs;
+    const ExprInputs inputs = e.inputs;
     const Types::BitWidth bitWidth = e.bitWidth;
 
     for (size_t i = 0; i < inputs.size(); ++i) {
@@ -54,7 +54,7 @@ static ExprId Rewrite_XorAndReduction(RewriteContext& ctx, ExprId id) {
             if (other.op != OpType::And)
                 continue;
 
-            std::vector<ExprId> andRemainder;
+            ExprInputs andRemainder;
             andRemainder.reserve(other.inputs.size());
 
             bool removedX = false;
@@ -82,7 +82,7 @@ static ExprId Rewrite_XorAndReduction(RewriteContext& ctx, ExprId id) {
 
             ExprId replacement = store->create(OpType::And, {x, notY}, bitWidth).id;
 
-            std::vector<ExprId> newInputs;
+            ExprInputs newInputs;
             newInputs.reserve(inputs.size() - 1);
 
             for (size_t k = 0; k < inputs.size(); ++k) {

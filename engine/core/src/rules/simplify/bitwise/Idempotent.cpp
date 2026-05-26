@@ -55,7 +55,7 @@ static ExprId Rewrite_Idempotent(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    std::vector<ExprId> unique;
+    ExprInputs unique;
     unique.reserve(e.inputs.size());
 
     std::unordered_map<ExprId, bool> seen;
@@ -80,7 +80,7 @@ static ExprId Rewrite_AndIdempotent(RewriteContext& ctx, ExprId id) {
     const Expr& e = (*store)[id];
 
     std::unordered_set<ExprId> seen;
-    std::vector<ExprId> unique;
+    ExprInputs unique;
 
     unique.reserve(e.inputs.size());
 

@@ -17,13 +17,15 @@ namespace BitFlow::Core::Expression {
 
 class ExprStore;
 
+using ExprInputs = std::vector<Ids::ExprId>;
+
 #ifdef BF_EXPR_LIFETIME_CHECKS
 struct ExprUnsafeStorage {
 #else
 struct Expr {
 #endif
     OpType op{};
-    std::vector<Ids::ExprId> inputs{};
+    ExprInputs inputs{};
 
     Types::BitWidth bitWidth{0};
 
