@@ -100,8 +100,10 @@ static bool Match_AddLinearMultiplicity(const ExprStore* store, ExprId id) {
             if (maybeSub.op == OpType::Sub && maybeSub.inputs.size() == 2) {
                 const Expr& subLhs = (*store)[maybeSub.inputs[0]];
                 const Expr& subRhs = (*store)[maybeSub.inputs[1]];
-                if (subLhs.op != OpType::Const && subRhs.op == OpType::Const) {
-                    if (++baseTermCounts[maybeSub.inputs[0]] >= 2)
+                LinearTerm lhsLinear{};
+                if (subRhs.op == OpType::Const &&
+                    DecomposeLinearTerm(store, maybeSub.inputs[0], lhsLinear, e.bitWidth)) {
+                    if (++baseTermCounts[lhsLinear.base] >= 2)
                         return true;
                 }
             }
@@ -300,8 +302,9 @@ static ExprId Rewrite_AddLinearMultiplicity(RewriteContext& ctx, ExprId id) {
             if (term.op == OpType::Sub && term.inputs.size() == 2) {
                 const Expr& subLhs = (*store)[term.inputs[0]];
                 const Expr& subRhs = (*store)[term.inputs[1]];
-                if (subLhs.op != OpType::Const && subRhs.op == OpType::Const) {
-                    AddCoeff(coeffByBaseId, baseOrder, term.inputs[0], 1, mask);
+                LinearTerm lhsLinear{};
+                if (subRhs.op == OpType::Const && DecomposeLinearTerm(store, term.inputs[0], lhsLinear, bitWidth)) {
+                    AddCoeff(coeffByBaseId, baseOrder, lhsLinear.base, lhsLinear.coeff, mask);
                     pendingSubConst = (pendingSubConst + subRhs.knownValue) & mask;
                     continue;
                 }

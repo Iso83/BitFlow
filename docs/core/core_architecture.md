@@ -781,12 +781,22 @@ Removes OR with zero.
 
 ### CORE.FACTORIZE.ARITHMETIC.ADD_LINEAR_MULTIPLICITY
 
-Converts repeated additive terms into multiplicative form.
+Combines repeated linear terms by merging their coefficients into a single multiplicative expression.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x + x + x$$ |
 | Rewrite | $$3 \cdot x$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$2x + x$$ |
+| Rewrite | $$3x$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x + (2x - 4)$$ |
+| Rewrite | $$3x - 4$$ |
 
 ---
 

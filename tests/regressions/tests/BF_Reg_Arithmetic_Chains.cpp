@@ -98,6 +98,18 @@ int Test_MixedFractionCancellation() {
     return 0;
 }
 
+int Test_Rewrite_RevisitsGeneratedSubtrees() {
+    MakeExprStore(32);
+
+    RuleEngine engine = BuildExplore();
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, C(3) / C(8) - (C(7) / C(8) - C(4) / C(8))));
+
+    BF_TEST(EqualChunkValue(r, 0u));
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestModZero_GuardLeftZeroStaysMod);
 
@@ -109,5 +121,7 @@ int main() {
     BF_RUN_TEST(Test_NestedPowerReductions);
     BF_RUN_TEST(Test_AffineChains);
     BF_RUN_TEST(Test_MixedFractionCancellation);
+
+    BF_RUN_TEST(Test_Rewrite_RevisitsGeneratedSubtrees);
     return 0;
 }

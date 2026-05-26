@@ -69,7 +69,12 @@ ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id) const {
     if (changed)
         current = store->create(op, std::move(newInputs), bitWidth).id;
 
-    return ApplyOnce(store, current);
+    const ExprId rewritten = ApplyOnce(store, current);
+
+    if (rewritten != current)
+        return ApplyRecursive(store, rewritten);
+
+    return current;
 }
 
 ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root) const {
