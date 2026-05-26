@@ -14,6 +14,7 @@ option(BF_TEST_CATCH_EXCEPTIONS
 option(BF_BUILD_TESTS 
     "Build tests" 
     ON)
+option(BF_BUILD_CLI "Build BitFlow CLI" OFF)
 
 if(BF_BUILD_TESTS)
     enable_testing()
@@ -25,3 +26,7 @@ endif()
 add_subdirectory(engine/core)
 add_subdirectory(engine/io)
 add_subdirectory(engine/functions)
+
+if(BF_BUILD_CLI)
+    add_subdirectory(cli)
+endif()
