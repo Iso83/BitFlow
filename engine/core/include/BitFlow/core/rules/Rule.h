@@ -177,6 +177,9 @@ Rule Get_AddLinearMultiplicity_Rule();
 inline constexpr RuleKey AddCommonFactor{"CORE.FACTORIZE.ARITHMETIC.ADD_COMMON_FACTOR"};
 Rule Get_AddCommonFactor_Rule();
 
+inline constexpr RuleKey PerfectSquare{"CORE.FACTORIZE.ARITHMETIC.PERFECT_SQUARE"};
+Rule Get_PerfectSquare_Rule();
+
 inline constexpr RuleKey CommonFactorCancel_PowTerms{"CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL_POW_TERMS"};
 Rule Get_CommonFactorCancel_PowTerms_Rule();
 

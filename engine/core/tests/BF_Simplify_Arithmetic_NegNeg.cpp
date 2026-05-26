@@ -11,7 +11,6 @@ int TestNegNeg_Basic() {
     const auto rule = Simplify::Arithmetic::Get_NegNeg_Rule();
 
     RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(rule);
 
     BF_VALIDATE_ENGINE(engine, rule);
@@ -29,7 +28,6 @@ int TestNegNeg_TripleNeg() {
     const auto rule = Simplify::Arithmetic::Get_NegNeg_Rule();
 
     RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(rule);
 
     BF_VALIDATE_ENGINE(engine, rule);
@@ -50,7 +48,6 @@ int TestNegNeg_NoMatchSingleNeg() {
     const auto rule = Simplify::Arithmetic::Get_NegNeg_Rule();
 
     RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(rule);
 
     BF_VALIDATE_ENGINE(engine, rule);

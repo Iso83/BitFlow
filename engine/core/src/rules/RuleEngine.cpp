@@ -120,7 +120,6 @@ DependencyValidationResult RuleEngine::AnalyzeDependencies(const Rule& testingRu
     result.valid = true;
 
     std::unordered_map<RuleKey, size_t> indices;
-
     indices.reserve(m_rules.size());
 
     for (size_t i = 0; i < m_rules.size(); ++i)
@@ -145,6 +144,24 @@ DependencyValidationResult RuleEngine::AnalyzeDependencies(const Rule& testingRu
             result.valid = false;
             result.missing.push_back(key);
         }
+    }
+
+    // =====================================================
+    // Extra / unrelated rules
+    // =====================================================
+
+    for (const Rule& r : m_rules) {
+
+        // skip tested rule itself
+        if (r.key == testingRule.key)
+            continue;
+
+        // skip required dependencies
+        if (required.contains(r.key))
+            continue;
+
+        result.valid = false;
+        result.extra.push_back(r.key);
     }
 
     // =====================================================

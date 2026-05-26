@@ -811,6 +811,27 @@ Extracts shared multiplicative factors from additions.
 
 ---
 
+### CORE.FACTORIZE.ARITHMETIC.PERFECT_SQUARE
+
+Recognizes perfect-square trinomials and rewrites them as squared binomials.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$a^2 + 2ab + b^2$$ |
+| Rewrite | $$(a+b)^2$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$a^2 - 2ab + b^2$$ |
+| Rewrite | $$(a-b)^2$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$a^2 - 6a + 9$$ |
+| Rewrite | $$(a-3)^2$$ |
+
+---
+
 ### CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL_POW_TERMS
 
 Cancels identical power terms and reduces power exponents that appear in both numerator and denominator.

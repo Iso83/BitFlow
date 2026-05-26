@@ -69,6 +69,7 @@ if(BF_BUILD_TESTS)
     
     bf_add_module_test(BitFlowCore core/rules/factorize/arithmetic BF_Factorize_Arithmetic_CombineConstants USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/factorize/arithmetic BF_Factorize_Arithmetic_CommonFactor USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core/rules/factorize/arithmetic BF_Factorize_Arithmetic_PerfectSquare USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/factorize/arithmetic BF_Factorize_Arithmetic_MulFractionNumerator USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/factorize/arithmetic BF_Factorize_Arithmetic_DivFractionNumerator USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/factorize/arithmetic BF_Factorize_Arithmetic_DivFractionDenominator USE_CORE_PRINT)
