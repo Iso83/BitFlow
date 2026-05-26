@@ -207,6 +207,42 @@ This guarantees structurally equivalent expressions serialize identically, impro
 
 ---
 
+# Normalize::Arithmetic
+
+### CORE.NORMALIZE.ARITHMETIC.ADD_NEG_TO_SUB
+
+Converts additions containing a negated term into subtraction form.
+This normalizes equivalent signed expressions into a more compact and consistent structure, enabling downstream simplification and canonicalization rules.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x + (-y)$$ |
+| Rewrite | $$x - y$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$1 + (-a)$$ |
+| Rewrite | $$1 - a$$ |
+
+---
+
+### CORE.NORMALIZE.ARITHMETIC.SUB_TO_NEG
+
+Rewrites subtraction into a negated canonical form when the left side is a smaller constant expression.
+This normalizes equivalent signed expressions so structurally identical forms can later simplify or cancel.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$1 - a$$ |
+| Rewrite | $$-(a - 1)$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$2 - b$$ |
+| Rewrite | $$-(b - 2)$$ |
+
+---
+
 # Normalize::Bitwise
 
 ### CORE.NORMALIZE.BITWISE.ROTATE_MODULO
@@ -399,6 +435,28 @@ Eliminates nested negation.
 | ------- | ---------- |
 | Input   | $$-(-x)$$  |
 | Rewrite | $$x$$      |
+
+---
+
+### CORE.SIMPLIFY.ARITHMETIC.NEG_POW_EVEN
+
+Removes negation from bases raised to an even exponent.
+Since even powers eliminate sign changes, equivalent expressions normalize into a common canonical form.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(-x)^2$$ |
+| Rewrite | $$x^2$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(-(a-1))^2$$ |
+| Rewrite | $$(a-1)^2$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(-x)^8$$ |
+| Rewrite | $$x^8$$ |
 
 ---
 

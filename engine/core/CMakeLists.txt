@@ -79,14 +79,18 @@ if(BF_BUILD_TESTS)
     bf_add_module_test(BitFlowCore core/rules/factorize/bitwise BF_Factorize_Bitwise_CommonFactor USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/factorize/bitwise BF_Factorize_Bitwise_Distribute USE_CORE_PRINT)
 
-    bf_add_module_test(BitFlowCore core/rules/normalize/bitwize BF_Normalize_Bitwise_Rotate USE_CORE_PRINT)
-
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Normalize_Flatten USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Normalize_Order USE_CORE_PRINT)
+
+    bf_add_module_test(BitFlowCore core/rules/normalize/arithmetic BF_Rules_Normalize_AddNegToSub USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core/rules/normalize/arithmetic BF_Rules_Normalize_SubToNeg USE_CORE_PRINT)
+    
+    bf_add_module_test(BitFlowCore core/rules/normalize/bitwize BF_Normalize_Bitwise_Rotate USE_CORE_PRINT)
 
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_CombineConstants USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_Fold USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_NegNeg USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_NegPowEven USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_One USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_SubNeg USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/simplify/arithmetic BF_Simplify_Arithmetic_Zero USE_CORE_PRINT)

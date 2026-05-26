@@ -32,6 +32,13 @@ inline constexpr RuleKey Order{"CORE.NORMALIZE.ORDER"};
 Rule Get_Order_Rule();
 } // namespace Normalize
 
+namespace Normalize::Arithmetic {
+inline constexpr RuleKey AddNegToSub{"CORE.NORMALIZE.ARITHMETIC.ADD_NEG_TO_SUB"};
+Rule Get_AddNegToSub_Rule();
+inline constexpr RuleKey SubToNeg{"CORE.NORMALIZE.ARITHMETIC.SUB_TO_NEG"};
+Rule Get_SubToNeg_Rule();
+} // namespace Normalize::Arithmetic
+
 namespace Normalize::Bitwise {
 inline constexpr RuleKey RotateModulo{"CORE.NORMALIZE.BITWISE.ROTATE_MODULO"};
 Rule Get_RotateModulo_Rule();
@@ -79,6 +86,9 @@ Rule Get_RotateZero_Rule();
 
 inline constexpr RuleKey NegNeg{"CORE.SIMPLIFY.ARITHMETIC.NEG_NEG"};
 Rule Get_NegNeg_Rule();
+
+inline constexpr RuleKey NegPowEven{"CORE.SIMPLIFY.ARITHMETIC.NEG_POW_EVEN"};
+Rule Get_NegPowEven_Rule();
 
 inline constexpr RuleKey SubNeg{"CORE.SIMPLIFY.ARITHMETIC.SUB_NEG"};
 Rule Get_SubNeg_Rule();

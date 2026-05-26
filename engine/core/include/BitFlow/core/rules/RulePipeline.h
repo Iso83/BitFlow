@@ -12,6 +12,8 @@ inline RuleEngine BuildNormalize() {
 
     e.AddRule(Normalize::Get_Flatten_Rule());
     e.AddRule(Normalize::Get_Order_Rule());
+    e.AddRule(Normalize::Arithmetic::Get_AddNegToSub_Rule());
+    e.AddRule(Normalize::Arithmetic::Get_SubToNeg_Rule());
     e.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
 
     return e;
@@ -86,6 +88,7 @@ inline RuleEngine BuildSimplifyArithmetic() {
     e.AddRule(Simplify::Arithmetic::Get_ShiftZero_Rule());
     e.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
     e.AddRule(Simplify::Arithmetic::Get_NegNeg_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_NegPowEven_Rule());
     e.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
     e.AddRule(Simplify::Arithmetic::Get_SubNeg_Rule());
     e.AddRule(Simplify::Arithmetic::Get_SubConstFold_Rule());
