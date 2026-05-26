@@ -88,13 +88,37 @@ static bool Match_SubAddSelfCancel(const ExprStore* store, ExprId id) {
         return false;
 
     const Expr& lhs = (*store)[e.inputs[0]];
-    if (lhs.op != OpType::Add || lhs.inputs.size() < 2)
+    if (lhs.op != OpType::Add)
         return false;
 
-    const ExprId rhsId = e.inputs[1];
-    for (ExprId inId : lhs.inputs) {
-        if (CompareExprCanonical(store, inId, rhsId) == 0)
-            return true;
+    std::vector<ExprId> positives;
+    std::vector<ExprId> negatives;
+    auto collectTerms = [&](auto&& self, ExprId exprId, bool positive) -> void {
+        const Expr& expr = (*store)[exprId];
+        if (expr.op == OpType::Add) {
+            for (ExprId inId : expr.inputs)
+                self(self, inId, positive);
+            return;
+        }
+        if (expr.op == OpType::Sub && expr.inputs.size() == 2) {
+            self(self, expr.inputs[0], positive);
+            self(self, expr.inputs[1], !positive);
+            return;
+        }
+        if (positive)
+            positives.push_back(exprId);
+        else
+            negatives.push_back(exprId);
+    };
+
+    collectTerms(collectTerms, e.inputs[0], true);
+    collectTerms(collectTerms, e.inputs[1], false);
+
+    for (ExprId posId : positives) {
+        for (ExprId negId : negatives) {
+            if (CompareExprCanonical(store, posId, negId) == 0)
+                return true;
+        }
     }
     return false;
 }
@@ -376,29 +400,72 @@ static ExprId Rewrite_SubConstFold(RewriteContext& ctx, ExprId id) {
 static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    const Expr& lhs = (*store)[e.inputs[0]];
-    const ExprId rhsId = e.inputs[1];
+    const Types::BitWidth bitWidth = e.bitWidth;
 
-    std::vector<ExprId> newInputs;
-    newInputs.reserve(lhs.inputs.size());
-
-    bool removed = false;
-    for (ExprId inId : lhs.inputs) {
-        if (!removed && CompareExprCanonical(store, inId, rhsId) == 0) {
-            removed = true;
-            continue;
+    std::vector<ExprId> positives;
+    std::vector<ExprId> negatives;
+    auto collectTerms = [&](auto&& self, ExprId exprId, bool positive) -> void {
+        const Expr& expr = (*store)[exprId];
+        if (expr.op == OpType::Add) {
+            for (ExprId inId : expr.inputs)
+                self(self, inId, positive);
+            return;
         }
-        newInputs.push_back(inId);
+        if (expr.op == OpType::Sub && expr.inputs.size() == 2) {
+            self(self, expr.inputs[0], positive);
+            self(self, expr.inputs[1], !positive);
+            return;
+        }
+        if (positive)
+            positives.push_back(exprId);
+        else
+            negatives.push_back(exprId);
+    };
+    collectTerms(collectTerms, e.inputs[0], true);
+    collectTerms(collectTerms, e.inputs[1], false);
+
+    bool changed = false;
+    std::vector<bool> negUsed(negatives.size(), false);
+    std::vector<ExprId> remainingPositives;
+    for (ExprId posId : positives) {
+        bool matched = false;
+        for (std::size_t i = 0; i < negatives.size(); ++i) {
+            if (!negUsed[i] && CompareExprCanonical(store, posId, negatives[i]) == 0) {
+                negUsed[i] = true;
+                changed = true;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched)
+            remainingPositives.push_back(posId);
     }
 
-    if (!removed)
+    std::vector<ExprId> remainingNegatives;
+    for (std::size_t i = 0; i < negatives.size(); ++i) {
+        if (!negUsed[i])
+            remainingNegatives.push_back(negatives[i]);
+    }
+
+    if (!changed)
         return id;
 
-    if (newInputs.empty())
-        return store->createConstant(0, e.bitWidth).id;
-    if (newInputs.size() == 1)
-        return newInputs[0];
-    return store->create(OpType::Add, std::move(newInputs), e.bitWidth).id;
+    auto buildAdd = [&](std::vector<ExprId>& terms) -> ExprId {
+        if (terms.empty())
+            return store->createConstant(0, bitWidth).id;
+        if (terms.size() == 1)
+            return terms[0];
+        return store->create(OpType::Add, std::move(terms), bitWidth).id;
+    };
+
+    ExprId positiveExpr = buildAdd(remainingPositives);
+
+    if (remainingNegatives.empty())
+        return positiveExpr;
+
+    ExprId negativeExpr = buildAdd(remainingNegatives);
+
+    return store->create(OpType::Sub, {positiveExpr, negativeExpr}, bitWidth).id;
 }
 
 static ExprId Rewrite_SubMulLinearCancel(RewriteContext& ctx, ExprId id) {
@@ -652,7 +719,10 @@ Rule Get_SubConstFold_Rule() {
 }
 
 Rule Get_SubAddSelfCancel_Rule() {
-    return Rule{SubAddSelfCancel, &Match_SubAddSelfCancel, &Rewrite_SubAddSelfCancel, {Normalize::Order}};
+    return Rule{SubAddSelfCancel,
+                &Match_SubAddSelfCancel,
+                &Rewrite_SubAddSelfCancel,
+                {Normalize::Order, Simplify::Arithmetic::AddFold}};
 }
 
 Rule Get_SubMulLinearCancel_Rule() {

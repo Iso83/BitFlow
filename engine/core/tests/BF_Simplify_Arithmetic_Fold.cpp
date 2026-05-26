@@ -96,6 +96,7 @@ int TestSubAddSelfCancel() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -115,6 +116,7 @@ int TestSubAddSelfCancel_MultiInput() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -129,6 +131,49 @@ int TestSubAddSelfCancel_MultiInput() {
 
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));
+
+    return 0;
+}
+
+int TestSubAddSelfCancel_SubRhs() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_SubAddSelfCancel_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (a + b) - (b - 2)));
+
+    BF_TEST(Op(r) == OpType::Add);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return EqualChunkValue(in, 2u); }));
+
+    return 0;
+}
+
+int TestSubAddSelfCancel_SubRhs_ToConst() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Arithmetic::Get_SubAddSelfCancel_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto b = V("b");
+
+    BF_SAFE_REWRITE(r, Rewrite(engine, (C(1) + b) - (b - C(2))));
+    BF_TEST(EqualChunkValue(r, 3u));
 
     return 0;
 }
@@ -618,6 +663,8 @@ int main() {
 
     BF_RUN_TEST(TestSubAddSelfCancel);
     BF_RUN_TEST(TestSubAddSelfCancel_MultiInput);
+    BF_RUN_TEST(TestSubAddSelfCancel_SubRhs);
+    BF_RUN_TEST(TestSubAddSelfCancel_SubRhs_ToConst);
 
     BF_RUN_TEST(TestSubMulLinearCancel);
     BF_RUN_TEST(TestSubMulLinearCancel_ToBase);

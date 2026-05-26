@@ -502,13 +502,23 @@ This simplifies arithmetic chains and improves canonicalization of affine expres
 
 ### CORE.SIMPLIFY.ARITHMETIC.SUB_ADD_SELF_CANCEL
 
-Removes a matching term from an additive expression when it is immediately subtracted afterwards.
-This simplifies expressions by eliminating redundant additive/subtractive pairs.
+Cancels matching additive terms across subtraction.
+This simplifies expressions by removing terms that appear on both sides of a subtraction, including terms nested inside additive or subtractive chains.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$(a + b + c) - b$$ |
 | Rewrite | $$a + c$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(a + b) - (b - 2)$$ |
+| Rewrite | $$a + 2$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(1 + b) - (b - 2)$$ |
+| Rewrite | $$3$$ |
 
 ---
 
@@ -887,6 +897,30 @@ Recognizes perfect-square trinomials and rewrites them as squared binomials.
 | ------- | ---------- |
 | Input   | $$a^2 - 6a + 9$$ |
 | Rewrite | $$(a-3)^2$$ |
+
+---
+
+### CORE.FACTORIZE.ARITHMETIC.DIFFERENCE_OF_SQUARES
+
+Factorizes a difference of two squared expressions into the product of their sum and difference.
+This applies the classical algebraic identity:
+
+$$x^2 - y^2 = (x-y)(x+y)$$
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$a^2 - b^2$$ |
+| Rewrite | $$(a-b)(a+b)$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(a+1)^2 - (a-2)^2$$ |
+| Rewrite | $$((a+1)-(a-2))((a+1)+(a-2))$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(1+b)^2 - (b-2)^2$$ |
+| Rewrite | $$((1+b)-(b-2))((1+b)+(b-2))$$ |
 
 ---
 
