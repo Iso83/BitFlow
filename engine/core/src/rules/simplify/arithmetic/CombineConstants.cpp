@@ -49,32 +49,40 @@ static ExprId Rewrite_CombineConstants(RewriteContext& ctx, ExprId id) {
 
     switch (e.op) {
     case OpType::Add:
-        return store->createConstant((lhs.knownValue + rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
+        return ctx.replace(
+            id, store->createConstant((lhs.knownValue + rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
     case OpType::Sub:
         if (lhs.knownValue >= rhs.knownValue)
-            return store->createConstant((lhs.knownValue - rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
+            return ctx.replace(
+                id, store->createConstant((lhs.knownValue - rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
 
-        return store
-            ->create(OpType::Neg,
-                     {store->createConstant((rhs.knownValue - lhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id},
-                     e.bitWidth)
-            .id;
+        return ctx.replace(
+            id,
+            store
+                ->create(
+                    OpType::Neg,
+                    {store->createConstant((rhs.knownValue - lhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id},
+                    e.bitWidth)
+                .id);
     case OpType::Mul:
-        return store->createConstant((lhs.knownValue * rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
+        return ctx.replace(
+            id, store->createConstant((lhs.knownValue * rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
     case OpType::Div:
         if (rhs.knownValue == 0) {
             BF_CORE_ASSERT(false);
             return id;
         }
 
-        return store->createConstant((lhs.knownValue / rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
+        return ctx.replace(
+            id, store->createConstant((lhs.knownValue / rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
     case OpType::Mod:
         if (rhs.knownValue == 0) {
             BF_CORE_ASSERT(false);
             return id;
         }
 
-        return store->createConstant((lhs.knownValue % rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id;
+        return ctx.replace(
+            id, store->createConstant((lhs.knownValue % rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
     default: {
         BF_CORE_ASSERT(false);
         return id;

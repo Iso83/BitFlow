@@ -103,12 +103,12 @@ static ExprId Rewrite_XorNotReduction(RewriteContext& ctx, ExprId id) {
             }
 
             if (newInputs.empty())
-                return store->makeTrue(bitWidth).id;
+                return ctx.replace(id, store->makeTrue(bitWidth).id);
 
             if (newInputs.size() == 1)
-                return newInputs[0];
+                return ctx.replace(id, newInputs[0]);
 
-            return store->create(OpType::And, std::move(newInputs), bitWidth).id;
+            return ctx.replace(id, store->create(OpType::And, std::move(newInputs), bitWidth).id);
         }
     }
 

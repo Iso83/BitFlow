@@ -191,7 +191,7 @@ static ExprId Rewrite_PerfectSquare(RewriteContext& ctx, ExprId id) {
     ExprId inner =
         neg ? store->create(OpType::Sub, {r1, r2}, bitWidth).id : store->create(OpType::Add, {r1, r2}, bitWidth).id;
     ExprId two = store->createConstant(2, bitWidth).id;
-    return store->create(OpType::Pow, {inner, two}, bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Pow, {inner, two}, bitWidth).id);
 }
 
 Rule Get_PerfectSquare_Rule() {

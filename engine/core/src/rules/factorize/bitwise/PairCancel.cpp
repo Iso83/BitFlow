@@ -135,12 +135,12 @@ static ExprId Rewrite_XorPairCancel(RewriteContext& ctx, ExprId id) {
         newInputs.push_back(common);
 
     if (newInputs.empty())
-        return store->makeFalse(e.bitWidth).id;
+        return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(OpType::Xor, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Xor, std::move(newInputs), e.bitWidth).id);
 }
 
 Rule Get_XorPairCancel_Rule() {

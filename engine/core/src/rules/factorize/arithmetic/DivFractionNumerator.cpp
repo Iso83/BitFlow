@@ -40,7 +40,7 @@ static ExprId Rewrite_DivFractionNumerator(RewriteContext& ctx, ExprId id) {
 
     const ExprId newDenominator = store->create(OpType::Mul, {b, c}, bitWidth).id;
 
-    return store->create(OpType::Div, {a, newDenominator}, bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Div, {a, newDenominator}, bitWidth).id);
 }
 
 Rule Get_DivFractionNumerator_Rule() {

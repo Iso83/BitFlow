@@ -84,12 +84,12 @@ static ExprId Rewrite_AddZero(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->makeFalse(bitWidth).id;
+        return ctx.replace(id, store->makeFalse(bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(OpType::Add, std::move(newInputs), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Add, std::move(newInputs), bitWidth).id);
 }
 
 static ExprId Rewrite_MulZero(RewriteContext& ctx, ExprId id) {
@@ -99,7 +99,7 @@ static ExprId Rewrite_MulZero(RewriteContext& ctx, ExprId id) {
     if (e.bitWidth == 0)
         BF_RULE_ERROR("Rewrite_MulZero encountered invalid bitWidth 0");
 
-    return store->makeFalse(e.bitWidth).id;
+    return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 }
 
 static ExprId Rewrite_SubZero(RewriteContext& ctx, ExprId id) {
@@ -110,7 +110,7 @@ static ExprId Rewrite_SubZero(RewriteContext& ctx, ExprId id) {
     const Types::BitWidth bitWidth = e.bitWidth;
 
     if (inputs.size() == 2 && IsConstFalse(store, inputs[0]))
-        return store->create(OpType::Neg, {inputs[1]}, bitWidth).id;
+        return ctx.replace(id, store->create(OpType::Neg, {inputs[1]}, bitWidth).id);
 
     ExprInputs newInputs;
     newInputs.reserve(inputs.size());
@@ -125,30 +125,30 @@ static ExprId Rewrite_SubZero(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(OpType::Sub, std::move(newInputs), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Sub, std::move(newInputs), bitWidth).id);
 }
 
 static ExprId Rewrite_SubSelf(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    return store->makeFalse(e.bitWidth).id;
+    return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 }
 
 static ExprId Rewrite_ModSelf(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    return store->makeFalse(e.bitWidth).id;
+    return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 }
 
 static ExprId Rewrite_PowZero(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    return store->createConstant(1, e.bitWidth).id;
+    return ctx.replace(id, store->createConstant(1, e.bitWidth).id);
 }
 
 static ExprId Rewrite_ShiftZero(RewriteContext& ctx, ExprId id) {
@@ -157,7 +157,7 @@ static ExprId Rewrite_ShiftZero(RewriteContext& ctx, ExprId id) {
 
     BF_CORE_ASSERT(store->isFalse(e.inputs[1]));
 
-    return e.inputs[0];
+    return ctx.replace(id, e.inputs[0]);
 }
 
 static ExprId Rewrite_RotateZero(RewriteContext& ctx, ExprId id) {
@@ -166,7 +166,7 @@ static ExprId Rewrite_RotateZero(RewriteContext& ctx, ExprId id) {
 
     BF_CORE_ASSERT(store->isFalse(e.inputs[1]));
 
-    return e.inputs[0];
+    return ctx.replace(id, e.inputs[0]);
 }
 #pragma endregion
 

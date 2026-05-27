@@ -49,7 +49,11 @@ ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id) const {
         } else
             after = r.rewrite(ctx, id);
 
-        // BF_CORE_ASSERT(ctx.changed);
+#if BF_RULE_STRICT_REWRITE
+        if (!ctx.changed)
+            BF_CORE_THROW("Rewrite produced no tracked changes. "
+                          "Possible mismatch between match() and rewrite().");
+#endif
 
         return after;
     }

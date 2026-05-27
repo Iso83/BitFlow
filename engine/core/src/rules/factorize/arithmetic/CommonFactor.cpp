@@ -364,10 +364,11 @@ static ExprId Rewrite_AddLinearMultiplicity(RewriteContext& ctx, ExprId id) {
         addResult = store->create(OpType::Add, std::move(normalizedAddTerms), bitWidth).id;
 
     if (pendingSubConst != 0)
-        return store->create(OpType::Sub, {addResult, store->createConstant(pendingSubConst, bitWidth).id}, bitWidth)
-            .id;
+        return ctx.replace(
+            id,
+            store->create(OpType::Sub, {addResult, store->createConstant(pendingSubConst, bitWidth).id}, bitWidth).id);
 
-    return addResult;
+    return ctx.replace(id, addResult);
 }
 
 static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, ExprId id) {
@@ -467,9 +468,9 @@ static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, ExprId id) {
     finalAddTerms.push_back(factored);
 
     if (finalAddTerms.size() == 1)
-        return finalAddTerms[0];
+        return ctx.replace(id, finalAddTerms[0]);
 
-    return store->create(OpType::Add, std::move(finalAddTerms), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Add, std::move(finalAddTerms), bitWidth).id);
 }
 
 static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id) {
@@ -583,12 +584,12 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id
             remaining.push_back(extraId);
 
         if (remaining.empty())
-            return store->createConstant(1, bitWidth).id;
+            return ctx.replace(id, store->createConstant(1, bitWidth).id);
 
         if (remaining.size() == 1)
-            return remaining[0];
+            return ctx.replace(id, remaining[0]);
 
-        return store->create(OpType::Mul, std::move(remaining), bitWidth).id;
+        return ctx.replace(id, store->create(OpType::Mul, std::move(remaining), bitWidth).id);
     };
 
     const ExprId newLhs = buildProduct(lhsInputs, lhsConsumed, lhsExtraFactors);
@@ -597,9 +598,9 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id
 
     // fully reduced
     if (EqualChunkValue(store, newRhs, 1u))
-        return newLhs;
+        return ctx.replace(id, newLhs);
 
-    return store->create(OpType::Div, {newLhs, newRhs}, bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Div, {newLhs, newRhs}, bitWidth).id);
 }
 
 static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
@@ -613,7 +614,7 @@ static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
 
     if (lhs.op == OpType::Div && lhs.inputs.size() == 2) {
         const ExprId numerator = store->create(OpType::Sub, {lhs.inputs[0], rhs.inputs[0]}, bitWidth).id;
-        return store->create(OpType::Div, {numerator, rhsDenominator}, bitWidth).id;
+        return ctx.replace(id, store->create(OpType::Div, {numerator, rhsDenominator}, bitWidth).id);
     }
 
     ExprInputs combinedAddTerms;
@@ -638,7 +639,7 @@ static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
     if (!rewritten)
         return id;
 
-    return store->create(OpType::Add, std::move(combinedAddTerms), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Add, std::move(combinedAddTerms), bitWidth).id);
 }
 
 static ExprId Rewrite_AddCommonDenominator(RewriteContext& ctx, ExprId id) {
@@ -652,7 +653,7 @@ static ExprId Rewrite_AddCommonDenominator(RewriteContext& ctx, ExprId id) {
     const Expr& rhs = (*store)[e.inputs[1]];
 
     const ExprId numerator = store->create(OpType::Add, {lhs.inputs[0], rhs.inputs[0]}, bitWidth).id;
-    return store->create(OpType::Div, {numerator, denominator}, bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Div, {numerator, denominator}, bitWidth).id);
 }
 
 static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, ExprId id) {
@@ -687,7 +688,7 @@ static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, ExprId id) {
                 newRhs = (newFactors.size() == 1) ? newFactors[0]
                                                   : store->create(OpType::Mul, std::move(newFactors), bitWidth).id;
 
-            return store->create(OpType::Sub, {eInputs[0], newRhs}, bitWidth).id;
+            return ctx.replace(id, store->create(OpType::Sub, {eInputs[0], newRhs}, bitWidth).id);
         }
     }
 

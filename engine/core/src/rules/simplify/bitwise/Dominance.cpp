@@ -58,19 +58,19 @@ static ExprId Rewrite_AndOneIdentity(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->makeTrue(e.bitWidth).id;
+        return ctx.replace(id, store->makeTrue(e.bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
 static ExprId Rewrite_OrOneDominance(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    return store->makeTrue(e.bitWidth).id;
+    return ctx.replace(id, store->makeTrue(e.bitWidth).id);
 }
 #pragma endregion
 

@@ -48,7 +48,7 @@ static ExprId Rewrite_DifferenceOfSquares(RewriteContext& ctx, ExprId id) {
 
     ExprId diff = store->create(OpType::Sub, {lhsBase, rhsBase}, bitWidth).id;
     ExprId sum = store->create(OpType::Add, {lhsBase, rhsBase}, bitWidth).id;
-    return store->create(OpType::Mul, {diff, sum}, bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Mul, {diff, sum}, bitWidth).id);
 }
 
 Rule Get_DifferenceOfSquares_Rule() {

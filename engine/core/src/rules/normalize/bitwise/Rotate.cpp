@@ -37,12 +37,12 @@ static ExprId Rewrite_RotateModulo(RewriteContext& ctx, ExprId id) {
     const Types::ExprChunk reduced = amount.knownValue % e.bitWidth;
 
     if (reduced == 0)
-        return e.inputs[0];
+        return ctx.replace(id, e.inputs[0]);
 
     const OpType op = e.op;
     const ExprId in0 = e.inputs[0];
     const Types::BitWidth bitWidth = e.bitWidth;
-    return store->create(op, {in0, store->createConstant(reduced, bitWidth).id}, bitWidth).id;
+    return ctx.replace(id, store->create(op, {in0, store->createConstant(reduced, bitWidth).id}, bitWidth).id);
 }
 
 Rule Get_RotateModulo_Rule() {

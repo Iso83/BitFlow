@@ -14,15 +14,15 @@ class RewriteContext final {
 
   private:
     Expression::ExprStore* m_store;
+    bool changed = false;
 
     explicit RewriteContext(Expression::ExprStore* store) : m_store(store) {}
 
   public:
-    bool changed = false;
-
-    inline void replace(Ids::ExprId oldId, Ids::ExprId newId) {
+    inline Ids::ExprId replace(Ids::ExprId oldId, Ids::ExprId newId) {
         m_store->replace(oldId, newId);
         changed = true;
+        return newId;
     }
 
     inline void release(Ids::ExprId oldId) {

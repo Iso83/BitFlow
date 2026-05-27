@@ -29,7 +29,7 @@ static ExprId Rewrite_NegPowEven(RewriteContext& ctx, ExprId id) {
     const Expr& base = (*store)[e.inputs[0]];
     BF_CORE_ASSERT(base.op == OpType::Neg && base.inputs.size() == 1);
 
-    return store->create(OpType::Pow, {base.inputs[0], e.inputs[1]}, e.bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Pow, {base.inputs[0], e.inputs[1]}, e.bitWidth).id);
 }
 
 Rule Get_NegPowEven_Rule() {

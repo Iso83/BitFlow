@@ -43,10 +43,10 @@ static ExprId Rewrite_Complement(RewriteContext& ctx, ExprId id) {
 
             if (IsNotOf(store, a, b) || IsNotOf(store, b, a)) {
                 if (e.op == OpType::And)
-                    return store->makeFalse().id;
+                    return ctx.replace(id, store->makeFalse().id);
 
                 if (e.op == OpType::Or)
-                    return store->makeTrue().id;
+                    return ctx.replace(id, store->makeTrue().id);
             }
         }
     }

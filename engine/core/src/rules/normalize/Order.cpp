@@ -38,7 +38,7 @@ static ExprId Rewrite_Order(RewriteContext& ctx, ExprId id) {
     if (sorted == e.inputs)
         return id;
 
-    return store->create(e.op, std::move(sorted), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(sorted), e.bitWidth).id);
 }
 
 Rule Get_Order_Rule() {

@@ -53,7 +53,7 @@ static ExprId Rewrite_MulFractionNumerator(RewriteContext& ctx, ExprId id) {
 
     const ExprId newNumerator = store->create(OpType::Mul, {numeratorId, termId}, bitWidth).id;
 
-    return store->create(OpType::Div, {newNumerator, denominatorId}, bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Div, {newNumerator, denominatorId}, bitWidth).id);
 }
 
 Rule Get_MulFractionNumerator_Rule() {

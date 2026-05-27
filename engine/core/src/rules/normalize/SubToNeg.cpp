@@ -32,7 +32,7 @@ static ExprId Rewrite_SubToNeg(RewriteContext& ctx, ExprId id) {
     BF_CORE_ASSERT(e.op == OpType::Sub && e.inputs.size() == 2);
 
     const ExprId swapped = store->create(OpType::Sub, {e.inputs[1], e.inputs[0]}, bitWidth).id;
-    return store->create(OpType::Neg, {swapped}, bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Neg, {swapped}, bitWidth).id);
 }
 
 Rule Get_SubToNeg_Rule() {

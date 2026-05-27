@@ -25,7 +25,7 @@ static ExprId Rewrite_SubNeg(RewriteContext& ctx, ExprId id) {
     const Expr& rhs = (*store)[e.inputs[1]];
     BF_CORE_ASSERT(rhs.op == OpType::Neg && rhs.inputs.size() == 1);
 
-    return store->create(OpType::Add, {e.inputs[0], rhs.inputs[0]}, e.bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Add, {e.inputs[0], rhs.inputs[0]}, e.bitWidth).id);
 }
 
 Rule Get_SubNeg_Rule() {

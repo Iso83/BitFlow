@@ -48,7 +48,7 @@ static ExprId Rewrite_Flatten(RewriteContext& ctx, ExprId id) {
             newInputs.push_back(in);
     }
 
-    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
 Rule Get_Flatten_Rule() {

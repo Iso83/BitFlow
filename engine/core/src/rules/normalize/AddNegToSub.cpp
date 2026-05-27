@@ -34,7 +34,7 @@ static ExprId Rewrite_AddNegToSub(RewriteContext& ctx, ExprId id) {
             positive = inId;
     }
 
-    return store->create(OpType::Sub, {positive, negative}, e.bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Sub, {positive, negative}, e.bitWidth).id);
 }
 
 Rule Get_AddNegToSub_Rule() {

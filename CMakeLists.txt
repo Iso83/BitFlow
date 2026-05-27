@@ -8,9 +8,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(BF_EXPR_LIFETIME_CHECKS
     "Enable Expr lifetime validation instrumentation"
     OFF)
+option(BF_RULE_STRICT_REWRITE
+    "Enable strict rule rewrite validation checks"
+    OFF)
+
 option(BF_TEST_CATCH_EXCEPTIONS
     "Catch exceptions inside BF_SAFE_REWRITE"
     ON)
+
 option(BF_BUILD_TESTS 
     "Build tests" 
     ON)

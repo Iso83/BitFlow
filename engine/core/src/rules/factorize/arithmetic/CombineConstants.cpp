@@ -56,14 +56,14 @@ static ExprId Rewrite_MulCombineConstants(RewriteContext& ctx, ExprId id) {
         const ExprId productId = store->createConstant(product, bitWidth).id;
 
         if (nonConst.empty())
-            return productId;
+            return ctx.replace(id, productId);
 
         nonConst.push_back(productId);
 
         if (nonConst.size() == 1)
-            return nonConst[0];
+            return ctx.replace(id, nonConst[0]);
 
-        return store->create(OpType::Mul, std::move(nonConst), bitWidth).id;
+        return ctx.replace(id, store->create(OpType::Mul, std::move(nonConst), bitWidth).id);
     }
 
     BF_CORE_ASSERT(false);

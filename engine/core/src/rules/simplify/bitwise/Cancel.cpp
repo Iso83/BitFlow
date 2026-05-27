@@ -141,12 +141,12 @@ static ExprId Rewrite_AndCancel(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->makeTrue(e.bitWidth).id;
+        return ctx.replace(id, store->makeTrue(e.bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
 static ExprId Rewrite_OrCancel(RewriteContext& ctx, ExprId id) {
@@ -168,12 +168,12 @@ static ExprId Rewrite_OrCancel(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->makeFalse(e.bitWidth).id;
+        return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
 static ExprId Rewrite_XorCancel(RewriteContext& ctx, ExprId id) {
@@ -224,11 +224,11 @@ static ExprId Rewrite_XorCancel(RewriteContext& ctx, ExprId id) {
     std::sort(terms.begin(), terms.end(), [&](ExprId a, ExprId b) { return CompareExprCanonical(store, a, b) < 0; });
 
     if (terms.empty())
-        return store->zeroId();
+        return ctx.replace(id, store->zeroId());
     if (terms.size() == 1)
-        return terms[0];
+        return ctx.replace(id, terms[0]);
 
-    return store->create(OpType::Xor, std::move(terms), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Xor, std::move(terms), bitWidth).id);
 }
 #pragma endregion
 

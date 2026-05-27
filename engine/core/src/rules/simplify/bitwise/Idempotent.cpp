@@ -70,9 +70,9 @@ static ExprId Rewrite_Idempotent(RewriteContext& ctx, ExprId id) {
     }
 
     if (unique.size() == 1)
-        return unique[0];
+        return ctx.replace(id, unique[0]);
 
-    return store->create(e.op, std::move(unique), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(unique), e.bitWidth).id);
 }
 
 static ExprId Rewrite_AndIdempotent(RewriteContext& ctx, ExprId id) {
@@ -90,9 +90,9 @@ static ExprId Rewrite_AndIdempotent(RewriteContext& ctx, ExprId id) {
     }
 
     if (unique.size() == 1)
-        return unique[0];
+        return ctx.replace(id, unique[0]);
 
-    return store->create(e.op, std::move(unique), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(unique), e.bitWidth).id);
 }
 #pragma endregion
 

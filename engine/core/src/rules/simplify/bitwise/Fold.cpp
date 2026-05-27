@@ -73,7 +73,7 @@ static ExprId Rewrite_AndFold(RewriteContext& ctx, ExprId id) {
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && store->isFalse(in))
-            return store->makeFalse(e.bitWidth).id;
+            return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 
         if (exprIn.op == OpType::Const && store->isTrue(in))
             continue;
@@ -82,12 +82,12 @@ static ExprId Rewrite_AndFold(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->makeTrue(e.bitWidth).id;
+        return ctx.replace(id, store->makeTrue(e.bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
 static ExprId Rewrite_OrFold(RewriteContext& ctx, ExprId id) {
@@ -98,7 +98,7 @@ static ExprId Rewrite_OrFold(RewriteContext& ctx, ExprId id) {
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
         if (exprIn.op == OpType::Const && store->isTrue(in))
-            return store->makeTrue(e.bitWidth).id;
+            return ctx.replace(id, store->makeTrue(e.bitWidth).id);
 
         if (exprIn.op == OpType::Const && store->isFalse(in))
             continue;
@@ -107,12 +107,12 @@ static ExprId Rewrite_OrFold(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->makeFalse(e.bitWidth).id;
+        return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
 static ExprId Rewrite_XorFold(RewriteContext& ctx, ExprId id) {
@@ -147,12 +147,12 @@ static ExprId Rewrite_XorFold(RewriteContext& ctx, ExprId id) {
         nonConst.push_back(store->createConstant(acc, e.bitWidth).id);
 
     if (nonConst.empty())
-        return store->createConstant(0, e.bitWidth).id;
+        return ctx.replace(id, store->createConstant(0, e.bitWidth).id);
 
     if (nonConst.size() == 1)
-        return nonConst[0];
+        return ctx.replace(id, nonConst[0]);
 
-    return store->create(OpType::Xor, std::move(nonConst), e.bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Xor, std::move(nonConst), e.bitWidth).id);
 }
 #pragma endregion
 

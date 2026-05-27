@@ -79,10 +79,10 @@ static ExprId Rewrite_Not(RewriteContext& ctx, ExprId id) {
     const Expr& exprIn = (*store)[in];
 
     if (exprIn.op == OpType::Not && exprIn.inputs.size() == 1)
-        return exprIn.inputs[0];
+        return ctx.replace(id, exprIn.inputs[0]);
 
     if (exprIn.op == OpType::Const)
-        return store->invertConst(in).id;
+        return ctx.replace(id, store->invertConst(in).id);
 
     BF_CORE_ASSERT(false);
     return id;
@@ -104,7 +104,7 @@ static ExprId Rewrite_NotPushdown(RewriteContext& ctx, ExprId id) {
     for (auto child : inputs)
         newInputs.push_back(store->create(OpType::Not, {child}, bitWidth).id);
 
-    return store->create(newOp, std::move(newInputs), bitWidth).id;
+    return ctx.replace(id, store->create(newOp, std::move(newInputs), bitWidth).id);
 }
 
 static ExprId Rewrite_NotXor(RewriteContext& ctx, ExprId id) {
@@ -123,7 +123,7 @@ static ExprId Rewrite_NotXor(RewriteContext& ctx, ExprId id) {
 
     newInputs.push_back(store->makeTrue(bitWidth).id);
 
-    return store->create(OpType::Xor, std::move(newInputs), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Xor, std::move(newInputs), bitWidth).id);
 }
 #pragma endregion
 

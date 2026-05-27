@@ -87,36 +87,36 @@ static ExprId Rewrite_MulOne(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->createConstant(1, e.bitWidth).id;
+        return ctx.replace(id, store->createConstant(1, e.bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
 static ExprId Rewrite_DivOne(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    return e.inputs[0];
+    return ctx.replace(id, e.inputs[0]);
 }
 
 static ExprId Rewrite_PowOne(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    return e.inputs[0];
+    return ctx.replace(id, e.inputs[0]);
 }
 
 static ExprId Rewrite_DivSelf(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    return store->createConstant(1, e.bitWidth).id;
+    return ctx.replace(id, store->createConstant(1, e.bitWidth).id);
 }
 
 static ExprId Rewrite_ModOne(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    return store->createConstant(0, e.bitWidth).id;
+    return ctx.replace(id, store->createConstant(0, e.bitWidth).id);
 }
 
 #pragma endregion

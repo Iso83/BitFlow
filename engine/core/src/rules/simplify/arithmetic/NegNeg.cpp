@@ -26,7 +26,7 @@ static ExprId Rewrite_NegNeg(RewriteContext& ctx, ExprId id) {
     const Expr& e2 = (*store)[e.inputs[0]];
     BF_CORE_ASSERT(e2.op == OpType::Neg && e2.inputs.size() == 1);
 
-    return e2.inputs[0];
+    return ctx.replace(id, e2.inputs[0]);
 }
 
 Rule Get_NegNeg_Rule() {

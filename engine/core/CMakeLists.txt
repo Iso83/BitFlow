@@ -43,6 +43,9 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
 if(BF_EXPR_LIFETIME_CHECKS)
     target_compile_definitions(BitFlowCore PUBLIC BF_EXPR_LIFETIME_CHECKS)
 endif()
+if(BF_RULE_STRICT_REWRITE)
+    target_compile_definitions(BitFlowCore PUBLIC BF_RULE_STRICT_REWRITE)
+endif()
 
 if(BF_TEST_CATCH_EXCEPTIONS)
     target_compile_definitions(BitFlowCore PUBLIC BF_TEST_CATCH_EXCEPTIONS)

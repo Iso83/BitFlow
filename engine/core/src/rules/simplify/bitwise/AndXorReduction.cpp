@@ -82,7 +82,7 @@ static ExprId Rewrite_AndXorReduction(RewriteContext& ctx, ExprId id) {
                     }
                 }
 
-                return store->create(OpType::And, std::move(newInputs), bitWidth).id;
+                return ctx.replace(id, store->create(OpType::And, std::move(newInputs), bitWidth).id);
             }
         }
     }

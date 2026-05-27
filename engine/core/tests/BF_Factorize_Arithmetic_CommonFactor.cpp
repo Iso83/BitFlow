@@ -379,7 +379,7 @@ int TestSubCommonDenominator_DifferentDenominator_NoRewrite() {
     auto d = V("d");
 
     auto expr = (a / c) - (b / d);
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr, &names));
+    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
 
     BF_TEST(r == expr);
 

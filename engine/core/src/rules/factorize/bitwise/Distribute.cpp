@@ -103,12 +103,12 @@ static ExprId Rewrite_Distribute_And_Over_Xor(RewriteContext& ctx, ExprId id) {
     }
 
     if (distributed.empty())
-        return store->makeFalse(bitWidth).id;
+        return ctx.replace(id, store->makeFalse(bitWidth).id);
 
     if (distributed.size() == 1)
-        return distributed[0];
+        return ctx.replace(id, distributed[0]);
 
-    return store->create(OpType::Xor, std::move(distributed), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Xor, std::move(distributed), bitWidth).id);
 }
 
 Rule Get_Distribute_Rule() {

@@ -303,8 +303,8 @@ static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
             newInputs.push_back(combined);
 
             if (newInputs.size() == 1)
-                return newInputs[0];
-            return store->create(OpType::Add, std::move(newInputs), bitWidth).id;
+                return ctx.replace(id, newInputs[0]);
+            return ctx.replace(id, store->create(OpType::Add, std::move(newInputs), bitWidth).id);
         }
     }
 
@@ -331,12 +331,12 @@ static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
         nonConst.push_back(store->createConstant(acc, e.bitWidth).id);
 
     if (nonConst.empty())
-        return store->createConstant(0, e.bitWidth).id;
+        return ctx.replace(id, store->createConstant(0, e.bitWidth).id);
 
     if (nonConst.size() == 1)
-        return nonConst[0];
+        return ctx.replace(id, nonConst[0]);
 
-    return store->create(OpType::Add, std::move(nonConst), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Add, std::move(nonConst), bitWidth).id);
 }
 
 static ExprId Rewrite_SubConstFold(RewriteContext& ctx, ExprId id) {
@@ -372,7 +372,7 @@ static ExprId Rewrite_SubConstFold(RewriteContext& ctx, ExprId id) {
     const Types::ExprChunk delta = (lhsConst - rhs.knownValue) & mask;
 
     if (newInputs.empty())
-        return store->createConstant(delta, bitWidth).id;
+        return ctx.replace(id, store->createConstant(delta, bitWidth).id);
 
     auto makeNonConst = [&]() -> ExprId {
         if (newInputs.size() == 1)
@@ -382,19 +382,20 @@ static ExprId Rewrite_SubConstFold(RewriteContext& ctx, ExprId id) {
     };
 
     if (delta == 0)
-        return makeNonConst();
+        return ctx.replace(id, makeNonConst());
 
     const Types::ExprChunk positiveLimit = mask >> 1;
 
     if (delta <= positiveLimit) {
         newInputs.push_back(store->createConstant(delta, bitWidth).id);
-        return store->create(OpType::Add, std::move(newInputs), bitWidth).id;
+        return ctx.replace(id, store->create(OpType::Add, std::move(newInputs), bitWidth).id);
     }
 
     const ExprId nonConst = makeNonConst();
     const Types::ExprChunk subtrahend = (rhs.knownValue - lhsConst) & mask;
 
-    return store->create(OpType::Sub, {nonConst, store->createConstant(subtrahend, bitWidth).id}, bitWidth).id;
+    return ctx.replace(
+        id, store->create(OpType::Sub, {nonConst, store->createConstant(subtrahend, bitWidth).id}, bitWidth).id);
 }
 
 static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
@@ -452,20 +453,20 @@ static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
 
     auto buildAdd = [&](ExprInputs& terms) -> ExprId {
         if (terms.empty())
-            return store->createConstant(0, bitWidth).id;
+            return ctx.replace(id, store->createConstant(0, bitWidth).id);
         if (terms.size() == 1)
-            return terms[0];
-        return store->create(OpType::Add, std::move(terms), bitWidth).id;
+            return ctx.replace(id, terms[0]);
+        return ctx.replace(id, store->create(OpType::Add, std::move(terms), bitWidth).id);
     };
 
     ExprId positiveExpr = buildAdd(remainingPositives);
 
     if (remainingNegatives.empty())
-        return positiveExpr;
+        return ctx.replace(id, positiveExpr);
 
     ExprId negativeExpr = buildAdd(remainingNegatives);
 
-    return store->create(OpType::Sub, {positiveExpr, negativeExpr}, bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Sub, {positiveExpr, negativeExpr}, bitWidth).id);
 }
 
 static ExprId Rewrite_SubMulLinearCancel(RewriteContext& ctx, ExprId id) {
@@ -512,18 +513,18 @@ static ExprId Rewrite_SubMulLinearCancel(RewriteContext& ctx, ExprId id) {
 
     Types::ExprChunk coeff = (lhsCoeff - rhsCoeff) & mask;
     if (coeff == 0)
-        return store->zeroId();
+        return ctx.replace(id, store->zeroId());
     if (coeff == mask)
-        return store->create(OpType::Neg, {lhsBase}, bitWidth).id;
+        return ctx.replace(id, store->create(OpType::Neg, {lhsBase}, bitWidth).id);
     if (coeff == 1)
-        return lhsBase;
+        return ctx.replace(id, lhsBase);
 
     const ExprId coeffId = store->createConstant(coeff, bitWidth).id;
     ExprInputs mulInputs{lhsBase, coeffId};
 
     if (mulInputs.size() == 1)
-        return mulInputs[0];
-    return store->create(OpType::Mul, std::move(mulInputs), bitWidth).id;
+        return ctx.replace(id, mulInputs[0]);
+    return ctx.replace(id, store->create(OpType::Mul, std::move(mulInputs), bitWidth).id);
 }
 
 static ExprId Rewrite_MulDivConstantReduction(RewriteContext& ctx, ExprId id) {
@@ -553,10 +554,10 @@ static ExprId Rewrite_MulDivConstantReduction(RewriteContext& ctx, ExprId id) {
         return id;
 
     if (newMulInputs.empty())
-        return store->createConstant(1, bitWidth).id;
+        return ctx.replace(id, store->createConstant(1, bitWidth).id);
     if (newMulInputs.size() == 1)
-        return newMulInputs[0];
-    return store->create(OpType::Mul, std::move(newMulInputs), bitWidth).id;
+        return ctx.replace(id, newMulInputs[0]);
+    return ctx.replace(id, store->create(OpType::Mul, std::move(newMulInputs), bitWidth).id);
 }
 
 static ExprId Rewrite_MulToPow(RewriteContext& ctx, ExprId id) {
@@ -590,11 +591,11 @@ static ExprId Rewrite_MulToPow(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->createConstant(1, bitWidth).id;
+        return ctx.replace(id, store->createConstant(1, bitWidth).id);
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(OpType::Mul, std::move(newInputs), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Mul, std::move(newInputs), bitWidth).id);
 }
 
 static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
@@ -686,7 +687,7 @@ static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->createConstant(1, bw).id;
+        return ctx.replace(id, store->createConstant(1, bw).id);
 
     for (std::size_t i = 0; i < inputs.size(); ++i) {
         if (consumed[i])
@@ -701,12 +702,12 @@ static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.size() == 1)
-        return negateResult ? store->create(OpType::Neg, {newInputs[0]}, bw).id : newInputs[0];
+        return ctx.replace(id, negateResult ? store->create(OpType::Neg, {newInputs[0]}, bw).id : newInputs[0]);
 
     ExprId result = store->create(OpType::Mul, std::move(newInputs), bw).id;
     if (negateResult)
-        return store->create(OpType::Neg, {result}, bw).id;
-    return result;
+        return ctx.replace(id, store->create(OpType::Neg, {result}, bw).id);
+    return ctx.replace(id, result);
 }
 #pragma endregion
 

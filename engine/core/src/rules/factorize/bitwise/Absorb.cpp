@@ -67,7 +67,7 @@ static ExprId Rewrite_AndAbsorb(RewriteContext& ctx, ExprId id) {
             const Expr& exprB = (*store)[b];
 
             if (exprB.op == OpType::Or && ContainsExpr(store, b, a))
-                return a;
+                return ctx.replace(id, a);
         }
     }
 
@@ -89,7 +89,7 @@ static ExprId Rewrite_OrAbsorb(RewriteContext& ctx, ExprId id) {
             const Expr& exprB = (*store)[b];
 
             if (exprB.op == OpType::And && ContainsExpr(store, b, a))
-                return a;
+                return ctx.replace(id, a);
         }
     }
 

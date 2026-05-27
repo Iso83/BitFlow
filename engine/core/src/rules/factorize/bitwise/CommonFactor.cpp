@@ -170,9 +170,9 @@ static ExprId Rewrite_XorAnd(RewriteContext& ctx, ExprId id) {
     }
 
     if (finalInputs.size() == 1)
-        return finalInputs[0];
+        return ctx.replace(id, finalInputs[0]);
 
-    return store->create(OpType::Xor, std::move(finalInputs), bitWidth).id;
+    return ctx.replace(id, store->create(OpType::Xor, std::move(finalInputs), bitWidth).id);
 }
 
 Rule Get_XorAnd_Rule() {

@@ -48,7 +48,7 @@ static ExprId Rewrite_AndZero(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
-    return store->makeFalse(e.bitWidth).id;
+    return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 }
 
 static ExprId Rewrite_OrZero(RewriteContext& ctx, ExprId id) {
@@ -65,12 +65,12 @@ static ExprId Rewrite_OrZero(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->makeFalse(e.bitWidth).id;
+        return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
 static ExprId Rewrite_XorZero(RewriteContext& ctx, ExprId id) {
@@ -87,12 +87,12 @@ static ExprId Rewrite_XorZero(RewriteContext& ctx, ExprId id) {
     }
 
     if (newInputs.empty())
-        return store->makeFalse(e.bitWidth).id;
+        return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 
     if (newInputs.size() == 1)
-        return newInputs[0];
+        return ctx.replace(id, newInputs[0]);
 
-    return store->create(e.op, std::move(newInputs), e.bitWidth).id;
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 #pragma endregion
 

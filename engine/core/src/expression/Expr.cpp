@@ -1,5 +1,3 @@
-#pragma once
-
 #include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/helper/Exception.h>
 #include <iostream>
