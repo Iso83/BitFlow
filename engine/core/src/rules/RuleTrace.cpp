@@ -1,5 +1,6 @@
 #include <BitFlow/core/rules/RuleTrace.h>
 #include <iostream>
+#include <memory>
 
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
