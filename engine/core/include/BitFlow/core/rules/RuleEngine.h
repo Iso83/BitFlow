@@ -16,7 +16,13 @@ class RuleEngine {
   public:
     int maxIterations = 64;
 
-    using DebugCallback = std::function<void(Ids::ExprId before, Ids::ExprId after, RuleKey key)>;
+    struct DebugCallBack_Ctx {
+        RuleKey key;
+        Expression::ExprStore* store = nullptr;
+        std::function<void(Ids::ExprId)> beginCallback;
+        std::function<void(Ids::ExprId)> endCallback;
+    };
+    using DebugCallback = std::function<void(DebugCallBack_Ctx& ctx)>;
 
   private:
     DebugCallback m_debugCallback;

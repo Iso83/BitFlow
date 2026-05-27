@@ -4,6 +4,7 @@
 
 #include <BitFlow/core/expression/ExprPrinter.h>
 #include <BitFlow/core/rules/RuleEngine.h>
+#include <BitFlow/core/rules/RuleTrace.h>
 #include <iostream>
 
 namespace BitFlow::Testing {
@@ -59,14 +60,9 @@ inline Core::Expression::ExprRef Rewrite(Core::Rules::RuleEngine& engine, Core::
     std::cout << "=== Rewrite Trace ===" << std::endl;
     std::cout << "Input : " << ToString(e.store, e.id, *traceNames, options) << std::endl;
 
-    engine.SetDebugCallback([traceNames, step = 0, e, options](Core::Ids::ExprId before, Core::Ids::ExprId after,
-                                                               Core::Rules::RuleKey key) mutable {
-        if (before == after)
-            return;
-
-        std::cout << "#" << step++ << " [" << key.value << "] " << ToString(e.store, before, *traceNames, options)
-                  << " -> " << ToString(e.store, after, *traceNames, options) << std::endl;
-    });
+    std::cout << "Trace: " << std::endl;
+    Core::Rules::AttachConsoleTrace(engine, *traceNames, options);
+    std::cout << std::endl;
 
     auto result = Rewrite(e.store, engine, e.id);
 

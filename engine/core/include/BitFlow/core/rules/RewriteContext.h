@@ -18,12 +18,16 @@ class RewriteContext final {
     explicit RewriteContext(Expression::ExprStore* store) : m_store(store) {}
 
   public:
+    bool changed = false;
+
     inline void replace(Ids::ExprId oldId, Ids::ExprId newId) {
         m_store->replace(oldId, newId);
+        changed = true;
     }
 
     inline void release(Ids::ExprId oldId) {
         m_store->release(oldId);
+        changed = true;
     }
 
     [[nodiscard]] operator Expression::ExprStore*() const {

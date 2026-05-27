@@ -29,15 +29,29 @@ ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id) const {
         if (!r.match(store, id))
             continue;
 
-        const ExprId before = id;
-        const ExprId after = r.rewrite(ctx, id);
+        ctx.changed = false;
 
-        if (after != before) {
-            if (m_debugCallback)
-                m_debugCallback(before, after, r.key);
+        ExprId after;
 
-            return after;
-        }
+        if (m_debugCallback) {
+            DebugCallBack_Ctx debugCtx{.key = r.key, .store = store};
+
+            m_debugCallback(debugCtx);
+
+            if (debugCtx.beginCallback)
+                debugCtx.beginCallback(id);
+
+            after = r.rewrite(ctx, id);
+
+            if (debugCtx.endCallback)
+                debugCtx.endCallback(after);
+
+        } else
+            after = r.rewrite(ctx, id);
+
+        // BF_CORE_ASSERT(ctx.changed);
+
+        return after;
     }
 
     return id;

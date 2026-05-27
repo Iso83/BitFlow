@@ -47,7 +47,6 @@ struct Expr {
 };
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
-
 struct ExprDebug {
   private:
     template <typename T> friend class FieldHook;

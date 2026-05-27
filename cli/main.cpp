@@ -1,6 +1,7 @@
 #include <BitFlow/core/expression/ExprPrinter.h>
 #include <BitFlow/core/expression/ExprStore.h>
 #include <BitFlow/core/rules/RulePipeline.h>
+#include <BitFlow/core/rules/RuleTrace.h>
 #include <BitFlow/io/ExprParser.h>
 #include <iostream>
 #include <string>
@@ -11,6 +12,7 @@
 
 using namespace BitFlow::Core;
 using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Rules;
 using namespace BitFlow::IO;
 
@@ -88,13 +90,8 @@ int main(int argc, char* argv[]) {
             engine.Merge(BuildFactorizeBitwise());
 
             if (trace) {
-                engine.SetDebugCallback([&](auto before, auto after, auto key) {
-                    std::cout << "  " << key.value << "\n";
-
-                    std::cout << "    " << ToString(&store, before, parsed.names, printOptions) << "\n";
-
-                    std::cout << "    -> " << ToString(&store, after, parsed.names, printOptions) << "\n";
-                });
+                std::cout << "\nTrace:\n";
+                AttachConsoleTrace(engine, parsed.names, printOptions);
             }
 
             ExprRef result = ExprRef(&store, engine.ApplyRecursive(&store, parsed.root.id));

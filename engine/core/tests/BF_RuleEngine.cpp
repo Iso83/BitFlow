@@ -4,6 +4,7 @@
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Rules;
 
 int TestAddRule_NoDuplicates() {
@@ -97,23 +98,36 @@ int TestDebugCallback() {
 
     BF_VALIDATE_ENGINE(engine, Simplify::Bitwise::Get_XorCancel_Rule());
 
-    bool called = false;
+    bool callbackCalled = false;
+    bool beginCalled = false;
+    bool endCalled = false;
     bool validCallback = true;
+    bool ctxStore = false;
 
-    engine.SetDebugCallback([&](auto before, auto after, auto key) {
-        called = true;
-        if (before == after)
+    engine.SetDebugCallback([&](RuleEngine::DebugCallBack_Ctx& debugCtx) {
+        callbackCalled = true;
+
+        if (!(debugCtx.key == Simplify::Bitwise::XorCancel))
             validCallback = false;
-        if (!(key == Simplify::Bitwise::XorCancel))
-            validCallback = false;
+
+        if (debugCtx.store)
+            ctxStore = true;
+
+        debugCtx.beginCallback = [&](ExprId id) { beginCalled = true; };
+
+        debugCtx.endCallback = [&](ExprId id) { endCalled = true; };
     });
 
     auto x = V("x");
 
     BF_SAFE_REWRITE(r, Rewrite(engine, x ^ x));
 
-    BF_TEST(called);
+    BF_TEST(callbackCalled);
+    BF_TEST(beginCalled);
+    BF_TEST(endCalled);
     BF_TEST(validCallback);
+    BF_TEST(ctxStore);
+
     BF_TEST(IsFalse(r));
 
     return 0;
