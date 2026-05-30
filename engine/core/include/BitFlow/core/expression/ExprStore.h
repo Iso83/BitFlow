@@ -40,6 +40,7 @@ class ExprStore {
 #else
     std::vector<Expr> m_nodes{};
 #endif
+    std::vector<Ids::ExprId> m_redirects{};
     std::vector<bool> m_alive{};
 #pragma endregion
 
@@ -129,6 +130,7 @@ class ExprStore {
         m_generation++;
 #endif
         m_nodes.resize(size);
+        m_redirects.resize(size);
         m_alive.resize(size, false);
     }
 
@@ -138,27 +140,49 @@ class ExprStore {
     [[nodiscard]] Expr& MakeDebugExpr(Ids::ExprId id);
 #endif
 
+    [[nodiscard]] Ids::ExprId resolve(Ids::ExprId id) {
+        Ids::ExprId root = id;
+
+        while (m_redirects[root.value()] != root)
+            root = m_redirects[root.value()];
+
+        while (id != root) {
+            Ids::ExprId next = m_redirects[id.value()];
+            m_redirects[id.value()] = root;
+            id = next;
+        }
+
+        return root;
+    }
+
+    [[nodiscard]] Ids::ExprId resolve(Ids::ExprId id) const {
+        while (m_redirects[id.value()] != id)
+            id = m_redirects[id.value()];
+
+        return id;
+    }
+
     [[nodiscard]] Expr& get(Ids::ExprId id) {
+        id = resolve(id);
+
 #ifdef BF_EXPR_LIFETIME_CHECKS
         return MakeDebugExpr(id);
 #else
-        return m_nodes[toIndex(id)];
+        return m_nodes[id.value()];
 #endif
-    }
-
-    [[nodiscard]] static size_t toIndex(Ids::ExprId id) {
-        return static_cast<size_t>(id.value());
     }
 
     [[nodiscard]] const Expr& get(Ids::ExprId id) const {
+        id = resolve(id);
+
 #ifdef BF_EXPR_LIFETIME_CHECKS
         return const_cast<ExprStore*>(this)->MakeDebugExpr(id);
 #else
-        return m_nodes[toIndex(id)];
+        return m_nodes[id.value()];
 #endif
     }
 
-    void replace(Ids::ExprId oldId, Ids::ExprId newId) {}
+    void replace(Ids::ExprId oldId, Ids::ExprId newId);
     void release(Ids::ExprId oldId) {}
 #pragma endregion
 };

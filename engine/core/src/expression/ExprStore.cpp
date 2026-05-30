@@ -55,11 +55,10 @@ ExprStore::ExprStore() {
     BF_CORE_ASSERT(bitWidth > 0);
 
     const auto id = createId();
-    const auto index = toIndex(id);
 
-    ensureCapacity(index + 1);
+    ensureCapacity(id.value() + 1);
 
-    auto& expr = m_nodes[index];
+    auto& expr = m_nodes[id.value()];
 #ifdef BF_EXPR_LIFETIME_CHECKS
     expr = ExprUnsafeStorage{};
 #else
@@ -69,7 +68,8 @@ ExprStore::ExprStore() {
     expr.bitWidth = bitWidth;
     expr.inputs = in;
 
-    m_alive[index] = true;
+    m_redirects[id.value()] = id;
+    m_alive[id.value()] = true;
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
     if (m_nextDebugSlot >= m_debugExprs.size())
@@ -90,11 +90,10 @@ ExprStore::ExprStore() {
     BF_CORE_ASSERT(bitWidth > 0);
 
     const auto id = createId();
-    const auto index = toIndex(id);
 
-    ensureCapacity(index + 1);
+    ensureCapacity(id.value() + 1);
 
-    auto& expr = m_nodes[index];
+    auto& expr = m_nodes[id.value()];
 #ifdef BF_EXPR_LIFETIME_CHECKS
     expr = ExprUnsafeStorage{};
 #else
@@ -104,7 +103,8 @@ ExprStore::ExprStore() {
     expr.bitWidth = bitWidth;
     expr.inputs = std::move(in);
 
-    m_alive[index] = true;
+    m_redirects[id.value()] = id;
+    m_alive[id.value()] = true;
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
     if (m_nextDebugSlot >= m_debugExprs.size())
@@ -127,9 +127,7 @@ ExprStore::ExprStore() {
     if (!contains(ref))
         return false;
 
-    const auto index = toIndex(ref.id);
-
-    m_alive[index] = false;
+    m_alive[ref.id.value()] = false;
     m_freeIds.push_back(ref.id.value());
 
     return true;
@@ -139,12 +137,12 @@ ExprStore::ExprStore() {
     if (ref.store != this || ref.id.value() == 0)
         return false;
 
-    const auto index = toIndex(ref.id);
+    const auto resolved = resolve(ref.id);
 
-    if (index >= m_alive.size())
+    if (resolved.value() >= m_alive.size())
         return false;
 
-    return m_alive[index];
+    return m_alive[resolved.value()];
 }
 #pragma endregion
 
@@ -279,12 +277,22 @@ void CollectEquivalentInputs(const ExprStore& store, ExprId id, OpType op, ExprI
     auto& debugExpr = m_debugExprs[m_nextDebugSlot++];
     debugExpr.m_store = this;
     debugExpr.m_id = id;
-    debugExpr.m_expr = &m_nodes[toIndex(id)];
+    debugExpr.m_expr = &m_nodes[id.value()];
     debugExpr.m_generation = m_generation;
 
     return debugExpr;
 }
 #endif
+
+void ExprStore::replace(ExprId oldId, ExprId newId) {
+    oldId = resolve(oldId);
+    newId = resolve(newId);
+
+    if (oldId == newId)
+        return;
+
+    m_redirects[oldId.value()] = newId;
+}
 #pragma endregion
 
 } // namespace BitFlow::Core::Expression
