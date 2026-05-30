@@ -116,7 +116,7 @@ static ExprId Rewrite_DivSelf(RewriteContext& ctx, ExprId id) {
 static ExprId Rewrite_ModOne(RewriteContext& ctx, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    return ctx.replace(id, store->createConstant(0, e.bitWidth).id);
+    return ctx.replace(id, store->zeroId());
 }
 
 #pragma endregion

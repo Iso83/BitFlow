@@ -584,12 +584,12 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id
             remaining.push_back(extraId);
 
         if (remaining.empty())
-            return ctx.replace(id, store->createConstant(1, bitWidth).id);
+            return store->createConstant(1, bitWidth).id;
 
         if (remaining.size() == 1)
-            return ctx.replace(id, remaining[0]);
+            return remaining[0];
 
-        return ctx.replace(id, store->create(OpType::Mul, std::move(remaining), bitWidth).id);
+        return store->create(OpType::Mul, std::move(remaining), bitWidth).id;
     };
 
     const ExprId newLhs = buildProduct(lhsInputs, lhsConsumed, lhsExtraFactors);

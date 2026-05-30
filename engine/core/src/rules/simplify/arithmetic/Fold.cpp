@@ -331,7 +331,7 @@ static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
         nonConst.push_back(store->createConstant(acc, e.bitWidth).id);
 
     if (nonConst.empty())
-        return ctx.replace(id, store->createConstant(0, e.bitWidth).id);
+        return ctx.replace(id, store->zeroId());
 
     if (nonConst.size() == 1)
         return ctx.replace(id, nonConst[0]);
@@ -453,10 +453,10 @@ static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
 
     auto buildAdd = [&](ExprInputs& terms) -> ExprId {
         if (terms.empty())
-            return ctx.replace(id, store->createConstant(0, bitWidth).id);
+            return store->zeroId();
         if (terms.size() == 1)
-            return ctx.replace(id, terms[0]);
-        return ctx.replace(id, store->create(OpType::Add, std::move(terms), bitWidth).id);
+            return terms[0];
+        return store->create(OpType::Add, std::move(terms), bitWidth).id;
     };
 
     ExprId positiveExpr = buildAdd(remainingPositives);

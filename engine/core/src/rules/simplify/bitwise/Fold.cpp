@@ -147,7 +147,7 @@ static ExprId Rewrite_XorFold(RewriteContext& ctx, ExprId id) {
         nonConst.push_back(store->createConstant(acc, e.bitWidth).id);
 
     if (nonConst.empty())
-        return ctx.replace(id, store->createConstant(0, e.bitWidth).id);
+        return ctx.replace(id, store->zeroId());
 
     if (nonConst.size() == 1)
         return ctx.replace(id, nonConst[0]);
