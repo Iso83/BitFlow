@@ -119,10 +119,10 @@ inline bool IsFullyConstant(const Core::Expression::ExprRef root) {
         return BitFlow::Core::Expression::ToString(root.store, root.id, _names.empty() ? names : _names, options);     \
     };                                                                                                                 \
     auto False = [&](BitFlow::Core::Types::BitWidth bitWidth = bw) {                                                   \
-        return ExprRef(&store, store.makeFalse(bitWidth).id);                                                          \
+        return BitFlow::Core::Expression::ExprRef(&store, store.makeFalse(bitWidth).id);                               \
     };                                                                                                                 \
     auto True = [&](BitFlow::Core::Types::BitWidth bitWidth = bw) {                                                    \
-        return ExprRef(&store, store.makeTrue(bitWidth).id);                                                           \
+        return BitFlow::Core::Expression::ExprRef(&store, store.makeTrue(bitWidth).id);                                \
     };                                                                                                                 \
     LAMBDA_IO_PRASE
 

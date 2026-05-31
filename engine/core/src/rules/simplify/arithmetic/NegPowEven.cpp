@@ -8,7 +8,7 @@ namespace BitFlow::Core::Rules::Simplify::Arithmetic {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_NegPowEven(const ExprStore* store, ExprId id) {
+static bool Match_NegPowEven(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Pow || e.inputs.size() != 2)
         return false;
@@ -21,7 +21,7 @@ static bool Match_NegPowEven(const ExprStore* store, ExprId id) {
     return exp.op == OpType::Const && ((exp.knownValue & 1u) == 0u);
 }
 
-static ExprId Rewrite_NegPowEven(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_NegPowEven(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     BF_CORE_ASSERT(e.op == OpType::Pow && e.inputs.size() == 2);

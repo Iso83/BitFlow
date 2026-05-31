@@ -31,13 +31,13 @@ bool TryMatch(const ExprStore* store, ExprId id, ExprId& lhsBaseOut, ExprId& rhs
 
 } // namespace
 
-static bool Match_DifferenceOfSquares(const ExprStore* store, ExprId id) {
+static bool Match_DifferenceOfSquares(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     ExprId lhsBase{};
     ExprId rhsBase{};
     return TryMatch(store, id, lhsBase, rhsBase);
 }
 
-static ExprId Rewrite_DifferenceOfSquares(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_DifferenceOfSquares(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     ExprId lhsBase{};
     ExprId rhsBase{};

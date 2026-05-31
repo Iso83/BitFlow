@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -19,7 +19,7 @@ int TestAndXorReduction_RightXor() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x & (x ^ y)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x & (x ^ y)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
@@ -43,7 +43,7 @@ int TestAndXorReduction_MultiArgAnd() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, c & (a ^ c) & (b ^ c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(c & (a ^ c) & (b ^ c)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));

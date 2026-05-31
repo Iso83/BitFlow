@@ -12,7 +12,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-template <OpType Op> static bool Match_RightZero(const ExprStore* store, ExprId id) {
+template <OpType Op> static bool Match_RightZero(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != Op)
@@ -30,7 +30,7 @@ template <OpType Op> static bool Match_RightZero(const ExprStore* store, ExprId 
 }
 #pragma endregion
 
-static bool Match_SubSelf(const ExprStore* store, ExprId id) {
+static bool Match_SubSelf(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Sub)
@@ -42,7 +42,7 @@ static bool Match_SubSelf(const ExprStore* store, ExprId id) {
     return e.inputs[0] == e.inputs[1];
 }
 
-static bool Match_ModSelf(const ExprStore* store, ExprId id) {
+static bool Match_ModSelf(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Mod)
@@ -54,7 +54,7 @@ static bool Match_ModSelf(const ExprStore* store, ExprId id) {
     return e.inputs[0] == e.inputs[1];
 }
 
-static bool Match_PowZero(const ExprStore* store, ExprId id) {
+static bool Match_PowZero(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Pow)
         return false;
@@ -66,7 +66,7 @@ static bool Match_PowZero(const ExprStore* store, ExprId id) {
 }
 
 #pragma region Rewrite
-static ExprId Rewrite_AddZero(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_AddZero(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -92,7 +92,7 @@ static ExprId Rewrite_AddZero(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Add, std::move(newInputs), bitWidth).id);
 }
 
-static ExprId Rewrite_MulZero(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_MulZero(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -102,7 +102,7 @@ static ExprId Rewrite_MulZero(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 }
 
-static ExprId Rewrite_SubZero(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_SubZero(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -130,28 +130,28 @@ static ExprId Rewrite_SubZero(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Sub, std::move(newInputs), bitWidth).id);
 }
 
-static ExprId Rewrite_SubSelf(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_SubSelf(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 }
 
-static ExprId Rewrite_ModSelf(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_ModSelf(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 }
 
-static ExprId Rewrite_PowZero(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_PowZero(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     return ctx.replace(id, store->createConstant(1, e.bitWidth).id);
 }
 
-static ExprId Rewrite_ShiftZero(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_ShiftZero(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -160,7 +160,7 @@ static ExprId Rewrite_ShiftZero(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, e.inputs[0]);
 }
 
-static ExprId Rewrite_RotateZero(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_RotateZero(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -196,8 +196,9 @@ Rule Get_PowZero_Rule() {
 
 Rule Get_ShiftZero_Rule() {
     return Rule{ShiftZero,
-                [](const ExprStore* store, ExprId id) {
-                    return Match_RightZero<OpType::Shl>(store, id) || Match_RightZero<OpType::Shr>(store, id);
+                [](const ExprStore* store, const ExprNameMap* names, ExprId id) {
+                    return Match_RightZero<OpType::Shl>(store, names, id) ||
+                           Match_RightZero<OpType::Shr>(store, names, id);
                 },
                 &Rewrite_ShiftZero,
                 {Normalize::Flatten}};
@@ -205,8 +206,9 @@ Rule Get_ShiftZero_Rule() {
 
 Rule Get_RotateZero_Rule() {
     return Rule{RotateZero,
-                [](const ExprStore* store, ExprId id) {
-                    return Match_RightZero<OpType::RotL>(store, id) || Match_RightZero<OpType::RotR>(store, id);
+                [](const ExprStore* store, const ExprNameMap* names, ExprId id) {
+                    return Match_RightZero<OpType::RotL>(store, names, id) ||
+                           Match_RightZero<OpType::RotR>(store, names, id);
                 },
                 &Rewrite_RotateZero,
                 {Normalize::Bitwise::RotateModulo}};

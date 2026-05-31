@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -18,7 +18,7 @@ int TestMulOne_Nested() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (x * 1) * 1));
+    BF_SAFE_REWRITE(r, BF_REWRITE((x * 1) * 1));
 
     BF_TEST(r == x);
     return 0;
@@ -34,7 +34,7 @@ int TestMulOne_AllOnesBecomeConstOne() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(1) * 1 * 1));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(1) * 1 * 1));
 
     BF_TEST(EqualChunkValue(r, 1u));
     return 0;
@@ -52,7 +52,7 @@ int TestMulOne_CanonicalOrderRegression() {
 
     auto x = V("x");
     auto y = V("y");
-    BF_SAFE_REWRITE(r, Rewrite(engine, y * 1 * x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(y * 1 * x));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -72,7 +72,7 @@ int TestDivOne_Basic() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x / 1));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x / 1));
 
     BF_TEST(r == x);
     return 0;
@@ -89,7 +89,7 @@ int TestPowOne_Basic() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(1)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x.Pow(1)));
 
     BF_TEST(r == x);
     return 0;
@@ -107,7 +107,7 @@ int TestPowOne_GuardExponentTwoStaysPow() {
     auto x = V("x");
     auto expr = x.Pow(2);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;
@@ -125,7 +125,7 @@ int TestDivOne_GuardLeftOneStaysDiv() {
     auto x = V("x");
     auto expr = C(1) / x;
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;
@@ -142,7 +142,7 @@ int TestDivSelf_Basic() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x / x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x / x));
 
     BF_TEST(EqualChunkValue(r, 1u));
     return 0;
@@ -161,7 +161,7 @@ int TestDivSelf_DifferentInputsStayDiv() {
     auto y = V("y");
     auto expr = x / y;
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;
@@ -178,7 +178,7 @@ int TestModOne_Basic() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x % 1));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x % 1));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -196,7 +196,7 @@ int TestModOne_GuardDifferentDivisorStaysMod() {
     auto x = V("x");
     auto expr = x % 2;
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;

@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -20,7 +20,7 @@ int TestXorAndCommonFactor() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a & b) ^ (a & c)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
@@ -51,7 +51,7 @@ int TestXorAndCommonFactor_MultiInput() {
     auto c = V("c");
     auto d = V("d");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c) ^ (a & d)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a & b) ^ (a & c) ^ (a & d)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
@@ -82,7 +82,7 @@ int TestXorAndFactor_Basic() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a & b) ^ (a & c)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
@@ -113,7 +113,7 @@ int TestXorAndFactor_WithUntouchedTerm() {
     auto c = V("c");
     auto d = V("d");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c) ^ d));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a & b) ^ (a & c) ^ d));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);
@@ -150,7 +150,7 @@ int TestXorAndFactor_NoMatch() {
     auto d = V("d");
     auto expr = (a & b) ^ (c & d);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;
@@ -172,7 +172,7 @@ int TestXorAndFactor_MultiFactorChoice_PicksMostFrequent() {
     auto d = V("d");
     auto e = V("e");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c) ^ (a & d) ^ (b ^ e)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a & b) ^ (a & c) ^ (a & d) ^ (b ^ e)));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 3);
@@ -209,7 +209,7 @@ int TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a & b) ^ (a & c) ^ (b & c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a & b) ^ (a & c) ^ (b & c)));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);
@@ -259,7 +259,7 @@ int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
 
     auto expr = f ^ a & (b & c ^ d & e);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;

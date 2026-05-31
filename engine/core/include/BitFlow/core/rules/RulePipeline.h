@@ -57,11 +57,11 @@ inline RuleEngine BuildSimplifyBitwise() {
     // Logical
     e.AddRule(Simplify::Bitwise::Get_Complement_Rule());
 
-    // Dominance
-    e.AddRule(Simplify::Bitwise::Get_AndZero_Rule());
+    // Dominance, Identity
+    e.AddRule(Simplify::Bitwise::Get_AndZeroDominance_Rule());
     e.AddRule(Simplify::Bitwise::Get_AndOneIdentity_Rule());
     e.AddRule(Simplify::Bitwise::Get_OrOneDominance_Rule());
-    e.AddRule(Simplify::Bitwise::Get_OrZero_Rule());
+    e.AddRule(Simplify::Bitwise::Get_OrZeroIdentity_Rule());
 
     return e;
 }

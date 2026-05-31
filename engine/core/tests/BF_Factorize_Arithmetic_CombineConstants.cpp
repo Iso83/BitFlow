@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -19,7 +19,7 @@ int TestFactorize_CombineNestedMulConstants() {
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(3) * (a * 2)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(3) * (a * 2)));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -42,7 +42,7 @@ int TestSimplify_CombineMulConstants_NonAdjacent() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(2) * a * 3));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(2) * a * 3));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);

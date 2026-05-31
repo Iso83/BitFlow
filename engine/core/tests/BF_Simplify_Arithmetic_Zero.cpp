@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -18,7 +18,7 @@ int TestAddZero_Nested() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (x + 0) + 0))
+    BF_SAFE_REWRITE(r, BF_REWRITE((x + 0) + 0))
 
     BF_TEST(r == x);
     return 0;
@@ -34,7 +34,7 @@ int TestAddZero_AllZerosBecomeConstZero() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(0) + 0 + 0));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(0) + 0 + 0));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -53,7 +53,7 @@ int TestAddZero_CanonicalOrderRegression() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, y + 0 + x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(y + 0 + x));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -73,7 +73,7 @@ int TestMulZero_Nested() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (x * 0) * x));
+    BF_SAFE_REWRITE(r, BF_REWRITE((x * 0) * x));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -91,7 +91,7 @@ int TestMulZero_DominanceWithMixedInputs() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * y * 0));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * y * 0));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -108,7 +108,7 @@ int TestSubZero_Basic() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x - 0));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x - 0));
 
     BF_TEST(r == x);
     return 0;
@@ -124,7 +124,7 @@ int TestPowZero_Basic() {
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto x = V("x");
-    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(0)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x.Pow(0)));
 
     BF_TEST(EqualChunkValue(r, 1u));
     return 0;
@@ -141,7 +141,7 @@ int TestPowZero_GuardExponentOneStaysPow() {
 
     auto x = V("x");
     auto expr = x.Pow(1);
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;
@@ -157,7 +157,7 @@ int TestSubZero_LeftZeroBecomesNeg() {
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto x = V("x");
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(0) - x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(0) - x));
 
     BF_TEST(Op(r) == OpType::Neg);
     BF_TEST(InputSize(r) == 1);
@@ -176,7 +176,7 @@ int TestSubSelf_Basic() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x - x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x - x));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -195,7 +195,7 @@ int TestSubSelf_DifferentInputsStaySub() {
     auto y = V("y");
 
     auto expr = x - y;
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;
@@ -212,7 +212,7 @@ int TestModSelf_Basic() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x % x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x % x));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -231,7 +231,7 @@ int TestModSelf_DifferentInputsStayMod() {
     auto y = V("y");
     auto expr = x % y;
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;
@@ -250,7 +250,7 @@ int TestShiftZero_Basic() {
 
     for (OpType op : {OpType::Shl, OpType::Shr}) {
         ExprRef expr = (op == OpType::Shl) ? (x << 0) : (x >> 0);
-        BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+        BF_SAFE_REWRITE(r, BF_REWRITE(expr));
         BF_TEST(r == x);
     }
 
@@ -269,7 +269,7 @@ int TestShiftZero_GuardLeftZeroStaysShift() {
 
     for (OpType op : {OpType::Shl, OpType::Shr}) {
         ExprRef expr = (op == OpType::Shl) ? (C(0) << x) : (C(0) >> x);
-        BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+        BF_SAFE_REWRITE(r, BF_REWRITE(expr));
         BF_TEST(r == expr);
     }
 
@@ -289,7 +289,7 @@ int TestRotateModulo_FullWidthBecomesIdentity() {
 
     for (OpType op : {OpType::RotL, OpType::RotR}) {
         ExprRef expr = (op == OpType::RotL) ? x.RotL(64) : x.RotR(64);
-        BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+        BF_SAFE_REWRITE(r, BF_REWRITE(expr));
         BF_TEST(r == x);
     }
 
@@ -309,7 +309,7 @@ int TestRotateModulo_GuardNonConstAmount() {
     auto n = V("n");
     auto expr = x.RotR(n);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
     BF_TEST(r == expr);
     return 0;
 }
@@ -326,7 +326,7 @@ int TestRotateModulo_Property_ConstantAmounts() {
     auto x = V("x");
 
     for (uint32_t amount = 0; amount < 128; ++amount) {
-        BF_SAFE_REWRITE(r, Rewrite(engine, x.RotR(amount)));
+        BF_SAFE_REWRITE(r, BF_REWRITE(x.RotR(amount)));
 
         const uint32_t reduced = amount % 32;
 
@@ -355,7 +355,7 @@ int TestRotateModulo_CanonicalOrderRegression() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, y + x.RotL(32)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(y + x.RotL(32)));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);

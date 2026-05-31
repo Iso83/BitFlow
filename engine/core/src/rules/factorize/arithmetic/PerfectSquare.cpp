@@ -173,13 +173,13 @@ bool TryMatch(const ExprStore* store, ExprId id, ExprId& root1Out, ExprId& root2
 
 } // namespace
 
-static bool Match_PerfectSquare(const ExprStore* store, ExprId id) {
+static bool Match_PerfectSquare(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     ExprId r1{}, r2{};
     bool neg = false;
     return TryMatch(store, id, r1, r2, neg);
 }
 
-static ExprId Rewrite_PerfectSquare(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_PerfectSquare(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     ExprId r1{}, r2{};
     bool neg = false;

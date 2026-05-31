@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Expression;
@@ -14,7 +14,7 @@ int TestSubToNeg_RewritesWhenOutOfOrder() {
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(1) - a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(1) - a));
 
     BF_TEST(Op(r) == OpType::Neg);
     BF_TEST(Op(Input(r, 0)) == OpType::Sub);
@@ -33,7 +33,7 @@ int TestSubToNeg_NoRewriteWhenCanonical() {
 
     auto a = V("a");
     auto expr = a - C(1);
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
     BF_TEST(r == expr);
     return 0;
 }
@@ -49,7 +49,7 @@ int TestSubToNeg_NoRewriteWhenLhsNotConst() {
     auto a = V("a");
     auto b = V("b");
     auto expr = a - b;
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
     BF_TEST(r == expr);
     return 0;
 }
@@ -64,7 +64,7 @@ int TestSubToNeg_NoRewriteWhenRhsConst() {
 
     auto a = V("a");
     auto expr = a - C(2);
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
     BF_TEST(r == expr);
     return 0;
 }
@@ -80,7 +80,7 @@ int TestSubToNeg_RewriteCompositeRhs() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(1) - (a + b)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(1) - (a + b)));
 
     BF_TEST(Op(r) == OpType::Neg);
 

@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -22,7 +22,7 @@ int Test_SubNeg_Basic() {
     const auto a = V("a");
     const auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a - (-b)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a - (-b)));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -43,7 +43,7 @@ int Test_SubNeg_ConstantFold() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(5) - (-C(7))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(5) - (-C(7))));
 
     BF_TEST(EqualChunkValue(r, 12u));
     return 0;

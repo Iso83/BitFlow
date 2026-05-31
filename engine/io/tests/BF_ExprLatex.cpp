@@ -2,7 +2,7 @@
 #include <BitFlow/io/ExprLatex.h>
 #include <BitFlow/io/ExprParser.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Testing;
@@ -221,7 +221,7 @@ int TestExprLatex_RewrittenNaryXor() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a ^ b ^ (a + C(8))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a ^ b ^ (a + C(8))));
 
     BF_TEST(ToLatex(r, names) == "a \\oplus b \\oplus (8 + a)");
 
@@ -234,7 +234,7 @@ int TestExprLatex_RewrittenMixedBitwiseArithmetic() {
     RuleEngine engine = BuildExplore();
     auto parsed = Parse("a^b+7|a+8*4-(f+f+f)-f**2");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, parsed.root));
+    BF_SAFE_REWRITE(r, BF_REWRITE(parsed.root));
 
     BF_TEST(!ToLatex(r, parsed.names).empty());
 

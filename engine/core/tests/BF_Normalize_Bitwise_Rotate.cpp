@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -16,7 +16,7 @@ int TestRotateModuloBitwidth_ReducesConstantAmount() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x.RotL(35)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x.RotL(35)));
 
     BF_TEST(Op(r) == OpType::RotL);
     BF_TEST(InputSize(r) == 2);

@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -40,7 +40,7 @@ int TestAddLinearMultiplicity_Basic() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a + a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a + a));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -61,7 +61,7 @@ int TestAddLinearMultiplicity_ImplicitAndExplicitCoeff() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a * 2) + a));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a * 2) + a));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -82,7 +82,7 @@ int TestAddLinearMultiplicity_MergesMultipleTerms() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a + (a * 2) + (a * 3)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a + (a * 2) + (a * 3)));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -104,7 +104,7 @@ int TestAddLinearMultiplicity_PreservesPassthroughTerms() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a + (a * 2) + b));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a + (a * 2) + b));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -125,7 +125,7 @@ static int TestAddLinearMultiplicity_Chain() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a - C(4) + a + a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a - C(4) + a + a));
 
     BF_TEST(Op(r) == OpType::Sub);
     BF_TEST(InputSize(r) == 2);
@@ -162,7 +162,7 @@ int TestAddCommonFactor_Basic() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a * b) + (a * c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a * b) + (a * c)));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -186,7 +186,7 @@ int TestAddCommonFactor_CommutativeMulOperands() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a * b) + (b * a)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a * b) + (b * a)));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 3);
@@ -212,7 +212,7 @@ int TestAddCommonFactor_PartialFactorization() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a * b) + (a * c) + c));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a * b) + (a * c) + c));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -233,7 +233,7 @@ int TestCommonFactorCancel_PowTerms_Basic() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, ((a.Pow(5) * C(2)) / (C(3) * a.Pow(5)))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(((a.Pow(5) * C(2)) / (C(3) * a.Pow(5)))));
 
     BF_TEST(Op(r) == OpType::Div);
     BF_TEST(InputSize(r) == 2);
@@ -262,7 +262,7 @@ int TestCommonFactorCancel_PowTerms_ExponentDifference() {
     // (a**8 * 2) / (3 * a**5)
     // => (2 * a**3) / 3
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, ((a.Pow(8) * C(2)) / (C(3) * a.Pow(5)))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(((a.Pow(8) * C(2)) / (C(3) * a.Pow(5)))));
 
     BF_TEST(Op(r) == OpType::Div);
     BF_TEST(InputSize(r) == 2);
@@ -302,7 +302,7 @@ int TestCommonFactorCancel_PowTerms_DirectDivision() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a.Pow(8) / a.Pow(5)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a.Pow(8) / a.Pow(5)));
 
     BF_TEST(IsPow(r, a, 3u));
     return 0;
@@ -318,7 +318,7 @@ int TestSubCommonDenominator() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(7) / C(8) - (C(5) / C(8))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(7) / C(8) - (C(5) / C(8))));
 
     BF_TEST(Op(r) == OpType::Div);
 
@@ -347,7 +347,7 @@ int TestSubCommonDenominator_Variables() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a / c) - (b / c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a / c) - (b / c)));
 
     BF_TEST(Op(r) == OpType::Div);
 
@@ -379,7 +379,7 @@ int TestSubCommonDenominator_DifferentDenominator_NoRewrite() {
     auto d = V("d");
 
     auto expr = (a / c) - (b / d);
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
 
@@ -405,7 +405,7 @@ int TestSubCommonDenominator_ComplexNumerator() {
     auto term1 = (a + b);
     auto term2 = (c * d);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (term1 / x) - (term2 / x)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((term1 / x) - (term2 / x)));
 
     BF_TEST(Op(r) == OpType::Div);
 
@@ -429,7 +429,7 @@ int TestSubCommonDenominator_WithLeadingAddTerm() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (C(40) + (C(5) / C(8))) - (C(3) / C(8))));
+    BF_SAFE_REWRITE(r, BF_REWRITE((C(40) + (C(5) / C(8))) - (C(3) / C(8))));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(AnyInput(r, [](ExprRef in) { return EqualChunkValue(in, 40u); }));
@@ -462,7 +462,7 @@ int TestAddCommonDenominator() {
     auto b = V("b");
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a / x) + (b / x)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a / x) + (b / x)));
 
     BF_TEST(Op(r) == OpType::Div);
 
@@ -489,7 +489,7 @@ int TestCommonFactorCancel_SubDivMul() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(5) / C(8) - ((C(3) / C(8)) * C(8))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(5) / C(8) - ((C(3) / C(8)) * C(8))));
 
     BF_TEST(Op(r) == OpType::Sub);
     BF_TEST(Op(Input(r, 0)) == OpType::Div);

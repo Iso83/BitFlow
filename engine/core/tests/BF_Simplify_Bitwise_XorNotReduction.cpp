@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -20,7 +20,7 @@ int TestXorNotReduction_Basic() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a ^ b) & ~a));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a ^ b) & ~a));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
@@ -44,7 +44,7 @@ int TestXorNotReduction_MultiXorArgs() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, ~a & (a ^ b ^ c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(~a & (a ^ b ^ c)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == a; }));
@@ -74,7 +74,7 @@ int TestXorNotReduction_IntegrationScenario() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a ^ b) & c & (a ^ c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a ^ b) & c & (a ^ c)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == b; }));

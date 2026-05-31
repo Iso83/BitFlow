@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -16,7 +16,7 @@ int TestNotDoubleNegation() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, ~~x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(~~x));
 
     BF_TEST(r == x);
     return 0;
@@ -30,7 +30,7 @@ int TestNotConst() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, ~C(0b1010)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(~C(0b1010)));
 
     BF_TEST(EqualChunkValue(r, 0b0101u));
     return 0;
@@ -47,7 +47,7 @@ int TestNotPushdown_And() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, ~(a & b)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(~(a & b)));
 
     BF_TEST(Op(r) == OpType::Or);
     BF_TEST(InputSize(r) == 2);
@@ -67,7 +67,7 @@ int TestNotPushdown_Or() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, ~(a | b)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(~(a | b)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
@@ -88,7 +88,7 @@ int TestNotXor() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, ~(a ^ b)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(~(a ^ b)));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 3);

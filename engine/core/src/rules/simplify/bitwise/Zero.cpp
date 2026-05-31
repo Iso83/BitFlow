@@ -11,7 +11,7 @@ using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 // a & ... & 0 → 0
-static bool Match_AndZero(const ExprStore* store, ExprId id) {
+static bool Match_AndZeroDominance(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
@@ -27,7 +27,7 @@ static bool Match_AndZero(const ExprStore* store, ExprId id) {
 }
 
 // a | ... | 0 → remove 0
-static bool Match_OrZero(const ExprStore* store, ExprId id) {
+static bool Match_OrZeroIdentity(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or)
@@ -44,14 +44,14 @@ static bool Match_OrZero(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AndZero(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_AndZeroDominance(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     return ctx.replace(id, store->makeFalse(e.bitWidth).id);
 }
 
-static ExprId Rewrite_OrZero(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_OrZeroIdentity(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -73,7 +73,7 @@ static ExprId Rewrite_OrZero(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
-static ExprId Rewrite_XorZero(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_XorZero(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     ExprInputs newInputs;
@@ -96,12 +96,12 @@ static ExprId Rewrite_XorZero(RewriteContext& ctx, ExprId id) {
 }
 #pragma endregion
 
-Rule Get_AndZero_Rule() {
-    return Rule{AndZero, &Match_AndZero, &Rewrite_AndZero, {Normalize::Flatten}};
+Rule Get_AndZeroDominance_Rule() {
+    return Rule{AndZeroDominance, &Match_AndZeroDominance, &Rewrite_AndZeroDominance, {Normalize::Flatten}};
 }
 
-Rule Get_OrZero_Rule() {
-    return Rule{OrZero, &Match_OrZero, &Rewrite_OrZero, {Normalize::Flatten}};
+Rule Get_OrZeroIdentity_Rule() {
+    return Rule{OrZeroIdentity, &Match_OrZeroIdentity, &Rewrite_OrZeroIdentity, {Normalize::Flatten}};
 }
 
 Rule Get_XorZero_Rule() {

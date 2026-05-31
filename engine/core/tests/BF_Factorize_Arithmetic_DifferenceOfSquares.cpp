@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Expression;
@@ -18,7 +18,7 @@ int TestDifferenceOfSquares_Basic() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a.Pow(C(2)) - b.Pow(C(2))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a.Pow(C(2)) - b.Pow(C(2))));
     BF_TEST(Op(r) == OpType::Mul);
 
     bool matchDiff = false;
@@ -55,7 +55,7 @@ int TestDifferenceOfSquares_ShiftedTerms() {
 
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (C(1) + b).Pow(C(2)) - (b - C(2)).Pow(C(2))));
+    BF_SAFE_REWRITE(r, BF_REWRITE((C(1) + b).Pow(C(2)) - (b - C(2)).Pow(C(2))));
     BF_TEST(Op(r) == OpType::Mul);
 
     bool matchDiff = false;
@@ -93,13 +93,13 @@ int TestDifferenceOfSquares_NoMatch() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r1, Rewrite(engine, a.Pow(C(3)) - b.Pow(C(2))));
+    BF_SAFE_REWRITE(r1, BF_REWRITE(a.Pow(C(3)) - b.Pow(C(2))));
     BF_TEST(Op(r1) != OpType::Mul);
 
-    BF_SAFE_REWRITE(r2, Rewrite(engine, a.Pow(C(2)) - b.Pow(C(3))));
+    BF_SAFE_REWRITE(r2, BF_REWRITE(a.Pow(C(2)) - b.Pow(C(3))));
     BF_TEST(Op(r2) != OpType::Mul);
 
-    BF_SAFE_REWRITE(r3, Rewrite(engine, a.Pow(C(2)) - b));
+    BF_SAFE_REWRITE(r3, BF_REWRITE(a.Pow(C(2)) - b));
     BF_TEST(Op(r3) != OpType::Mul);
 
     return 0;

@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -17,7 +17,7 @@ int TestAndCancelPair() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x & x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x & x));
 
     BF_TEST(r == x);
     return 0;
@@ -35,7 +35,7 @@ int TestAndCancelMixed() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x & y & x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x & y & x));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
@@ -57,7 +57,7 @@ int TestOrCancelPair() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x | x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x | x));
 
     BF_TEST(r == x);
     return 0;
@@ -76,7 +76,7 @@ int TestOrCancelMixed() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, y | x | y));
+    BF_SAFE_REWRITE(r, BF_REWRITE(y | x | y));
 
     BF_TEST(Op(r) == OpType::Or);
     BF_TEST(InputSize(r) == 2);
@@ -98,7 +98,7 @@ int TestXorParityCancel_Pair() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a ^ a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a ^ a));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -118,7 +118,7 @@ int TestXorParityCancel_ToSingle() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x ^ x ^ y));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x ^ x ^ y));
 
     BF_TEST(r == y);
     return 0;
@@ -139,7 +139,7 @@ int TestXorParityCancel_MixedToXor() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a ^ b ^ c ^ a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a ^ b ^ c ^ a));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);
@@ -162,7 +162,7 @@ int TestXorParityCancel_AllEven() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a ^ b ^ a ^ b));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a ^ b ^ a ^ b));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -181,7 +181,7 @@ int TestXorParityCancel_Triple() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a ^ a ^ a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a ^ a ^ a));
 
     BF_TEST(r == a);
     return 0;
@@ -202,7 +202,7 @@ int TestXorParity_RewriteKeepsCanonicalOrder() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, c ^ a ^ b ^ a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(c ^ a ^ b ^ a));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);

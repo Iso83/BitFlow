@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -23,7 +23,7 @@ int TestDivFractionNumerator_Basic() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a / b) / c));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a / b) / c));
 
     BF_TEST(Op(r) == OpType::Div);
     BF_TEST(InputSize(r) == 2);
@@ -52,7 +52,7 @@ int TestDivFractionNumerator_LhsNotFraction() {
     auto a = V("a");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a / c));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a / c));
 
     BF_TEST(Op(r) == OpType::Div);
     BF_TEST(InputSize(r) == 2);

@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -19,8 +19,8 @@ int TestXorDedup() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r1, Rewrite(engine, x ^ y));
-    BF_SAFE_REWRITE(r2, Rewrite(engine, y ^ x));
+    BF_SAFE_REWRITE(r1, BF_REWRITE(x ^ y));
+    BF_SAFE_REWRITE(r2, BF_REWRITE(y ^ x));
 
     BF_TEST(Op(r1) == OpType::Xor);
     BF_TEST(Op(r2) == OpType::Xor);
@@ -40,30 +40,30 @@ int TestSimplify_ConstCombine_Basic() {
     BF_VALIDATE_ENGINE(engine, rule);
 
     {
-        BF_SAFE_REWRITE(r, Rewrite(engine, C(5) + 7));
+        BF_SAFE_REWRITE(r, BF_REWRITE(C(5) + 7));
         BF_TEST(EqualChunkValue(r, 12u));
     }
 
     {
-        BF_SAFE_REWRITE(r, Rewrite(engine, C(9) - 4));
+        BF_SAFE_REWRITE(r, BF_REWRITE(C(9) - 4));
         BF_TEST(EqualChunkValue(r, 5u));
     }
     {
-        BF_SAFE_REWRITE(r, Rewrite(engine, C(5) - 6));
+        BF_SAFE_REWRITE(r, BF_REWRITE(C(5) - 6));
         BF_TEST(Op(r) == OpType::Neg);
         BF_TEST(EqualChunkValue(Input(r, 0), 1u));
     }
     {
-        BF_SAFE_REWRITE(r, Rewrite(engine, C(3) * 6));
+        BF_SAFE_REWRITE(r, BF_REWRITE(C(3) * 6));
         BF_TEST(EqualChunkValue(r, 18u));
     }
     {
-        BF_SAFE_REWRITE(r, Rewrite(engine, C(8) / 2));
+        BF_SAFE_REWRITE(r, BF_REWRITE(C(8) / 2));
         BF_TEST(EqualChunkValue(r, 4u));
     }
     {
         auto in = C(2) / 3;
-        BF_SAFE_REWRITE(r, Rewrite(engine, in));
+        BF_SAFE_REWRITE(r, BF_REWRITE(in));
         BF_TEST(r == in);
     }
     return 0;

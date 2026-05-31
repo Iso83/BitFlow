@@ -29,7 +29,7 @@ static ExprId BuildAnd(ExprStore* store, ExprId a, ExprId b) {
 }
 #pragma endregion
 
-static bool Match_Distribute_And_Over_Xor(const ExprStore* store, ExprId id) {
+static bool Match_Distribute_And_Over_Xor(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
@@ -55,7 +55,7 @@ static bool Match_Distribute_And_Over_Xor(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_Distribute_And_Over_Xor(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_Distribute_And_Over_Xor(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 

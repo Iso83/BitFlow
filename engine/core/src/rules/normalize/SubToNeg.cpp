@@ -8,7 +8,7 @@ namespace BitFlow::Core::Rules::Normalize::Arithmetic {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_SubToNeg(const ExprStore* store, ExprId id) {
+static bool Match_SubToNeg(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Sub || e.inputs.size() != 2)
         return false;
@@ -22,10 +22,10 @@ static bool Match_SubToNeg(const ExprStore* store, ExprId id) {
 
     // Rewrite when lhs sorts before rhs,
     // so the larger/canonical expression becomes the base.
-    return CanonicalExprLess(store, e.inputs[0], e.inputs[1]);
+    return CanonicalExprLess(store, names, e.inputs[0], e.inputs[1]);
 }
 
-static ExprId Rewrite_SubToNeg(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_SubToNeg(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;

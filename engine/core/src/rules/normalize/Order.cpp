@@ -10,7 +10,7 @@ namespace BitFlow::Core::Rules::Normalize {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_Order(const ExprStore* store, ExprId id) {
+static bool Match_Order(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (!Expression::IsCommutative(e.op))
@@ -20,20 +20,20 @@ static bool Match_Order(const ExprStore* store, ExprId id) {
         return false;
 
     for (size_t i = 1; i < e.inputs.size(); ++i) {
-        if (CanonicalExprLess(store, e.inputs[i], e.inputs[i - 1]))
+        if (CanonicalExprLess(store, names, e.inputs[i], e.inputs[i - 1]))
             return true;
     }
 
     return false;
 }
 
-static ExprId Rewrite_Order(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_Order(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
     ExprInputs sorted = e.inputs;
 
-    std::sort(sorted.begin(), sorted.end(), [&](ExprId a, ExprId b) { return CanonicalExprLess(store, a, b); });
+    std::sort(sorted.begin(), sorted.end(), [&](ExprId a, ExprId b) { return CanonicalExprLess(store, names, a, b); });
 
     if (sorted == e.inputs)
         return id;

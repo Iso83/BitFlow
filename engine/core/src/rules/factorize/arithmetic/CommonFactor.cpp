@@ -72,7 +72,7 @@ static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTer
 }
 
 #pragma region Match
-static bool Match_AddLinearMultiplicity(const ExprStore* store, ExprId id) {
+static bool Match_AddLinearMultiplicity(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Add || e.inputs.size() < 2)
@@ -117,7 +117,7 @@ static bool Match_AddLinearMultiplicity(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_AddCommonFactor(const ExprStore* store, ExprId id) {
+static bool Match_AddCommonFactor(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Add || e.inputs.size() < 2)
@@ -145,7 +145,7 @@ static bool Match_AddCommonFactor(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id) {
+static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Div || e.inputs.size() != 2)
@@ -195,7 +195,7 @@ static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, ExprId id)
     return false;
 }
 
-static bool Match_SubCommonDenominator(const ExprStore* store, ExprId id) {
+static bool Match_SubCommonDenominator(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Sub || e.inputs.size() != 2)
         return false;
@@ -224,7 +224,7 @@ static bool Match_SubCommonDenominator(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_AddCommonDenominator(const ExprStore* store, ExprId id) {
+static bool Match_AddCommonDenominator(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Add || e.inputs.size() != 2)
         return false;
@@ -241,7 +241,7 @@ static bool Match_AddCommonDenominator(const ExprStore* store, ExprId id) {
     return store->structuralEquivalent(lhs.inputs[1], rhs.inputs[1]);
 }
 
-static bool Match_CommonFactorCancel(const ExprStore* store, ExprId id) {
+static bool Match_CommonFactorCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Sub || e.inputs.size() != 2)
         return false;
@@ -269,7 +269,7 @@ static bool Match_CommonFactorCancel(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AddLinearMultiplicity(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_AddLinearMultiplicity(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -371,7 +371,7 @@ static ExprId Rewrite_AddLinearMultiplicity(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, addResult);
 }
 
-static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -473,7 +473,7 @@ static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Add, std::move(finalAddTerms), bitWidth).id);
 }
 
-static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -603,7 +603,7 @@ static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, ExprId id
     return ctx.replace(id, store->create(OpType::Div, {newLhs, newRhs}, bitWidth).id);
 }
 
-static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -642,7 +642,7 @@ static ExprId Rewrite_SubCommonDenominator(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Add, std::move(combinedAddTerms), bitWidth).id);
 }
 
-static ExprId Rewrite_AddCommonDenominator(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_AddCommonDenominator(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -656,7 +656,7 @@ static ExprId Rewrite_AddCommonDenominator(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Div, {numerator, denominator}, bitWidth).id);
 }
 
-static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;

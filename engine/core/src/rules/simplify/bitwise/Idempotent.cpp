@@ -12,7 +12,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_Idempotent(const ExprStore* store, ExprId id) {
+static bool Match_Idempotent(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And && e.op != OpType::Or)
@@ -34,7 +34,7 @@ static bool Match_Idempotent(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_AndIdempotent(const ExprStore* store, ExprId id) {
+static bool Match_AndIdempotent(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And || e.inputs.size() < 2)
@@ -51,7 +51,7 @@ static bool Match_AndIdempotent(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_Idempotent(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_Idempotent(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -75,7 +75,7 @@ static ExprId Rewrite_Idempotent(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(e.op, std::move(unique), e.bitWidth).id);
 }
 
-static ExprId Rewrite_AndIdempotent(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_AndIdempotent(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 

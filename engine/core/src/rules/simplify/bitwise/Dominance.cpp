@@ -11,7 +11,7 @@ using namespace BitFlow::Core::Expression;
 
 #pragma region Match
 // a & ... & 1 → remove 1
-static bool Match_AndOneIdentity(const ExprStore* store, ExprId id) {
+static bool Match_AndOneIdentity(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
@@ -27,7 +27,7 @@ static bool Match_AndOneIdentity(const ExprStore* store, ExprId id) {
 }
 
 // a | ... | 1 → 1
-static bool Match_OrOneDominance(const ExprStore* store, ExprId id) {
+static bool Match_OrOneDominance(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or)
@@ -44,7 +44,7 @@ static bool Match_OrOneDominance(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AndOneIdentity(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_AndOneIdentity(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -66,7 +66,7 @@ static ExprId Rewrite_AndOneIdentity(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
-static ExprId Rewrite_OrOneDominance(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_OrOneDominance(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 

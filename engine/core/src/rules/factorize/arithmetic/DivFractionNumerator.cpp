@@ -8,7 +8,7 @@ namespace BitFlow::Core::Rules::Factorize::Arithmetic {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_DivFractionNumerator(const ExprStore* store, ExprId id) {
+static bool Match_DivFractionNumerator(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Div || e.inputs.size() != 2)
@@ -19,7 +19,7 @@ static bool Match_DivFractionNumerator(const ExprStore* store, ExprId id) {
     return lhs.op == OpType::Div && lhs.inputs.size() == 2;
 }
 
-static ExprId Rewrite_DivFractionNumerator(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_DivFractionNumerator(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
 
     const Expr& e = (*store)[id];

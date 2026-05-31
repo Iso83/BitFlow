@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -18,7 +18,7 @@ int TestXorFlatten() {
     auto y = V("y");
     auto z = V("z");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (x ^ y) ^ z));
+    BF_SAFE_REWRITE(r, BF_REWRITE((x ^ y) ^ z));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 3);
@@ -39,7 +39,7 @@ int TestNotNotDoesNotFlatten() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, -(-x)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(-(-x)));
 
     BF_TEST(Op(r) == OpType::Neg);
     BF_TEST(InputSize(r) == 1);

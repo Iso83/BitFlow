@@ -10,7 +10,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_MulOne(const ExprStore* store, ExprId id) {
+static bool Match_MulOne(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Mul)
         return false;
@@ -24,7 +24,7 @@ static bool Match_MulOne(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_DivOne(const ExprStore* store, ExprId id) {
+static bool Match_DivOne(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Div)
         return false;
@@ -36,7 +36,7 @@ static bool Match_DivOne(const ExprStore* store, ExprId id) {
     return rhs.op == OpType::Const && rhs.knownValue == 1;
 }
 
-static bool Match_PowOne(const ExprStore* store, ExprId id) {
+static bool Match_PowOne(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Pow)
         return false;
@@ -48,7 +48,7 @@ static bool Match_PowOne(const ExprStore* store, ExprId id) {
     return rhs.op == OpType::Const && rhs.knownValue == 1;
 }
 
-static bool Match_DivSelf(const ExprStore* store, ExprId id) {
+static bool Match_DivSelf(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Div)
         return false;
@@ -59,7 +59,7 @@ static bool Match_DivSelf(const ExprStore* store, ExprId id) {
     return e.inputs[0] == e.inputs[1];
 }
 
-static bool Match_ModOne(const ExprStore* store, ExprId id) {
+static bool Match_ModOne(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Mod)
         return false;
@@ -74,7 +74,7 @@ static bool Match_ModOne(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_MulOne(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_MulOne(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     ExprInputs newInputs;
@@ -95,25 +95,25 @@ static ExprId Rewrite_MulOne(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
-static ExprId Rewrite_DivOne(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_DivOne(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     return ctx.replace(id, e.inputs[0]);
 }
 
-static ExprId Rewrite_PowOne(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_PowOne(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     return ctx.replace(id, e.inputs[0]);
 }
 
-static ExprId Rewrite_DivSelf(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_DivSelf(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     return ctx.replace(id, store->createConstant(1, e.bitWidth).id);
 }
 
-static ExprId Rewrite_ModOne(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_ModOne(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     return ctx.replace(id, store->zeroId());

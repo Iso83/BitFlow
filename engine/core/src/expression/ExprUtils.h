@@ -24,7 +24,7 @@ inline bool ContainsExpr(const ExprStore* store, Ids::ExprId id, Ids::ExprId tar
     return false;
 }
 
-template <OpType Op> inline bool Match_Zero(const ExprStore* store, Ids::ExprId id) {
+template <OpType Op> inline bool Match_Zero(const ExprStore* store, const ExprNameMap* names, Ids::ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != Op)
         return false;
@@ -41,7 +41,7 @@ template <OpType Op> inline bool Match_Zero(const ExprStore* store, Ids::ExprId 
 }
 #pragma endregion
 
-inline int CompareExprCanonical(const ExprStore* store, Ids::ExprId a, Ids::ExprId b) {
+inline int CompareExprCanonical(const ExprStore* store, const ExprNameMap* names, Ids::ExprId a, Ids::ExprId b) {
     if (a == b)
         return 0;
 
@@ -75,8 +75,25 @@ inline int CompareExprCanonical(const ExprStore* store, Ids::ExprId a, Ids::Expr
     }
 
     // --- variables ---
-    if (exprA.op == OpType::Var)
+    if (exprA.op == OpType::Var) {
+
+        std::string_view nameA;
+        std::string_view nameB;
+
+        if (names != nullptr) {
+
+            if (auto it = names->find(a); it != names->end())
+                nameA = it->second;
+
+            if (auto it = names->find(b); it != names->end())
+                nameB = it->second;
+        }
+
+        if (nameA != nameB)
+            return nameA < nameB ? -1 : 1;
+
         return a.value() < b.value() ? -1 : 1;
+    }
 
     // --- arity ---
     if (exprA.inputs.size() != exprB.inputs.size())
@@ -84,7 +101,7 @@ inline int CompareExprCanonical(const ExprStore* store, Ids::ExprId a, Ids::Expr
 
     // --- recursive compare ---
     for (size_t i = 0; i < exprA.inputs.size(); ++i) {
-        const int cmp = CompareExprCanonical(store, exprA.inputs[i], exprB.inputs[i]);
+        const int cmp = CompareExprCanonical(store, names, exprA.inputs[i], exprB.inputs[i]);
 
         if (cmp != 0)
             return cmp;
@@ -93,8 +110,8 @@ inline int CompareExprCanonical(const ExprStore* store, Ids::ExprId a, Ids::Expr
     return 0;
 }
 
-inline bool CanonicalExprLess(const ExprStore* store, Ids::ExprId a, Ids::ExprId b) {
-    return CompareExprCanonical(store, a, b) < 0;
+inline bool CanonicalExprLess(const ExprStore* store, const ExprNameMap* names, Ids::ExprId a, Ids::ExprId b) {
+    return CompareExprCanonical(store, names, a, b) < 0;
 }
 
 } // namespace BitFlow::Core::Expression

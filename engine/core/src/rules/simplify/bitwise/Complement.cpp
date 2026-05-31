@@ -13,7 +13,7 @@ static bool IsNotOf(const ExprStore* store, ExprId a, ExprId b) {
     return exprA.op == OpType::Not && exprA.inputs.size() == 1 && store->structuralEquivalent(exprA.inputs[0], b);
 }
 
-static bool Match_Complement(const ExprStore* store, ExprId id) {
+static bool Match_Complement(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if ((e.op != OpType::And && e.op != OpType::Or) || e.inputs.size() < 2)
@@ -32,7 +32,7 @@ static bool Match_Complement(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_Complement(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_Complement(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 

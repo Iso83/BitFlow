@@ -53,7 +53,7 @@ static int TestMatchZero_Positive() {
 
     auto expr = a + zero;
 
-    BF_TEST(Match_Zero<OpType::Add>(&store, expr.id));
+    BF_TEST(Match_Zero<OpType::Add>(&store, &names, expr.id));
 
     return 0;
 }
@@ -66,7 +66,7 @@ static int TestMatchZero_WrongOp() {
 
     auto expr = a ^ zero;
 
-    BF_TEST(!Match_Zero<OpType::Add>(&store, expr.id));
+    BF_TEST(!Match_Zero<OpType::Add>(&store, &names, expr.id));
 
     return 0;
 }
@@ -79,7 +79,7 @@ static int TestMatchZero_NoZeroInput() {
 
     auto expr = a + b;
 
-    BF_TEST(!Match_Zero<OpType::Add>(&store, expr.id));
+    BF_TEST(!Match_Zero<OpType::Add>(&store, &names, expr.id));
 
     return 0;
 }
@@ -134,7 +134,7 @@ static int TestCompareExprCanonical_SameExpr() {
 
     auto a = V("a");
 
-    BF_TEST(CompareExprCanonical(&store, a.id, a.id) == 0);
+    BF_TEST(CompareExprCanonical(&store, &names, a.id, a.id) == 0);
 
     return 0;
 }
@@ -145,8 +145,8 @@ static int TestCompareExprCanonical_ConstantOrder() {
     auto c1 = C(1);
     auto c2 = C(2);
 
-    BF_TEST(CompareExprCanonical(&store, c1.id, c2.id) < 0);
-    BF_TEST(CompareExprCanonical(&store, c2.id, c1.id) > 0);
+    BF_TEST(CompareExprCanonical(&store, &names, c1.id, c2.id) < 0);
+    BF_TEST(CompareExprCanonical(&store, &names, c2.id, c1.id) > 0);
 
     return 0;
 }
@@ -161,7 +161,7 @@ static int TestCompareExprCanonical_ArityOrder() {
     auto x1 = a ^ b;
     auto x2 = a ^ b ^ c;
 
-    BF_TEST(CompareExprCanonical(&store, x1.id, x2.id) < 0);
+    BF_TEST(CompareExprCanonical(&store, &names, x1.id, x2.id) < 0);
 
     return 0;
 }
@@ -172,8 +172,8 @@ static int TestCanonicalExprLess_Positive() {
     auto c1 = C(1);
     auto c2 = C(2);
 
-    BF_TEST(CanonicalExprLess(&store, c1.id, c2.id));
-    BF_TEST(!CanonicalExprLess(&store, c2.id, c1.id));
+    BF_TEST(CanonicalExprLess(&store, &names, c1.id, c2.id));
+    BF_TEST(!CanonicalExprLess(&store, &names, c2.id, c1.id));
 
     return 0;
 }

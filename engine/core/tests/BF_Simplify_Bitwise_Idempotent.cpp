@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -17,7 +17,7 @@ int TestAndIdempotent() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a & a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a & a));
     BF_TEST(r == a);
 
     return 0;
@@ -35,7 +35,7 @@ int TestAndIdempotentMixed() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a & b & a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a & b & a));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
@@ -57,7 +57,7 @@ int TestOrIdempotent() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a | a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a | a));
 
     BF_TEST(r == a);
 
@@ -76,7 +76,7 @@ int TestOrIdempotentMixed() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, b | a | b));
+    BF_SAFE_REWRITE(r, BF_REWRITE(b | a | b));
 
     BF_TEST(Op(r) == OpType::Or);
     BF_TEST(InputSize(r) == 2);

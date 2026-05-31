@@ -19,7 +19,7 @@ static bool ContainsStructurallyEquivalent(const ExprStore* store, const ExprInp
     return false;
 }
 
-static bool Match_XorPairCancel(const ExprStore* store, ExprId id) {
+static bool Match_XorPairCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Xor)
@@ -53,7 +53,7 @@ static bool Match_XorPairCancel(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static ExprId Rewrite_XorPairCancel(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_XorPairCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 

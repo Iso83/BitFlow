@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -19,7 +19,7 @@ int TestAndAbsorb() {
     auto b = V("b");
     auto inner = a | b;
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a & inner));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a & inner));
 
     BF_TEST(r == a);
     return 0;
@@ -38,7 +38,7 @@ int TestOrAbsorb() {
     auto b = V("b");
     auto inner = a & b;
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a | inner));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a | inner));
 
     BF_TEST(r == a);
     return 0;

@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Expression;
@@ -18,7 +18,7 @@ int TestAddNegToSub_Basic() {
 
     auto x = V("x");
     auto y = V("y");
-    BF_SAFE_REWRITE(r, Rewrite(engine, x + (-y)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x + (-y)));
 
     BF_TEST(Op(r) == OpType::Sub);
     BF_TEST(InputSize(r) == 2);
@@ -42,7 +42,7 @@ int TestAddNegToSub_NoMatch_MultipleNegatives() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a + b + (-c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a + b + (-c)));
 
     BF_TEST(InputSize(r) == 3);
 

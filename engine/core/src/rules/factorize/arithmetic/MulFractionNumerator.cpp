@@ -8,7 +8,7 @@ namespace BitFlow::Core::Rules::Factorize::Arithmetic {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_MulFractionNumerator(const ExprStore* store, ExprId id) {
+static bool Match_MulFractionNumerator(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Mul || e.inputs.size() != 2)
@@ -24,7 +24,7 @@ static bool Match_MulFractionNumerator(const ExprStore* store, ExprId id) {
     return lhsIsFraction != rhsIsFraction;
 }
 
-static ExprId Rewrite_MulFractionNumerator(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_MulFractionNumerator(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
 
     const Expr& e = (*store)[id];

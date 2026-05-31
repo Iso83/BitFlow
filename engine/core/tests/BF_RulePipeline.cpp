@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Expression;
@@ -97,7 +97,7 @@ int TestRulePipeline_Explore() {
 
     RuleEngine engine = BuildExplore();
     auto x = V("x");
-    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(4) * x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x.Pow(4) * x));
     return 0;
 }
 

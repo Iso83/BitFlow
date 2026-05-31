@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -17,7 +17,7 @@ int TestNegNeg_Basic() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, -(-a)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(-(-a)));
 
     BF_TEST(r == a);
     return 0;
@@ -34,7 +34,7 @@ int TestNegNeg_TripleNeg() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, -(-(-a))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(-(-(-a))));
 
     BF_TEST(Op(r) == OpType::Neg);
     BF_TEST(InputSize(r) == 1);
@@ -54,7 +54,7 @@ int TestNegNeg_NoMatchSingleNeg() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, -a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(-a));
 
     BF_TEST(Op(r) == OpType::Neg);
     BF_TEST(InputSize(r) == 1);

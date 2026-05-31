@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -22,7 +22,7 @@ int TestXorPairCancel() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a ^ b) ^ (a ^ c)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a ^ b) ^ (a ^ c)));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);
@@ -48,8 +48,8 @@ int TestXorPairCancel_MultiInputOddCommon() {
     auto b = V("b");
     auto c = V("c");
     auto d = V("d");
-    
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a ^ b) ^ (a ^ c) ^ (a ^ d)));
+
+    BF_SAFE_REWRITE(r, BF_REWRITE((a ^ b) ^ (a ^ c) ^ (a ^ d)));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 4);

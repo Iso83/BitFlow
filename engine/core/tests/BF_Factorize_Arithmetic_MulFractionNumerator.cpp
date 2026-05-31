@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -19,7 +19,7 @@ int TestMulFractionNumerator_FractionOnRhs() {
 
     BF_VALIDATE_ENGINE(engine, rule);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, C(2) * (C(3) / C(8))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(2) * (C(3) / C(8))));
 
     BF_TEST(Op(r) == OpType::Div);
     BF_TEST(InputSize(r) == 2);
@@ -51,7 +51,7 @@ int TestMulFractionNumerator_FractionOnLhs() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a / b) * c));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a / b) * c));
 
     BF_TEST(Op(r) == OpType::Div);
     BF_TEST(InputSize(r) == 2);
@@ -84,7 +84,7 @@ int TestMulFractionNumerator_BothFractions() {
     auto c = V("c");
     auto d = V("d");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a / b) * (c / d)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a / b) * (c / d)));
 
     BF_TEST(Op(r) == OpType::Mul);
 

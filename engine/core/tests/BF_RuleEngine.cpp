@@ -1,6 +1,7 @@
 #include <BitFlow/core/rules/RuleEngine.h>
+#include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Expression;
@@ -55,7 +56,7 @@ int TestValidateDependencies_OrderViolation() {
         MakeExprStore(32);
 
         auto x = V("x");
-        Rewrite(engine, x);
+        BF_REWRITE(x);
     } catch (...) {
         failed = true;
     }
@@ -79,7 +80,7 @@ int TestRewrite_FixedPoint() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x ^ x ^ x ^ x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x ^ x ^ x ^ x));
 
     BF_TEST(IsFalse(r));
     return 0;
@@ -120,7 +121,7 @@ int TestDebugCallback() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x ^ x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x ^ x));
 
     BF_TEST(callbackCalled);
     BF_TEST(beginCalled);
@@ -129,6 +130,56 @@ int TestDebugCallback() {
     BF_TEST(ctxStore);
 
     BF_TEST(IsFalse(r));
+
+    return 0;
+}
+
+int TestCollectRequiredRules_AddZero() {
+    RuleEngine engine = BuildExplore();
+
+    auto rules = engine.CollectRequiredRules(Simplify::Arithmetic::Get_AddZero_Rule().key);
+
+    BF_TEST(rules.contains(Simplify::Arithmetic::Get_AddZero_Rule().key));
+
+    BF_TEST(rules.contains(Normalize::Get_Order_Rule().key));
+
+    return 0;
+}
+
+int TestCollectRequiredRules_MulOne() {
+    RuleEngine engine = BuildExplore();
+
+    auto rules = engine.CollectRequiredRules(Simplify::Arithmetic::Get_MulOne_Rule().key);
+
+    BF_TEST(rules.contains(Simplify::Arithmetic::Get_MulOne_Rule().key));
+
+    BF_TEST(rules.contains(Normalize::Get_Order_Rule().key));
+
+    return 0;
+}
+
+int TestCollectRequiredRules_SubZero() {
+    RuleEngine engine = BuildExplore();
+
+    auto rules = engine.CollectRequiredRules(Simplify::Arithmetic::Get_SubZero_Rule().key);
+
+    BF_TEST(rules.contains(Simplify::Arithmetic::Get_SubZero_Rule().key));
+
+    BF_TEST(!rules.contains(Normalize::Get_Order_Rule().key));
+
+    return 0;
+}
+
+int TestCollectRequiredRules_Recursive() {
+    RuleEngine engine = BuildExplore();
+
+    auto rules = engine.CollectRequiredRules(Factorize::Arithmetic::Get_AddCommonFactor_Rule().key);
+
+    BF_TEST(rules.contains(Factorize::Arithmetic::Get_AddCommonFactor_Rule().key));
+
+    BF_TEST(rules.contains(Normalize::Get_Order_Rule().key));
+
+    BF_TEST(rules.contains(Normalize::Get_Flatten_Rule().key));
 
     return 0;
 }
@@ -142,6 +193,11 @@ int main() {
 
     BF_RUN_TEST(TestRewrite_FixedPoint);
     BF_RUN_TEST(TestDebugCallback);
+
+    BF_RUN_TEST(TestCollectRequiredRules_AddZero);
+    BF_RUN_TEST(TestCollectRequiredRules_MulOne);
+    BF_RUN_TEST(TestCollectRequiredRules_SubZero);
+    BF_RUN_TEST(TestCollectRequiredRules_Recursive);
 
     return 0;
 }

@@ -19,14 +19,14 @@ void RuleEngine::AddRule(const Rule& rule) {
     m_validated = false;
 }
 
-ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id) const {
+ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id, const ExprNameMap* names) const {
     if (!m_validated)
         ValidateDependencies();
 
     RewriteContext ctx(store);
 
     for (const Rule& r : m_rules) {
-        if (!r.match(store, id))
+        if (!r.match(store, names, id))
             continue;
 
         ctx.changed = false;
@@ -41,13 +41,13 @@ ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id) const {
             if (debugCtx.beginCallback)
                 debugCtx.beginCallback(id);
 
-            after = r.rewrite(ctx, id);
+            after = r.rewrite(ctx, names, id);
 
             if (debugCtx.endCallback)
                 debugCtx.endCallback(after);
 
         } else
-            after = r.rewrite(ctx, id);
+            after = r.rewrite(ctx, names, id);
 
 #if BF_RULE_STRICT_REWRITE
         if (!ctx.changed)
@@ -61,7 +61,7 @@ ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id) const {
     return id;
 }
 
-ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id) const {
+ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id, const ExprNameMap* names) const {
     const Expr& e = (*store)[id];
 
     const OpType op = e.op;
@@ -74,7 +74,7 @@ ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id) const {
     bool changed = false;
 
     for (ExprId child : inputs) {
-        ExprId newChild = ApplyRecursive(store, child);
+        ExprId newChild = ApplyRecursive(store, child, names);
 
         if (newChild != child)
             changed = true;
@@ -95,11 +95,11 @@ ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id) const {
     return current;
 }
 
-ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root) const {
+ExprId RuleEngine::Rewrite(ExprStore* store, ExprId root, const ExprNameMap* names) const {
     ExprId current = root;
 
     for (int i = 0; i < maxIterations; ++i) {
-        ExprId next = ApplyRecursive(store, current);
+        ExprId next = ApplyRecursive(store, current, names);
 
         if (next == current)
             return current;
@@ -251,6 +251,27 @@ void RuleEngine::ValidateDependencies() const {
     }
 
     m_validated = true;
+}
+
+std::unordered_set<RuleKey> RuleEngine::CollectRequiredRules(const RuleKey& key) const {
+    std::unordered_set<RuleKey> result;
+
+    std::function<void(const RuleKey&)> visit = [&](const RuleKey& current) {
+        if (!result.insert(current).second)
+            return;
+
+        auto it = std::find_if(m_rules.begin(), m_rules.end(), [&](const Rule& rule) { return rule.key == current; });
+
+        if (it == m_rules.end())
+            return;
+
+        for (const auto& dep : it->deps)
+            visit(dep);
+    };
+
+    visit(key);
+
+    return result;
 }
 
 } // namespace BitFlow::Core::Rules

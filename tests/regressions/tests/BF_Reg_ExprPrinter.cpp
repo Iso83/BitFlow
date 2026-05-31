@@ -3,7 +3,7 @@
 #include <BitFlow/io/ExprParser.h>
 #include <BitFlow/io/ExprPrinter.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Testing;

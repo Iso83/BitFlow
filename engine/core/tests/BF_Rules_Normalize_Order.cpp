@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -18,7 +18,7 @@ int TestXorOrdering() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, y ^ x ^ y ^ x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(y ^ x ^ y ^ x));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 4);

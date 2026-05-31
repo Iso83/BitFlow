@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -17,7 +17,7 @@ int TestAddFold() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x + 10 + 20));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x + 10 + 20));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -39,7 +39,7 @@ int TestSubConstFold() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (x + 8) - 1));
+    BF_SAFE_REWRITE(r, BF_REWRITE((x + 8) - 1));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -61,7 +61,7 @@ int TestSubConstFold_MultiConst() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (x + 8 + 2) - 1));
+    BF_SAFE_REWRITE(r, BF_REWRITE((x + 8 + 2) - 1));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -83,7 +83,7 @@ int TestSubConstFold_Cancel() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (x + 1) - 1));
+    BF_SAFE_REWRITE(r, BF_REWRITE((x + 1) - 1));
 
     BF_TEST(r == x);
     return 0;
@@ -103,7 +103,7 @@ int TestSubAddSelfCancel() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x + y - x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x + y - x));
 
     BF_TEST(r == y);
     return 0;
@@ -124,7 +124,7 @@ int TestSubAddSelfCancel_MultiInput() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a + b + c - b));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a + b + c - b));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -149,7 +149,7 @@ int TestSubAddSelfCancel_SubRhs() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (a + b) - (b - 2)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((a + b) - (b - 2)));
 
     BF_TEST(Op(r) == OpType::Add);
     BF_TEST(InputSize(r) == 2);
@@ -172,7 +172,7 @@ int TestSubAddSelfCancel_SubRhs_ToConst() {
 
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (C(1) + b) - (b - C(2))));
+    BF_SAFE_REWRITE(r, BF_REWRITE((C(1) + b) - (b - C(2))));
     BF_TEST(EqualChunkValue(r, 3u));
 
     return 0;
@@ -190,7 +190,7 @@ int TestSubMulLinearCancel() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * 5 - x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * 5 - x));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -213,7 +213,7 @@ int TestSubMulLinearCancel_ToBase() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * 2 - x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * 2 - x));
 
     BF_TEST(r == x);
 
@@ -232,7 +232,7 @@ int TestSubMulLinearCancel_ToZero() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * 1 - x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * 1 - x));
 
     BF_TEST(Op(r) == OpType::Const);
     BF_TEST(EqualChunkValue(r, 0u));
@@ -252,7 +252,7 @@ int TestSubMulLinearCancel_PowCoefficientCancel() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a.Pow(5) * C(2) - C(3) * a.Pow(5)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a.Pow(5) * C(2) - C(3) * a.Pow(5)));
 
     BF_TEST(Op(r) == OpType::Neg);
     BF_TEST(InputSize(r) == 1);
@@ -284,7 +284,7 @@ int TestMulDivConstantReduction() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * 12 / 3));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * 12 / 3));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -306,7 +306,7 @@ int TestMulDivConstantReduction_ToBase() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * 8 / 8));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * 8 / 8));
 
     BF_TEST(r == x);
 
@@ -325,7 +325,7 @@ int TestMulDivConstantReduction_WithExtraFactors() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * y * 18 / 6));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * y * 18 / 6));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 3);
@@ -350,7 +350,7 @@ int TestMulToPow() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * x));
 
     BF_TEST(Op(r) == OpType::Pow);
     BF_TEST(InputSize(r) == 2);
@@ -374,7 +374,7 @@ int TestMulToPow_TripleMultiplicity() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * x * x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * x * x));
 
     BF_TEST(Op(r) == OpType::Pow);
     BF_TEST(InputSize(r) == 2);
@@ -399,7 +399,7 @@ int TestMulToPow_MixedFactors() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * x * y));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * x * y));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -441,7 +441,7 @@ int TestMulToPow_MultipleGroups() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * x * y * y));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * x * y * y));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -487,7 +487,7 @@ int TestCombineMulPow_BaseAndPow() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * x.Pow(2)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * x.Pow(2)));
 
     BF_TEST(Op(r) == OpType::Pow);
     BF_TEST(InputSize(r) == 2);
@@ -510,7 +510,7 @@ int TestCombineMulPow_PowAndBase() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(4) * x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x.Pow(4) * x));
 
     BF_TEST(Op(r) == OpType::Pow);
     BF_TEST(InputSize(r) == 2);
@@ -534,7 +534,7 @@ int TestCombineMulPow_PowAndBase_SymbolicExponent() {
     auto x = V("x");
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(a) * x));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x.Pow(a) * x));
 
     BF_TEST(Op(r) == OpType::Pow);
     BF_TEST(InputSize(r) == 2);
@@ -572,7 +572,7 @@ int TestCombineMulPow_TwoPows() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x.Pow(2) * x.Pow(5)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x.Pow(2) * x.Pow(5)));
 
     BF_TEST(Op(r) == OpType::Pow);
     BF_TEST(InputSize(r) == 2);
@@ -596,7 +596,7 @@ int TestCombineMulPow_MixedFactors() {
     auto x = V("x");
     auto y = V("y");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x * x.Pow(2) * y));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x * x.Pow(2) * y));
 
     BF_TEST(Op(r) == OpType::Mul);
     BF_TEST(InputSize(r) == 2);
@@ -636,7 +636,7 @@ int TestMulPow_NegativeExponentChain() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a * -(a.Pow(4))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a * -(a.Pow(4))));
 
     BF_TEST(Op(r) == OpType::Neg);
     BF_TEST(InputSize(r) == 1);

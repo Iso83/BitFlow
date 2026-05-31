@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -18,12 +18,12 @@ int TestAndFold() {
     auto x = V("x");
 
     {
-        BF_SAFE_REWRITE(r, Rewrite(engine, x & True() & True()));
+        BF_SAFE_REWRITE(r, BF_REWRITE(x & True() & True()));
         BF_TEST(r == x);
     }
 
     {
-        BF_SAFE_REWRITE(r, Rewrite(engine, x & False() & True()));
+        BF_SAFE_REWRITE(r, BF_REWRITE(x & False() & True()));
         BF_TEST(IsFalse(r));
     }
 
@@ -42,12 +42,12 @@ int TestOrFold() {
     auto x = V("x");
 
     {
-        BF_SAFE_REWRITE(r, Rewrite(engine, x | False() | False()));
+        BF_SAFE_REWRITE(r, BF_REWRITE(x | False() | False()));
         BF_TEST(r == x);
     }
 
     {
-        BF_SAFE_REWRITE(r, Rewrite(engine, x | True() | False()));
+        BF_SAFE_REWRITE(r, BF_REWRITE(x | True() | False()));
         BF_TEST(IsTrue(r));
     }
 
@@ -65,7 +65,7 @@ int TestXorFold() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, x ^ True() ^ True()));
+    BF_SAFE_REWRITE(r, BF_REWRITE(x ^ True() ^ True()));
 
     BF_TEST(r == x);
     return 0;
@@ -80,7 +80,7 @@ int TestXorFoldAllConstZero() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, True() ^ True()));
+    BF_SAFE_REWRITE(r, BF_REWRITE(True() ^ True()));
 
     BF_TEST(IsFalse(r));
 

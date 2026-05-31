@@ -14,13 +14,13 @@ class RewriteContext;
 struct Rule {
     RuleKey key;
 
-    bool (*match)(const Expression::ExprStore*, Ids::ExprId);
-    Ids::ExprId (*rewrite)(RewriteContext&, Ids::ExprId);
+    bool (*match)(const Expression::ExprStore*, const Expression::ExprNameMap*, Ids::ExprId);
+    Ids::ExprId (*rewrite)(RewriteContext&, const Expression::ExprNameMap*, Ids::ExprId);
 
     std::vector<RuleKey> deps{};
 
-    Rule(RuleKey k, bool (*m)(const Expression::ExprStore*, Ids::ExprId),
-         Ids::ExprId (*r)(RewriteContext&, Ids::ExprId), std::vector<RuleKey> d = {})
+    Rule(RuleKey k, bool (*m)(const Expression::ExprStore*, const Expression::ExprNameMap*, Ids::ExprId),
+         Ids::ExprId (*r)(RewriteContext&, const Expression::ExprNameMap*, Ids::ExprId), std::vector<RuleKey> d = {})
         : key(std::move(k)), match(m), rewrite(r), deps(std::move(d)) {}
 };
 
@@ -167,8 +167,8 @@ Rule Get_XorAndReduction_Rule();
 inline constexpr RuleKey XorNotReduction{"CORE.SIMPLIFY.BITWISE.XOR_NOT_REDUCTION"};
 Rule Get_XorNotReduction_Rule();
 
-inline constexpr RuleKey AndZero{"CORE.SIMPLIFY.BITWISE.AND_ZERO_DOMINANCE"};
-Rule Get_AndZero_Rule();
+inline constexpr RuleKey AndZeroDominance{"CORE.SIMPLIFY.BITWISE.AND_ZERO_DOMINANCE"};
+Rule Get_AndZeroDominance_Rule();
 
 inline constexpr RuleKey AndOneIdentity{"CORE.SIMPLIFY.BITWISE.AND_ONE_IDENTITY"};
 Rule Get_AndOneIdentity_Rule();
@@ -176,8 +176,8 @@ Rule Get_AndOneIdentity_Rule();
 inline constexpr RuleKey OrOneDominance{"CORE.SIMPLIFY.BITWISE.OR_ONE_DOMINANCE"};
 Rule Get_OrOneDominance_Rule();
 
-inline constexpr RuleKey OrZero{"CORE.SIMPLIFY.BITWISE.OR_ZERO_IDENTITY"};
-Rule Get_OrZero_Rule();
+inline constexpr RuleKey OrZeroIdentity{"CORE.SIMPLIFY.BITWISE.OR_ZERO_IDENTITY"};
+Rule Get_OrZeroIdentity_Rule();
 } // namespace Simplify::Bitwise
 
 namespace Factorize::Arithmetic {

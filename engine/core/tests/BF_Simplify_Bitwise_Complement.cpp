@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -18,7 +18,7 @@ int TestAndComplement() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a & ~a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a & ~a));
 
     BF_TEST(IsFalse(r));
     return 0;
@@ -36,7 +36,7 @@ int TestOrComplement() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a | ~a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a | ~a));
 
     BF_TEST(IsTrue(r));
     return 0;

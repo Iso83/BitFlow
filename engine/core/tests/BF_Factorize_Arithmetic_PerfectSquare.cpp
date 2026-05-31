@@ -1,5 +1,5 @@
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -18,7 +18,7 @@ int TestPerfectSquare_PositiveAB() {
 
     auto a = V("a");
     auto b = V("b");
-    BF_SAFE_REWRITE(r, Rewrite(engine, a.Pow(C(2)) + (C(2) * a * b) + b.Pow(C(2))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a.Pow(C(2)) + (C(2) * a * b) + b.Pow(C(2))));
     BF_TEST(Op(r) == OpType::Pow);
     BF_TEST(ExprOf(Input(r, 1)).knownValue == 2);
     BF_TEST(Op(Input(r, 0)) == OpType::Add);
@@ -39,7 +39,7 @@ int TestPerfectSquare_NegativeAB() {
 
     auto a = V("a");
     auto b = V("b");
-    BF_SAFE_REWRITE(r, Rewrite(engine, a.Pow(C(2)) - (C(2) * a * b) + b.Pow(C(2))));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a.Pow(C(2)) - (C(2) * a * b) + b.Pow(C(2))));
     BF_TEST(Op(r) == OpType::Pow);
     BF_TEST(Op(Input(r, 0)) == OpType::Sub);
 
@@ -61,7 +61,7 @@ int TestPerfectSquare_LinearAndConstant() {
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
-    BF_SAFE_REWRITE(r1, Rewrite(engine, a.Pow(C(2)) + (C(2) * a) + C(1)));
+    BF_SAFE_REWRITE(r1, BF_REWRITE(a.Pow(C(2)) + (C(2) * a) + C(1)));
     BF_TEST(Op(r1) == OpType::Pow);
 
     BF_TEST(EqualChunkValue(Input(r1, 1), 2u));
@@ -71,7 +71,7 @@ int TestPerfectSquare_LinearAndConstant() {
     BF_TEST(AnyInput(add, [&](ExprRef x) { return x == a; }));
     BF_TEST(AnyInput(add, [&](ExprRef x) { return Op(x) == OpType::Const && ExprOf(x).knownValue == 1; }));
 
-    BF_SAFE_REWRITE(r2, Rewrite(engine, a.Pow(C(2)) - (C(6) * a) + C(9)));
+    BF_SAFE_REWRITE(r2, BF_REWRITE(a.Pow(C(2)) - (C(6) * a) + C(9)));
     BF_TEST(Op(r2) == OpType::Pow);
 
     BF_TEST(EqualChunkValue(Input(r2, 1), 2u));
@@ -99,10 +99,10 @@ int TestPerfectSquare_NoMatch() {
     auto b = V("b");
     auto c = V("c");
 
-    BF_SAFE_REWRITE(r1, Rewrite(engine, a.Pow(C(2)) + (C(5) * a) + C(6)));
+    BF_SAFE_REWRITE(r1, BF_REWRITE(a.Pow(C(2)) + (C(5) * a) + C(6)));
     BF_TEST(r1 != (a + C(3)).Pow(C(2)));
 
-    BF_SAFE_REWRITE(r2, Rewrite(engine, a.Pow(C(2)) + (C(2) * a * b) + c.Pow(C(2))));
+    BF_SAFE_REWRITE(r2, BF_REWRITE(a.Pow(C(2)) + (C(2) * a * b) + c.Pow(C(2))));
     BF_TEST(r2 != (a + b).Pow(C(2)));
     return 0;
 }

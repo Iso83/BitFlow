@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -16,7 +16,7 @@ int TestXorParity_WithConstCancel() {
 
     auto a = V("a");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a ^ 1 ^ a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a ^ 1 ^ a));
 
     BF_TEST(EqualChunkValue(r, 1u));
     return 0;
@@ -32,7 +32,7 @@ int TestXorParity_WithConstMixed() {
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, a ^ 1 ^ b ^ a));
+    BF_SAFE_REWRITE(r, BF_REWRITE(a ^ 1 ^ b ^ a));
 
     BF_TEST(Op(r) == OpType::Xor);
     BF_TEST(InputSize(r) == 2);
@@ -51,7 +51,7 @@ int TestXorParity_StructuralRotatePairCancelsToZero() {
     auto x = V("x");
     auto term = x.RotR(2);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, term ^ term));
+    BF_SAFE_REWRITE(r, BF_REWRITE(term ^ term));
 
     BF_TEST(EqualChunkValue(r, 0u));
     return 0;
@@ -67,7 +67,7 @@ int TestXorParity_StructuralRotateDuplicateLeavesSingle() {
     auto x = V("x");
     auto term = x.RotR(2);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, term ^ x.RotR(13) ^ term));
+    BF_SAFE_REWRITE(r, BF_REWRITE(term ^ x.RotR(13) ^ term));
 
     BF_TEST(Op(r) == OpType::RotR);
     BF_TEST(InputSize(r) == 2);

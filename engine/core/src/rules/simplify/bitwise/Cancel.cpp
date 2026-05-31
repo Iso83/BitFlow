@@ -11,16 +11,16 @@ namespace BitFlow::Core::Rules::Simplify::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static size_t FindEquivalentIndex(const ExprStore* store, const ExprInputs& reps, ExprId id) {
+static size_t FindEquivalentIndex(const ExprStore* store, const ExprNameMap* names, const ExprInputs& reps, ExprId id) {
     for (size_t i = 0; i < reps.size(); ++i) {
-        if (CompareExprCanonical(store, reps[i], id) == 0)
+        if (CompareExprCanonical(store, names, reps[i], id) == 0)
             return i;
     }
     return reps.size();
 }
 
 #pragma region Match
-static bool Match_AndCancel(const ExprStore* store, ExprId id) {
+static bool Match_AndCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
@@ -42,7 +42,7 @@ static bool Match_AndCancel(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_OrCancel(const ExprStore* store, ExprId id) {
+static bool Match_OrCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Or)
@@ -64,7 +64,7 @@ static bool Match_OrCancel(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_XorCancel(const ExprStore* store, Ids::ExprId id) {
+static bool Match_XorCancel(const ExprStore* store, const ExprNameMap* names, Ids::ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Xor)
@@ -96,7 +96,7 @@ static bool Match_XorCancel(const ExprStore* store, Ids::ExprId id) {
             continue;
         }
 
-        const size_t idx = FindEquivalentIndex(store, reps, in);
+        const size_t idx = FindEquivalentIndex(store, names, reps, in);
         if (idx == reps.size()) {
             reps.push_back(in);
             repCounts.push_back(1);
@@ -122,7 +122,7 @@ static bool Match_XorCancel(const ExprStore* store, Ids::ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AndCancel(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_AndCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -149,7 +149,7 @@ static ExprId Rewrite_AndCancel(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
-static ExprId Rewrite_OrCancel(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_OrCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -176,7 +176,7 @@ static ExprId Rewrite_OrCancel(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
 }
 
-static ExprId Rewrite_XorCancel(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_XorCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -197,7 +197,7 @@ static ExprId Rewrite_XorCancel(RewriteContext& ctx, ExprId id) {
             constParity ^= in.knownValue;
             hasConst = true;
         } else {
-            const size_t idx = FindEquivalentIndex(store, reps, inId);
+            const size_t idx = FindEquivalentIndex(store, names, reps, inId);
             if (idx == reps.size()) {
                 reps.push_back(inId);
                 counts.push_back(1);
@@ -221,7 +221,8 @@ static ExprId Rewrite_XorCancel(RewriteContext& ctx, ExprId id) {
     if (hasConst && constParity != 0)
         terms.push_back(store->createConstant(constParity, bitWidth).id);
 
-    std::sort(terms.begin(), terms.end(), [&](ExprId a, ExprId b) { return CompareExprCanonical(store, a, b) < 0; });
+    std::sort(terms.begin(), terms.end(),
+              [&](ExprId a, ExprId b) { return CompareExprCanonical(store, names, a, b) < 0; });
 
     if (terms.empty())
         return ctx.replace(id, store->zeroId());

@@ -10,7 +10,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_Not(const ExprStore* store, ExprId id) {
+static bool Match_Not(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Not)
@@ -30,7 +30,7 @@ static bool Match_Not(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_NotPushdown(const ExprStore* store, ExprId id) {
+static bool Match_NotPushdown(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Not)
@@ -56,7 +56,7 @@ static bool Match_NotPushdown(const ExprStore* store, ExprId id) {
     return !allNot;
 }
 
-static bool Match_NotXor(const ExprStore* store, ExprId id) {
+static bool Match_NotXor(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Not)
@@ -72,7 +72,7 @@ static bool Match_NotXor(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_Not(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_Not(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     ExprId in = e.inputs[0];
@@ -88,7 +88,7 @@ static ExprId Rewrite_Not(RewriteContext& ctx, ExprId id) {
     return id;
 }
 
-static ExprId Rewrite_NotPushdown(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_NotPushdown(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -107,7 +107,7 @@ static ExprId Rewrite_NotPushdown(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(newOp, std::move(newInputs), bitWidth).id);
 }
 
-static ExprId Rewrite_NotXor(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_NotXor(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     ExprId in = e.inputs[0];

@@ -3,7 +3,7 @@
 #include <BitFlow/io/ExprParser.h>
 #include <BitFlow/io/ExprPrinter.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 #include <TestAssert.h>
 
 using namespace BitFlow::Testing;
@@ -19,14 +19,14 @@ static int Run_Parse_Latex(const std::string& input) {
 
     auto parse = Parse(input);
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, parse.root, &parse.names));
+    BF_SAFE_REWRITE(r, BF_REWRITE(parse.root, &parse.names));
 
     const auto text = BitFlow::IO::ToString(r, parse.names);
     BF_TEST(!text.empty());
 
     auto parse2 = Parse(text);
 
-    BF_SAFE_REWRITE(r2, Rewrite(engine, parse2.root, &parse2.names));
+    BF_SAFE_REWRITE(r2, BF_REWRITE(parse2.root, &parse2.names));
 
     BF_TEST(!ToLatex(r2, parse2.names).empty());
 

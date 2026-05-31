@@ -1,6 +1,6 @@
 #include <BitFlow/core/rules/RulePipeline.h>
 #include <ExprTestUtils.h>
-#include <RuleTestHelpers.h>
+#include <RuleTestUtils.h>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Expression;
@@ -15,7 +15,7 @@ int TestNegPowEven_Basic() {
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto x = V("x");
-    BF_SAFE_REWRITE(r, Rewrite(engine, (-x).Pow(2)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((-x).Pow(2)));
 
     BF_TEST(IsPow(r, x, 2u));
     return 0;
@@ -31,7 +31,7 @@ int TestNegPowEven_NestedBase() {
 
     auto a = V("a");
     auto b = V("b");
-    BF_SAFE_REWRITE(r, Rewrite(engine, (-(a + b)).Pow(2)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((-(a + b)).Pow(2)));
 
     BF_TEST(Op(r) == OpType::Pow);
     BF_TEST(EqualChunkValue(Input(r, 1), 2u));
@@ -55,7 +55,7 @@ int TestNegPowEven_ZeroExponent() {
 
     auto x = V("x");
 
-    BF_SAFE_REWRITE(r, Rewrite(engine, (-x).Pow(0)));
+    BF_SAFE_REWRITE(r, BF_REWRITE((-x).Pow(0)));
 
     BF_TEST(IsPow(r, x, 0u));
     return 0;
@@ -71,7 +71,7 @@ int TestNegPowEven_OddExponentNoRewrite() {
 
     auto x = V("x");
     auto expr = (-x).Pow(3);
-    BF_SAFE_REWRITE(r, Rewrite(engine, expr));
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
 
     BF_TEST(r == expr);
     return 0;

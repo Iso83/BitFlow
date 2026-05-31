@@ -116,6 +116,7 @@ endif()
 
 set(BITFLOW_DOC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../docs/core/core_architecture.md
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../AGENTS.md
 )
 
 target_sources(BitFlowCore PRIVATE

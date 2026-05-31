@@ -10,7 +10,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-static bool Match_AddFold(const ExprStore* store, ExprId id) {
+static bool Match_AddFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Add)
         return false;
@@ -54,7 +54,7 @@ static bool Match_AddFold(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_SubConstFold(const ExprStore* store, ExprId id) {
+static bool Match_SubConstFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Sub || e.inputs.size() < 2)
@@ -82,7 +82,7 @@ static bool Match_SubConstFold(const ExprStore* store, ExprId id) {
     return constCount >= 1;
 }
 
-static bool Match_SubAddSelfCancel(const ExprStore* store, ExprId id) {
+static bool Match_SubAddSelfCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Sub || e.inputs.size() < 2)
         return false;
@@ -116,14 +116,14 @@ static bool Match_SubAddSelfCancel(const ExprStore* store, ExprId id) {
 
     for (ExprId posId : positives) {
         for (ExprId negId : negatives) {
-            if (CompareExprCanonical(store, posId, negId) == 0)
+            if (CompareExprCanonical(store, names, posId, negId) == 0)
                 return true;
         }
     }
     return false;
 }
 
-static bool Match_SubMulLinearCancel(const ExprStore* store, ExprId id) {
+static bool Match_SubMulLinearCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Sub || e.inputs.size() < 2)
         return false;
@@ -163,13 +163,14 @@ static bool Match_SubMulLinearCancel(const ExprStore* store, ExprId id) {
     if (rhs.op == OpType::Mul) {
         ExprId rhsBase{};
         Types::ExprChunk rhsCoeff{};
-        return decomposeMulLinear(e.inputs[1], rhsBase, rhsCoeff) && CompareExprCanonical(store, lhsBase, rhsBase) == 0;
+        return decomposeMulLinear(e.inputs[1], rhsBase, rhsCoeff) &&
+               CompareExprCanonical(store, names, lhsBase, rhsBase) == 0;
     }
 
-    return CompareExprCanonical(store, lhsBase, e.inputs[1]) == 0;
+    return CompareExprCanonical(store, names, lhsBase, e.inputs[1]) == 0;
 }
 
-static bool Match_MulDivConstantReduction(const ExprStore* store, ExprId id) {
+static bool Match_MulDivConstantReduction(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Div || e.inputs.size() < 2)
         return false;
@@ -190,7 +191,7 @@ static bool Match_MulDivConstantReduction(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_MulToPow(const ExprStore* store, ExprId id) {
+static bool Match_MulToPow(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Mul || e.inputs.size() < 2)
         return false;
@@ -205,7 +206,7 @@ static bool Match_MulToPow(const ExprStore* store, ExprId id) {
     return false;
 }
 
-static bool Match_MulPowCombine(const ExprStore* store, ExprId id) {
+static bool Match_MulPowCombine(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::Mul || e.inputs.size() < 2)
@@ -249,7 +250,7 @@ static bool Match_MulPowCombine(const ExprStore* store, ExprId id) {
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_AddFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const ExprInputs eInputs = e.inputs;
@@ -339,7 +340,7 @@ static ExprId Rewrite_AddFold(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Add, std::move(nonConst), bitWidth).id);
 }
 
-static ExprId Rewrite_SubConstFold(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_SubConstFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
 
@@ -398,7 +399,7 @@ static ExprId Rewrite_SubConstFold(RewriteContext& ctx, ExprId id) {
         id, store->create(OpType::Sub, {nonConst, store->createConstant(subtrahend, bitWidth).id}, bitWidth).id);
 }
 
-static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -431,7 +432,7 @@ static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
     for (ExprId posId : positives) {
         bool matched = false;
         for (std::size_t i = 0; i < negatives.size(); ++i) {
-            if (!negUsed[i] && CompareExprCanonical(store, posId, negatives[i]) == 0) {
+            if (!negUsed[i] && CompareExprCanonical(store, names, posId, negatives[i]) == 0) {
                 negUsed[i] = true;
                 changed = true;
                 matched = true;
@@ -469,7 +470,7 @@ static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Sub, {positiveExpr, negativeExpr}, bitWidth).id);
 }
 
-static ExprId Rewrite_SubMulLinearCancel(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_SubMulLinearCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
@@ -506,9 +507,10 @@ static ExprId Rewrite_SubMulLinearCancel(RewriteContext& ctx, ExprId id) {
     const Expr& rhs = (*store)[e.inputs[1]];
     if (rhs.op == OpType::Mul) {
         ExprId rhsBase{};
-        if (!decomposeMulLinear(e.inputs[1], rhsBase, rhsCoeff) || CompareExprCanonical(store, lhsBase, rhsBase) != 0)
+        if (!decomposeMulLinear(e.inputs[1], rhsBase, rhsCoeff) ||
+            CompareExprCanonical(store, names, lhsBase, rhsBase) != 0)
             return id;
-    } else if (CompareExprCanonical(store, lhsBase, e.inputs[1]) != 0)
+    } else if (CompareExprCanonical(store, names, lhsBase, e.inputs[1]) != 0)
         return id;
 
     Types::ExprChunk coeff = (lhsCoeff - rhsCoeff) & mask;
@@ -527,7 +529,7 @@ static ExprId Rewrite_SubMulLinearCancel(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Mul, std::move(mulInputs), bitWidth).id);
 }
 
-static ExprId Rewrite_MulDivConstantReduction(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_MulDivConstantReduction(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const Expr& lhs = (*store)[e.inputs[0]];
@@ -560,7 +562,7 @@ static ExprId Rewrite_MulDivConstantReduction(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Mul, std::move(newMulInputs), bitWidth).id);
 }
 
-static ExprId Rewrite_MulToPow(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_MulToPow(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const ExprInputs inputs = e.inputs;
@@ -577,7 +579,7 @@ static ExprId Rewrite_MulToPow(RewriteContext& ctx, ExprId id) {
         consumed[i] = true;
 
         for (std::size_t j = i + 1; j < inputs.size(); ++j) {
-            if (!consumed[j] && CompareExprCanonical(store, inputs[i], inputs[j]) == 0) {
+            if (!consumed[j] && CompareExprCanonical(store, names, inputs[i], inputs[j]) == 0) {
                 consumed[j] = true;
                 ++multiplicity;
             }
@@ -598,7 +600,7 @@ static ExprId Rewrite_MulToPow(RewriteContext& ctx, ExprId id) {
     return ctx.replace(id, store->create(OpType::Mul, std::move(newInputs), bitWidth).id);
 }
 
-static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, ExprId id) {
+static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const ExprInputs inputs = e.inputs;
