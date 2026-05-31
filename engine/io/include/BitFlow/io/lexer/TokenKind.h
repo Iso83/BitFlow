@@ -9,6 +9,7 @@ enum class TokenKind {
     Identifier,
     DecimalLiteral,
     HexLiteral,
+    BinaryLiteral,
 
     LeftParen,
     RightParen,

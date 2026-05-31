@@ -15,8 +15,8 @@ int TestXorOrdering() {
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
-    auto x = V("x");
     auto y = V("y");
+    auto x = V("x");
 
     BF_SAFE_REWRITE(r, BF_REWRITE(y ^ x ^ y ^ x));
 

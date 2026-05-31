@@ -250,10 +250,12 @@ This normalizes equivalent signed expressions so structurally identical forms ca
 Normalizes rotate amounts modulo the expression bit-width.
 This keeps rotations canonical (`rot(x, w)` becomes `rot(x, 0)` for width `w`) and enables downstream `ROTATE_ZERO` elimination.
 
+**Assuming a 32-bit expression width**
+
 | Step    | Expression            |
 | ------- | --------------------- |
 | Input   | $$rotl(x, 32)$$       |
-| Rewrite | $$rotl(x, 0)$$        |
+| Rewrite | $$x$$                 |
 
 | Step    | Expression            |
 | ------- | --------------------- |

@@ -13,7 +13,7 @@ static const DocExample g_examples[] = {
 
 #pragma region NormalizeBitwise
 
-    {.rule = Normalize::Bitwise::Get_RotateModulo_Rule().key, .input = "a <<< 32", .expected = "a <<< 0"},
+    {.rule = Normalize::Bitwise::Get_RotateModulo_Rule().key, .input = "u32(a) <<< 32", .expected = "a"},
 
 #pragma endregion
 

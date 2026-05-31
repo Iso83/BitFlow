@@ -9,15 +9,15 @@ using BitFlow::IO::Lexer::Token;
 using BitFlow::IO::Lexer::TokenKind;
 
 int TestLexer_AllTokenTypes() {
-    const std::string input = "foo 12 0x2A ( ) , + - * / % & | ^ ~ ** <<< >>>";
+    const std::string input = "foo 12 0x2A 0b1010 ( ) , + - * / % & | ^ ~ ** <<< >>>";
     const std::vector<Token> tokens = BitFlow::IO::Lexer::Tokenize(input);
 
     const std::vector<TokenKind> expected = {
-        TokenKind::Identifier, TokenKind::DecimalLiteral, TokenKind::HexLiteral, TokenKind::LeftParen,
-        TokenKind::RightParen, TokenKind::Comma,          TokenKind::Plus,       TokenKind::Minus,
-        TokenKind::Star,       TokenKind::Slash,          TokenKind::Percent,    TokenKind::Ampersand,
-        TokenKind::Pipe,       TokenKind::Caret,          TokenKind::Tilde,      TokenKind::Pow,
-        TokenKind::RotLeft,    TokenKind::RotRight,       TokenKind::EndOfInput};
+        TokenKind::Identifier, TokenKind::DecimalLiteral, TokenKind::HexLiteral, TokenKind::BinaryLiteral,
+        TokenKind::LeftParen,  TokenKind::RightParen,     TokenKind::Comma,      TokenKind::Plus,
+        TokenKind::Minus,      TokenKind::Star,           TokenKind::Slash,      TokenKind::Percent,
+        TokenKind::Ampersand,  TokenKind::Pipe,           TokenKind::Caret,      TokenKind::Tilde,
+        TokenKind::Pow,        TokenKind::RotLeft,        TokenKind::RotRight,   TokenKind::EndOfInput};
 
     BF_TEST(tokens.size() == expected.size());
     for (std::size_t i = 0; i < expected.size(); ++i)
@@ -27,6 +27,8 @@ int TestLexer_AllTokenTypes() {
     BF_TEST(tokens[1].numericValue.value() == static_cast<std::uint64_t>(12));
     BF_TEST(tokens[2].numericValue.has_value());
     BF_TEST(tokens[2].numericValue.value() == static_cast<std::uint64_t>(42));
+    BF_TEST(tokens[3].numericValue.has_value());
+    BF_TEST(tokens[3].numericValue.value() == static_cast<std::uint64_t>(10));
 
     return 0;
 }
@@ -69,6 +71,19 @@ int TestLexer_HexVariants() {
     BF_TEST(tokens[0].kind == TokenKind::HexLiteral);
     BF_TEST(tokens[0].numericValue.value() == static_cast<std::uint64_t>(16));
     BF_TEST(tokens[1].kind == TokenKind::HexLiteral);
+    BF_TEST(tokens[1].numericValue.value() == static_cast<std::uint64_t>(255));
+    BF_TEST(tokens[2].kind == TokenKind::EndOfInput);
+
+    return 0;
+}
+
+int TestLexer_BinaryVariants() {
+    const std::vector<Token> tokens = BitFlow::IO::Lexer::Tokenize("0b1 0B11111111");
+
+    BF_TEST(tokens.size() == 3);
+    BF_TEST(tokens[0].kind == TokenKind::BinaryLiteral);
+    BF_TEST(tokens[0].numericValue.value() == static_cast<std::uint64_t>(1));
+    BF_TEST(tokens[1].kind == TokenKind::BinaryLiteral);
     BF_TEST(tokens[1].numericValue.value() == static_cast<std::uint64_t>(255));
     BF_TEST(tokens[2].kind == TokenKind::EndOfInput);
 
@@ -132,14 +147,28 @@ int TestLexer_ImplicitMultiplicationXBeforeIdentifierWithDigits() {
     return 0;
 }
 
+int TestLexer_WidthConstructorsRemainIdentifiers() {
+    const auto tokens = BitFlow::IO::Lexer::Tokenize("u8(a) u32(x)");
+
+    BF_TEST(tokens[0].kind == TokenKind::Identifier);
+    BF_TEST(tokens[0].text == "u8");
+
+    BF_TEST(tokens[4].kind == TokenKind::Identifier);
+    BF_TEST(tokens[4].text == "u32");
+
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestLexer_AllTokenTypes);
     BF_RUN_TEST(TestLexer_WhitespaceIsSkipped);
     BF_RUN_TEST(TestLexer_IdentifierRules);
     BF_RUN_TEST(TestLexer_HexVariants);
+    BF_RUN_TEST(TestLexer_BinaryVariants);
     BF_RUN_TEST(TestLexer_ShiftOperatorsLongestMatch);
     BF_RUN_TEST(TestLexer_InvalidInputProducesErrorToken);
     BF_RUN_TEST(TestLexer_UnexpectedCharacterHasPosition);
     BF_RUN_TEST(TestLexer_ImplicitMultiplicationXBeforeIdentifierWithDigits);
+    BF_RUN_TEST(TestLexer_WidthConstructorsRemainIdentifiers);
     return 0;
 }

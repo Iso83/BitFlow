@@ -202,6 +202,136 @@ int TestExprParser_ParsesVariableNamedX() {
     return 0;
 }
 
+int TestExprParser_WidthConstructorsForVariables() {
+    MakeExprStore(32);
+
+    const struct {
+        const char* text;
+        BitFlow::Core::Types::BitWidth width;
+    } cases[] = {{"u8(a)", 8}, {"u16(a)", 16}, {"u32(a)", 32}, {"u64(a)", 64}};
+
+    for (const auto& c : cases) {
+        auto parsed = Parse(c.text);
+
+        BF_TEST(Op(parsed.root) == OpType::Var);
+        BF_TEST(BitWidth(parsed.root) == c.width);
+        BF_TEST(parsed.names.at(parsed.root.id) == "a");
+    }
+
+    {
+        auto parsed = Parse("u8(a) + u8(b)");
+        BF_TEST(Op(parsed.root) == OpType::Add);
+        BF_TEST(BitWidth(parsed.root) == 8);
+        BF_TEST(BitWidth(Input(parsed.root, 0)) == 8);
+        BF_TEST(BitWidth(Input(parsed.root, 1)) == 8);
+    }
+
+    return 0;
+}
+
+int TestExprParser_WidthConstructorsForConstants() {
+    MakeExprStore(32);
+
+    {
+        auto root = Parse("u8(255)").root;
+        BF_TEST(Op(root) == OpType::Const);
+        BF_TEST(BitWidth(root) == 8);
+        BF_TEST(ExprOf(root).knownValue == 255);
+    }
+
+    {
+        auto root = Parse("u16(255)").root;
+        BF_TEST(Op(root) == OpType::Const);
+        BF_TEST(BitWidth(root) == 16);
+        BF_TEST(ExprOf(root).knownValue == 255);
+    }
+
+    return 0;
+}
+
+int TestExprParser_HexLiterals() {
+    MakeExprStore(32);
+
+    {
+        auto root = Parse("0xFF").root;
+        BF_TEST(Op(root) == OpType::Const);
+        BF_TEST(ExprOf(root).knownValue == 255);
+    }
+
+    {
+        auto root = Parse("0x1234").root;
+        BF_TEST(Op(root) == OpType::Const);
+        BF_TEST(ExprOf(root).knownValue == 0x1234);
+    }
+
+    return 0;
+}
+
+int TestExprParser_BinaryLiterals() {
+    MakeExprStore(32);
+
+    {
+        auto root = Parse("0b10101010").root;
+        BF_TEST(Op(root) == OpType::Const);
+        BF_TEST(ExprOf(root).knownValue == 0b10101010);
+    }
+
+    {
+        auto root = Parse("0b11111111").root;
+        BF_TEST(Op(root) == OpType::Const);
+        BF_TEST(ExprOf(root).knownValue == 0b11111111);
+    }
+
+    return 0;
+}
+
+int TestExprParser_WidthConstructorsForPrefixedLiterals() {
+    MakeExprStore(32);
+
+    {
+        auto root = Parse("u8(0xFF)").root;
+        BF_TEST(Op(root) == OpType::Const);
+        BF_TEST(BitWidth(root) == 8);
+        BF_TEST(ExprOf(root).knownValue == 255);
+    }
+
+    {
+        auto root = Parse("u8(0b11111111)").root;
+        BF_TEST(Op(root) == OpType::Const);
+        BF_TEST(BitWidth(root) == 8);
+        BF_TEST(ExprOf(root).knownValue == 255);
+    }
+
+    return 0;
+}
+
+int TestExprParser_WidthConstructorForCompoundExpression() {
+    MakeExprStore(32);
+
+    auto root = Parse("u32(a + b)").root;
+
+    BF_TEST(Op(root) == OpType::Add);
+    BF_TEST(BitWidth(root) == 32);
+    BF_TEST(Op(Input(root, 0)) == OpType::Var);
+    BF_TEST(Op(Input(root, 1)) == OpType::Var);
+
+    return 0;
+}
+
+int TestExprParser_WidthConstructorNamesRemainVariablesWithoutCall() {
+    MakeExprStore(32);
+
+    auto parsed = Parse("u8 + 1");
+
+    BF_TEST(Op(parsed.root) == OpType::Add);
+
+    auto lhs = Input(parsed.root, 0);
+    BF_TEST(Op(lhs) == OpType::Var);
+    BF_TEST(parsed.names.at(lhs.id) == "u8");
+
+    return 0;
+}
+
 int TestExprParser_RoundTrip_ToString() {
     MakeExprStore(32);
 
@@ -273,6 +403,13 @@ int main() {
     BF_RUN_TEST(TestExprParser_ParsesLetterXAsMultiplicationInfix);
     BF_RUN_TEST(TestExprParser_ParsesLetterXAsMultiplicationWithoutSpaces);
     BF_RUN_TEST(TestExprParser_ParsesVariableNamedX);
+    BF_RUN_TEST(TestExprParser_WidthConstructorsForVariables);
+    BF_RUN_TEST(TestExprParser_WidthConstructorsForConstants);
+    BF_RUN_TEST(TestExprParser_HexLiterals);
+    BF_RUN_TEST(TestExprParser_BinaryLiterals);
+    BF_RUN_TEST(TestExprParser_WidthConstructorsForPrefixedLiterals);
+    BF_RUN_TEST(TestExprParser_WidthConstructorForCompoundExpression);
+    BF_RUN_TEST(TestExprParser_WidthConstructorNamesRemainVariablesWithoutCall);
     BF_RUN_TEST(TestExprParser_RoundTrip_ToString);
     BF_RUN_TEST(TestExprParser_UnaryChain_NormalizationAndRoundTrip);
     return 0;

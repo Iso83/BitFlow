@@ -12,6 +12,8 @@ enum class LexerErrorCode {
     InvalidDecimalLiteral,
     MissingHexDigits,
     InvalidHexLiteral,
+    MissingBinaryDigits,
+    InvalidBinaryLiteral,
 };
 
 struct SourceSpan {

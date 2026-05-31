@@ -2,12 +2,16 @@
 #include <BitFlow/io/ExprParser.h>
 #include <BitFlow/io/helper/Exception.h>
 #include <BitFlow/io/lexer/Lexer.h>
+#include <algorithm>
+#include <optional>
+#include <unordered_map>
 
 namespace BitFlow::IO {
 
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::IO::Lexer;
+namespace Types = BitFlow::Core::Types;
 
 static IOException ParseErrorAt(const std::string& message, const Token& token) {
     return IOException(message + " at position " + std::to_string(token.span.begin));
@@ -17,7 +21,7 @@ class PrattParser {
   private:
     std::vector<Token> m_tokens;
     std::size_t m_pos = 0;
-    std::unordered_map<std::string, ExprId> m_varIds;
+    std::unordered_map<std::string, std::unordered_map<Types::BitWidth, ExprId>> m_varIds;
     ExprStore* m_store;
     IFunctionResolver* m_functions{};
 
@@ -81,8 +85,8 @@ class PrattParser {
 
     static bool IsPrefixToken(TokenKind kind) {
         return kind == TokenKind::Identifier || kind == TokenKind::DecimalLiteral || kind == TokenKind::HexLiteral ||
-               kind == TokenKind::LeftParen || kind == TokenKind::Tilde || kind == TokenKind::Plus ||
-               kind == TokenKind::Minus;
+               kind == TokenKind::BinaryLiteral || kind == TokenKind::LeftParen || kind == TokenKind::Tilde ||
+               kind == TokenKind::Plus || kind == TokenKind::Minus;
     }
 
     static bool IsInfixOperandStart(const Token& token) {
@@ -205,7 +209,7 @@ class PrattParser {
 
             ExprId right = ParseExpression(rbp);
 
-            left = m_store->create(op, {left, right}).id;
+            left = CreateBinary(op, left, right);
         }
 
         return left;
@@ -229,7 +233,7 @@ class PrattParser {
         if (!isNegative)
             return inner;
 
-        return m_store->create(OpType::Neg, {inner}).id;
+        return CreateUnary(OpType::Neg, inner);
     }
 
     ExprId ParsePrefix(const Token& token) {
@@ -238,6 +242,7 @@ class PrattParser {
             return ParseIdentifierOrCall(token);
         case TokenKind::DecimalLiteral:
         case TokenKind::HexLiteral:
+        case TokenKind::BinaryLiteral:
             return ParseLiteral(token);
         case TokenKind::LeftParen:
             return ParseGroupedExpression(token);
@@ -248,7 +253,7 @@ class PrattParser {
                 BF_IO_THROW("Missing OpInfo for Not");
 
             ExprId inner = ParseExpression(info->precedence);
-            return m_store->create(OpType::Not, {inner}).id;
+            return CreateUnary(OpType::Not, inner);
         }
         case TokenKind::Plus:
             return ParseSignedPrefixExpression(false);
@@ -259,19 +264,106 @@ class PrattParser {
         }
     }
 
-    ExprId ParseIdentifierOrCall(const Token& token) {
-        if (Current().kind == TokenKind::LeftParen)
-            return ParseFunctionCall(token);
+    ExprId CreateUnary(OpType op, ExprId input) {
+        const Expr& inputExpr = (*m_store)[input];
+        return m_store->create(op, {input}, inputExpr.bitWidth).id;
+    }
 
-        auto it = m_varIds.find(token.text);
-        if (it == m_varIds.end()) {
-            ExprId id = m_store->createVariable().id;
-            m_varIds[token.text] = id;
-            m_idToName[id] = token.text;
-            return id;
+    ExprId CreateBinary(OpType op, ExprId left, ExprId right) {
+        const Expr& leftExpr = (*m_store)[left];
+        const Expr& rightExpr = (*m_store)[right];
+
+        Types::BitWidth bitWidth = Types::ExprChunkBits;
+
+        switch (op) {
+        case OpType::Shl:
+        case OpType::Shr:
+        case OpType::RotL:
+        case OpType::RotR:
+        case OpType::Pow:
+            bitWidth = leftExpr.bitWidth;
+            break;
+        default:
+            bitWidth = std::max(leftExpr.bitWidth, rightExpr.bitWidth);
+            break;
         }
 
-        return it->second;
+        return m_store->create(op, {left, right}, bitWidth).id;
+    }
+
+    static std::optional<Types::BitWidth> WidthConstructorBitWidth(const std::string& name) {
+        if (name == "u8")
+            return Types::BitWidth{8};
+
+        if (name == "u16")
+            return Types::BitWidth{16};
+
+        if (name == "u32")
+            return Types::BitWidth{32};
+
+        if (name == "u64")
+            return Types::BitWidth{64};
+
+        return std::nullopt;
+    }
+
+    ExprId GetOrCreateVariable(const std::string& name, Types::BitWidth bitWidth) {
+        auto& widths = m_varIds[name];
+        auto it = widths.find(bitWidth);
+        if (it != widths.end())
+            return it->second;
+
+        ExprId id = m_store->createVariable(bitWidth).id;
+        widths[bitWidth] = id;
+        m_idToName[id] = name;
+        return id;
+    }
+
+    ExprId ParseWidthConstructor(const Token& identifier, Types::BitWidth bitWidth) {
+        if (!Consume(TokenKind::LeftParen))
+            throw ParseErrorAt("Expected '(' after width constructor", Current());
+
+        if (Current().kind == TokenKind::RightParen)
+            throw ParseErrorAt("Width constructor expects exactly 1 argument", identifier);
+
+        ExprId inner = ParseExpression(0);
+
+        if (Consume(TokenKind::Comma))
+            throw ParseErrorAt("Width constructor expects exactly 1 argument", Current());
+
+        if (!Consume(TokenKind::RightParen))
+            throw ParseErrorAt("Expected ')' after width constructor argument", Current());
+
+        return ApplyExplicitWidth(inner, bitWidth);
+    }
+
+    ExprId ApplyExplicitWidth(ExprId id, Types::BitWidth bitWidth) {
+        const Expr& expr = (*m_store)[id];
+
+        if (expr.op == OpType::Const) {
+            const Types::ExprChunk mask = Expr::fullMask(bitWidth);
+            return m_store->createConstant(expr.knownValue & mask, bitWidth).id;
+        }
+
+        if (expr.op == OpType::Var) {
+            const auto name = m_idToName.find(id);
+            if (name != m_idToName.end())
+                return GetOrCreateVariable(name->second, bitWidth);
+        }
+
+        ExprInputs inputs = expr.inputs;
+        return m_store->create(expr.op, std::move(inputs), bitWidth).id;
+    }
+
+    ExprId ParseIdentifierOrCall(const Token& token) {
+        if (Current().kind == TokenKind::LeftParen) {
+            if (auto width = WidthConstructorBitWidth(token.text))
+                return ParseWidthConstructor(token, *width);
+
+            return ParseFunctionCall(token);
+        }
+
+        return GetOrCreateVariable(token.text, Types::ExprChunkBits);
     }
 
     ExprId ParseFunctionCall(const Token& identifier) {
@@ -294,7 +386,7 @@ class PrattParser {
             if (args.size() != 2)
                 throw ParseErrorAt("Function pow expects exactly 2 arguments", identifier);
 
-            return m_store->create(OpType::Pow, {args[0].id, args[1].id}).id;
+            return CreateBinary(OpType::Pow, args[0].id, args[1].id);
         }
 
         if (!m_functions || !m_functions->Contains(identifier.text))

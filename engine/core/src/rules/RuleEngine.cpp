@@ -87,10 +87,10 @@ ExprId RuleEngine::ApplyRecursive(ExprStore* store, ExprId id, const ExprNameMap
     if (changed)
         current = store->create(op, std::move(newInputs), bitWidth).id;
 
-    const ExprId rewritten = ApplyOnce(store, current);
+    const ExprId rewritten = ApplyOnce(store, current, names);
 
     if (rewritten != current)
-        return ApplyRecursive(store, rewritten);
+        return ApplyRecursive(store, rewritten, names);
 
     return current;
 }

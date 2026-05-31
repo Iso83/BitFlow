@@ -26,6 +26,7 @@ class Lexer {
     Token ReadIdentifier();
     Token ReadDecimalLiteral();
     Token ReadHexLiteral();
+    Token ReadBinaryLiteral();
     Token ReadOperatorOrPunctuation();
     Token MakeErrorToken(std::size_t begin, std::size_t end, LexerErrorCode errorCode, std::string text) const;
 };

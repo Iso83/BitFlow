@@ -25,6 +25,10 @@ bool IsHexDigit(char ch) {
     return std::isxdigit(uch) != 0;
 }
 
+bool IsBinDigit(char ch) {
+    return ch == '0' || ch == '1';
+}
+
 bool IsOperandEndChar(char ch) {
     const unsigned char uch = static_cast<unsigned char>(ch);
     return std::isalnum(uch) != 0 || ch == '_' || ch == ')';
@@ -79,6 +83,9 @@ Token Lexer::NextToken() {
     if (IsDecDigit(Peek())) {
         if (Peek() == '0' && (Peek(1) == 'x' || Peek(1) == 'X'))
             return ReadHexLiteral();
+
+        if (Peek() == '0' && (Peek(1) == 'b' || Peek(1) == 'B'))
+            return ReadBinaryLiteral();
 
         return ReadDecimalLiteral();
     }
@@ -151,6 +158,29 @@ Token Lexer::ReadHexLiteral() {
                               BuildErrorText("Invalid hex literal", begin));
 
     return Token{TokenKind::HexLiteral, std::move(text), SourceSpan{begin, m_pos}, value, std::nullopt};
+}
+
+Token Lexer::ReadBinaryLiteral() {
+    const std::size_t begin = m_pos;
+    Advance(2); // 0b / 0B
+
+    const std::size_t binaryBegin = m_pos;
+    while (IsBinDigit(Peek()))
+        Advance(1);
+
+    if (binaryBegin == m_pos)
+        return MakeErrorToken(begin, m_pos, LexerErrorCode::MissingBinaryDigits,
+                              BuildErrorText("Expected binary digits after 0b prefix", begin));
+
+    std::string text = m_input.substr(begin, m_pos - begin);
+    const std::string binaryDigits = text.substr(2);
+    const std::optional<std::uint64_t> value = ParseUnsigned(binaryDigits, 2);
+
+    if (!value)
+        return MakeErrorToken(begin, m_pos, LexerErrorCode::InvalidBinaryLiteral,
+                              BuildErrorText("Invalid binary literal", begin));
+
+    return Token{TokenKind::BinaryLiteral, std::move(text), SourceSpan{begin, m_pos}, value, std::nullopt};
 }
 
 Token Lexer::ReadOperatorOrPunctuation() {
