@@ -10,6 +10,7 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
+BF_DEPRECATED("Use HasBooleanConstantInput<OpType::And, true, true>")
 static bool Match_AndFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::And)
@@ -27,6 +28,7 @@ static bool Match_AndFold(const ExprStore* store, const ExprNameMap* names, Expr
     return false;
 }
 
+BF_DEPRECATED("Use HasBooleanConstantInput<OpType::Or, true, true>")
 static bool Match_OrFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Or)

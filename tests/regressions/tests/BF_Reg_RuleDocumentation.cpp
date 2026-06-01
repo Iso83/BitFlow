@@ -27,7 +27,7 @@ static const DocExample g_examples[] = {
 
     {.rule = Simplify::Arithmetic::Get_PowOne_Rule().key, .input = "a**1", .expected = "a"},
 
-    {.rule = Simplify::Arithmetic::Get_MulZero_Rule().key, .input = "a * 0", .expected = "0"},
+    {.rule = Simplify::Arithmetic::Get_MulZero_Rule().key, .input = "0 * a", .expected = "0"},
 
     {.rule = Simplify::Arithmetic::Get_PowZero_Rule().key, .input = "a**0", .expected = "1"},
 
@@ -55,7 +55,7 @@ static const DocExample g_examples[] = {
 
 #pragma region SimplifyBitwise
 
-    {.rule = Simplify::Bitwise::Get_XorZero_Rule().key, .input = "a ^ 0", .expected = "a"},
+    {.rule = Simplify::Bitwise::Get_XorZero_Rule().key, .input = "0 ^ a", .expected = "a"},
 
     {.rule = Simplify::Bitwise::Get_AndCancel_Rule().key, .input = "a & a", .expected = "a"},
 
@@ -66,10 +66,6 @@ static const DocExample g_examples[] = {
     {.rule = Simplify::Bitwise::Get_Not_Rule().key, .input = "~(~a)", .expected = "a"},
 
     {.rule = Simplify::Bitwise::Get_Complement_Rule().key, .input = "a & ~a", .expected = "0"},
-
-    {.rule = Simplify::Bitwise::Get_AndZeroDominance_Rule().key, .input = "a & 0", .expected = "0"},
-
-    {.rule = Simplify::Bitwise::Get_OrZeroIdentity_Rule().key, .input = "a | 0", .expected = "a"},
 
 #pragma endregion
 

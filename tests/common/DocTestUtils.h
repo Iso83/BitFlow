@@ -42,26 +42,21 @@ bool ValidateTrace(const Core::Rules::RuleEngine& engine, Core::Rules::RuleKey t
     return ok;
 }
 
-int ValidateDocExample(const DocExample& ex) {
+int ValidateDocExample(const DocExample& ex, bool trace = false) {
     Core::Expression::ExprStore store;
-
-    auto parsed = IO::Parse(&store, ex.input);
-
     Core::Rules::RuleEngine engine = Core::Rules::BuildExplore();
 
     std::unordered_set<Core::Rules::RuleKey> usedRules;
-
     engine.SetDebugCallback([&](Core::Rules::RuleEngine::DebugCallBack_Ctx& ctx) { usedRules.insert(ctx.key); });
 
-    BF_SAFE_REWRITE(rewritten,
-                    Core::Expression::ExprRef(&store, engine.Rewrite(&store, parsed.root.id, &parsed.names)));
+    auto parsed = IO::Parse(&store, ex.input);
+
+    BF_SAFE_REWRITE(rewritten, Rewrite(engine, parsed.names, parsed.root, trace));
 
     auto result = Core::Expression::ToString(rewritten.store, rewritten.id, parsed.names);
 
     BF_TEST(result == ex.expected);
-
     BF_TEST(ValidateTrace(engine, ex.rule, usedRules));
-
     return 0;
 }
 

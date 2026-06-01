@@ -315,7 +315,7 @@ Reduces multiplication by zero to zero.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$x \cdot 0$$ |
+| Input   | $$0 \cdot x$$ |
 | Rewrite | $$0$$      |
 
 ---
@@ -617,30 +617,50 @@ Removes XOR with zero.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$x \oplus 0$$ |
+| Input   | $$0 \oplus x$$ |
 | Rewrite | $$x$$      |
 
 ---
 
 ### CORE.SIMPLIFY.BITWISE.AND_FOLD
 
-Combines constant AND terms.
+Simplifies AND expressions containing constant operands.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \land 255 \land 15$$ |
 | Rewrite | $$x \land 15$$ |
 
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land 0$$ |
+| Rewrite | $$0$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \land \text{true}$$ |
+| Rewrite | $$x$$ |
+
 ---
 
 ### CORE.SIMPLIFY.BITWISE.OR_FOLD
 
-Combines constant OR terms.
+Simplifies OR expressions containing constant operands.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \lor 1 \lor 2$$ |
 | Rewrite | $$x \lor 3$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \lor 0$$ |
+| Rewrite | $$x$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$x \lor \text{true}$$ |
+| Rewrite | $$\text{true}$$ |
 
 ---
 
@@ -803,17 +823,6 @@ Simplifies XOR expressions involving complements.
 
 ---
 
-### CORE.SIMPLIFY.BITWISE.AND_ZERO_DOMINANCE
-
-Applies AND dominance with zero.
-
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$x \land 0$$ |
-| Rewrite | $$0$$ |
-
----
-
 ### CORE.SIMPLIFY.BITWISE.AND_ONE_IDENTITY
 
 Removes all-ones masks where possible.
@@ -833,17 +842,6 @@ Applies OR dominance with all-ones values.
 | ------- | ---------- |
 | Input   | $$x \lor -1$$ |
 | Rewrite | $$-1$$ |
-
----
-
-### CORE.SIMPLIFY.BITWISE.OR_ZERO_IDENTITY
-
-Removes OR with zero.
-
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$x \lor 0$$ |
-| Rewrite | $$x$$ |
 
 ---
 

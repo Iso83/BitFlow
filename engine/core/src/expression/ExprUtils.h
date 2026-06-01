@@ -39,6 +39,34 @@ template <OpType Op> inline bool Match_Zero(const ExprStore* store, const ExprNa
 
     return false;
 }
+
+template <OpType Op, bool MatchTrue, bool MatchFalse>
+inline bool HasBooleanConstantInput(const ExprStore* store, const ExprNameMap* names, Ids::ExprId id) {
+    static_assert(MatchFalse || MatchTrue);
+
+    const Expr& e = (*store)[id];
+
+    if (e.op != Op || e.inputs.size() < 2)
+        return false;
+
+    for (auto in : e.inputs) {
+
+        const Expr& exprIn = (*store)[in];
+
+        if (exprIn.op != OpType::Const)
+            continue;
+
+        if constexpr (MatchTrue)
+            if (store->isTrue(in))
+                return true;
+
+        if constexpr (MatchFalse)
+            if (store->isFalse(in))
+                return true;
+    }
+
+    return false;
+}
 #pragma endregion
 
 inline int CompareExprCanonical(const ExprStore* store, const ExprNameMap* names, Ids::ExprId a, Ids::ExprId b) {
