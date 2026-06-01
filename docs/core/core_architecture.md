@@ -629,28 +629,28 @@ Simplifies AND expressions containing constant operands.
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \land 255 \land 15$$ |
-| Rewrite | $$x \land 15$$ |
+| Rewrite | $$15 \land x$$ |
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \land 0$$ |
 | Rewrite | $$0$$ |
 
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$x \land \text{true}$$ |
-| Rewrite | $$x$$ |
-
 ---
 
 ### CORE.SIMPLIFY.BITWISE.OR_FOLD
 
-Simplifies OR expressions containing constant operands.
+Simplifies OR expressions containing constant operands by bitwise-OR folding all constant terms. When duplicate OR terms are present, `OR_CANCEL` runs before this rule so constants can fold after idempotent operands are removed.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \lor 1 \lor 2$$ |
-| Rewrite | $$x \lor 3$$ |
+| Rewrite | $$3 \lor x$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$1 \lor 2 \lor a \lor a$$ |
+| Rewrite | $$3 \lor a$$ |
 
 | Step    | Expression |
 | ------- | ---------- |
@@ -670,8 +670,8 @@ Combines constant XOR terms.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$x \oplus 1 \oplus 1$$ |
-| Rewrite | $$x$$ |
+| Input   | $$x \oplus 1 \oplus 2$$ |
+| Rewrite | $$3 \oplus x$$ |
 
 ---
 

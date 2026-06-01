@@ -28,7 +28,6 @@ static bool Match_AndFold(const ExprStore* store, const ExprNameMap* names, Expr
     return false;
 }
 
-BF_DEPRECATED("Use HasBooleanConstantInput<OpType::Or, true, true>")
 static bool Match_OrFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Or)
@@ -37,13 +36,20 @@ static bool Match_OrFold(const ExprStore* store, const ExprNameMap* names, ExprI
     if (e.inputs.size() < 2)
         return false;
 
+    size_t constCount = 0;
+
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
-        if (exprIn.op == OpType::Const && (store->isTrue(in) || store->isFalse(in)))
+        if (exprIn.op != OpType::Const)
+            continue;
+
+        if (store->isTrue(in) || store->isFalse(in))
             return true;
+
+        constCount++;
     }
 
-    return false;
+    return constCount >= 2;
 }
 
 static bool Match_XorFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
@@ -95,18 +101,36 @@ static ExprId Rewrite_AndFold(RewriteContext& ctx, const ExprNameMap* names, Exp
 static ExprId Rewrite_OrFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
+
+    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
+    Types::ExprChunk acc = 0;
+    bool hasConst = false;
+
     ExprInputs newInputs;
+    newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
-        if (exprIn.op == OpType::Const && store->isTrue(in))
-            return ctx.replace(id, store->makeTrue(e.bitWidth).id);
+        if (exprIn.op == OpType::Const) {
+            acc |= exprIn.knownValue;
+            hasConst = true;
 
-        if (exprIn.op == OpType::Const && store->isFalse(in))
+            if ((acc & mask) == mask)
+                return ctx.replace(id, store->makeTrue(e.bitWidth).id);
+
             continue;
+        }
 
         newInputs.push_back(in);
     }
+
+    if (!hasConst)
+        return id;
+
+    acc &= mask;
+
+    if (acc != 0)
+        newInputs.insert(newInputs.begin(), store->createConstant(acc, e.bitWidth).id);
 
     if (newInputs.empty())
         return ctx.replace(id, store->makeFalse(e.bitWidth).id);
@@ -159,15 +183,15 @@ static ExprId Rewrite_XorFold(RewriteContext& ctx, const ExprNameMap* names, Exp
 #pragma endregion
 
 Rule Get_AndFold_Rule() {
-    return Rule{AndFold, &Match_AndFold, &Rewrite_AndFold, {Normalize::Flatten}};
+    return Rule{AndFold, &Match_AndFold, &Rewrite_AndFold, {Normalize::Order}};
 }
 
 Rule Get_OrFold_Rule() {
-    return Rule{OrFold, &Match_OrFold, &Rewrite_OrFold, {Normalize::Flatten}};
+    return Rule{OrFold, &Match_OrFold, &Rewrite_OrFold, {Normalize::Order}};
 }
 
 Rule Get_XorFold_Rule() {
-    return Rule{XorFold, &Match_XorFold, &Rewrite_XorFold, {Normalize::Flatten}};
+    return Rule{XorFold, &Match_XorFold, &Rewrite_XorFold, {Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

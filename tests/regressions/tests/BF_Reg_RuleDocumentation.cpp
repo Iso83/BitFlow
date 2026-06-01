@@ -51,11 +51,24 @@ static const DocExample g_examples[] = {
 
     {.rule = Simplify::Arithmetic::Get_SubNeg_Rule().key, .input = "a - (-b)", .expected = "a + b"},
 
+    {.rule = Simplify::Arithmetic::Get_AddFold_Rule().key, .input = "1 + 2 + a", .expected = "3 + a"},
+
+    {.rule = Simplify::Arithmetic::Get_CombineConstants_Rule().key, .input = "2 * 3 * a", .expected = "6 * a"},
+
 #pragma endregion
 
 #pragma region SimplifyBitwise
 
     {.rule = Simplify::Bitwise::Get_XorZero_Rule().key, .input = "0 ^ a", .expected = "a"},
+
+    {.rule = Simplify::Bitwise::Get_AndFold_Rule().key, .input = "u8(a) & u8(255) & u8(15)", .expected = "15 & a"},
+    {.rule = Simplify::Bitwise::Get_AndFold_Rule().key, .input = "a & 0", .expected = "0"},
+
+    {.rule = Simplify::Bitwise::Get_OrFold_Rule().key, .input = "a | 1 | 2", .expected = "3 | a"},
+    {.rule = Simplify::Bitwise::Get_OrFold_Rule().key, .input = "a | 0", .expected = "a"},
+    {.rule = Simplify::Bitwise::Get_OrFold_Rule().key, .input = "u8(a) | u8(255)", .expected = "255"},
+
+    {.rule = Simplify::Bitwise::Get_XorFold_Rule().key, .input = "a ^ 1 ^ 2", .expected = "3 ^ a"},
 
     {.rule = Simplify::Bitwise::Get_AndCancel_Rule().key, .input = "a & a", .expected = "a"},
 
