@@ -172,6 +172,9 @@ Rule Get_PerfectSquare_Rule();
 inline constexpr RuleKey DifferenceOfSquares{"CORE.FACTORIZE.ARITHMETIC.DIFFERENCE_OF_SQUARES"};
 Rule Get_DifferenceOfSquares_Rule();
 
+inline constexpr RuleKey PromoteFactorsToPower{"CORE.FACTORIZE.ARITHMETIC.PROMOTE_FACTORS_TO_POWER"};
+Rule Get_PromoteFactorsToPower_Rule();
+
 inline constexpr RuleKey CommonFactorCancel_PowTerms{"CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL_POW_TERMS"};
 Rule Get_CommonFactorCancel_PowTerms_Rule();
 

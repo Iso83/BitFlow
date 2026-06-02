@@ -74,6 +74,7 @@ std::vector<Rule> BuildRulesInDeclarationOrder() {
         Factorize::Arithmetic::Get_AddCommonFactor_Rule(),
         Factorize::Arithmetic::Get_PerfectSquare_Rule(),
         Factorize::Arithmetic::Get_DifferenceOfSquares_Rule(),
+        Factorize::Arithmetic::Get_PromoteFactorsToPower_Rule(),
         Factorize::Arithmetic::Get_CommonFactorCancel_PowTerms_Rule(),
         Factorize::Arithmetic::Get_CommonFactorCancel_Rule(),
         Factorize::Arithmetic::Get_SubCommonDenominator_Rule(),
@@ -262,6 +263,13 @@ std::vector<DocExample> BuildDocExamples() {
          .expected = "(1 + a + (a - 2)) * (1 + a - (a - 2))",
          .disabledRules = {Simplify::Arithmetic::SubAddSelfCancel, Factorize::Arithmetic::AddLinearMultiplicity,
                            Factorize::Arithmetic::AddCommonFactor}},
+
+        {.rule = Factorize::Arithmetic::Get_PromoteFactorsToPower_Rule().key,
+         .input = "a * b * c * (a * b)**2",
+         .expected = "c * (a * b) ** 3"},
+        {.rule = Factorize::Arithmetic::Get_PromoteFactorsToPower_Rule().key,
+         .input = "a * b * c * d * (a * b * c)**5",
+         .expected = "d * (a * b * c) ** 6"},
 
         {.rule = Factorize::Arithmetic::Get_CommonFactorCancel_PowTerms_Rule().key,
          .input = "a**5 * 2 / (3 * a**5)",

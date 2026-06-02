@@ -864,6 +864,24 @@ Factorizes a difference of two squared expressions into the product of their sum
 
 ---
 
+
+### CORE.FACTORIZE.ARITHMETIC.PROMOTE_FACTORS_TO_POWER
+
+Promotes a complete set of plain multiplicative factors into an existing power whose base is their product.
+This compacts expressions where one additional occurrence of a compound product appears next to a power of that same product.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$a \cdot b \cdot c \cdot (a \cdot b)^2$$ |
+| Rewrite | $$c \cdot (a \cdot b)^3$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$a \cdot b \cdot c \cdot d \cdot (a \cdot b \cdot c)^5$$ |
+| Rewrite | $$d \cdot (a \cdot b \cdot c)^6$$ |
+
+---
+
 ### CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL_POW_TERMS
 
 Cancels identical power terms and reduces power exponents that appear in both numerator and denominator.

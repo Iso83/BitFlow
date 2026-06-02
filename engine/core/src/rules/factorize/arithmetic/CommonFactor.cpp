@@ -24,6 +24,68 @@ struct LinearTerm {
     Types::ExprChunk coeff{0};
 };
 
+struct PowerFactorPromotionMatch {
+    std::size_t powIndex{};
+    std::vector<bool> consumedFactors;
+    bool matched{false};
+};
+
+static PowerFactorPromotionMatch FindPowerFactorPromotion(const ExprStore* store, const Expr& e) {
+    PowerFactorPromotionMatch result{};
+
+    if (e.op != OpType::Mul || e.inputs.size() < 2)
+        return result;
+
+    for (std::size_t powIndex = 0; powIndex < e.inputs.size(); ++powIndex) {
+        const Expr& maybePow = (*store)[e.inputs[powIndex]];
+        if (maybePow.op != OpType::Pow || maybePow.inputs.size() != 2)
+            continue;
+
+        const Expr& exponent = (*store)[maybePow.inputs[1]];
+        if (exponent.op != OpType::Const)
+            continue;
+
+        const Expr& base = (*store)[maybePow.inputs[0]];
+        if (base.op != OpType::Mul || base.inputs.size() < 2)
+            continue;
+
+        std::vector<bool> consumed(e.inputs.size(), false);
+        consumed[powIndex] = true;
+        bool allBaseFactorsFound = true;
+
+        for (ExprId baseFactorId : base.inputs) {
+            bool found = false;
+
+            for (std::size_t factorIndex = 0; factorIndex < e.inputs.size(); ++factorIndex) {
+                if (consumed[factorIndex])
+                    continue;
+
+                if (!store->structuralEquivalent(baseFactorId, e.inputs[factorIndex]))
+                    continue;
+
+                consumed[factorIndex] = true;
+                found = true;
+                break;
+            }
+
+            if (!found) {
+                allBaseFactorsFound = false;
+                break;
+            }
+        }
+
+        if (!allBaseFactorsFound)
+            continue;
+
+        result.powIndex = powIndex;
+        result.consumedFactors = std::move(consumed);
+        result.matched = true;
+        return result;
+    }
+
+    return result;
+}
+
 static bool DecomposeLinearTerm(const ExprStore* store, ExprId termId, LinearTerm& out, Types::BitWidth bitWidth) {
     const Expr& term = (*store)[termId];
 
@@ -143,6 +205,11 @@ static bool Match_AddCommonFactor(const ExprStore* store, const ExprNameMap* nam
     }
 
     return false;
+}
+
+static bool Match_PromoteFactorsToPower(const ExprStore* store, const ExprNameMap* names, ExprId id) {
+    const Expr& e = (*store)[id];
+    return FindPowerFactorPromotion(store, e).matched;
 }
 
 static bool Match_CommonFactorCancel_PowTerms(const ExprStore* store, const ExprNameMap* names, ExprId id) {
@@ -512,6 +579,39 @@ static ExprId Rewrite_AddCommonFactor(RewriteContext& ctx, const ExprNameMap* na
     return ctx.replace(id, store->create(OpType::Add, std::move(finalAddTerms), bitWidth).id);
 }
 
+static ExprId Rewrite_PromoteFactorsToPower(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr& e = (*store)[id];
+    const ExprInputs eInputs = e.inputs;
+    const PowerFactorPromotionMatch match = FindPowerFactorPromotion(store, e);
+
+    if (!match.matched)
+        return id;
+
+    const Expr& pow = (*store)[e.inputs[match.powIndex]];
+    const ExprId baseId = pow.inputs[0];
+    const Expr& exponent = (*store)[pow.inputs[1]];
+    const Types::BitWidth bitWidth = e.bitWidth;
+    const Types::ExprChunk promotedExponent = (exponent.knownValue + 1) & Expr::fullMask(bitWidth);
+    const ExprId promotedExponentId = store->createConstant(promotedExponent, bitWidth).id;
+    const ExprId promotedPower = store->create(OpType::Pow, {baseId, promotedExponentId}, bitWidth).id;
+
+    ExprInputs newFactors;
+    newFactors.reserve(eInputs.size() - 1);
+
+    for (std::size_t i = 0; i < eInputs.size(); ++i) {
+        if (!match.consumedFactors[i])
+            newFactors.push_back(eInputs[i]);
+    }
+
+    newFactors.push_back(promotedPower);
+
+    if (newFactors.size() == 1)
+        return ctx.replace(id, newFactors[0]);
+
+    return ctx.replace(id, store->create(OpType::Mul, std::move(newFactors), bitWidth).id);
+}
+
 static ExprId Rewrite_CommonFactorCancel_PowTerms(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
@@ -808,6 +908,11 @@ Rule Get_AddLinearMultiplicity_Rule() {
 
 Rule Get_AddCommonFactor_Rule() {
     return Rule{AddCommonFactor, &Match_AddCommonFactor, &Rewrite_AddCommonFactor, {AddLinearMultiplicity}};
+}
+
+Rule Get_PromoteFactorsToPower_Rule() {
+    return Rule{
+        PromoteFactorsToPower, &Match_PromoteFactorsToPower, &Rewrite_PromoteFactorsToPower, {Normalize::Order}};
 }
 
 Rule Get_CommonFactorCancel_PowTerms_Rule() {

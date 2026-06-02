@@ -1,5 +1,6 @@
 #include <ExprTestUtils.h>
 #include <RuleTestUtils.h>
+#include <initializer_list>
 
 using namespace BitFlow::Testing;
 using namespace BitFlow::Core::Ids;
@@ -218,6 +219,101 @@ int TestAddCommonFactor_PartialFactorization() {
     BF_TEST(InputSize(r) == 2);
     BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Mul && CountExpr(in, a) == 1; }));
+    return 0;
+}
+
+static bool IsMulOf(ExprRef e, std::initializer_list<ExprRef> expectedFactors) {
+    if (Op(e) != OpType::Mul || InputSize(e) != expectedFactors.size())
+        return false;
+
+    for (ExprRef expected : expectedFactors) {
+        if (!AnyInput(e, [&](ExprRef in) { return in == expected; }))
+            return false;
+    }
+
+    return true;
+}
+
+int TestPromoteFactorsToPower_Basic() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_PromoteFactorsToPower_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto ab = a * b;
+
+    BF_SAFE_REWRITE(r, BF_REWRITE(a * b * c * ab.Pow(C(2))));
+
+    BF_TEST(Op(r) == OpType::Mul);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        return Op(in) == OpType::Pow && IsMulOf(Input(in, 0), {a, b}) && EqualChunkValue(Input(in, 1), 3u);
+    }));
+    return 0;
+}
+
+int TestPromoteFactorsToPower_LargerBase() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_PromoteFactorsToPower_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+    auto abc = a * b * c;
+
+    BF_SAFE_REWRITE(r, BF_REWRITE(a * b * c * d * abc.Pow(C(5))));
+
+    BF_TEST(Op(r) == OpType::Mul);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == d; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        return Op(in) == OpType::Pow && IsMulOf(Input(in, 0), {a, b, c}) && EqualChunkValue(Input(in, 1), 6u);
+    }));
+    return 0;
+}
+
+int TestPromoteFactorsToPower_NoPartialMatch() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_PromoteFactorsToPower_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto ab = a * b;
+    auto expr = a * c * ab.Pow(C(2));
+
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
+
+    BF_TEST(Op(r) == OpType::Mul);
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == c; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        return Op(in) == OpType::Pow && IsMulOf(Input(in, 0), {a, b}) && EqualChunkValue(Input(in, 1), 2u);
+    }));
+    BF_TEST(!AnyInput(r, [&](ExprRef in) {
+        return Op(in) == OpType::Pow && IsMulOf(Input(in, 0), {a, b}) && EqualChunkValue(Input(in, 1), 3u);
+    }));
     return 0;
 }
 
@@ -541,6 +637,9 @@ int main() {
     BF_RUN_TEST(TestAddCommonFactor_Basic);
     BF_RUN_TEST(TestAddCommonFactor_CommutativeMulOperands);
     BF_RUN_TEST(TestAddCommonFactor_PartialFactorization);
+    BF_RUN_TEST(TestPromoteFactorsToPower_Basic);
+    BF_RUN_TEST(TestPromoteFactorsToPower_LargerBase);
+    BF_RUN_TEST(TestPromoteFactorsToPower_NoPartialMatch);
     BF_RUN_TEST(TestCommonFactorCancel_PowTerms_Basic);
     BF_RUN_TEST(TestCommonFactorCancel_PowTerms_ExponentDifference);
     BF_RUN_TEST(TestCommonFactorCancel_PowTerms_DirectDivision);

@@ -119,6 +119,7 @@ inline RuleEngine BuildFactorizeArithmetic() {
     e.AddRule(Factorize::Arithmetic::Get_AddCommonFactor_Rule());
     e.AddRule(Factorize::Arithmetic::Get_PerfectSquare_Rule());
     e.AddRule(Factorize::Arithmetic::Get_DifferenceOfSquares_Rule());
+    e.AddRule(Factorize::Arithmetic::Get_PromoteFactorsToPower_Rule());
     e.AddRule(Factorize::Arithmetic::Get_CommonFactorCancel_PowTerms_Rule());
     e.AddRule(Factorize::Arithmetic::Get_CommonFactorCancel_Rule());
     e.AddRule(Factorize::Arithmetic::Get_SubCommonDenominator_Rule());
