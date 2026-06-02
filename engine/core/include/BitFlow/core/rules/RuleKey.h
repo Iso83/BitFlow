@@ -5,7 +5,7 @@
 namespace BitFlow::Core::Rules {
 
 struct RuleKey {
-    const std::string_view value{};
+    std::string_view value{};
 
     constexpr RuleKey(const char* v) : value(v) {}
 

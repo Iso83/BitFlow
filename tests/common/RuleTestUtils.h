@@ -2,9 +2,9 @@
 
 #include "TestAssert.h"
 
-#include <BitFlow/core/rules/RulePipeline.h>
 #include <BitFlow/core/expression/ExprPrinter.h>
 #include <BitFlow/core/rules/RuleEngine.h>
+#include <BitFlow/core/rules/RulePipeline.h>
 #include <BitFlow/core/rules/RuleTrace.h>
 #include <iostream>
 
@@ -46,10 +46,8 @@ inline bool PrintDependencyValidation(const Core::Rules::DependencyValidationRes
     return false;
 }
 
-inline Core::Expression::ExprRef Rewrite(Core::Rules::RuleEngine& engine, 
-                                        const Core::Expression::ExprNameMap& names,
-                                         Core::Expression::ExprRef e,
-                                         const bool trace = false,
+inline Core::Expression::ExprRef Rewrite(Core::Rules::RuleEngine& engine, const Core::Expression::ExprNameMap& names,
+                                         Core::Expression::ExprRef e, const bool trace = false,
                                          const Core::Expression::PrintOptions& options = {}) {
 
     if (!trace)
@@ -86,6 +84,6 @@ inline Core::Expression::ExprRef Rewrite(Core::Rules::RuleEngine& engine,
     field = rewrite;
 #endif
 
-#define BF_REWRITE(expr) Rewrite(engine, names, expr)
+#define BF_REWRITE(expr, ...) Rewrite(engine, names, expr, __VA_ARGS__)
 
 } // namespace BitFlow::Testing

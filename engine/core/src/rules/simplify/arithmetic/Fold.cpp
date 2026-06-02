@@ -714,7 +714,7 @@ static ExprId Rewrite_MulPowCombine(RewriteContext& ctx, const ExprNameMap* name
 #pragma endregion
 
 Rule Get_AddFold_Rule() {
-    return Rule{AddFold, &Match_AddFold, &Rewrite_AddFold, {Normalize::Flatten}};
+    return Rule{AddFold, &Match_AddFold, &Rewrite_AddFold, {Normalize::Order}};
 }
 
 Rule Get_SubConstFold_Rule() {
@@ -722,10 +722,7 @@ Rule Get_SubConstFold_Rule() {
 }
 
 Rule Get_SubAddSelfCancel_Rule() {
-    return Rule{SubAddSelfCancel,
-                &Match_SubAddSelfCancel,
-                &Rewrite_SubAddSelfCancel,
-                {Normalize::Order, Simplify::Arithmetic::AddFold}};
+    return Rule{SubAddSelfCancel, &Match_SubAddSelfCancel, &Rewrite_SubAddSelfCancel, {Simplify::Arithmetic::AddFold}};
 }
 
 Rule Get_SubMulLinearCancel_Rule() {
@@ -733,10 +730,8 @@ Rule Get_SubMulLinearCancel_Rule() {
 }
 
 Rule Get_MulDivConstantReduction_Rule() {
-    return Rule{MulDivConstantReduction,
-                &Match_MulDivConstantReduction,
-                &Rewrite_MulDivConstantReduction,
-                {Normalize::Flatten}};
+    return Rule{
+        MulDivConstantReduction, &Match_MulDivConstantReduction, &Rewrite_MulDivConstantReduction, {Normalize::Order}};
 }
 
 Rule Get_MulToPow_Rule() {

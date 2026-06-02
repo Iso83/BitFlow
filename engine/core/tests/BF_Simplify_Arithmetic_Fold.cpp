@@ -12,6 +12,7 @@ int TestAddFold() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -32,6 +33,7 @@ int TestSubConstFold() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
     engine.AddRule(rule);
 
@@ -54,6 +56,7 @@ int TestSubConstFold_MultiConst() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
     engine.AddRule(rule);
 
@@ -76,6 +79,7 @@ int TestSubConstFold_Cancel() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());
     engine.AddRule(rule);
 
@@ -279,6 +283,7 @@ int TestMulDivConstantReduction() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -301,6 +306,7 @@ int TestMulDivConstantReduction_ToBase() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -319,6 +325,7 @@ int TestMulDivConstantReduction_WithExtraFactors() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 

@@ -6,9 +6,9 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-int TestXorNotReduction_Basic() {
+int TestXorAndNotReduction_Basic() {
     MakeExprStore(32);
-    const auto rule = Simplify::Bitwise::Get_XorNotReduction_Rule();
+    const auto rule = Simplify::Bitwise::Get_XorAndNotReduction_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
@@ -29,9 +29,9 @@ int TestXorNotReduction_Basic() {
     return 0;
 }
 
-int TestXorNotReduction_MultiXorArgs() {
+int TestXorAndNotReduction_MultiXorArgs() {
     MakeExprStore(32);
-    const auto rule = Simplify::Bitwise::Get_XorNotReduction_Rule();
+    const auto rule = Simplify::Bitwise::Get_XorAndNotReduction_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
@@ -59,9 +59,9 @@ int TestXorNotReduction_MultiXorArgs() {
     return 0;
 }
 
-int TestXorNotReduction_IntegrationScenario() {
+int TestXorAndNotReduction_IntegrationScenario() {
     MakeExprStore(32);
-    const auto rule = Simplify::Bitwise::Get_XorNotReduction_Rule();
+    const auto rule = Simplify::Bitwise::Get_XorAndNotReduction_Rule();
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
@@ -85,8 +85,8 @@ int TestXorNotReduction_IntegrationScenario() {
 }
 
 int main() {
-    BF_RUN_TEST(TestXorNotReduction_Basic);
-    BF_RUN_TEST(TestXorNotReduction_MultiXorArgs);
-    BF_RUN_TEST(TestXorNotReduction_IntegrationScenario);
+    BF_RUN_TEST(TestXorAndNotReduction_Basic);
+    BF_RUN_TEST(TestXorAndNotReduction_MultiXorArgs);
+    BF_RUN_TEST(TestXorAndNotReduction_IntegrationScenario);
     return 0;
 }

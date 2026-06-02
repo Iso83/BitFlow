@@ -46,7 +46,7 @@ static ExprId Rewrite_Complement(RewriteContext& ctx, const ExprNameMap* names, 
                     return ctx.replace(id, store->makeFalse().id);
 
                 if (e.op == OpType::Or)
-                    return ctx.replace(id, store->makeTrue().id);
+                    return ctx.replace(id, store->makeTrue(e.bitWidth).id);
             }
         }
     }

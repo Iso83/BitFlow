@@ -9,7 +9,7 @@ namespace BitFlow::Core::Rules::Simplify::Bitwise {
 using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
-static bool Match_XorNotReduction(const ExprStore* store, const ExprNameMap* names, ExprId id) {
+static bool Match_XorAndNotReduction(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
     if (e.op != OpType::And)
@@ -40,7 +40,7 @@ static bool Match_XorNotReduction(const ExprStore* store, const ExprNameMap* nam
     return false;
 }
 
-static ExprId Rewrite_XorNotReduction(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
+static ExprId Rewrite_XorAndNotReduction(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
     const ExprInputs inputs = e.inputs;
@@ -116,8 +116,8 @@ static ExprId Rewrite_XorNotReduction(RewriteContext& ctx, const ExprNameMap* na
     return id;
 }
 
-Rule Get_XorNotReduction_Rule() {
-    return Rule{XorNotReduction, &Match_XorNotReduction, &Rewrite_XorNotReduction, {AndXorReduction}};
+Rule Get_XorAndNotReduction_Rule() {
+    return Rule{XorAndNotReduction, &Match_XorAndNotReduction, &Rewrite_XorAndNotReduction, {AndXorReduction}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

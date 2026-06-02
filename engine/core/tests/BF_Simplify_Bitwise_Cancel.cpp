@@ -6,85 +6,6 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 using namespace BitFlow::Core::Rules;
 
-int TestAndCancelPair() {
-    MakeExprStore(32);
-    const auto rule = Simplify::Bitwise::Get_AndCancel_Rule();
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(rule);
-    BF_VALIDATE_ENGINE(engine, rule);
-
-    auto x = V("x");
-
-    BF_SAFE_REWRITE(r, BF_REWRITE(x & x));
-
-    BF_TEST(r == x);
-    return 0;
-}
-
-int TestAndCancelMixed() {
-    MakeExprStore(32);
-    const auto rule = Simplify::Bitwise::Get_AndCancel_Rule();
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(rule);
-    BF_VALIDATE_ENGINE(engine, rule);
-
-    auto x = V("x");
-    auto y = V("y");
-
-    BF_SAFE_REWRITE(r, BF_REWRITE(x & y & x));
-
-    BF_TEST(Op(r) == OpType::And);
-    BF_TEST(InputSize(r) == 2);
-    BF_TEST(Input(r, 0) == x);
-    BF_TEST(Input(r, 1) == y);
-
-    return 0;
-}
-
-int TestOrCancelPair() {
-    MakeExprStore(32);
-    const auto rule = Simplify::Bitwise::Get_OrCancel_Rule();
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(rule);
-    BF_VALIDATE_ENGINE(engine, rule);
-
-    auto x = V("x");
-
-    BF_SAFE_REWRITE(r, BF_REWRITE(x | x));
-
-    BF_TEST(r == x);
-    return 0;
-}
-
-int TestOrCancelMixed() {
-    MakeExprStore(32);
-    const auto rule = Simplify::Bitwise::Get_OrCancel_Rule();
-
-    RuleEngine engine;
-    engine.AddRule(Normalize::Get_Flatten_Rule());
-    engine.AddRule(Normalize::Get_Order_Rule());
-    engine.AddRule(rule);
-    BF_VALIDATE_ENGINE(engine, rule);
-
-    auto x = V("x");
-    auto y = V("y");
-
-    BF_SAFE_REWRITE(r, BF_REWRITE(y | x | y));
-
-    BF_TEST(Op(r) == OpType::Or);
-    BF_TEST(InputSize(r) == 2);
-    BF_TEST(Input(r, 0) == x);
-    BF_TEST(Input(r, 1) == y);
-    return 0;
-}
-
 int TestXorParityCancel_Pair() {
     MakeExprStore(32);
     const auto rule = Simplify::Bitwise::Get_XorCancel_Rule();
@@ -212,10 +133,6 @@ int TestXorParity_RewriteKeepsCanonicalOrder() {
 }
 
 int main() {
-    BF_RUN_TEST(TestAndCancelPair);
-    BF_RUN_TEST(TestAndCancelMixed);
-    BF_RUN_TEST(TestOrCancelPair);
-    BF_RUN_TEST(TestOrCancelMixed);
     BF_RUN_TEST(TestXorParityCancel_Pair);
     BF_RUN_TEST(TestXorParityCancel_ToSingle);
     BF_RUN_TEST(TestXorParityCancel_MixedToXor);

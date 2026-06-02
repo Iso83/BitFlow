@@ -176,7 +176,7 @@ static ExprId Rewrite_XorAnd(RewriteContext& ctx, const ExprNameMap* names, Expr
 }
 
 Rule Get_XorAnd_Rule() {
-    return Rule{XorAnd, &Match_XorAnd, &Rewrite_XorAnd, {Normalize::Order}};
+    return Rule{XorAnd, &Match_XorAnd, &Rewrite_XorAnd, {Simplify::Bitwise::XorAndReduction}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

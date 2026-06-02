@@ -131,12 +131,6 @@ Rule Get_OrFold_Rule();
 inline constexpr RuleKey XorFold{"CORE.SIMPLIFY.BITWISE.XOR_FOLD"};
 Rule Get_XorFold_Rule();
 
-inline constexpr RuleKey AndCancel{"CORE.SIMPLIFY.BITWISE.AND_CANCEL"};
-Rule Get_AndCancel_Rule();
-
-inline constexpr RuleKey OrCancel{"CORE.SIMPLIFY.BITWISE.OR_CANCEL"};
-Rule Get_OrCancel_Rule();
-
 inline constexpr RuleKey XorCancel{"CORE.SIMPLIFY.BITWISE.XOR_CANCEL"};
 Rule Get_XorCancel_Rule();
 
@@ -152,9 +146,6 @@ Rule Get_NotXor_Rule();
 inline constexpr RuleKey Idempotent{"CORE.SIMPLIFY.BITWISE.IDEMPOTENT"};
 Rule Get_Idempotent_Rule();
 
-inline constexpr RuleKey AndIdempotent{"CORE.SIMPLIFY.BITWISE.AND_IDEMPOTENT"};
-Rule Get_AndIdempotent_Rule();
-
 inline constexpr RuleKey Complement{"CORE.SIMPLIFY.BITWISE.COMPLEMENT"};
 Rule Get_Complement_Rule();
 
@@ -164,14 +155,8 @@ Rule Get_AndXorReduction_Rule();
 inline constexpr RuleKey XorAndReduction{"CORE.SIMPLIFY.BITWISE.XOR_AND_REDUCTION"};
 Rule Get_XorAndReduction_Rule();
 
-inline constexpr RuleKey XorNotReduction{"CORE.SIMPLIFY.BITWISE.XOR_NOT_REDUCTION"};
-Rule Get_XorNotReduction_Rule();
-
-inline constexpr RuleKey AndOneIdentity{"CORE.SIMPLIFY.BITWISE.AND_ONE_IDENTITY"};
-Rule Get_AndOneIdentity_Rule();
-
-inline constexpr RuleKey OrOneDominance{"CORE.SIMPLIFY.BITWISE.OR_ONE_DOMINANCE"};
-Rule Get_OrOneDominance_Rule();
+inline constexpr RuleKey XorAndNotReduction{"CORE.SIMPLIFY.BITWISE.XOR_AND_NOT_REDUCTION"};
+Rule Get_XorAndNotReduction_Rule();
 } // namespace Simplify::Bitwise
 
 namespace Factorize::Arithmetic {
@@ -199,14 +184,8 @@ Rule Get_SubCommonDenominator_Rule();
 inline constexpr RuleKey AddCommonDenominator{"CORE.FACTORIZE.ARITHMETIC.ADD_COMMON_DENOMINATOR"};
 Rule Get_AddCommonDenominator_Rule();
 
-inline constexpr RuleKey MulCombineConstants{"CORE.FACTORIZE.ARITHMETIC.MUL_COMBINE_CONSTANTS"};
-Rule Get_MulCombineConstants_Rule();
-
 inline constexpr RuleKey MulFractionNumerator{"CORE.FACTORIZE.ARITHMETIC.MUL_FRACTION_NUMERATOR"};
 Rule Get_MulFractionNumerator_Rule();
-
-inline constexpr RuleKey DivFractionNumerator{"CORE.FACTORIZE.ARITHMETIC.DIV_FRACTION_NUMERATOR"};
-Rule Get_DivFractionNumerator_Rule();
 
 inline constexpr RuleKey DivFractionDenominator{"CORE.FACTORIZE.ARITHMETIC.DIV_FRACTION_DENOMINATOR"};
 Rule Get_DivFractionDenominator_Rule();
@@ -215,9 +194,6 @@ Rule Get_DivFractionDenominator_Rule();
 namespace Factorize::Bitwise {
 inline constexpr RuleKey XorAnd{"CORE.FACTORIZE.BITWISE.XOR_AND"};
 Rule Get_XorAnd_Rule();
-
-inline constexpr RuleKey XorPairCancel{"CORE.FACTORIZE.BITWISE.XOR_PAIR_CANCEL"};
-Rule Get_XorPairCancel_Rule();
 
 inline constexpr RuleKey AndAbsorb{"CORE.FACTORIZE.BITWISE.AND_ABSORB"};
 Rule Get_AndAbsorb_Rule();

@@ -479,6 +479,37 @@ int TestAddCommonDenominator() {
     return 0;
 }
 
+int TestCommonFactorCancel_DivisionFactors() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Arithmetic::Get_CommonFactorCancel_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+
+    BF_SAFE_REWRITE(r, BF_REWRITE((a * b * C(2)) / (b * C(3))));
+
+    BF_TEST(Op(r) == OpType::Div);
+    BF_TEST(InputSize(r) == 2);
+
+    const ExprRef numerator = Input(r, 0);
+    const ExprRef denominator = Input(r, 1);
+
+    BF_TEST(Op(numerator) == OpType::Mul);
+    BF_TEST(InputSize(numerator) == 2);
+    BF_TEST(AnyInput(numerator, [](ExprRef in) { return EqualChunkValue(in, 2u); }));
+    BF_TEST(AnyInput(numerator, [&](ExprRef in) { return in == a; }));
+    BF_TEST(EqualChunkValue(denominator, 3u));
+    BF_TEST(CountExpr(r, b) == 0);
+
+    return 0;
+}
+
 int TestCommonFactorCancel_SubDivMul() {
     MakeExprStore(32);
     const auto rule = Factorize::Arithmetic::Get_CommonFactorCancel_Rule();
@@ -520,6 +551,7 @@ int main() {
     BF_RUN_TEST(TestSubCommonDenominator_ComplexNumerator);
     BF_RUN_TEST(TestSubCommonDenominator_WithLeadingAddTerm);
     BF_RUN_TEST(TestAddCommonDenominator);
+    BF_RUN_TEST(TestCommonFactorCancel_DivisionFactors);
     BF_RUN_TEST(TestCommonFactorCancel_SubDivMul);
     return 0;
 }

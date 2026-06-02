@@ -10,13 +10,23 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 void RuleEngine::AddRule(const Rule& rule) {
-    if (m_present.contains(rule.key))
+    if (Contains(rule.key))
         return;
 
     m_present.insert(rule.key);
     m_rules.push_back(rule);
 
     m_validated = false;
+}
+
+bool RuleEngine::RemoveRule(const RuleKey& key) {
+    if (!m_present.erase(key))
+        return false;
+
+    std::erase_if(m_rules, [&](const Rule& rule) { return rule.key == key; });
+
+    m_validated = false;
+    return true;
 }
 
 ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id, const ExprNameMap* names) const {

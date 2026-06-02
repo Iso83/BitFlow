@@ -241,8 +241,47 @@ static bool Match_AddCommonDenominator(const ExprStore* store, const ExprNameMap
     return store->structuralEquivalent(lhs.inputs[1], rhs.inputs[1]);
 }
 
+static bool IsCommonFactorCancelPlainFactor(const ExprStore* store, ExprId factorId) {
+    const Expr& factor = (*store)[factorId];
+
+    // Power cancellation owns exponent-aware rewrites and identical power factors.
+    return factor.op != OpType::Pow;
+}
+
+static bool HasCommonMultiplicativeFactor(const ExprStore* store, const ExprInputs& lhsFactors,
+                                          const ExprInputs& rhsFactors) {
+    for (ExprId lhsFactorId : lhsFactors) {
+        if (!IsCommonFactorCancelPlainFactor(store, lhsFactorId))
+            continue;
+
+        for (ExprId rhsFactorId : rhsFactors) {
+            if (!IsCommonFactorCancelPlainFactor(store, rhsFactorId))
+                continue;
+
+            if (store->structuralEquivalent(lhsFactorId, rhsFactorId))
+                return true;
+        }
+    }
+
+    return false;
+}
+
 static bool Match_CommonFactorCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
+
+    if (e.op == OpType::Div && e.inputs.size() == 2) {
+        const Expr& lhs = (*store)[e.inputs[0]];
+        const Expr& rhs = (*store)[e.inputs[1]];
+
+        const ExprInputs lhsFactors = lhs.op == OpType::Mul ? lhs.inputs : ExprInputs{e.inputs[0]};
+        const ExprInputs rhsFactors = rhs.op == OpType::Mul ? rhs.inputs : ExprInputs{e.inputs[1]};
+
+        if (lhsFactors.size() == 1 && rhsFactors.size() == 1)
+            return false;
+
+        return HasCommonMultiplicativeFactor(store, lhsFactors, rhsFactors);
+    }
+
     if (e.op != OpType::Sub || e.inputs.size() != 2)
         return false;
 
@@ -661,6 +700,75 @@ static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, const ExprNameMap*
     const Expr& e = (*store)[id];
     const Types::BitWidth bitWidth = e.bitWidth;
     const ExprInputs eInputs = e.inputs;
+
+    auto buildProduct = [&](const ExprInputs& factors) -> ExprId {
+        if (factors.empty())
+            return store->createConstant(1, bitWidth).id;
+
+        if (factors.size() == 1)
+            return factors[0];
+
+        ExprInputs productFactors = factors;
+        return store->create(OpType::Mul, std::move(productFactors), bitWidth).id;
+    };
+
+    if (e.op == OpType::Div && e.inputs.size() == 2) {
+        const Expr& lhs = (*store)[e.inputs[0]];
+        const Expr& rhs = (*store)[e.inputs[1]];
+
+        const ExprInputs lhsFactors = lhs.op == OpType::Mul ? lhs.inputs : ExprInputs{e.inputs[0]};
+        const ExprInputs rhsFactors = rhs.op == OpType::Mul ? rhs.inputs : ExprInputs{e.inputs[1]};
+
+        std::vector<bool> lhsConsumed(lhsFactors.size(), false);
+        std::vector<bool> rhsConsumed(rhsFactors.size(), false);
+        bool anyCanceled = false;
+
+        for (size_t i = 0; i < lhsFactors.size(); ++i) {
+            for (size_t j = 0; j < rhsFactors.size(); ++j) {
+                if (rhsConsumed[j])
+                    continue;
+
+                if (!IsCommonFactorCancelPlainFactor(store, lhsFactors[i]) ||
+                    !IsCommonFactorCancelPlainFactor(store, rhsFactors[j]))
+                    continue;
+
+                if (!store->structuralEquivalent(lhsFactors[i], rhsFactors[j]))
+                    continue;
+
+                lhsConsumed[i] = true;
+                rhsConsumed[j] = true;
+                anyCanceled = true;
+                break;
+            }
+        }
+
+        if (!anyCanceled)
+            return id;
+
+        ExprInputs newLhsFactors;
+        ExprInputs newRhsFactors;
+        newLhsFactors.reserve(lhsFactors.size());
+        newRhsFactors.reserve(rhsFactors.size());
+
+        for (size_t i = 0; i < lhsFactors.size(); ++i) {
+            if (!lhsConsumed[i])
+                newLhsFactors.push_back(lhsFactors[i]);
+        }
+
+        for (size_t i = 0; i < rhsFactors.size(); ++i) {
+            if (!rhsConsumed[i])
+                newRhsFactors.push_back(rhsFactors[i]);
+        }
+
+        const ExprId newLhs = buildProduct(newLhsFactors);
+        const ExprId newRhs = buildProduct(newRhsFactors);
+
+        if (EqualChunkValue(store, newRhs, 1u))
+            return ctx.replace(id, newLhs);
+
+        return ctx.replace(id, store->create(OpType::Div, {newLhs, newRhs}, bitWidth).id);
+    }
+
     const Expr& rhs = (*store)[e.inputs[1]];
 
     for (size_t i = 0; i < rhs.inputs.size(); ++i) {
@@ -683,10 +791,7 @@ static ExprId Rewrite_CommonFactorCancel(RewriteContext& ctx, const ExprNameMap*
             }
             newFactors.push_back(maybeDiv.inputs[0]);
 
-            ExprId newRhs = store->createConstant(1, bitWidth).id;
-            if (!newFactors.empty())
-                newRhs = (newFactors.size() == 1) ? newFactors[0]
-                                                  : store->create(OpType::Mul, std::move(newFactors), bitWidth).id;
+            const ExprId newRhs = buildProduct(newFactors);
 
             return ctx.replace(id, store->create(OpType::Sub, {eInputs[0], newRhs}, bitWidth).id);
         }

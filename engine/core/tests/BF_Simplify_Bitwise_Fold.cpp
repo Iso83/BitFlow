@@ -38,6 +38,7 @@ int TestOrFold() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -63,6 +64,7 @@ int TestOrFold_BitwiseConstants() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Idempotent_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 

@@ -82,6 +82,7 @@ int TestNotXor() {
 
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 

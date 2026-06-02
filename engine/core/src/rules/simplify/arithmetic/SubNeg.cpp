@@ -29,7 +29,7 @@ static ExprId Rewrite_SubNeg(RewriteContext& ctx, const ExprNameMap* names, Expr
 }
 
 Rule Get_SubNeg_Rule() {
-    return Rule{SubNeg, &Match_SubNeg, &Rewrite_SubNeg, {Normalize::Order, NegNeg, Arithmetic::AddFold}};
+    return Rule{SubNeg, &Match_SubNeg, &Rewrite_SubNeg, {NegNeg, Arithmetic::AddFold}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Arithmetic

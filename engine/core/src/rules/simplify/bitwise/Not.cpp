@@ -136,7 +136,7 @@ Rule Get_NotPushdown_Rule() {
 }
 
 Rule Get_NotXor_Rule() {
-    return Rule{NotXor, &Match_NotXor, &Rewrite_NotXor, {Normalize::Flatten}};
+    return Rule{NotXor, &Match_NotXor, &Rewrite_NotXor, {Normalize::Order}};
 }
 
 } // namespace BitFlow::Core::Rules::Simplify::Bitwise

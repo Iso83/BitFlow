@@ -101,8 +101,9 @@ static ExprId Rewrite_AndFold(RewriteContext& ctx, const ExprNameMap* names, Exp
 static ExprId Rewrite_OrFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
+    const Types::BitWidth bitWidth = e.bitWidth;
 
-    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
+    const Types::ExprChunk mask = Expr::fullMask(bitWidth);
     Types::ExprChunk acc = 0;
     bool hasConst = false;
 
@@ -116,7 +117,7 @@ static ExprId Rewrite_OrFold(RewriteContext& ctx, const ExprNameMap* names, Expr
             hasConst = true;
 
             if ((acc & mask) == mask)
-                return ctx.replace(id, store->makeTrue(e.bitWidth).id);
+                return ctx.replace(id, store->makeTrue(bitWidth).id);
 
             continue;
         }
@@ -130,20 +131,21 @@ static ExprId Rewrite_OrFold(RewriteContext& ctx, const ExprNameMap* names, Expr
     acc &= mask;
 
     if (acc != 0)
-        newInputs.insert(newInputs.begin(), store->createConstant(acc, e.bitWidth).id);
+        newInputs.insert(newInputs.begin(), store->createConstant(acc, bitWidth).id);
 
     if (newInputs.empty())
-        return ctx.replace(id, store->makeFalse(e.bitWidth).id);
+        return ctx.replace(id, store->makeFalse(bitWidth).id);
 
     if (newInputs.size() == 1)
         return ctx.replace(id, newInputs[0]);
 
-    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
+    return ctx.replace(id, store->create(OpType::Or, std::move(newInputs), bitWidth).id);
 }
 
 static ExprId Rewrite_XorFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
+    const Types::BitWidth bitWidth = e.bitWidth;
 
     Types::ExprChunk acc = 0;
     bool hasConst = false;
@@ -151,7 +153,7 @@ static ExprId Rewrite_XorFold(RewriteContext& ctx, const ExprNameMap* names, Exp
     ExprInputs nonConst;
     nonConst.reserve(e.inputs.size());
 
-    const Types::ExprChunk mask = Expr::fullMask(e.bitWidth);
+    const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
     for (ExprId inId : e.inputs) {
         const Expr& in = (*store)[inId];
@@ -170,7 +172,7 @@ static ExprId Rewrite_XorFold(RewriteContext& ctx, const ExprNameMap* names, Exp
         return id;
 
     if (acc != 0)
-        nonConst.push_back(store->createConstant(acc, e.bitWidth).id);
+        nonConst.push_back(store->createConstant(acc, bitWidth).id);
 
     if (nonConst.empty())
         return ctx.replace(id, store->zeroId());
@@ -178,7 +180,7 @@ static ExprId Rewrite_XorFold(RewriteContext& ctx, const ExprNameMap* names, Exp
     if (nonConst.size() == 1)
         return ctx.replace(id, nonConst[0]);
 
-    return ctx.replace(id, store->create(OpType::Xor, std::move(nonConst), e.bitWidth).id);
+    return ctx.replace(id, store->create(OpType::Xor, std::move(nonConst), bitWidth).id);
 }
 #pragma endregion
 
@@ -187,7 +189,7 @@ Rule Get_AndFold_Rule() {
 }
 
 Rule Get_OrFold_Rule() {
-    return Rule{OrFold, &Match_OrFold, &Rewrite_OrFold, {Normalize::Order}};
+    return Rule{OrFold, &Match_OrFold, &Rewrite_OrFold, {Normalize::Order, Bitwise::Idempotent}};
 }
 
 Rule Get_XorFold_Rule() {

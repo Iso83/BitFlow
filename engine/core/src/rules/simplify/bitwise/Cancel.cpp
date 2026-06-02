@@ -20,50 +20,6 @@ static size_t FindEquivalentIndex(const ExprStore* store, const ExprNameMap* nam
 }
 
 #pragma region Match
-static bool Match_AndCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
-    const Expr& e = (*store)[id];
-
-    if (e.op != OpType::And)
-        return false;
-
-    if (e.inputs.size() < 2)
-        return false;
-
-    std::unordered_map<ExprId, int> counts;
-    counts.reserve(e.inputs.size());
-
-    for (auto in : e.inputs) {
-        counts[in]++;
-
-        if (counts[in] >= 2)
-            return true;
-    }
-
-    return false;
-}
-
-static bool Match_OrCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
-    const Expr& e = (*store)[id];
-
-    if (e.op != OpType::Or)
-        return false;
-
-    if (e.inputs.size() < 2)
-        return false;
-
-    std::unordered_map<ExprId, int> counts;
-    counts.reserve(e.inputs.size());
-
-    for (auto in : e.inputs) {
-        counts[in]++;
-
-        if (counts[in] >= 2)
-            return true;
-    }
-
-    return false;
-}
-
 static bool Match_XorCancel(const ExprStore* store, const ExprNameMap* names, Ids::ExprId id) {
     const Expr& e = (*store)[id];
 
@@ -122,60 +78,6 @@ static bool Match_XorCancel(const ExprStore* store, const ExprNameMap* names, Id
 #pragma endregion
 
 #pragma region Rewrite
-static ExprId Rewrite_AndCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
-    ExprStore* store = ctx;
-    const Expr& e = (*store)[id];
-
-    ExprInputs newInputs;
-    newInputs.reserve(e.inputs.size());
-
-    std::unordered_map<ExprId, bool> seen;
-    seen.reserve(e.inputs.size());
-
-    for (auto in : e.inputs) {
-        if (seen[in])
-            continue;
-
-        seen[in] = true;
-        newInputs.push_back(in);
-    }
-
-    if (newInputs.empty())
-        return ctx.replace(id, store->makeTrue(e.bitWidth).id);
-
-    if (newInputs.size() == 1)
-        return ctx.replace(id, newInputs[0]);
-
-    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
-}
-
-static ExprId Rewrite_OrCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
-    ExprStore* store = ctx;
-    const Expr& e = (*store)[id];
-
-    ExprInputs newInputs;
-    newInputs.reserve(e.inputs.size());
-
-    std::unordered_map<ExprId, bool> seen;
-    seen.reserve(e.inputs.size());
-
-    for (auto in : e.inputs) {
-        if (seen[in])
-            continue;
-
-        seen[in] = true;
-        newInputs.push_back(in);
-    }
-
-    if (newInputs.empty())
-        return ctx.replace(id, store->makeFalse(e.bitWidth).id);
-
-    if (newInputs.size() == 1)
-        return ctx.replace(id, newInputs[0]);
-
-    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
-}
-
 static ExprId Rewrite_XorCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
@@ -232,14 +134,6 @@ static ExprId Rewrite_XorCancel(RewriteContext& ctx, const ExprNameMap* names, E
     return ctx.replace(id, store->create(OpType::Xor, std::move(terms), bitWidth).id);
 }
 #pragma endregion
-
-Rule Get_AndCancel_Rule() {
-    return Rule{AndCancel, &Match_AndCancel, &Rewrite_AndCancel, {Normalize::Flatten}};
-}
-
-Rule Get_OrCancel_Rule() {
-    return Rule{OrCancel, &Match_OrCancel, &Rewrite_OrCancel, {Normalize::Order}};
-}
 
 Rule Get_XorCancel_Rule() {
     return Rule{XorCancel, &Match_XorCancel, &Rewrite_XorCancel, {Normalize::Order, XorZero}};

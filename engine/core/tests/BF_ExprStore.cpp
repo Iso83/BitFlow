@@ -98,7 +98,7 @@ int TestContains_ReturnsFalseAfterRemove() {
 
     BF_TEST(store.contains(v));
 
-    store.remove(v);
+    auto removed = store.remove(v);
 
     BF_TEST(!store.contains(v));
 

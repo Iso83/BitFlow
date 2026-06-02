@@ -74,3 +74,37 @@ Before implementing a new rule:
 - Verify that the behavior cannot already be achieved through a combination of existing rules.
 - Prefer extending an existing rule when the transformation belongs to the same conceptual operation.
 - Avoid introducing duplicate rewrite behavior.
+
+## Documentation Validation
+Whenever a rule is added, removed, renamed, reordered, or modified:
+- Update `docs/core/core_architecture.md`.
+- Keep the documented rule list in the same order as `Rules.h`.
+- Update `BF_Reg_RuleDocumentation.cpp`.
+- Keep `BuildRulesInDeclarationOrder()` synchronized with `Rules.h`.
+- Keep `BuildDocExamples()` synchronized with `Rules.h`.
+- Every rule must have at least one documentation example.
+- Documentation examples must describe the behavior of the target rule itself.
+- Documentation examples must remain stable under `RulePipeline::BuildExplore()`.
+
+Purpose of `BF_Reg_RuleDocumentation.cpp`:
+- Verifies that `Rules.h`, documentation, and examples remain synchronized.
+- Verifies that every registered rule has documentation coverage.
+- Detects duplicate rewrite behavior between rules.
+- Detects hidden rule overlap.
+- Detects unintended cross-rule interactions.
+- Helps prevent multiple rules from implementing the same transformation.
+
+Notes:
+- `RulePipeline::BuildExplore()` is considered the canonical rewrite pipeline and is used by the validation tests.
+- `RulePipeline::BuildExpand()` is an optional user-facing expansion pipeline.
+- Expansion rules may intentionally introduce flip-flop behavior or intermediate forms that are later simplified by Explore.
+- Documentation examples should therefore be validated against Explore behavior, not Expand behavior.
+
+## Existing Rule First
+Before implementing a new rule:
+- Verify that the behavior cannot already be achieved through a combination of existing rules.
+- Verify that no existing rule already performs the same rewrite.
+- Run `BF_Reg_RuleDocumentation.cpp` and review failures carefully.
+- Prefer extending an existing rule when the transformation belongs to the same conceptual operation.
+- Avoid introducing duplicate rewrite behavior.
+- Avoid introducing specialized rules that are already covered by a more generic rule.

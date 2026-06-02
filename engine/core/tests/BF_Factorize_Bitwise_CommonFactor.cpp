@@ -13,6 +13,8 @@ int TestXorAndCommonFactor() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -43,6 +45,8 @@ int TestXorAndCommonFactor_MultiInput() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -75,6 +79,8 @@ int TestXorAndFactor_Basic() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -105,6 +111,8 @@ int TestXorAndFactor_WithUntouchedTerm() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -141,6 +149,8 @@ int TestXorAndFactor_NoMatch() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -163,6 +173,8 @@ int TestXorAndFactor_MultiFactorChoice_PicksMostFrequent() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -202,6 +214,8 @@ int TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
@@ -247,6 +261,8 @@ int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
     RuleEngine engine;
     engine.AddRule(Normalize::Get_Flatten_Rule());
     engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_AndXorReduction_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_XorAndReduction_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 

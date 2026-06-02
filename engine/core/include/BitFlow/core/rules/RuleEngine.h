@@ -36,7 +36,13 @@ class RuleEngine {
     RuleEngine() = default;
     ~RuleEngine() = default;
 
+    [[nodiscard]] inline bool Contains(const RuleKey& key) const {
+        return m_present.contains(key);
+    }
+
     void AddRule(const Rule& rule);
+
+    bool RemoveRule(const RuleKey& key);
 
     void Merge(const RuleEngine& other) {
         for (const auto& rule : other.m_rules)

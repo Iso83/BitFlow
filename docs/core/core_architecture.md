@@ -367,11 +367,6 @@ Removes division by one.
 | Input   | $$x / 1$$  |
 | Rewrite | $$x$$      |
 
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$x / 1$$  |
-| Rewrite | $$x$$      |
-
 ---
 
 ### CORE.SIMPLIFY.ARITHMETIC.DIV_SELF
@@ -473,8 +468,8 @@ Eliminates subtraction of a negated value.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$x - (-(a+b))$$ |
-| Rewrite | $$x + (a+b)$$ |
+| Input   | $$x - (-(y+z))$$ |
+| Rewrite | $$x + y + z$$ |
 
 ---
 
@@ -486,7 +481,7 @@ This helps normalize arithmetic expressions into a more stable canonical form.
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x + 10 + 20$$ |
-| Rewrite | $$x + 30$$ |
+| Rewrite | $$30 + x$$ |
 
 ---
 
@@ -498,7 +493,7 @@ This simplifies arithmetic chains and improves canonicalization of affine expres
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$(x + 8) - 1$$ |
-| Rewrite | $$x + 7$$ |
+| Rewrite | $$7 + x$$ |
 
 ---
 
@@ -532,7 +527,7 @@ The rule decreases the multiplicative coefficient by one while preserving remain
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \cdot 5 - x$$ |
-| Rewrite | $$x \cdot 4$$ |
+| Rewrite | $$4 \cdot x$$ |
 
 ---
 
@@ -544,7 +539,7 @@ This simplifies arithmetic expressions by folding divisible constant coefficient
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \cdot 12 \div 3$$ |
-| Rewrite | $$x \cdot 4$$ |
+| Rewrite | $$4 \cdot x$$ |
 
 ---
 
@@ -628,7 +623,7 @@ Simplifies AND expressions containing constant operands.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$x \land 255 \land 15$$ |
+| Input   | $$x \land \text{true} \land 15$$ |
 | Rewrite | $$15 \land x$$ |
 
 | Step    | Expression |
@@ -675,28 +670,6 @@ Combines constant XOR terms.
 
 ---
 
-### CORE.SIMPLIFY.BITWISE.AND_CANCEL
-
-Cancels duplicate AND terms where possible.
-
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$x \land x$$ |
-| Rewrite | $$x$$ |
-
----
-
-### CORE.SIMPLIFY.BITWISE.OR_CANCEL
-
-Cancels duplicate OR terms where possible.
-
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$x \lor x$$ |
-| Rewrite | $$x$$ |
-
----
-
 ### CORE.SIMPLIFY.BITWISE.XOR_CANCEL
 
 Cancels duplicate XOR pairs.
@@ -737,7 +710,7 @@ Normalizes NOT/XOR relationships.
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$\sim(x \oplus y)$$ |
-| Rewrite | $$(\sim x) \oplus y$$ |
+| Rewrite | $$\text{true} \oplus x \oplus y$$ |
 
 ---
 
@@ -749,12 +722,6 @@ Simplifies idempotent bitwise patterns.
 | ------- | ---------- |
 | Input   | $$x \lor x$$ |
 | Rewrite | $$x$$ |
-
----
-
-### CORE.SIMPLIFY.BITWISE.AND_IDEMPOTENT
-
-Simplifies repeated AND terms.
 
 | Step    | Expression |
 | ------- | ---------- |
@@ -807,41 +774,22 @@ Reduces XOR expressions involving masked terms.
 
 ---
 
-### CORE.SIMPLIFY.BITWISE.XOR_NOT_REDUCTION
+### CORE.SIMPLIFY.BITWISE.XOR_AND_NOT_REDUCTION
 
-Simplifies XOR expressions involving complements.
+Removes XOR operands that are masked by their own complement.
 
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$x \oplus \sim x$$ |
-| Rewrite | $$-1$$ |
+If an expression contains both `a` inside an XOR term and `~a` as an AND factor,
+the `a` contribution can never affect the result and is removed from the XOR.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$\sim x \oplus x$$ |
-| Rewrite | $$-1$$ |
-
----
-
-### CORE.SIMPLIFY.BITWISE.AND_ONE_IDENTITY
-
-Removes all-ones masks where possible.
+| Input   | $$(a \oplus b) \land \sim a$$ |
+| Rewrite | $$b \land \sim a$$ |
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$x \land -1$$ |
-| Rewrite | $$x$$ |
-
----
-
-### CORE.SIMPLIFY.BITWISE.OR_ONE_DOMINANCE
-
-Applies OR dominance with all-ones values.
-
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$x \lor -1$$ |
-| Rewrite | $$-1$$ |
+| Input   | $$\sim a \land (a \oplus b \oplus c)$$ |
+| Rewrite | $$\sim a \land (b \oplus c)$$ |
 
 ---
 
@@ -874,8 +822,8 @@ Extracts shared multiplicative factors from additions.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$a \cdot x + b \cdot x$$ |
-| Rewrite | $$(a + b) \cdot x$$ |
+| Input   | $$a \cdot x + a \cdot y$$ |
+| Rewrite | $$a \cdot (x+y)$$ |
 
 ---
 
@@ -903,24 +851,16 @@ Recognizes perfect-square trinomials and rewrites them as squared binomials.
 ### CORE.FACTORIZE.ARITHMETIC.DIFFERENCE_OF_SQUARES
 
 Factorizes a difference of two squared expressions into the product of their sum and difference.
-This applies the classical algebraic identity:
-
-$$x^2 - y^2 = (x-y)(x+y)$$
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$a^2 - b^2$$ |
-| Rewrite | $$(a-b)(a+b)$$ |
+| Rewrite | $$(a+b)(a-b)$$ |
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$(a+1)^2 - (a-2)^2$$ |
-| Rewrite | $$((a+1)-(a-2))((a+1)+(a-2))$$ |
-
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$(1+b)^2 - (b-2)^2$$ |
-| Rewrite | $$((1+b)-(b-2))((1+b)+(b-2))$$ |
+| Rewrite | $$(1 + a + (a - 2)) \cdot (1 + a - (a - 2))$$ |
 
 ---
 
@@ -936,18 +876,18 @@ Cancels identical power terms and reduces power exponents that appear in both nu
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$\frac{a^8 \cdot 2}{3 \cdot a^5}$$ |
-| Rewrite | $$\frac{a^3 \cdot 2}{3}$$ |
+| Rewrite | $$\frac{2 \cdot a^3}{3}$$ |
 
 ---
 
 ### CORE.FACTORIZE.ARITHMETIC.COMMON_FACTOR_CANCEL
 
-Cancels common multiplicative factors that appear in both numerator and denominator.
+Removes factors that appear on both sides of a division.
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$\frac{a \cdot b \cdot 2}{b \cdot 3}$$ |
-| Rewrite | $$\frac{a \cdot 2}{3}$$ |
+| Rewrite | $$\frac{2 \cdot a}{3}$$ |
 
 ---
 
@@ -979,17 +919,6 @@ This is primarily a structural normalization step that prepares arithmetic cance
 
 ---
 
-### CORE.FACTORIZE.ARITHMETIC.MUL_COMBINE_CONSTANTS
-
-Combines constant multiplication chains.
-
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$2 \cdot 3 \cdot x$$ |
-| Rewrite | $$6 \cdot x$$ |
-
----
-
 ### CORE.FACTORIZE.ARITHMETIC.MUL_FRACTION_NUMERATOR
 
 Pushes multiplicative terms into a fraction numerator.
@@ -1003,17 +932,6 @@ Pushes multiplicative terms into a fraction numerator.
 | ------- | ---------- |
 | Input   | $$\frac{a}{b} \cdot c$$ |
 | Rewrite | $$\frac{a \cdot c}{b}$$ |
-
----
-
-### CORE.FACTORIZE.ARITHMETIC.DIV_FRACTION_NUMERATOR
-
-Moves multiplication inside a fraction numerator.
-
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$a \cdot \frac{b}{x}$$ |
-| Rewrite | $$\frac{a \cdot b}{x}$$ |
 
 ---
 
@@ -1036,24 +954,13 @@ Extracts common XOR/AND structures into reduced forms.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$(x \land y) \oplus (x \land z)$$ |
+| Input   | $$(y \land x) \oplus (z \land x)$$ |
 | Rewrite | $$x \land (y \oplus z)$$ |
 
 | Step    | Expression |
 | ------- | ---------- |
 | Input   | $$x \oplus (x \land y) \oplus (x \land z)$$ |
-| Rewrite | $$x \oplus (x \land (y \oplus z))$$ |
-
----
-
-### CORE.FACTORIZE.BITWISE.XOR_PAIR_CANCEL
-
-Cancels duplicated XOR factor pairs.
-
-| Step    | Expression |
-| ------- | ---------- |
-| Input   | $$x \oplus y \oplus x$$ |
-| Rewrite | $$y$$ |
+| Rewrite | $$x \land (z \oplus \lnot y)$$ |
 
 ---
 

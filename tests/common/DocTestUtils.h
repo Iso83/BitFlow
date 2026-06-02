@@ -11,6 +11,9 @@ struct DocExample {
 
     const char* input;
     const char* expected;
+    std::vector<Core::Rules::RuleKey> disabledRules{};
+    bool expand = false;
+    bool trace = false;
 };
 
 bool ValidateTrace(const Core::Rules::RuleEngine& engine, Core::Rules::RuleKey target,
@@ -42,13 +45,11 @@ bool ValidateTrace(const Core::Rules::RuleEngine& engine, Core::Rules::RuleKey t
     return ok;
 }
 
-int ValidateDocExample(const DocExample& ex, const bool trace = false,
+int ValidateDocExample(Core::Rules::RuleEngine& engine, const DocExample& ex, const bool trace = false,
                        const Core::Expression::PrintOptions& options = {}) {
     Core::Expression::ExprStore store;
 
     auto parsed = IO::Parse(&store, ex.input);
-
-    Core::Rules::RuleEngine engine = Core::Rules::BuildExplore();
 
     std::unordered_set<Core::Rules::RuleKey> usedRules;
     auto traceState = std::make_shared<std::string>();
