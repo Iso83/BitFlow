@@ -16,7 +16,7 @@ ExprStore::ExprStore() {
 }
 
 #pragma region Constants
-[[nodiscard]] ExprRef ExprStore::createConstant(Types::ExprChunk value, Types::BitWidth bitWidth) {
+ExprRef ExprStore::createConstant(Types::ExprChunk value, Types::BitWidth bitWidth) {
     auto ref = create(OpType::Const, {}, bitWidth);
 
     Expr& expr = get(ref.id);
@@ -26,7 +26,7 @@ ExprStore::ExprStore() {
     return ref;
 }
 
-[[nodiscard]] ExprRef ExprStore::makeTrue(Types::BitWidth bitWidth) {
+ExprRef ExprStore::makeTrue(Types::BitWidth bitWidth) {
     auto ref = create(OpType::Const, {}, bitWidth);
 
     Expr& expr = get(ref.id);
@@ -37,7 +37,7 @@ ExprStore::ExprStore() {
     return ref;
 }
 
-[[nodiscard]] ExprRef ExprStore::invertConst(ExprId id) {
+ExprRef ExprStore::invertConst(ExprId id) {
     const Expr& e = get(id);
 
     if (e.op != OpType::Const)
@@ -51,7 +51,7 @@ ExprStore::ExprStore() {
 #pragma endregion
 
 #pragma region Create
-[[nodiscard]] ExprRef ExprStore::create(OpType op, std::initializer_list<ExprId> in, Types::BitWidth bitWidth) {
+ExprRef ExprStore::create(OpType op, std::initializer_list<ExprId> in, Types::BitWidth bitWidth) {
     BF_CORE_ASSERT(bitWidth > 0);
 
     const auto id = createId();
@@ -86,7 +86,7 @@ ExprStore::ExprStore() {
     return ExprRef(this, id);
 }
 
-[[nodiscard]] ExprRef ExprStore::create(OpType op, ExprInputs&& in, Types::BitWidth bitWidth) {
+ExprRef ExprStore::create(OpType op, ExprInputs&& in, Types::BitWidth bitWidth) {
     BF_CORE_ASSERT(bitWidth > 0);
 
     const auto id = createId();
@@ -123,7 +123,7 @@ ExprStore::ExprStore() {
 #pragma endregion
 
 #pragma region Query
-[[nodiscard]] bool ExprStore::remove(ExprRef ref) {
+bool ExprStore::remove(ExprRef ref) {
     if (!contains(ref))
         return false;
 
@@ -133,7 +133,7 @@ ExprStore::ExprStore() {
     return true;
 }
 
-[[nodiscard]] bool ExprStore::contains(ExprRef ref) const {
+bool ExprStore::contains(ExprRef ref) const {
     if (ref.store != this || ref.id.value() == 0)
         return false;
 
@@ -160,7 +160,7 @@ void CollectEquivalentInputs(const ExprStore& store, ExprId id, OpType op, ExprI
 }
 
 #pragma region Equivalence
-[[nodiscard]] bool ExprStore::structuralEquivalent(ExprId a, ExprId b) const {
+bool ExprStore::structuralEquivalent(ExprId a, ExprId b) const {
     // fast path
     if (a == b)
         return true;
@@ -242,7 +242,7 @@ void CollectEquivalentInputs(const ExprStore& store, ExprId id, OpType op, ExprI
     return true;
 }
 
-[[nodiscard]] bool ExprStore::equalConstValue(ExprId a, ExprId b) const {
+bool ExprStore::equalConstValue(ExprId a, ExprId b) const {
     const Expr& ea = get(a);
     const Expr& eb = get(b);
 
@@ -254,7 +254,7 @@ void CollectEquivalentInputs(const ExprStore& store, ExprId id, OpType op, ExprI
 #pragma endregion
 
 #pragma region Internal
-[[nodiscard]] ExprId ExprStore::createId() {
+ExprId ExprStore::createId() {
     ValueType value{};
 
     if (!m_freeIds.empty()) {
@@ -268,7 +268,7 @@ void CollectEquivalentInputs(const ExprStore& store, ExprId id, OpType op, ExprI
 }
 
 #ifdef BF_EXPR_LIFETIME_CHECKS
-[[nodiscard]] Expr& ExprStore::MakeDebugExpr(ExprId id) {
+Expr& ExprStore::MakeDebugExpr(ExprId id) {
 
     if (m_nextDebugSlot >= m_debugExprs.size())
         BF_CORE_THROW(

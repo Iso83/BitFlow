@@ -53,12 +53,12 @@ class RuleEngine {
         return m_rules;
     }
 
-    Ids::ExprId ApplyOnce(Expression::ExprStore* store, Ids::ExprId id,
-                          const Expression::ExprNameMap* names = nullptr) const;
-    Ids::ExprId ApplyRecursive(Expression::ExprStore* store, Ids::ExprId id,
-                               const Expression::ExprNameMap* names = nullptr) const;
-    Ids::ExprId Rewrite(Expression::ExprStore* store, Ids::ExprId root,
-                        const Expression::ExprNameMap* names = nullptr) const;
+    [[nodiscard]] Ids::ExprId ApplyOnce(Expression::ExprStore* store, Ids::ExprId id,
+                                        const Expression::ExprNameMap* names = nullptr) const;
+    [[nodiscard]] Ids::ExprId ApplyRecursive(Expression::ExprStore* store, Ids::ExprId id,
+                                             const Expression::ExprNameMap* names = nullptr) const;
+    [[nodiscard]] Ids::ExprId Rewrite(Expression::ExprStore* store, Ids::ExprId root,
+                                      const Expression::ExprNameMap* names = nullptr) const;
 
     void SetDebugCallback(DebugCallback cb) {
         m_debugCallback = std::move(cb);
