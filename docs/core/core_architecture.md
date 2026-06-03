@@ -636,7 +636,7 @@ Removes XOR with zero.
 
 ### CORE.SIMPLIFY.BITWISE.AND_FOLD
 
-Simplifies AND expressions containing constant operands.
+Simplifies AND expressions containing constant operands by bitwise-AND folding all constant terms.
 
 | Step    | Expression |
 | ------- | ---------- |
@@ -647,6 +647,11 @@ Simplifies AND expressions containing constant operands.
 | ------- | ---------- |
 | Input   | $$x \land 0$$ |
 | Rewrite | $$0$$ |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$255 \land 15$$ |
+| Rewrite | $$15$$ |
 
 ---
 

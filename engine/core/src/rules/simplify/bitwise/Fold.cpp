@@ -10,7 +10,6 @@ using namespace BitFlow::Core::Ids;
 using namespace BitFlow::Core::Expression;
 
 #pragma region Match
-BF_DEPRECATED("Use HasBooleanConstantInput<OpType::And, true, true>")
 static bool Match_AndFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::And)
@@ -19,13 +18,20 @@ static bool Match_AndFold(const ExprStore* store, const ExprNameMap* names, Expr
     if (e.inputs.size() < 2)
         return false;
 
+    size_t constCount = 0;
+
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
-        if (exprIn.op == OpType::Const && (store->isFalse(in) || store->isTrue(in)))
+        if (exprIn.op != OpType::Const)
+            continue;
+
+        if (store->isFalse(in) || store->isTrue(in))
             return true;
+
+        constCount++;
     }
 
-    return false;
+    return constCount >= 2;
 }
 
 static bool Match_OrFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
@@ -76,26 +82,45 @@ static bool Match_XorFold(const ExprStore* store, const ExprNameMap* names, Expr
 static ExprId Rewrite_AndFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
+    const Types::BitWidth bitWidth = e.bitWidth;
+    const Types::ExprChunk mask = Expr::fullMask(bitWidth);
+
+    Types::ExprChunk acc = mask;
+    bool hasConst = false;
+
     ExprInputs newInputs;
+    newInputs.reserve(e.inputs.size());
 
     for (auto in : e.inputs) {
         const Expr& exprIn = (*store)[in];
-        if (exprIn.op == OpType::Const && store->isFalse(in))
-            return ctx.replace(id, store->makeFalse(e.bitWidth).id);
+        if (exprIn.op == OpType::Const) {
+            acc &= exprIn.knownValue;
+            hasConst = true;
 
-        if (exprIn.op == OpType::Const && store->isTrue(in))
+            if ((acc & mask) == 0)
+                return ctx.replace(id, store->makeFalse(bitWidth).id);
+
             continue;
+        }
 
         newInputs.push_back(in);
     }
 
+    if (!hasConst)
+        return id;
+
+    acc &= mask;
+
+    if (acc != mask)
+        newInputs.insert(newInputs.begin(), store->createConstant(acc, bitWidth).id);
+
     if (newInputs.empty())
-        return ctx.replace(id, store->makeTrue(e.bitWidth).id);
+        return ctx.replace(id, store->makeTrue(bitWidth).id);
 
     if (newInputs.size() == 1)
         return ctx.replace(id, newInputs[0]);
 
-    return ctx.replace(id, store->create(e.op, std::move(newInputs), e.bitWidth).id);
+    return ctx.replace(id, store->create(e.op, std::move(newInputs), bitWidth).id);
 }
 
 static ExprId Rewrite_OrFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {

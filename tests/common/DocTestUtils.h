@@ -5,6 +5,8 @@
 #include "TestAssert.h"
 
 #include <memory>
+#include <unordered_set>
+#include <vector>
 
 namespace BitFlow::Testing {
 

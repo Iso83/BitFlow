@@ -31,6 +31,51 @@ int TestAndFold() {
     return 0;
 }
 
+int TestAndFold_BitwiseConstants() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_AndFold_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+
+    {
+        BF_SAFE_REWRITE(r, BF_REWRITE(C(0xFFu) & C(0x0Fu)));
+        BF_TEST(EqualChunkValue(r, 0x0Fu));
+    }
+
+    {
+        BF_SAFE_REWRITE(r, BF_REWRITE(C(0xFFu) & C(0x0Fu) & a));
+        BF_TEST(Op(r) == OpType::And);
+        BF_TEST(InputSize(r) == 2);
+        BF_TEST(EqualChunkValue(Input(r, 0), 0x0Fu));
+        BF_TEST(Input(r, 1) == a);
+    }
+
+    return 0;
+}
+
+int TestAndFold_AllConstants() {
+    MakeExprStore(32);
+    const auto rule = Simplify::Bitwise::Get_AndFold_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    BF_SAFE_REWRITE(r, BF_REWRITE(C(528734635u) & C(2935074176u)));
+
+    BF_TEST(EqualChunkValue(r, 243370368u));
+
+    return 0;
+}
+
 int TestOrFold() {
     MakeExprStore(32);
     const auto rule = Simplify::Bitwise::Get_OrFold_Rule();
@@ -123,6 +168,8 @@ int TestXorFoldAllConstZero() {
 
 int main() {
     BF_RUN_TEST(TestAndFold);
+    BF_RUN_TEST(TestAndFold_BitwiseConstants);
+    BF_RUN_TEST(TestAndFold_AllConstants);
     BF_RUN_TEST(TestOrFold);
     BF_RUN_TEST(TestOrFold_BitwiseConstants);
     BF_RUN_TEST(TestXorFold);

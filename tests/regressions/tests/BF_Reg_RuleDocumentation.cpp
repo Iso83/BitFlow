@@ -205,6 +205,7 @@ std::vector<DocExample> BuildDocExamples() {
 
         {.rule = Simplify::Bitwise::Get_AndFold_Rule().key, .input = "u8(x) & u8(255) & u8(15)", .expected = "15 & x"},
         {.rule = Simplify::Bitwise::Get_AndFold_Rule().key, .input = "x & 0", .expected = "0"},
+        {.rule = Simplify::Bitwise::Get_AndFold_Rule().key, .input = "255 & 15", .expected = "15"},
 
         {.rule = Simplify::Bitwise::Get_OrFold_Rule().key, .input = "x | 1 | 2", .expected = "3 | x"},
         {.rule = Simplify::Bitwise::Get_OrFold_Rule().key, .input = "1 | 2 | a | a", .expected = "3 | a"},
