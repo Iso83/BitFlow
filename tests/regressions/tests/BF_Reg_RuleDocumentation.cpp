@@ -40,6 +40,7 @@ std::vector<Rule> BuildRulesInDeclarationOrder() {
         Simplify::Arithmetic::Get_ModSelf_Rule(),
         Simplify::Arithmetic::Get_ShiftZero_Rule(),
         Simplify::Arithmetic::Get_RotateZero_Rule(),
+        Simplify::Arithmetic::Get_ShiftRotateConstantFold_Rule(),
         Simplify::Arithmetic::Get_NegNeg_Rule(),
         Simplify::Arithmetic::Get_NegPowEven_Rule(),
         Simplify::Arithmetic::Get_SubNeg_Rule(),
@@ -149,6 +150,13 @@ std::vector<DocExample> BuildDocExamples() {
         {.rule = Simplify::Arithmetic::Get_ShiftZero_Rule().key, .input = "x << 0", .expected = "x"},
 
         {.rule = Simplify::Arithmetic::Get_RotateZero_Rule().key, .input = "x <<< 0", .expected = "x"},
+
+        {.rule = Simplify::Arithmetic::Get_ShiftRotateConstantFold_Rule().key,
+         .input = "u8(129) <<< 1",
+         .expected = "3"},
+        {.rule = Simplify::Arithmetic::Get_ShiftRotateConstantFold_Rule().key,
+         .input = "u8(128) >> 7",
+         .expected = "1"},
 
         {.rule = Simplify::Arithmetic::Get_NegNeg_Rule().key, .input = "-(-x)", .expected = "x"},
 

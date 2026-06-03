@@ -1,6 +1,24 @@
 # BitFlow Agent Instructions
 When creating, modifying, extending, or removing a rule, the following checklist is mandatory.
 
+## Existing Code Style
+- Do not remove code organization constructs (regions, grouping comments, file sections) unless explicitly requested.
+- Do not modernize working code unless the task explicitly requires it.
+- Existing infrastructure should be assumed intentional.
+
+## Protected Infrastructure
+### RuleTestUtils.h
+- Keep macro `BF_REWRITE` exactly as implemented.
+- Do not replace `__VA_ARGS__` with `__VA_OPT__`.
+- Do not modernize or refactor this macro.
+- The current implementation is intentional and verified.
+
+### BF_Reg_RuleDocumentation.cpp
+- Keep existing `#pragma region` blocks.
+- Do not remove, merge or rename regions.
+- Regions are used intentionally for navigation and maintenance.
+- Treat region structure as part of the file organization.
+
 ## Rule Registration
 Every new rule must:
 - Be declared in the appropriate `Rules.h`.

@@ -77,6 +77,7 @@ inline RuleEngine BuildSimplifyArithmetic() {
     e.AddRule(Simplify::Arithmetic::Get_ModSelf_Rule());
     e.AddRule(Simplify::Arithmetic::Get_ShiftZero_Rule());
     e.AddRule(Simplify::Arithmetic::Get_RotateZero_Rule());
+    e.AddRule(Simplify::Arithmetic::Get_ShiftRotateConstantFold_Rule());
     e.AddRule(Simplify::Arithmetic::Get_NegNeg_Rule());
     e.AddRule(Simplify::Arithmetic::Get_NegPowEven_Rule());
     e.AddRule(Simplify::Arithmetic::Get_AddFold_Rule());

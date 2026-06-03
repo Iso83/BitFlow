@@ -4,6 +4,8 @@
 #include "RuleTestUtils.h"
 #include "TestAssert.h"
 
+#include <memory>
+
 namespace BitFlow::Testing {
 
 struct DocExample {

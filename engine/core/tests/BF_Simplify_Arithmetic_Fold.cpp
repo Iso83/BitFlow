@@ -27,6 +27,60 @@ int TestAddFold() {
     return 0;
 }
 
+int TestShiftRotateConstantFold_ShiftsUseLhsBitWidth() {
+    MakeExprStore(8);
+    const auto rule = Simplify::Arithmetic::Get_ShiftRotateConstantFold_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto value = store.createConstant(0b0011, 4);
+    auto amount = store.createConstant(1, 16);
+
+    auto shl = store.create(OpType::Shl, {value.id, amount.id}, 16);
+    BF_SAFE_REWRITE(shlResult, BF_REWRITE(shl));
+    BF_TEST(Op(shlResult) == OpType::Const);
+    BF_TEST(BitWidth(shlResult) == 4);
+    BF_TEST(EqualChunkValue(shlResult, 0b0110));
+
+    auto shr = store.create(OpType::Shr, {value.id, amount.id}, 16);
+    BF_SAFE_REWRITE(shrResult, BF_REWRITE(shr));
+    BF_TEST(Op(shrResult) == OpType::Const);
+    BF_TEST(BitWidth(shrResult) == 4);
+    BF_TEST(EqualChunkValue(shrResult, 0b0001));
+
+    return 0;
+}
+
+int TestShiftRotateConstantFold_RotatesUseLhsBitWidth() {
+    MakeExprStore(8);
+    const auto rule = Simplify::Arithmetic::Get_ShiftRotateConstantFold_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Bitwise::Get_RotateModulo_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto value = store.createConstant(0b10000001, 8);
+    auto amount = store.createConstant(1, 16);
+
+    auto rotl = store.create(OpType::RotL, {value.id, amount.id}, 16);
+    BF_SAFE_REWRITE(rotlResult, BF_REWRITE(rotl));
+    BF_TEST(Op(rotlResult) == OpType::Const);
+    BF_TEST(BitWidth(rotlResult) == 8);
+    BF_TEST(EqualChunkValue(rotlResult, 0b00000011));
+
+    auto rotr = store.create(OpType::RotR, {value.id, amount.id}, 16);
+    BF_SAFE_REWRITE(rotrResult, BF_REWRITE(rotr));
+    BF_TEST(Op(rotrResult) == OpType::Const);
+    BF_TEST(BitWidth(rotrResult) == 8);
+    BF_TEST(EqualChunkValue(rotrResult, 0b11000000));
+
+    return 0;
+}
+
 int TestSubConstFold() {
     MakeExprStore(32);
     const auto rule = Simplify::Arithmetic::Get_SubConstFold_Rule();
@@ -667,6 +721,8 @@ int main() {
     BF_RUN_TEST(TestSubConstFold);
     BF_RUN_TEST(TestSubConstFold_MultiConst);
     BF_RUN_TEST(TestSubConstFold_Cancel);
+    BF_RUN_TEST(TestShiftRotateConstantFold_ShiftsUseLhsBitWidth);
+    BF_RUN_TEST(TestShiftRotateConstantFold_RotatesUseLhsBitWidth);
 
     BF_RUN_TEST(TestSubAddSelfCancel);
     BF_RUN_TEST(TestSubAddSelfCancel_MultiInput);

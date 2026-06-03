@@ -82,6 +82,34 @@ static bool Match_SubConstFold(const ExprStore* store, const ExprNameMap* names,
     return constCount >= 1;
 }
 
+static bool IsShiftRotateOp(OpType op) {
+    return op == OpType::Shl || op == OpType::Shr || op == OpType::RotL || op == OpType::RotR;
+}
+
+static bool Match_ShiftRotateConstantFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
+    const Expr& e = (*store)[id];
+
+    if (!IsShiftRotateOp(e.op) || e.inputs.size() != 2)
+        return false;
+
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const Expr& rhs = (*store)[e.inputs[1]];
+
+    if (lhs.op != OpType::Const || rhs.op != OpType::Const)
+        return false;
+
+    if (lhs.bitWidth == 0 || lhs.bitWidth > Types::ExprChunkBits)
+        return false;
+
+    if (rhs.knownValue == 0)
+        return false;
+
+    if ((e.op == OpType::RotL || e.op == OpType::RotR) && rhs.knownValue >= lhs.bitWidth)
+        return false;
+
+    return true;
+}
+
 static bool Match_SubAddSelfCancel(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
     if (e.op != OpType::Sub || e.inputs.size() < 2)
@@ -397,6 +425,45 @@ static ExprId Rewrite_SubConstFold(RewriteContext& ctx, const ExprNameMap* names
 
     return ctx.replace(
         id, store->create(OpType::Sub, {nonConst, store->createConstant(subtrahend, bitWidth).id}, bitWidth).id);
+}
+
+static ExprId Rewrite_ShiftRotateConstantFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr& e = (*store)[id];
+
+    const Expr& lhs = (*store)[e.inputs[0]];
+    const Expr& rhs = (*store)[e.inputs[1]];
+
+    const Types::BitWidth bitWidth = lhs.bitWidth;
+    const Types::ExprChunk mask = Expr::fullMask(bitWidth);
+    const Types::ExprChunk value = lhs.knownValue & mask;
+    const Types::ExprChunk amount = rhs.knownValue;
+
+    Types::ExprChunk result = 0;
+
+    switch (e.op) {
+    case OpType::Shl:
+        result = (amount >= bitWidth || amount >= Types::ExprChunkBits) ? 0 : (value << amount) & mask;
+        break;
+    case OpType::Shr:
+        result = (amount >= bitWidth || amount >= Types::ExprChunkBits) ? 0 : value >> amount;
+        break;
+    case OpType::RotL: {
+        const Types::ExprChunk reduced = amount % bitWidth;
+        result = ((value << reduced) | (value >> (bitWidth - reduced))) & mask;
+        break;
+    }
+    case OpType::RotR: {
+        const Types::ExprChunk reduced = amount % bitWidth;
+        result = ((value >> reduced) | (value << (bitWidth - reduced))) & mask;
+        break;
+    }
+    default:
+        BF_CORE_ASSERT(false);
+        return id;
+    }
+
+    return ctx.replace(id, store->createConstant(result, bitWidth).id);
 }
 
 static ExprId Rewrite_SubAddSelfCancel(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
@@ -719,6 +786,13 @@ Rule Get_AddFold_Rule() {
 
 Rule Get_SubConstFold_Rule() {
     return Rule{SubConstFold, &Match_SubConstFold, &Rewrite_SubConstFold, {Simplify::Arithmetic::AddFold}};
+}
+
+Rule Get_ShiftRotateConstantFold_Rule() {
+    return Rule{ShiftRotateConstantFold,
+                &Match_ShiftRotateConstantFold,
+                &Rewrite_ShiftRotateConstantFold,
+                {Normalize::Bitwise::RotateModulo}};
 }
 
 Rule Get_SubAddSelfCancel_Rule() {

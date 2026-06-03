@@ -424,6 +424,23 @@ Removes rotations by zero.
 
 ---
 
+### CORE.SIMPLIFY.ARITHMETIC.SHIFT_ROTATE_CONSTANT_FOLD
+
+Evaluates shifts and rotations when both the value and amount are constants.
+The result keeps the bit width of the left-hand constant value.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$rotl(u8(129), 1)$$ |
+| Rewrite | $$3$$      |
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$u8(128) >> 7$$ |
+| Rewrite | $$1$$ |
+
+---
+
 ### CORE.SIMPLIFY.ARITHMETIC.NEG_NEG
 
 Eliminates nested negation.

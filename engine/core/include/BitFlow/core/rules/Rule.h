@@ -84,6 +84,9 @@ Rule Get_ShiftZero_Rule();
 inline constexpr RuleKey RotateZero{"CORE.SIMPLIFY.ARITHMETIC.ROTATE_ZERO"};
 Rule Get_RotateZero_Rule();
 
+inline constexpr RuleKey ShiftRotateConstantFold{"CORE.SIMPLIFY.ARITHMETIC.SHIFT_ROTATE_CONSTANT_FOLD"};
+Rule Get_ShiftRotateConstantFold_Rule();
+
 inline constexpr RuleKey NegNeg{"CORE.SIMPLIFY.ARITHMETIC.NEG_NEG"};
 Rule Get_NegNeg_Rule();
 
