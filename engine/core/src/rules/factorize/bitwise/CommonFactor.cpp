@@ -56,6 +56,7 @@ static ExprId FindBestCommonFactor(const ExprStore* store, ExprId id) {
     return best;
 }
 
+#pragma region Matching
 static bool Match_XorAnd(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 
@@ -88,6 +89,40 @@ static bool Match_XorAnd(const ExprStore* store, const ExprNameMap* names, ExprI
     return false;
 }
 
+static bool Match_DistributeAndOverOr(const ExprStore* store, const ExprNameMap* names, ExprId id) {
+    const Expr& e = (*store)[id];
+
+    if (e.op != OpType::Or || e.inputs.size() < 2)
+        return false;
+
+    std::unordered_map<ExprId, size_t> counts;
+
+    for (auto termId : e.inputs) {
+        const Expr& term = (*store)[termId];
+
+        if (term.op != OpType::And || term.inputs.size() < 2)
+            continue;
+
+        ExprInputs seen;
+        seen.reserve(term.inputs.size());
+
+        for (auto inId : term.inputs) {
+            if (std::find(seen.begin(), seen.end(), inId) != seen.end())
+                continue;
+
+            seen.push_back(inId);
+
+            auto& cnt = counts[inId];
+            if (++cnt >= 2)
+                return true;
+        }
+    }
+
+    return false;
+}
+#pragma endregion
+
+#pragma region Rewrite
 static ExprId Rewrite_XorAnd(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr e = (*store)[id];
@@ -175,8 +210,97 @@ static ExprId Rewrite_XorAnd(RewriteContext& ctx, const ExprNameMap* names, Expr
     return ctx.replace(id, store->create(OpType::Xor, std::move(finalInputs), bitWidth).id);
 }
 
+static ExprId Rewrite_DistributeAndOverOr(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
+    ExprStore* store = ctx;
+    const Expr e = (*store)[id];
+
+    const ExprId bestFactor = FindBestCommonFactor(store, id);
+
+    ExprInputs termsToFactor;
+    termsToFactor.reserve(e.inputs.size());
+
+    for (auto termId : e.inputs) {
+        const Expr term = (*store)[termId];
+
+        if (term.op != OpType::And || term.inputs.size() < 2)
+            continue;
+
+        for (auto inId : term.inputs) {
+            if (inId == bestFactor) {
+                termsToFactor.push_back(termId);
+                break;
+            }
+        }
+    }
+
+    if (termsToFactor.size() < 2) {
+        BF_CORE_ASSERT(false);
+        return id;
+    }
+
+    ExprInputs orInputs;
+    orInputs.reserve(termsToFactor.size());
+
+    for (auto termId : termsToFactor) {
+        const Expr term = (*store)[termId];
+
+        ExprInputs rest;
+        rest.reserve(term.inputs.size());
+
+        bool removed = false;
+
+        for (auto inId : term.inputs) {
+            if (!removed && inId == bestFactor) {
+                removed = true;
+                continue;
+            }
+
+            rest.push_back(inId);
+        }
+
+        if (rest.empty())
+            orInputs.push_back(store->makeTrue(term.bitWidth).id);
+        else if (rest.size() == 1)
+            orInputs.push_back(rest[0]);
+        else
+            orInputs.push_back(store->create(OpType::And, std::move(rest), term.bitWidth).id);
+    }
+
+    ExprId orExpr{};
+
+    const Types::BitWidth bitWidth = e.bitWidth;
+    const ExprInputs inputs = e.inputs;
+
+    if (orInputs.size() == 1)
+        orExpr = orInputs[0];
+    else
+        orExpr = store->create(OpType::Or, std::move(orInputs), bitWidth).id;
+
+    ExprId factored = store->create(OpType::And, {bestFactor, orExpr}, bitWidth).id;
+
+    ExprInputs finalInputs;
+    finalInputs.reserve(inputs.size() - termsToFactor.size() + 1);
+
+    finalInputs.push_back(factored);
+
+    for (auto termId : inputs) {
+        if (std::find(termsToFactor.begin(), termsToFactor.end(), termId) == termsToFactor.end())
+            finalInputs.push_back(termId);
+    }
+
+    if (finalInputs.size() == 1)
+        return ctx.replace(id, finalInputs[0]);
+
+    return ctx.replace(id, store->create(OpType::Or, std::move(finalInputs), bitWidth).id);
+}
+#pragma endregion
+
 Rule Get_XorAnd_Rule() {
     return Rule{XorAnd, &Match_XorAnd, &Rewrite_XorAnd, {Simplify::Bitwise::XorAndReduction}};
+}
+
+Rule Get_DistributeAndOverOr_Rule() {
+    return Rule{DistributeAndOverOr, &Match_DistributeAndOverOr, &Rewrite_DistributeAndOverOr, {Normalize::Flatten}};
 }
 
 } // namespace BitFlow::Core::Rules::Factorize::Bitwise

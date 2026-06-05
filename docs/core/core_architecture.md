@@ -1035,3 +1035,17 @@ Although mathematically inverse of factoring rules, pipeline ordering determines
 | ------- | ---------- |
 | Input   | $$x \land (y \oplus z)$$ |
 | Rewrite | $$(x \land y) \oplus (x \land z)$$ |
+
+---
+
+### CORE.FACTORIZE.BITWISE.DISTRIBUTE_AND_OVER_OR
+
+Factors a shared bitwise AND operand out of OR terms by applying the inverse of AND-over-OR distribution.
+This rewrites OR expressions such as `(a & b) | (a & c)` into a single AND with the shared factor and an OR of the remaining terms.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(a \land b) \lor (a \land c)$$ |
+| Rewrite | $$a \land (b \lor c)$$ |
+
+---

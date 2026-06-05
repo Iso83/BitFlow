@@ -104,6 +104,7 @@ inline RuleEngine BuildFactorizeBitwise() {
     e.AddRule(Factorize::Bitwise::Get_XorAnd_Rule());
     e.AddRule(Factorize::Bitwise::Get_AndAbsorb_Rule());
     e.AddRule(Factorize::Bitwise::Get_OrAbsorb_Rule());
+    e.AddRule(Factorize::Bitwise::Get_DistributeAndOverOr_Rule());
 
     return e;
 }
@@ -167,9 +168,7 @@ inline RuleEngine BuildExpand() {
     RuleEngine e;
 
     e.AddRule(Normalize::Get_Flatten_Rule());
-
     e.AddRule(Normalize::Arithmetic::Get_SubToNeg_Rule());
-
     e.AddRule(Factorize::Bitwise::Get_Distribute_Rule());
 
     return e;

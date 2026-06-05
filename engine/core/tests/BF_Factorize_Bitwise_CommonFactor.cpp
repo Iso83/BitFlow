@@ -281,6 +281,91 @@ int TestXorAndFactor_ExplosionGuard_NoGrowthRewrite() {
     return 0;
 }
 
+int TestDistributeAndOverOr_Basic() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_DistributeAndOverOr_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+
+    BF_SAFE_REWRITE(r, BF_REWRITE((a & b) | (a & c)));
+
+    BF_TEST(Op(r) == OpType::And);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef inA) { return inA == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (Op(in) != OpType::Or)
+            return false;
+
+        return AnyInput(in, [&](ExprRef inB) { return inB == b; }) &&
+               AnyInput(in, [&](ExprRef inC) { return inC == c; });
+    }));
+
+    return 0;
+}
+
+int TestDistributeAndOverOr_WithUntouchedTerm() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_DistributeAndOverOr_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+
+    BF_SAFE_REWRITE(r, BF_REWRITE((a & b) | (a & c) | d));
+
+    BF_TEST(Op(r) == OpType::Or);
+    BF_TEST(InputSize(r) == 2);
+    BF_TEST(AnyInput(r, [&](ExprRef inD) { return inD == d; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) {
+        if (Op(in) != OpType::And)
+            return false;
+
+        return AnyInput(in, [&](ExprRef inA) { return inA == a; }) && AnyInput(in, [&](ExprRef inner) {
+                   if (Op(inner) != OpType::Or)
+                       return false;
+
+                   return AnyInput(inner, [&](ExprRef inB) { return inB == b; }) &&
+                          AnyInput(inner, [&](ExprRef inC) { return inC == c; });
+               });
+    }));
+
+    return 0;
+}
+
+int TestDistributeAndOverOr_NoMatch() {
+    MakeExprStore(32);
+    const auto rule = Factorize::Bitwise::Get_DistributeAndOverOr_Rule();
+
+    RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(rule);
+    BF_VALIDATE_ENGINE(engine, rule);
+
+    auto a = V("a");
+    auto b = V("b");
+    auto c = V("c");
+    auto d = V("d");
+    auto expr = (a & b) | (c & d);
+
+    BF_SAFE_REWRITE(r, BF_REWRITE(expr));
+
+    BF_TEST(r == expr);
+    return 0;
+}
+
 int main() {
     BF_RUN_TEST(TestXorAndCommonFactor);
     BF_RUN_TEST(TestXorAndCommonFactor_MultiInput);
@@ -290,5 +375,8 @@ int main() {
     BF_RUN_TEST(TestXorAndFactor_MultiFactorChoice_PicksMostFrequent);
     BF_RUN_TEST(TestXorAndFactor_MultiFactorChoice_TieBreakOnLowerId);
     BF_RUN_TEST(TestXorAndFactor_ExplosionGuard_NoGrowthRewrite);
+    BF_RUN_TEST(TestDistributeAndOverOr_Basic);
+    BF_RUN_TEST(TestDistributeAndOverOr_WithUntouchedTerm);
+    BF_RUN_TEST(TestDistributeAndOverOr_NoMatch);
     return 0;
 }
