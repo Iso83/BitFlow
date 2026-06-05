@@ -9,7 +9,7 @@ inline bool IsConstFalse(const ExprStore* store, Ids::ExprId id) {
     return e.op == OpType::Const && store->isFalse(id);
 }
 
-#pragma region Matching
+#pragma region Match
 inline bool ContainsExpr(const ExprStore* store, Ids::ExprId id, Ids::ExprId target) {
     if (store->structuralEquivalent(id, target))
         return true;

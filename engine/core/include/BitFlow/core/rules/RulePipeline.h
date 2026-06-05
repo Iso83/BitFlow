@@ -27,8 +27,8 @@ inline RuleEngine BuildSimplifyBitwise() {
     e.Merge(BuildNormalize());
 
     // NOT
-    e.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
     e.AddRule(Simplify::Bitwise::Get_Not_Rule());
+    e.AddRule(Simplify::Bitwise::Get_NotPushdown_Rule());
     e.AddRule(Simplify::Bitwise::Get_NotXor_Rule());
 
     // Neutral
@@ -104,6 +104,8 @@ inline RuleEngine BuildFactorizeBitwise() {
     e.AddRule(Factorize::Bitwise::Get_XorAnd_Rule());
     e.AddRule(Factorize::Bitwise::Get_AndAbsorb_Rule());
     e.AddRule(Factorize::Bitwise::Get_OrAbsorb_Rule());
+    e.AddRule(Factorize::Bitwise::Get_DeMorganAnd_Rule());
+    e.AddRule(Factorize::Bitwise::Get_DeMorganOr_Rule());
     e.AddRule(Factorize::Bitwise::Get_DistributeAndOverOr_Rule());
     e.AddRule(Factorize::Bitwise::Get_DistributeOrOverAnd_Rule());
 

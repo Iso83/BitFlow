@@ -207,6 +207,12 @@ Rule Get_AndAbsorb_Rule();
 inline constexpr RuleKey OrAbsorb{"CORE.FACTORIZE.BITWISE.OR_ABSORB"};
 Rule Get_OrAbsorb_Rule();
 
+inline constexpr RuleKey DeMorganAnd{"CORE.FACTORIZE.BITWISE.DE_MORGAN_AND"};
+Rule Get_DeMorganAnd_Rule();
+
+inline constexpr RuleKey DeMorganOr{"CORE.FACTORIZE.BITWISE.DE_MORGAN_OR"};
+Rule Get_DeMorganOr_Rule();
+
 inline constexpr RuleKey Distribute{"CORE.FACTORIZE.BITWISE.DISTRIBUTE"};
 Rule Get_Distribute_Rule();
 

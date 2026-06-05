@@ -88,6 +88,8 @@ std::vector<Rule> BuildRulesInDeclarationOrder() {
         Factorize::Bitwise::Get_XorAnd_Rule(),
         Factorize::Bitwise::Get_AndAbsorb_Rule(),
         Factorize::Bitwise::Get_OrAbsorb_Rule(),
+        Factorize::Bitwise::Get_DeMorganAnd_Rule(),
+        Factorize::Bitwise::Get_DeMorganOr_Rule(),
         Factorize::Bitwise::Get_Distribute_Rule(),
         Factorize::Bitwise::Get_DistributeAndOverOr_Rule(),
         Factorize::Bitwise::Get_DistributeOrOverAnd_Rule(),
@@ -220,7 +222,7 @@ std::vector<DocExample> BuildDocExamples() {
 
         {.rule = Simplify::Bitwise::Get_Not_Rule().key, .input = "~(~x)", .expected = "x"},
 
-        {.rule = Simplify::Bitwise::Get_NotPushdown_Rule().key, .input = "~(x & y)", .expected = "~x | ~y"},
+        {.rule = Simplify::Bitwise::Get_NotPushdown_Rule().key, .input = "~(~x & y)", .expected = "x | ~y"},
 
         {.rule = Simplify::Bitwise::Get_NotXor_Rule().key, .input = "~(u8(x) ^ u8(y))", .expected = "255 ^ x ^ y"},
 
@@ -327,6 +329,10 @@ std::vector<DocExample> BuildDocExamples() {
         {.rule = Factorize::Bitwise::Get_AndAbsorb_Rule().key, .input = "x & (x | y)", .expected = "x"},
 
         {.rule = Factorize::Bitwise::Get_OrAbsorb_Rule().key, .input = "x | (x & y)", .expected = "x"},
+
+        {.rule = Factorize::Bitwise::Get_DeMorganAnd_Rule().key, .input = "~a | ~b", .expected = "~(a & b)"},
+
+        {.rule = Factorize::Bitwise::Get_DeMorganOr_Rule().key, .input = "~a & ~b", .expected = "~(a | b)"},
 
         {.rule = Factorize::Bitwise::Get_Distribute_Rule().key,
          .input = "x & (y ^ z)",

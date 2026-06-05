@@ -41,17 +41,20 @@ int TestNotPushdown_And() {
     const auto rule = Simplify::Bitwise::Get_NotPushdown_Rule();
 
     RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, BF_REWRITE(~(a & b)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(~((~a) & b)));
 
     BF_TEST(Op(r) == OpType::Or);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == b; }));
     return 0;
 }
@@ -61,17 +64,20 @@ int TestNotPushdown_Or() {
     const auto rule = Simplify::Bitwise::Get_NotPushdown_Rule();
 
     RuleEngine engine;
+    engine.AddRule(Normalize::Get_Flatten_Rule());
+    engine.AddRule(Normalize::Get_Order_Rule());
+    engine.AddRule(Simplify::Bitwise::Get_Not_Rule());
     engine.AddRule(rule);
     BF_VALIDATE_ENGINE(engine, rule);
 
     auto a = V("a");
     auto b = V("b");
 
-    BF_SAFE_REWRITE(r, BF_REWRITE(~(a | b)));
+    BF_SAFE_REWRITE(r, BF_REWRITE(~((~a) | b)));
 
     BF_TEST(Op(r) == OpType::And);
     BF_TEST(InputSize(r) == 2);
-    BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == a; }));
+    BF_TEST(AnyInput(r, [&](ExprRef in) { return in == a; }));
     BF_TEST(AnyInput(r, [&](ExprRef in) { return Op(in) == OpType::Not && InputSize(in) == 1 && Input(in, 0) == b; }));
     return 0;
 }

@@ -716,12 +716,13 @@ Simplifies nested NOT operations.
 
 ### CORE.SIMPLIFY.BITWISE.NOT_PUSHDOWN
 
-Pushes NOT operators deeper into expressions.
+Pushes NOT operators deeper into bitwise AND and OR expressions when doing so reduces nested negations.
+Expressions where all operands are negated are preserved for De Morgan factorization rules.
 
 | Step    | Expression |
 | ------- | ---------- |
-| Input   | $$\sim(x \land y)$$ |
-| Rewrite | $$\sim x \lor \sim y$$ |
+| Input   | $$\sim(\sim x \land y)$$ |
+| Rewrite | $$x \lor \sim y$$ |
 
 ---
 
@@ -1023,6 +1024,30 @@ Applies absorption rules for OR expressions.
 | ------- | ---------- |
 | Input   | $$x \lor (x \land y)$$ |
 | Rewrite | $$x$$ |
+
+---
+
+### CORE.FACTORIZE.BITWISE.DE_MORGAN_AND
+
+Factors a common NOT out of OR terms by applying De Morgan's law.
+This rewrites expressions where all OR operands are negated into a single negation of an AND expression.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\neg a \lor \neg b$$ |
+| Rewrite | $$\neg (a \land b)$$ |
+
+---
+
+### CORE.FACTORIZE.BITWISE.DE_MORGAN_OR
+
+Factors a common NOT out of AND terms by applying De Morgan's law.
+This rewrites expressions where all AND operands are negated into a single negation of an OR expression.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$\neg a \land \neg b$$ |
+| Rewrite | $$\neg (a \lor b)$$ |
 
 ---
 

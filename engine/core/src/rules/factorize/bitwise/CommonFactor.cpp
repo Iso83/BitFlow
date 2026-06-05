@@ -56,7 +56,7 @@ static ExprId FindBestCommonFactor(const ExprStore* store, ExprId id, OpType ter
     return best;
 }
 
-#pragma region Matching
+#pragma region Match
 static bool Match_XorAnd(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
 

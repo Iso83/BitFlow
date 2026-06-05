@@ -78,6 +78,7 @@ if(BF_BUILD_TESTS)
 
     bf_add_module_test(BitFlowCore core/rules/factorize/bitwise BF_Factorize_Bitwise_Absorb USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/factorize/bitwise BF_Factorize_Bitwise_CommonFactor USE_CORE_PRINT)
+    bf_add_module_test(BitFlowCore core/rules/factorize/bitwise BF_Factorize_Bitwise_DeMorgan USE_CORE_PRINT)
     bf_add_module_test(BitFlowCore core/rules/factorize/bitwise BF_Factorize_Bitwise_Distribute USE_CORE_PRINT)
 
     bf_add_module_test(BitFlowCore core/rules/normalize BF_Rules_Normalize_Flatten USE_CORE_PRINT)

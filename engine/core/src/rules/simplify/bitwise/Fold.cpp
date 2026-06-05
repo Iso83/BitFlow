@@ -82,6 +82,8 @@ static bool Match_XorFold(const ExprStore* store, const ExprNameMap* names, Expr
 static ExprId Rewrite_AndFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
+    BF_CORE_ASSERT(e.op == OpType::And);
+
     const Types::BitWidth bitWidth = e.bitWidth;
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
 
@@ -120,14 +122,15 @@ static ExprId Rewrite_AndFold(RewriteContext& ctx, const ExprNameMap* names, Exp
     if (newInputs.size() == 1)
         return ctx.replace(id, newInputs[0]);
 
-    return ctx.replace(id, store->create(e.op, std::move(newInputs), bitWidth).id);
+    return ctx.replace(id, store->create(OpType::And, std::move(newInputs), bitWidth).id);
 }
 
 static ExprId Rewrite_OrFold(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
     ExprStore* store = ctx;
     const Expr& e = (*store)[id];
-    const Types::BitWidth bitWidth = e.bitWidth;
+    BF_CORE_ASSERT(e.op == OpType::Or);
 
+    const Types::BitWidth bitWidth = e.bitWidth;
     const Types::ExprChunk mask = Expr::fullMask(bitWidth);
     Types::ExprChunk acc = 0;
     bool hasConst = false;

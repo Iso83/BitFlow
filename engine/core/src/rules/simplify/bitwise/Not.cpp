@@ -44,16 +44,19 @@ static bool Match_NotPushdown(const ExprStore* store, const ExprNameMap* names, 
     if (!(in.op == OpType::And || in.op == OpType::Or))
         return false;
 
+    bool anyNot = false;
     bool allNot = true;
     for (auto child : in.inputs) {
         const Expr& exprChild = (*store)[child];
-        if (exprChild.op != OpType::Not) {
-            allNot = false;
-            break;
+        if (exprChild.op == OpType::Not) {
+            anyNot = true;
+            continue;
         }
+
+        allNot = false;
     }
 
-    return !allNot;
+    return anyNot && !allNot;
 }
 
 static bool Match_NotXor(const ExprStore* store, const ExprNameMap* names, ExprId id) {
@@ -132,7 +135,7 @@ Rule Get_Not_Rule() {
 }
 
 Rule Get_NotPushdown_Rule() {
-    return Rule{NotPushdown, &Match_NotPushdown, &Rewrite_NotPushdown};
+    return Rule{NotPushdown, &Match_NotPushdown, &Rewrite_NotPushdown, {Normalize::Order, Not}};
 }
 
 Rule Get_NotXor_Rule() {
