@@ -90,6 +90,7 @@ std::vector<Rule> BuildRulesInDeclarationOrder() {
         Factorize::Bitwise::Get_OrAbsorb_Rule(),
         Factorize::Bitwise::Get_Distribute_Rule(),
         Factorize::Bitwise::Get_DistributeAndOverOr_Rule(),
+        Factorize::Bitwise::Get_DistributeOrOverAnd_Rule(),
 #pragma endregion
     };
 }
@@ -335,6 +336,10 @@ std::vector<DocExample> BuildDocExamples() {
         {.rule = Factorize::Bitwise::Get_DistributeAndOverOr_Rule().key,
          .input = "(a & b) | (a & c)",
          .expected = "a & (b | c)"},
+
+        {.rule = Factorize::Bitwise::Get_DistributeOrOverAnd_Rule().key,
+         .input = "(a | b) & (a | c)",
+         .expected = "a | b & c"},
 #pragma endregion
     };
 }

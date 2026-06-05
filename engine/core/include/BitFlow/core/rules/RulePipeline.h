@@ -105,6 +105,7 @@ inline RuleEngine BuildFactorizeBitwise() {
     e.AddRule(Factorize::Bitwise::Get_AndAbsorb_Rule());
     e.AddRule(Factorize::Bitwise::Get_OrAbsorb_Rule());
     e.AddRule(Factorize::Bitwise::Get_DistributeAndOverOr_Rule());
+    e.AddRule(Factorize::Bitwise::Get_DistributeOrOverAnd_Rule());
 
     return e;
 }

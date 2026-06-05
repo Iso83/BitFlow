@@ -1049,3 +1049,15 @@ This rewrites OR expressions such as `(a & b) | (a & c)` into a single AND with 
 | Rewrite | $$a \land (b \lor c)$$ |
 
 ---
+
+### CORE.FACTORIZE.BITWISE.DISTRIBUTE_OR_OVER_AND
+
+Factors a shared bitwise OR operand out of AND terms by applying the inverse of OR-over-AND distribution.
+This rewrites AND expressions such as `(a | b) & (a | c)` into a single OR with the shared factor and an AND of the remaining terms.
+
+| Step    | Expression |
+| ------- | ---------- |
+| Input   | $$(a \lor b) \land (a \lor c)$$ |
+| Rewrite | $$a \lor (b \land c)$$ |
+
+---

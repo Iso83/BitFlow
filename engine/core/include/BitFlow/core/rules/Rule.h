@@ -212,6 +212,9 @@ Rule Get_Distribute_Rule();
 
 inline constexpr RuleKey DistributeAndOverOr{"CORE.FACTORIZE.BITWISE.DISTRIBUTE_AND_OVER_OR"};
 Rule Get_DistributeAndOverOr_Rule();
+
+inline constexpr RuleKey DistributeOrOverAnd{"CORE.FACTORIZE.BITWISE.DISTRIBUTE_OR_OVER_AND"};
+Rule Get_DistributeOrOverAnd_Rule();
 } // namespace Factorize::Bitwise
 
 } // namespace BitFlow::Core::Rules
