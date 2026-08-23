@@ -1,13 +1,13 @@
 #include "expression/ExprUtils.h"
 #include "rules/RuleDiagnostics.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/RuleEngine.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/RuleEngine.h>
 
-namespace BitFlow::Core::Rules {
+namespace BitFlow::Engine::Core::Rules {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 void RuleEngine::AddRule(const Rule& rule) {
     if (Contains(rule.key))
@@ -59,7 +59,7 @@ ExprId RuleEngine::ApplyOnce(ExprStore* store, ExprId id, const ExprNameMap* nam
         } else
             after = r.rewrite(ctx, names, id);
 
-#if BF_RULE_STRICT_REWRITE
+#if BitFlow_RULE_STRICT_REWRITE
         if (!ctx.changed)
             BF_CORE_THROW("Rewrite produced no tracked changes. "
                           "Possible mismatch between match() and rewrite().");
@@ -284,4 +284,4 @@ std::unordered_set<RuleKey> RuleEngine::CollectRequiredRules(const RuleKey& key)
     return result;
 }
 
-} // namespace BitFlow::Core::Rules
+} // namespace BitFlow::Engine::Core::Rules

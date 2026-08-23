@@ -1,12 +1,12 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Simplify::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool Match_NegPowEven(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
@@ -36,4 +36,4 @@ Rule Get_NegPowEven_Rule() {
     return Rule{NegPowEven, &Match_NegPowEven, &Rewrite_NegPowEven};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic

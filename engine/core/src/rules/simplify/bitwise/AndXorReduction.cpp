@@ -1,13 +1,13 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify::Bitwise {
+namespace BitFlow::Engine::Core::Rules::Simplify::Bitwise {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool Match_AndXorReduction(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
@@ -95,4 +95,4 @@ Rule Get_AndXorReduction_Rule() {
     return Rule{AndXorReduction, &Match_AndXorReduction, &Rewrite_AndXorReduction, {Normalize::Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Bitwise
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Bitwise

@@ -1,14 +1,14 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <unordered_map>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Factorize::Bitwise {
+namespace BitFlow::Engine::Core::Rules::Factorize::Bitwise {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static ExprId FindBestCommonFactor(const ExprStore* store, ExprId id, OpType termOp = OpType::And) {
     const Expr& e = (*store)[id];
@@ -423,4 +423,4 @@ Rule Get_DistributeOrOverAnd_Rule() {
     return Rule{DistributeOrOverAnd, &Match_DistributeOrOverAnd, &Rewrite_DistributeOrOverAnd, {Normalize::Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize::Bitwise
+} // namespace BitFlow::Engine::Core::Rules::Factorize::Bitwise

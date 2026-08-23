@@ -1,12 +1,12 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Factorize::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Factorize::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool Match_MulFractionNumerator(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
@@ -60,4 +60,4 @@ Rule Get_MulFractionNumerator_Rule() {
     return Rule{MulFractionNumerator, &Match_MulFractionNumerator, &Rewrite_MulFractionNumerator, {Normalize::Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Factorize::Arithmetic

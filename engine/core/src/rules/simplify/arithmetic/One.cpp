@@ -1,13 +1,13 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 #pragma region Match
 static bool Match_MulOne(const ExprStore* store, const ExprNameMap* names, ExprId id) {
@@ -141,4 +141,4 @@ Rule Get_ModOne_Rule() {
     return Rule{ModOne, &Match_ModOne, &Rewrite_ModOne, {Normalize::Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic

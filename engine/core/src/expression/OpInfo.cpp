@@ -1,7 +1,7 @@
-#include <BitFlow/core/expression/OpInfo.h>
-#include <BitFlow/core/helper/Exception.h>
+#include <BitFlow/engine/core/expression/OpInfo.h>
+#include <BitFlow/engine/core/helper/Exception.h>
 
-namespace BitFlow::Core::Expression {
+namespace BitFlow::Engine::Core::Expression {
 
 static constexpr OpInfo g_not{90, Associativity::Right, "~", false, true};
 
@@ -35,53 +35,53 @@ static constexpr OpInfo g_or{30, Associativity::Left, "|", true, false};
 
 const OpInfo* GetOpInfo(OpType op) {
     switch (op) {
-    case OpType::Not:
-        return &g_not;
+        case OpType::Not:
+            return &g_not;
 
-    case OpType::Neg:
-        return &g_neg;
+        case OpType::Neg:
+            return &g_neg;
 
-    case OpType::Mul:
-        return &g_mul;
+        case OpType::Mul:
+            return &g_mul;
 
-    case OpType::Div:
-        return &g_div;
+        case OpType::Div:
+            return &g_div;
 
-    case OpType::Mod:
-        return &g_mod;
+        case OpType::Mod:
+            return &g_mod;
 
-    case OpType::Pow:
-        return &g_pow;
+        case OpType::Pow:
+            return &g_pow;
 
-    case OpType::Add:
-        return &g_add;
+        case OpType::Add:
+            return &g_add;
 
-    case OpType::Sub:
-        return &g_sub;
+        case OpType::Sub:
+            return &g_sub;
 
-    case OpType::Shl:
-        return &g_shl;
+        case OpType::Shl:
+            return &g_shl;
 
-    case OpType::Shr:
-        return &g_shr;
+        case OpType::Shr:
+            return &g_shr;
 
-    case OpType::RotL:
-        return &g_rotl;
+        case OpType::RotL:
+            return &g_rotl;
 
-    case OpType::RotR:
-        return &g_rotr;
+        case OpType::RotR:
+            return &g_rotr;
 
-    case OpType::And:
-        return &g_and;
+        case OpType::And:
+            return &g_and;
 
-    case OpType::Xor:
-        return &g_xor;
+        case OpType::Xor:
+            return &g_xor;
 
-    case OpType::Or:
-        return &g_or;
+        case OpType::Or:
+            return &g_or;
 
-    default:
-        BF_CORE_THROW("Missing OpInfo for OpType");
+        default:
+            BF_CORE_THROW("Missing OpInfo for OpType");
     }
 }
 
@@ -111,4 +111,4 @@ bool RequiresParentheses(OpType parent, OpType child, bool isRightChild) {
     return true;
 }
 
-} // namespace BitFlow::Core::Expression
+} // namespace BitFlow::Engine::Core::Expression

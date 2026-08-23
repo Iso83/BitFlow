@@ -1,10 +1,10 @@
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Normalize::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Normalize::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool Match_AddNegToSub(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
@@ -41,4 +41,4 @@ Rule Get_AddNegToSub_Rule() {
     return Rule{AddNegToSub, &Match_AddNegToSub, &Rewrite_AddNegToSub, {Normalize::Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Normalize::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Normalize::Arithmetic

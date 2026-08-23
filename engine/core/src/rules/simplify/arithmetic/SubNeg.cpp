@@ -1,12 +1,12 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Simplify::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool Match_SubNeg(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
@@ -32,4 +32,4 @@ Rule Get_SubNeg_Rule() {
     return Rule{SubNeg, &Match_SubNeg, &Rewrite_SubNeg, {NegNeg, Arithmetic::AddFold}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic

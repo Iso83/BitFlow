@@ -27,3 +27,16 @@ SpaceBeforeAssignmentOperators: true
 SpaceBeforeParens: ControlStatements
 
 Standard: c++20
+
+DerivePointerAlignment: false
+IndentCaseLabels: true
+IndentCaseBlocks: true
+
+EmptyLineBeforeAccessModifier: LogicalBlock
+AccessModifierOffset: -4
+
+Cpp11BracedListStyle: true
+
+FixNamespaceComments: true
+
+ReflowComments: false

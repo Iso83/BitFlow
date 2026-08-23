@@ -1,13 +1,13 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify::Bitwise {
+namespace BitFlow::Engine::Core::Rules::Simplify::Bitwise {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 #pragma region Match
 static bool Match_Not(const ExprStore* store, const ExprNameMap* names, ExprId id) {
@@ -142,4 +142,4 @@ Rule Get_NotXor_Rule() {
     return Rule{NotXor, &Match_NotXor, &Rewrite_NotXor, {Normalize::Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Bitwise
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Bitwise

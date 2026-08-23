@@ -1,8 +1,8 @@
 #pragma once
 
-#include <BitFlow/core/expression/ExprStore.h>
+#include <BitFlow/engine/core/expression/ExprStore.h>
 
-namespace BitFlow::Core::Expression {
+namespace BitFlow::Engine::Core::Expression {
 
 inline bool IsConstFalse(const ExprStore* store, Ids::ExprId id) {
     const Expr& e = (*store)[id];
@@ -142,4 +142,4 @@ inline bool CanonicalExprLess(const ExprStore* store, const ExprNameMap* names, 
     return CompareExprCanonical(store, names, a, b) < 0;
 }
 
-} // namespace BitFlow::Core::Expression
+} // namespace BitFlow::Engine::Core::Expression

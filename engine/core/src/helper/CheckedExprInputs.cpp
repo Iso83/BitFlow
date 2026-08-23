@@ -1,9 +1,9 @@
-#include <BitFlow/core/expression/Expr.h>
-#include <BitFlow/core/helper/CheckedExprInputs.h>
+#include <BitFlow/engine/core/expression/Expr.h>
+#include <BitFlow/engine/core/helper/CheckedExprInputs.h>
 
-namespace BitFlow::Core::Expression {
+namespace BitFlow::Engine::Core::Expression {
 
-#ifdef BF_EXPR_LIFETIME_CHECKS
+#ifdef BitFlow_EXPR_LIFETIME_CHECKS
 
 CheckedExprInputs::CheckedExprInputs(ExprDebug* parent) : m_parent(parent) {}
 
@@ -115,4 +115,4 @@ bool operator!=(const CheckedExprInputs::Container& lhs, const CheckedExprInputs
 }
 #endif
 
-} // namespace BitFlow::Core::Expression
+} // namespace BitFlow::Engine::Core::Expression

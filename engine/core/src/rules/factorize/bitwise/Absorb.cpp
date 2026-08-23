@@ -1,12 +1,12 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Factorize::Bitwise {
+namespace BitFlow::Engine::Core::Rules::Factorize::Bitwise {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 #pragma region Match
 static bool Match_AndAbsorb(const ExprStore* store, const ExprNameMap* names, ExprId id) {
@@ -106,4 +106,4 @@ Rule Get_OrAbsorb_Rule() {
     return Rule{OrAbsorb, &Match_OrAbsorb, &Rewrite_OrAbsorb, {Normalize::Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize::Bitwise
+} // namespace BitFlow::Engine::Core::Rules::Factorize::Bitwise

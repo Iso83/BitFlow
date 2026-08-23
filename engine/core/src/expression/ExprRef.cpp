@@ -1,8 +1,8 @@
-#include <BitFlow/core/expression/ExprRef.h>
-#include <BitFlow/core/expression/ExprStore.h>
+#include <BitFlow/engine/core/expression/ExprRef.h>
+#include <BitFlow/engine/core/expression/ExprStore.h>
 #include <algorithm>
 
-namespace BitFlow::Core::Expression {
+namespace BitFlow::Engine::Core::Expression {
 
 ExprRef::ExprRef(ExprStore* owner, Ids::ExprId exprId) : store(owner), id(exprId) {}
 
@@ -141,4 +141,4 @@ ExprRef ExprRef::operator|(Types::ExprChunk rhs) const {
     return *this | Const(rhs, BitWidth());
 }
 
-} // namespace BitFlow::Core::Expression
+} // namespace BitFlow::Engine::Core::Expression

@@ -1,10 +1,10 @@
-#include <BitFlow/core/helper/Debug.h>
-#include <BitFlow/functions/FunctionRegistry.h>
+#include <BitFlow/engine/core/helper/Debug.h>
+#include <BitFlow/engine/functions/FunctionRegistry.h>
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
-namespace BitFlow::Functions {
+namespace BitFlow::Engine::Functions {
 
 bool FunctionRegistry::Add(FunctionDefinition def) {
     BF_CORE_ASSERT(!def.name.empty());
@@ -88,4 +88,4 @@ ExprRef FunctionRegistry::Invoke(const FunctionDefinition& def, ExprStore* store
     return result;
 }
 
-} // namespace BitFlow::Functions
+} // namespace BitFlow::Engine::Functions

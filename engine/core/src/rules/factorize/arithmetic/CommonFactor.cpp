@@ -1,15 +1,15 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/expression/ExprRefUtils.h>
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/expression/ExprRefUtils.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <unordered_map>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Factorize::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Factorize::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static void AddCoeff(std::unordered_map<ExprId, Types::ExprChunk>& coeffByBaseId, ExprInputs& baseOrder, ExprId base,
                      Types::ExprChunk coeff, Types::ExprChunk mask) {
@@ -934,4 +934,4 @@ Rule Get_CommonFactorCancel_Rule() {
     return Rule{CommonFactorCancel, &Match_CommonFactorCancel, &Rewrite_CommonFactorCancel, {Normalize::Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Factorize::Arithmetic

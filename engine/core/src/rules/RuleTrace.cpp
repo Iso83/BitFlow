@@ -1,11 +1,11 @@
-#include <BitFlow/core/rules/RuleTrace.h>
+#include <BitFlow/engine/core/rules/RuleTrace.h>
 #include <iostream>
 #include <memory>
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
-namespace BitFlow::Core::Rules {
+namespace BitFlow::Engine::Core::Rules {
 void AttachConsoleTrace(RuleEngine& engine, const ExprNameMap& names, const PrintOptions& printOptions) {
     auto traceState = std::make_shared<std::string>();
     auto stepState = std::make_shared<int>(0);
@@ -24,4 +24,4 @@ void AttachConsoleTrace(RuleEngine& engine, const ExprNameMap& names, const Prin
         };
     });
 }
-} // namespace BitFlow::Core::Rules
+} // namespace BitFlow::Engine::Core::Rules

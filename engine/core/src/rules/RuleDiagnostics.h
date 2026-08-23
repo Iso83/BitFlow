@@ -1,11 +1,11 @@
 #pragma once
 
-#include <BitFlow/core/helper/Exception.h>
-#include <BitFlow/core/rules/RuleKey.h>
+#include <BitFlow/engine/core/helper/Exception.h>
+#include <BitFlow/engine/core/rules/RuleKey.h>
 #include <iostream>
 #include <string>
 
-namespace BitFlow::Core::Rules {
+namespace BitFlow::Engine::Core::Rules {
 inline std::string ToString(RuleKey key) {
     return std::string(key.value);
 }
@@ -20,6 +20,6 @@ inline std::string ToString(RuleKey key) {
     BF_CORE_THROW(full);
 }
 
-} // namespace BitFlow::Core::Rules
+} // namespace BitFlow::Engine::Core::Rules
 
-#define BF_RULE_ERROR(msg) BitFlow::Core::Rules::ThrowRuleError_Impl(__FILE__, __LINE__, __func__, (msg))
+#define BF_RULE_ERROR(msg) BitFlow::Engine::Core::Rules::ThrowRuleError_Impl(__FILE__, __LINE__, __func__, (msg))

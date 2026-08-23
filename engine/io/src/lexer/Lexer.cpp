@@ -1,10 +1,10 @@
-#include <BitFlow/io/lexer/Lexer.h>
+#include <BitFlow/engine/io/lexer/Lexer.h>
 #include <cctype>
 #include <charconv>
 #include <cstdint>
 #include <utility>
 
-namespace BitFlow::IO::Lexer {
+namespace BitFlow::Engine::IO::Lexer {
 
 bool IsIdentifierStart(char ch) {
     const unsigned char uch = static_cast<unsigned char>(ch);
@@ -208,34 +208,34 @@ Token Lexer::ReadOperatorOrPunctuation() {
         return makeSimple(TokenKind::ShiftLeft, 2);
 
     switch (Peek()) {
-    case '(':
-        return makeSimple(TokenKind::LeftParen, 1);
-    case ')':
-        return makeSimple(TokenKind::RightParen, 1);
-    case ',':
-        return makeSimple(TokenKind::Comma, 1);
-    case '+':
-        return makeSimple(TokenKind::Plus, 1);
-    case '-':
-        return makeSimple(TokenKind::Minus, 1);
-    case '*':
-        return makeSimple(TokenKind::Star, 1);
-    case '/':
-        return makeSimple(TokenKind::Slash, 1);
-    case '%':
-        return makeSimple(TokenKind::Percent, 1);
-    case '&':
-        return makeSimple(TokenKind::Ampersand, 1);
-    case '|':
-        return makeSimple(TokenKind::Pipe, 1);
-    case '^':
-        return makeSimple(TokenKind::Caret, 1);
-    case '~':
-        return makeSimple(TokenKind::Tilde, 1);
-    default:
-        Advance(1);
-        return MakeErrorToken(begin, m_pos, LexerErrorCode::UnexpectedCharacter,
-                              BuildErrorText("Unexpected character", begin));
+        case '(':
+            return makeSimple(TokenKind::LeftParen, 1);
+        case ')':
+            return makeSimple(TokenKind::RightParen, 1);
+        case ',':
+            return makeSimple(TokenKind::Comma, 1);
+        case '+':
+            return makeSimple(TokenKind::Plus, 1);
+        case '-':
+            return makeSimple(TokenKind::Minus, 1);
+        case '*':
+            return makeSimple(TokenKind::Star, 1);
+        case '/':
+            return makeSimple(TokenKind::Slash, 1);
+        case '%':
+            return makeSimple(TokenKind::Percent, 1);
+        case '&':
+            return makeSimple(TokenKind::Ampersand, 1);
+        case '|':
+            return makeSimple(TokenKind::Pipe, 1);
+        case '^':
+            return makeSimple(TokenKind::Caret, 1);
+        case '~':
+            return makeSimple(TokenKind::Tilde, 1);
+        default:
+            Advance(1);
+            return MakeErrorToken(begin, m_pos, LexerErrorCode::UnexpectedCharacter,
+                                  BuildErrorText("Unexpected character", begin));
     }
 }
 
@@ -259,4 +259,4 @@ std::vector<Token> Tokenize(const std::string& input) {
     return tokens;
 }
 
-} // namespace BitFlow::IO::Lexer
+} // namespace BitFlow::Engine::IO::Lexer

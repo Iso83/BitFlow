@@ -1,23 +1,23 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Simplify::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool IsSupportedOp(OpType op) {
     switch (op) {
-    case OpType::Add:
-    case OpType::Sub:
-    case OpType::Mul:
-    case OpType::Div:
-    case OpType::Mod:
-        return true;
-    default:
-        return false;
+        case OpType::Add:
+        case OpType::Sub:
+        case OpType::Mul:
+        case OpType::Div:
+        case OpType::Mod:
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -48,45 +48,48 @@ static ExprId Rewrite_CombineConstants(RewriteContext& ctx, const ExprNameMap* n
     const Expr& rhs = (*store)[e.inputs[1]];
 
     switch (e.op) {
-    case OpType::Add:
-        return ctx.replace(
-            id, store->createConstant((lhs.knownValue + rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
-    case OpType::Sub:
-        if (lhs.knownValue >= rhs.knownValue)
+        case OpType::Add:
             return ctx.replace(
-                id, store->createConstant((lhs.knownValue - rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
+                id, store->createConstant((lhs.knownValue + rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
+        case OpType::Sub:
+            if (lhs.knownValue >= rhs.knownValue)
+                return ctx.replace(
+                    id,
+                    store->createConstant((lhs.knownValue - rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
 
-        return ctx.replace(
-            id,
-            store
-                ->create(
-                    OpType::Neg,
-                    {store->createConstant((rhs.knownValue - lhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id},
-                    e.bitWidth)
-                .id);
-    case OpType::Mul:
-        return ctx.replace(
-            id, store->createConstant((lhs.knownValue * rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
-    case OpType::Div:
-        if (rhs.knownValue == 0) {
-            BF_CORE_ASSERT(false);
-            return id;
-        }
+            return ctx.replace(
+                id,
+                store
+                    ->create(
+                        OpType::Neg,
+                        {store->createConstant((rhs.knownValue - lhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth)
+                             .id},
+                        e.bitWidth)
+                    .id);
+        case OpType::Mul:
+            return ctx.replace(
+                id, store->createConstant((lhs.knownValue * rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
+        case OpType::Div:
+            if (rhs.knownValue == 0) {
+                BF_CORE_ASSERT(false);
+                return id;
+            }
 
-        return ctx.replace(
-            id, store->createConstant((lhs.knownValue / rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
-    case OpType::Mod:
-        if (rhs.knownValue == 0) {
-            BF_CORE_ASSERT(false);
-            return id;
-        }
+            return ctx.replace(
+                id, store->createConstant((lhs.knownValue / rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
+        case OpType::Mod:
+            if (rhs.knownValue == 0) {
+                BF_CORE_ASSERT(false);
+                return id;
+            }
 
-        return ctx.replace(
-            id, store->createConstant((lhs.knownValue % rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
-    default: {
-        BF_CORE_ASSERT(false);
-        return id;
-    }
+            return ctx.replace(
+                id, store->createConstant((lhs.knownValue % rhs.knownValue) & e.fullMask(e.bitWidth), e.bitWidth).id);
+        default:
+            {
+                BF_CORE_ASSERT(false);
+                return id;
+            }
     }
 }
 
@@ -94,4 +97,4 @@ Rule Get_CombineConstants_Rule() {
     return Rule{CombineConstants, &Match_CombineConstants, &Rewrite_CombineConstants, {Normalize::Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic

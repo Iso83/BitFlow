@@ -1,14 +1,14 @@
-#include <BitFlow/core/expression/ExprRefUtils.h>
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/helper/Exception.h>
+#include <BitFlow/engine/core/expression/ExprRefUtils.h>
+#include <BitFlow/engine/core/expression/ExprStore.h>
+#include <BitFlow/engine/core/helper/Exception.h>
 
-namespace BitFlow::Core::Expression {
+namespace BitFlow::Engine::Core::Expression {
 
 using namespace Ids;
 
 ExprStore::ExprStore() {
 
-#ifdef BF_EXPR_LIFETIME_CHECKS
+#ifdef BitFlow_EXPR_LIFETIME_CHECKS
     m_debugExprs.resize(200000);
 #endif
 
@@ -59,7 +59,7 @@ ExprRef ExprStore::create(OpType op, std::initializer_list<ExprId> in, Types::Bi
     ensureCapacity(id.value() + 1);
 
     auto& expr = m_nodes[id.value()];
-#ifdef BF_EXPR_LIFETIME_CHECKS
+#ifdef BitFlow_EXPR_LIFETIME_CHECKS
     expr = ExprUnsafeStorage{};
 #else
     expr = Expr{};
@@ -71,7 +71,7 @@ ExprRef ExprStore::create(OpType op, std::initializer_list<ExprId> in, Types::Bi
     m_redirects[id.value()] = id;
     m_alive[id.value()] = true;
 
-#ifdef BF_EXPR_LIFETIME_CHECKS
+#ifdef BitFlow_EXPR_LIFETIME_CHECKS
     if (m_nextDebugSlot >= m_debugExprs.size())
         BF_CORE_THROW(
             "ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper addresses must remain stable.");
@@ -94,7 +94,7 @@ ExprRef ExprStore::create(OpType op, ExprInputs&& in, Types::BitWidth bitWidth) 
     ensureCapacity(id.value() + 1);
 
     auto& expr = m_nodes[id.value()];
-#ifdef BF_EXPR_LIFETIME_CHECKS
+#ifdef BitFlow_EXPR_LIFETIME_CHECKS
     expr = ExprUnsafeStorage{};
 #else
     expr = Expr{};
@@ -106,7 +106,7 @@ ExprRef ExprStore::create(OpType op, ExprInputs&& in, Types::BitWidth bitWidth) 
     m_redirects[id.value()] = id;
     m_alive[id.value()] = true;
 
-#ifdef BF_EXPR_LIFETIME_CHECKS
+#ifdef BitFlow_EXPR_LIFETIME_CHECKS
     if (m_nextDebugSlot >= m_debugExprs.size())
         BF_CORE_THROW(
             "ExprStore debug wrapper overflow: m_debugExprs cannot grow because wrapper addresses must remain stable.");
@@ -267,7 +267,7 @@ ExprId ExprStore::createId() {
     return ExprId{value};
 }
 
-#ifdef BF_EXPR_LIFETIME_CHECKS
+#ifdef BitFlow_EXPR_LIFETIME_CHECKS
 Expr& ExprStore::MakeDebugExpr(ExprId id) {
 
     if (m_nextDebugSlot >= m_debugExprs.size())
@@ -295,4 +295,4 @@ void ExprStore::replace(ExprId oldId, ExprId newId) {
 }
 #pragma endregion
 
-} // namespace BitFlow::Core::Expression
+} // namespace BitFlow::Engine::Core::Expression

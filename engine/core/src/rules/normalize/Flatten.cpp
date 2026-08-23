@@ -1,13 +1,13 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <utility>
 
-namespace BitFlow::Core::Rules::Normalize {
+namespace BitFlow::Engine::Core::Rules::Normalize {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool Match_Flatten(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
@@ -55,4 +55,4 @@ Rule Get_Flatten_Rule() {
     return Rule{Flatten, &Match_Flatten, &Rewrite_Flatten};
 }
 
-} // namespace BitFlow::Core::Rules::Normalize
+} // namespace BitFlow::Engine::Core::Rules::Normalize

@@ -1,13 +1,13 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 #pragma region Match
 static bool Match_AddFold(const ExprStore* store, const ExprNameMap* names, ExprId id) {
@@ -442,25 +442,27 @@ static ExprId Rewrite_ShiftRotateConstantFold(RewriteContext& ctx, const ExprNam
     Types::ExprChunk result = 0;
 
     switch (e.op) {
-    case OpType::Shl:
-        result = (amount >= bitWidth || amount >= Types::ExprChunkBits) ? 0 : (value << amount) & mask;
-        break;
-    case OpType::Shr:
-        result = (amount >= bitWidth || amount >= Types::ExprChunkBits) ? 0 : value >> amount;
-        break;
-    case OpType::RotL: {
-        const Types::ExprChunk reduced = amount % bitWidth;
-        result = ((value << reduced) | (value >> (bitWidth - reduced))) & mask;
-        break;
-    }
-    case OpType::RotR: {
-        const Types::ExprChunk reduced = amount % bitWidth;
-        result = ((value >> reduced) | (value << (bitWidth - reduced))) & mask;
-        break;
-    }
-    default:
-        BF_CORE_ASSERT(false);
-        return id;
+        case OpType::Shl:
+            result = (amount >= bitWidth || amount >= Types::ExprChunkBits) ? 0 : (value << amount) & mask;
+            break;
+        case OpType::Shr:
+            result = (amount >= bitWidth || amount >= Types::ExprChunkBits) ? 0 : value >> amount;
+            break;
+        case OpType::RotL:
+            {
+                const Types::ExprChunk reduced = amount % bitWidth;
+                result = ((value << reduced) | (value >> (bitWidth - reduced))) & mask;
+                break;
+            }
+        case OpType::RotR:
+            {
+                const Types::ExprChunk reduced = amount % bitWidth;
+                result = ((value >> reduced) | (value << (bitWidth - reduced))) & mask;
+                break;
+            }
+        default:
+            BF_CORE_ASSERT(false);
+            return id;
     }
 
     return ctx.replace(id, store->createConstant(result, bitWidth).id);
@@ -816,4 +818,4 @@ Rule Get_CombineMulPow_Rule() {
     return Rule{CombineMulPow, &Match_MulPowCombine, &Rewrite_MulPowCombine, {Normalize::Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic

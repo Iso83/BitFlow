@@ -1,12 +1,12 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Normalize::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Normalize::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool Match_SubToNeg(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
@@ -39,4 +39,4 @@ Rule Get_SubToNeg_Rule() {
     return Rule{SubToNeg, &Match_SubToNeg, &Rewrite_SubToNeg};
 }
 
-} // namespace BitFlow::Core::Rules::Normalize::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Normalize::Arithmetic

@@ -1,10 +1,10 @@
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Factorize::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Factorize::Arithmetic {
 
-using namespace BitFlow::Core::Expression;
-using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
 
 namespace {
 
@@ -42,7 +42,8 @@ static ExprId Rewrite_DifferenceOfSquares(RewriteContext& ctx, const ExprNameMap
     ExprId lhsBase{};
     ExprId rhsBase{};
 
-    BF_CORE_ASSERT(TryMatch(store, id, lhsBase, rhsBase));
+    const bool matched = TryMatch(store, id, lhsBase, rhsBase);
+    BF_CORE_ASSERT(matched);
 
     const Types::BitWidth bitWidth = (*store)[id].bitWidth;
 
@@ -55,4 +56,4 @@ Rule Get_DifferenceOfSquares_Rule() {
     return Rule{DifferenceOfSquares, &Match_DifferenceOfSquares, &Rewrite_DifferenceOfSquares, {Normalize::Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Factorize::Arithmetic

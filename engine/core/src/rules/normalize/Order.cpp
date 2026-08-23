@@ -1,14 +1,14 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <algorithm>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Normalize {
+namespace BitFlow::Engine::Core::Rules::Normalize {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool Match_Order(const ExprStore* store, const ExprNameMap* names, ExprId id) {
     const Expr& e = (*store)[id];
@@ -45,4 +45,4 @@ Rule Get_Order_Rule() {
     return Rule{Order, &Match_Order, &Rewrite_Order, {Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Normalize
+} // namespace BitFlow::Engine::Core::Rules::Normalize

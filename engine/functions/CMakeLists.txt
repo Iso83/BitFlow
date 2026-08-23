@@ -1,51 +1,99 @@
-file(GLOB_RECURSE BF_FUNCTIONS_SRC CONFIGURE_DEPENDS
+# ============================================================================
+# Source files
+# ============================================================================
+
+file(GLOB_RECURSE MODULE_SRC CONFIGURE_DEPENDS
     src/*.cpp
 )
 
-
-file(GLOB_RECURSE BF_FUNCTIONS_PRIVATE_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PRIVATE_HEADERS CONFIGURE_DEPENDS
     src/*.h
 )
 
-file(GLOB_RECURSE BF_FUNCTIONS_PUBLIC_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PUBLIC_HEADERS CONFIGURE_DEPENDS
     include/*.h
 )
 
-add_library(BitFlowFunctions
-    ${BF_FUNCTIONS_SRC}
-    ${BF_FUNCTIONS_PRIVATE_HEADERS}
-    ${BF_FUNCTIONS_PUBLIC_HEADERS}
+# ============================================================================
+# Target
+# ============================================================================
+
+string(REPLACE "/" "_" MODULE_NAME "engine/functions")
+
+set(MODULE_TARGET "${PROJECT_NAME}_${MODULE_NAME}")
+
+add_library(${MODULE_TARGET}
+    ${MODULE_SRC}
+    ${MODULE_PRIVATE_HEADERS}
+    ${MODULE_PUBLIC_HEADERS}
 )
 
-target_link_libraries(BitFlowFunctions PUBLIC 
-    BitFlowCore
-	BitFlowIO
+add_library(${PROJECT_NAME}::${MODULE_NAME} ALIAS ${MODULE_TARGET})
+
+# ============================================================================
+# Build configuration
+# ============================================================================
+
+cppcmake_version_target(${MODULE_TARGET})
+cppcmake_helper_include_target(${MODULE_TARGET})
+
+target_include_directories(${MODULE_TARGET}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-target_include_directories(BitFlowFunctions PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_compile_features(${MODULE_TARGET}
+    PUBLIC
+        cxx_std_20
 )
 
-target_include_directories(BitFlowFunctions PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+# ============================================================================
+# IDE organization
+# ============================================================================
 
-set_target_properties(BitFlowFunctions PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
-)
+cppcmake_project_set_ide_folder(${MODULE_TARGET} "engine/functions")
 
-set_property(TARGET BitFlowFunctions PROPERTY FOLDER "engine/functions")
-
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/BitFlow/functions
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/engine/functions"
     PREFIX "Include"
-    FILES ${BF_FUNCTIONS_PUBLIC_HEADERS}
+    FILES
+        ${MODULE_PUBLIC_HEADERS}
 )
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"
     PREFIX "Source"
-    FILES ${BF_FUNCTIONS_SRC} ${BF_FUNCTIONS_PRIVATE_HEADERS}
+    FILES
+        ${MODULE_SRC}
+        ${MODULE_PRIVATE_HEADERS}
 )
 
-if(BF_BUILD_TESTS)
-    bf_add_module_test(BitFlowFunctions functions BF_Functions)
-endif()
+# ============================================================================
+# Dependencies
+# ============================================================================
+
+target_link_libraries(${MODULE_TARGET}
+    PUBLIC
+        ${PROJECT_NAME}::engine_io
+)
+
+# ============================================================================
+# Tests
+# ============================================================================
+
+cppcmake_test_add(
+    NAME
+        Test_${MODULE_TARGET}
+    TARGET
+        ${MODULE_TARGET}
+    MODULE
+        "engine/functions"
+    SOURCES
+        tests/Functions.cpp
+    LINK_LIBRARIES
+        ${PROJECT_NAME}::tests_common
+    INCLUDE_DIRECTORIES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)

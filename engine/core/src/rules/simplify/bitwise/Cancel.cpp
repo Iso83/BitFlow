@@ -1,15 +1,15 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify::Bitwise {
+namespace BitFlow::Engine::Core::Rules::Simplify::Bitwise {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static size_t FindEquivalentIndex(const ExprStore* store, const ExprNameMap* names, const ExprInputs& reps, ExprId id) {
     for (size_t i = 0; i < reps.size(); ++i) {
@@ -139,4 +139,4 @@ Rule Get_XorCancel_Rule() {
     return Rule{XorCancel, &Match_XorCancel, &Rewrite_XorCancel, {Normalize::Order, XorZero}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Bitwise
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Bitwise

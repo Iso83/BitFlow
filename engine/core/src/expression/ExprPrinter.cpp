@@ -1,53 +1,53 @@
-#include <BitFlow/core/expression/ExprPrinter.h>
-#include <BitFlow/core/expression/OpInfo.h>
+#include <BitFlow/engine/core/expression/ExprPrinter.h>
+#include <BitFlow/engine/core/expression/OpInfo.h>
 #include <sstream>
 
-namespace BitFlow::Core::Expression {
+namespace BitFlow::Engine::Core::Expression {
 
 static const char* OpTypeName(OpType op) {
     switch (op) {
-    case OpType::Var:
-        return "Var";
-    case OpType::Const:
-        return "Const";
-    case OpType::Not:
-        return "Not";
-    case OpType::Neg:
-        return "Neg";
+        case OpType::Var:
+            return "Var";
+        case OpType::Const:
+            return "Const";
+        case OpType::Not:
+            return "Not";
+        case OpType::Neg:
+            return "Neg";
 
-    case OpType::And:
-        return "And";
-    case OpType::Or:
-        return "Or";
-    case OpType::Xor:
-        return "Xor";
+        case OpType::And:
+            return "And";
+        case OpType::Or:
+            return "Or";
+        case OpType::Xor:
+            return "Xor";
 
-    case OpType::Add:
-        return "Add";
-    case OpType::Sub:
-        return "Sub";
-    case OpType::Mul:
-        return "Mul";
-    case OpType::Div:
-        return "Div";
-    case OpType::Mod:
-        return "Mod";
+        case OpType::Add:
+            return "Add";
+        case OpType::Sub:
+            return "Sub";
+        case OpType::Mul:
+            return "Mul";
+        case OpType::Div:
+            return "Div";
+        case OpType::Mod:
+            return "Mod";
 
-    case OpType::Pow:
-        return "Pow";
+        case OpType::Pow:
+            return "Pow";
 
-    case OpType::Shl:
-        return "Shl";
-    case OpType::Shr:
-        return "Shr";
+        case OpType::Shl:
+            return "Shl";
+        case OpType::Shr:
+            return "Shr";
 
-    case OpType::RotL:
-        return "RotL";
-    case OpType::RotR:
-        return "RotR";
+        case OpType::RotL:
+            return "RotL";
+        case OpType::RotR:
+            return "RotR";
 
-    default:
-        return "Unknown";
+        default:
+            return "Unknown";
     }
 }
 
@@ -91,30 +91,31 @@ static void PrintDebugStructure(const ExprStore* store, Ids::ExprId id, std::ost
         out << "#" << id.value() << ":";
 
     switch (e.op) {
-    case OpType::Const:
-        out << e.knownValue;
+        case OpType::Const:
+            out << e.knownValue;
 
-        if (options.showBitWidth)
-            out << ":" << e.bitWidth;
+            if (options.showBitWidth)
+                out << ":" << e.bitWidth;
 
-        return;
+            return;
 
-    case OpType::Var: {
-        auto it = names.find(id);
+        case OpType::Var:
+            {
+                auto it = names.find(id);
 
-        if (it != names.end())
-            out << it->second;
-        else
-            out << "v" << id.value();
+                if (it != names.end())
+                    out << it->second;
+                else
+                    out << "v" << id.value();
 
-        if (options.showBitWidth)
-            out << ":" << e.bitWidth;
+                if (options.showBitWidth)
+                    out << ":" << e.bitWidth;
 
-        return;
-    }
+                return;
+            }
 
-    default:
-        break;
+        default:
+            break;
     }
 
     out << OpTypeName(e.op) << "(";
@@ -275,4 +276,4 @@ std::string ToString(const ExprStore* store, const Ids::ExprId e, const ExprName
     return out.str();
 }
 
-} // namespace BitFlow::Core::Expression
+} // namespace BitFlow::Engine::Core::Expression

@@ -1,13 +1,13 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify::Bitwise {
+namespace BitFlow::Engine::Core::Rules::Simplify::Bitwise {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 #pragma region Rewrite
 static ExprId Rewrite_XorZero(RewriteContext& ctx, const ExprNameMap* names, ExprId id) {
@@ -37,4 +37,4 @@ Rule Get_XorZero_Rule() {
     return Rule{XorZero, &Match_Zero<OpType::Xor>, &Rewrite_XorZero, {Normalize::Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Bitwise
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Bitwise

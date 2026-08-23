@@ -1,7 +1,7 @@
-#include <BitFlow/core/eval/Evaluator.h>
+#include <BitFlow/engine/core/eval/Evaluator.h>
 #include <cassert>
 
-namespace BitFlow::Core::Eval {
+namespace BitFlow::Engine::Core::Eval {
 
 using namespace Expression;
 using namespace BitVector;
@@ -25,159 +25,164 @@ EvalResult EvaluateConstant(const ExprStore* store, const Expr* node, Types::Bit
         return Make(EvalStatus::UnsupportedOp, bitWidth);
 
     switch (node->op) {
-    case OpType::Var:
-        return Make(EvalStatus::NotConstant, bitWidth);
+        case OpType::Var:
+            return Make(EvalStatus::NotConstant, bitWidth);
 
-    case OpType::Const:
-        return MakeSuccess(bf_uint(node->knownValue, bitWidth));
+        case OpType::Const:
+            return MakeSuccess(bf_uint(node->knownValue, bitWidth));
 
-    case OpType::Not:
-    case OpType::Neg: {
-        if (node->inputs.size() != 1)
-            return Make(EvalStatus::UnsupportedOp, bitWidth);
+        case OpType::Not:
+        case OpType::Neg:
+            {
+                if (node->inputs.size() != 1)
+                    return Make(EvalStatus::UnsupportedOp, bitWidth);
 
-        auto a = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
-        if (a.status != EvalStatus::Success)
-            return a;
+                auto a = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
+                if (a.status != EvalStatus::Success)
+                    return a;
 
-        return (node->op == OpType::Not) ? MakeSuccess(~a.value) : MakeSuccess(-a.value);
-    }
-
-    case OpType::And:
-    case OpType::Or:
-    case OpType::Xor:
-    case OpType::Add:
-    case OpType::Mul: {
-        if (node->inputs.empty())
-            return Make(EvalStatus::UnsupportedOp, bitWidth);
-
-        auto first = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
-        if (first.status != EvalStatus::Success)
-            return first;
-
-        BitVector::bf_uint acc = std::move(first.value);
-
-        for (size_t i = 1; i < node->inputs.size(); ++i) {
-            auto term = EvaluateConstant(store, &(*store)[node->inputs[i]], bitWidth);
-            if (term.status != EvalStatus::Success)
-                return term;
-
-            switch (node->op) {
-            case OpType::And:
-                acc &= term.value;
-                break;
-            case OpType::Or:
-                acc |= term.value;
-                break;
-            case OpType::Xor:
-                acc ^= term.value;
-                break;
-            case OpType::Add:
-                acc += term.value;
-                break;
-            case OpType::Mul:
-                acc *= term.value;
-                break;
-            default:
-                return Make(EvalStatus::UnsupportedOp, bitWidth);
+                return (node->op == OpType::Not) ? MakeSuccess(~a.value) : MakeSuccess(-a.value);
             }
-        }
 
-        return MakeSuccess(std::move(acc));
-    }
+        case OpType::And:
+        case OpType::Or:
+        case OpType::Xor:
+        case OpType::Add:
+        case OpType::Mul:
+            {
+                if (node->inputs.empty())
+                    return Make(EvalStatus::UnsupportedOp, bitWidth);
 
-    case OpType::Sub:
-    case OpType::Div:
-    case OpType::Mod: {
-        if (node->inputs.size() < 2)
-            return Make(EvalStatus::UnsupportedOp, bitWidth);
+                auto first = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
+                if (first.status != EvalStatus::Success)
+                    return first;
 
-        auto first = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
-        if (first.status != EvalStatus::Success)
-            return first;
+                BitVector::bf_uint acc = std::move(first.value);
 
-        BitVector::bf_uint acc = std::move(first.value);
+                for (size_t i = 1; i < node->inputs.size(); ++i) {
+                    auto term = EvaluateConstant(store, &(*store)[node->inputs[i]], bitWidth);
+                    if (term.status != EvalStatus::Success)
+                        return term;
 
-        for (size_t i = 1; i < node->inputs.size(); ++i) {
-            auto term = EvaluateConstant(store, &(*store)[node->inputs[i]], bitWidth);
-            if (term.status != EvalStatus::Success)
-                return term;
+                    switch (node->op) {
+                        case OpType::And:
+                            acc &= term.value;
+                            break;
+                        case OpType::Or:
+                            acc |= term.value;
+                            break;
+                        case OpType::Xor:
+                            acc ^= term.value;
+                            break;
+                        case OpType::Add:
+                            acc += term.value;
+                            break;
+                        case OpType::Mul:
+                            acc *= term.value;
+                            break;
+                        default:
+                            return Make(EvalStatus::UnsupportedOp, bitWidth);
+                    }
+                }
 
-            switch (node->op) {
-            case OpType::Sub:
-                acc -= term.value;
-                break;
-
-            case OpType::Div:
-                if (term.value.IsZero())
-                    return Make(EvalStatus::DivisionByZero, bitWidth);
-                acc /= term.value;
-                break;
-
-            case OpType::Mod:
-                if (term.value.IsZero())
-                    return Make(EvalStatus::ModuloByZero, bitWidth);
-                acc %= term.value;
-                break;
-
-            default:
-                return Make(EvalStatus::UnsupportedOp, bitWidth);
+                return MakeSuccess(std::move(acc));
             }
-        }
 
-        return MakeSuccess(std::move(acc));
-    }
+        case OpType::Sub:
+        case OpType::Div:
+        case OpType::Mod:
+            {
+                if (node->inputs.size() < 2)
+                    return Make(EvalStatus::UnsupportedOp, bitWidth);
 
-    case OpType::Pow: {
-        if (node->inputs.size() != 2)
-            return Make(EvalStatus::UnsupportedOp, bitWidth);
+                auto first = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
+                if (first.status != EvalStatus::Success)
+                    return first;
 
-        auto a = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
-        if (a.status != EvalStatus::Success)
-            return a;
+                BitVector::bf_uint acc = std::move(first.value);
 
-        auto b = EvaluateConstant(store, &(*store)[node->inputs[1]], bitWidth);
-        if (b.status != EvalStatus::Success)
-            return b;
+                for (size_t i = 1; i < node->inputs.size(); ++i) {
+                    auto term = EvaluateConstant(store, &(*store)[node->inputs[i]], bitWidth);
+                    if (term.status != EvalStatus::Success)
+                        return term;
 
-        return MakeSuccess(a.value.Pow(b.value.ToChunk()));
-    }
+                    switch (node->op) {
+                        case OpType::Sub:
+                            acc -= term.value;
+                            break;
 
-    case OpType::Shl:
-    case OpType::Shr:
-    case OpType::RotL:
-    case OpType::RotR: {
-        if (node->inputs.size() != 2)
-            return Make(EvalStatus::UnsupportedOp, bitWidth);
+                        case OpType::Div:
+                            if (term.value.IsZero())
+                                return Make(EvalStatus::DivisionByZero, bitWidth);
+                            acc /= term.value;
+                            break;
 
-        auto a = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
-        if (a.status != EvalStatus::Success)
-            return a;
+                        case OpType::Mod:
+                            if (term.value.IsZero())
+                                return Make(EvalStatus::ModuloByZero, bitWidth);
+                            acc %= term.value;
+                            break;
 
-        auto b = EvaluateConstant(store, &(*store)[node->inputs[1]], bitWidth);
-        if (b.status != EvalStatus::Success)
-            return b;
+                        default:
+                            return Make(EvalStatus::UnsupportedOp, bitWidth);
+                    }
+                }
 
-        switch (node->op) {
+                return MakeSuccess(std::move(acc));
+            }
+
+        case OpType::Pow:
+            {
+                if (node->inputs.size() != 2)
+                    return Make(EvalStatus::UnsupportedOp, bitWidth);
+
+                auto a = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
+                if (a.status != EvalStatus::Success)
+                    return a;
+
+                auto b = EvaluateConstant(store, &(*store)[node->inputs[1]], bitWidth);
+                if (b.status != EvalStatus::Success)
+                    return b;
+
+                return MakeSuccess(a.value.Pow(b.value.ToChunk()));
+            }
+
         case OpType::Shl:
-            return MakeSuccess(a.value << b.value);
-
         case OpType::Shr:
-            return MakeSuccess(a.value >> b.value);
-
         case OpType::RotL:
-            return MakeSuccess(a.value.RotL(b.value.ToUint32()));
-
         case OpType::RotR:
-            return MakeSuccess(a.value.RotR(b.value.ToUint32()));
+            {
+                if (node->inputs.size() != 2)
+                    return Make(EvalStatus::UnsupportedOp, bitWidth);
+
+                auto a = EvaluateConstant(store, &(*store)[node->inputs[0]], bitWidth);
+                if (a.status != EvalStatus::Success)
+                    return a;
+
+                auto b = EvaluateConstant(store, &(*store)[node->inputs[1]], bitWidth);
+                if (b.status != EvalStatus::Success)
+                    return b;
+
+                switch (node->op) {
+                    case OpType::Shl:
+                        return MakeSuccess(a.value << b.value);
+
+                    case OpType::Shr:
+                        return MakeSuccess(a.value >> b.value);
+
+                    case OpType::RotL:
+                        return MakeSuccess(a.value.RotL(b.value.ToUint32()));
+
+                    case OpType::RotR:
+                        return MakeSuccess(a.value.RotR(b.value.ToUint32()));
+
+                    default:
+                        return Make(EvalStatus::UnsupportedOp, bitWidth);
+                }
+            }
 
         default:
             return Make(EvalStatus::UnsupportedOp, bitWidth);
-        }
-    }
-
-    default:
-        return Make(EvalStatus::UnsupportedOp, bitWidth);
     }
 }
 
@@ -205,4 +210,4 @@ bool IsFullyConstant(const ExprStore* store, const Expr* node) {
     return true;
 }
 
-} // namespace BitFlow::Core::Eval
+} // namespace BitFlow::Engine::Core::Eval

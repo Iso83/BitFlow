@@ -1,15 +1,15 @@
 #include "expression/ExprUtils.h"
 #include "rules/RuleDiagnostics.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <stdexcept>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Simplify::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 #pragma region Match
 template <OpType Op> static bool Match_RightZero(const ExprStore* store, const ExprNameMap* names, ExprId id) {
@@ -214,4 +214,4 @@ Rule Get_RotateZero_Rule() {
                 {Normalize::Bitwise::RotateModulo}};
 }
 
-} // namespace BitFlow::Core::Rules::Simplify::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Simplify::Arithmetic

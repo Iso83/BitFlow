@@ -1,12 +1,12 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 
-namespace BitFlow::Core::Rules::Normalize::Bitwise {
+namespace BitFlow::Engine::Core::Rules::Normalize::Bitwise {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 static bool IsConstFalse(const ExprStore* store, ExprId id) {
     const Expr& e = (*store)[id];
@@ -49,4 +49,4 @@ Rule Get_RotateModulo_Rule() {
     return Rule{RotateModulo, &Match_RotateModulo, &Rewrite_RotateModulo};
 }
 
-} // namespace BitFlow::Core::Rules::Normalize::Bitwise
+} // namespace BitFlow::Engine::Core::Rules::Normalize::Bitwise

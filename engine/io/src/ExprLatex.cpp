@@ -1,51 +1,51 @@
-#include <BitFlow/core/expression/Expr.h>
-#include <BitFlow/core/expression/OpInfo.h>
-#include <BitFlow/io/ExprLatex.h>
-#include <BitFlow/io/helper/Exception.h>
+#include <BitFlow/engine/core/expression/Expr.h>
+#include <BitFlow/engine/core/expression/OpInfo.h>
+#include <BitFlow/engine/io/ExprLatex.h>
+#include <BitFlow/engine/io/helper/Exception.h>
 #include <sstream>
 
-namespace BitFlow::IO {
+namespace BitFlow::Engine::IO {
 
-using namespace BitFlow::Core::Expression;
-using namespace BitFlow::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
 
 static std::string OpToLatex(OpType op) {
     switch (op) {
-    case OpType::Add:
-        return "+";
+        case OpType::Add:
+            return "+";
 
-    case OpType::Sub:
-        return "-";
+        case OpType::Sub:
+            return "-";
 
-    case OpType::Mul:
-        return "\\cdot";
+        case OpType::Mul:
+            return "\\cdot";
 
-    case OpType::Div:
-        return "\\frac";
+        case OpType::Div:
+            return "\\frac";
 
-    case OpType::Mod:
-        return "\\bmod";
+        case OpType::Mod:
+            return "\\bmod";
 
-    case OpType::And:
-        return "\\land";
+        case OpType::And:
+            return "\\land";
 
-    case OpType::Or:
-        return "\\lor";
+        case OpType::Or:
+            return "\\lor";
 
-    case OpType::Xor:
-        return "\\oplus";
+        case OpType::Xor:
+            return "\\oplus";
 
-    case OpType::Shl:
-        return "\\ll";
+        case OpType::Shl:
+            return "\\ll";
 
-    case OpType::Shr:
-        return "\\gg";
+        case OpType::Shr:
+            return "\\gg";
 
-    case OpType::Not:
-        return "\\sim";
+        case OpType::Not:
+            return "\\sim";
 
-    default:
-        BF_IO_THROW("Missing latex operator");
+        default:
+            BF_IO_THROW("Missing latex operator");
     }
 }
 
@@ -71,112 +71,116 @@ static void WriteLatex(std::ostringstream& out, const ExprStore* store, ExprId i
     const Expr& expr = (*store)[id];
 
     switch (expr.op) {
-    case OpType::Const:
-        out << expr.knownValue;
-        return;
+        case OpType::Const:
+            out << expr.knownValue;
+            return;
 
-    case OpType::Var:
-        if (names) {
-            auto it = names->find(id);
+        case OpType::Var:
+            if (names) {
+                auto it = names->find(id);
 
-            if (it != names->end()) {
-                out << it->second;
+                if (it != names->end()) {
+                    out << it->second;
+                    return;
+                }
+            }
+
+            out << "v" << id.value();
+            return;
+
+        case OpType::Not:
+            {
+                out << OpToLatex(expr.op) << " ";
+
+                const ExprId inner = expr.inputs[0];
+
+                const bool parens = NeedsParens(store, id, inner, false);
+
+                if (parens)
+                    out << "(";
+
+                WriteLatex(out, store, inner, names);
+
+                if (parens)
+                    out << ")";
+
                 return;
             }
-        }
 
-        out << "v" << id.value();
-        return;
+        case OpType::Neg:
+            {
+                out << "-";
 
-    case OpType::Not: {
-        out << OpToLatex(expr.op) << " ";
+                const ExprId inner = expr.inputs[0];
 
-        const ExprId inner = expr.inputs[0];
+                const bool parens = NeedsParens(store, id, inner, false);
 
-        const bool parens = NeedsParens(store, id, inner, false);
+                if (parens)
+                    out << "(";
 
-        if (parens)
-            out << "(";
+                WriteLatex(out, store, inner, names);
 
-        WriteLatex(out, store, inner, names);
+                if (parens)
+                    out << ")";
 
-        if (parens)
-            out << ")";
+                return;
+            }
 
-        return;
-    }
+        case OpType::RotL:
+        case OpType::RotR:
+            {
+                out << "\\operatorname{";
 
-    case OpType::Neg: {
-        out << "-";
+                if (expr.op == OpType::RotL)
+                    out << "rotl";
+                else
+                    out << "rotr";
 
-        const ExprId inner = expr.inputs[0];
+                out << "}(";
 
-        const bool parens = NeedsParens(store, id, inner, false);
+                WriteLatex(out, store, expr.inputs[0], names);
 
-        if (parens)
-            out << "(";
+                out << ", ";
 
-        WriteLatex(out, store, inner, names);
+                WriteLatex(out, store, expr.inputs[1], names);
 
-        if (parens)
-            out << ")";
-
-        return;
-    }
-
-    case OpType::RotL:
-    case OpType::RotR: {
-        out << "\\operatorname{";
-
-        if (expr.op == OpType::RotL)
-            out << "rotl";
-        else
-            out << "rotr";
-
-        out << "}(";
-
-        WriteLatex(out, store, expr.inputs[0], names);
-
-        out << ", ";
-
-        WriteLatex(out, store, expr.inputs[1], names);
-
-        out << ")";
-
-        return;
-    }
-
-    case OpType::Pow: {
-        const ExprId base = expr.inputs[0];
-        const ExprId exponent = expr.inputs[1];
-
-        const Expr& baseExpr = (*store)[base];
-
-        if (baseExpr.op == OpType::Div) {
-            out << "\\left(";
-            WriteLatex(out, store, base, names);
-            out << "\\right)";
-        } else {
-            const bool baseParens = NeedsParens(store, id, base, false);
-
-            if (baseParens)
-                out << "(";
-
-            WriteLatex(out, store, base, names);
-
-            if (baseParens)
                 out << ")";
-        }
 
-        out << "^{";
-        WriteLatex(out, store, exponent, names);
-        out << "}";
+                return;
+            }
 
-        return;
-    }
+        case OpType::Pow:
+            {
+                const ExprId base = expr.inputs[0];
+                const ExprId exponent = expr.inputs[1];
 
-    default:
-        break;
+                const Expr& baseExpr = (*store)[base];
+
+                if (baseExpr.op == OpType::Div) {
+                    out << "\\left(";
+                    WriteLatex(out, store, base, names);
+                    out << "\\right)";
+                } else {
+                    const bool baseParens = NeedsParens(store, id, base, false);
+
+                    if (baseParens)
+                        out << "(";
+
+                    WriteLatex(out, store, base, names);
+
+                    if (baseParens)
+                        out << ")";
+                }
+
+                out << "^{";
+                WriteLatex(out, store, exponent, names);
+                out << "}";
+
+                return;
+            }
+
+        default:
+            break;
     }
 
     if (expr.inputs.empty())
@@ -227,4 +231,4 @@ std::string ToLatex(ExprRef root, const ExprNameMap& names) {
     return ToLatex(root.store, root.id, names);
 }
 
-} // namespace BitFlow::IO
+} // namespace BitFlow::Engine::IO

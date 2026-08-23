@@ -1,9 +1,9 @@
-#include <BitFlow/core/bitvector/BitVector.h>
-#include <BitFlow/core/helper/Debug.h>
-#include <BitFlow/core/helper/Exception.h>
+#include <BitFlow/engine/core/bitvector/BitVector.h>
+#include <BitFlow/engine/core/helper/Debug.h>
+#include <BitFlow/engine/core/helper/Exception.h>
 #include <algorithm>
 
-namespace BitFlow::Core::BitVector {
+namespace BitFlow::Engine::Core::BitVector {
 
 static Types::ExprChunk MaskChunk(Types::BitWidth bits) {
     if (bits == 0)
@@ -33,14 +33,14 @@ bf_uint::bf_uint(Types::ExprChunk v, Types::BitWidth bw) : bf_uint(bw) {
 #pragma region string conversion
 std::string bf_uint::ToString(StringBase base) const {
     switch (base) {
-    case StringBase::Binary:
-        return ToBinaryString();
-    case StringBase::Decimal:
-        return ToDecimalString();
-    case StringBase::Hex:
-        return ToHexString(false);
-    default:
-        return ToDecimalString();
+        case StringBase::Binary:
+            return ToBinaryString();
+        case StringBase::Decimal:
+            return ToDecimalString();
+        case StringBase::Hex:
+            return ToHexString(false);
+        default:
+            return ToDecimalString();
     }
 }
 
@@ -546,4 +546,4 @@ void bf_uint::Normalize() {
     if (rem != 0)
         m_words.back() &= MaskChunk(rem);
 }
-} // namespace BitFlow::Core::BitVector
+} // namespace BitFlow::Engine::Core::BitVector

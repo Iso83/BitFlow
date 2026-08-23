@@ -1,35 +1,35 @@
-#include <BitFlow/core/expression/OpInfo.h>
-#include <BitFlow/io/ExprParser.h>
-#include <BitFlow/io/helper/Exception.h>
-#include <BitFlow/io/lexer/Lexer.h>
+#include <BitFlow/engine/core/expression/OpInfo.h>
+#include <BitFlow/engine/io/ExprParser.h>
+#include <BitFlow/engine/io/helper/Exception.h>
+#include <BitFlow/engine/io/lexer/Lexer.h>
 #include <algorithm>
 #include <optional>
 #include <unordered_map>
 
-namespace BitFlow::IO {
+namespace BitFlow::Engine::IO {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
-using namespace BitFlow::IO::Lexer;
-namespace Types = BitFlow::Core::Types;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
+using namespace BitFlow::Engine::IO::Lexer;
+namespace Types = BitFlow::Engine::Core::Types;
 
 static IOException ParseErrorAt(const std::string& message, const Token& token) {
     return IOException(message + " at position " + std::to_string(token.span.begin));
 }
 
 class PrattParser {
-  private:
+private:
     std::vector<Token> m_tokens;
     std::size_t m_pos = 0;
     std::unordered_map<std::string, std::unordered_map<Types::BitWidth, ExprId>> m_varIds;
     ExprStore* m_store;
     IFunctionResolver* m_functions{};
 
-  public:
+public:
     ExprNameMap m_idToName;
 
     explicit PrattParser(ExprStore* store, const std::string& input, IFunctionResolver* functions = nullptr)
-        : m_store(store), m_functions(functions), m_tokens(BitFlow::IO::Lexer::Tokenize(input)) {}
+        : m_store(store), m_functions(functions), m_tokens(BitFlow::Engine::IO::Lexer::Tokenize(input)) {}
 
     ExprId ParseExpressionRoot() {
         if (m_tokens.empty())
@@ -51,7 +51,7 @@ class PrattParser {
         return expr;
     }
 
-  private:
+private:
     const Token& Current() const {
         if (m_pos >= m_tokens.size())
             return m_tokens.back();
@@ -102,47 +102,47 @@ class PrattParser {
 
     static OpType TokenToOp(TokenKind kind) {
         switch (kind) {
-        case TokenKind::Star:
-            return OpType::Mul;
+            case TokenKind::Star:
+                return OpType::Mul;
 
-        case TokenKind::Slash:
-            return OpType::Div;
+            case TokenKind::Slash:
+                return OpType::Div;
 
-        case TokenKind::Percent:
-            return OpType::Mod;
+            case TokenKind::Percent:
+                return OpType::Mod;
 
-        case TokenKind::Plus:
-            return OpType::Add;
+            case TokenKind::Plus:
+                return OpType::Add;
 
-        case TokenKind::Minus:
-            return OpType::Sub;
+            case TokenKind::Minus:
+                return OpType::Sub;
 
-        case TokenKind::ShiftLeft:
-            return OpType::Shl;
+            case TokenKind::ShiftLeft:
+                return OpType::Shl;
 
-        case TokenKind::ShiftRight:
-            return OpType::Shr;
+            case TokenKind::ShiftRight:
+                return OpType::Shr;
 
-        case TokenKind::RotLeft:
-            return OpType::RotL;
+            case TokenKind::RotLeft:
+                return OpType::RotL;
 
-        case TokenKind::RotRight:
-            return OpType::RotR;
+            case TokenKind::RotRight:
+                return OpType::RotR;
 
-        case TokenKind::Ampersand:
-            return OpType::And;
+            case TokenKind::Ampersand:
+                return OpType::And;
 
-        case TokenKind::Caret:
-            return OpType::Xor;
+            case TokenKind::Caret:
+                return OpType::Xor;
 
-        case TokenKind::Pipe:
-            return OpType::Or;
+            case TokenKind::Pipe:
+                return OpType::Or;
 
-        case TokenKind::Pow:
-            return OpType::Pow;
+            case TokenKind::Pow:
+                return OpType::Pow;
 
-        default:
-            BF_IO_THROW("TokenToOp: unsupported TokenKind");
+            default:
+                BF_IO_THROW("TokenToOp: unsupported TokenKind");
         }
     }
 
@@ -168,27 +168,27 @@ class PrattParser {
             bool isMulAliasX = false;
 
             switch (lookahead.kind) {
-            case TokenKind::Star:
-            case TokenKind::Slash:
-            case TokenKind::Percent:
-            case TokenKind::Plus:
-            case TokenKind::Minus:
-            case TokenKind::ShiftLeft:
-            case TokenKind::ShiftRight:
-            case TokenKind::RotLeft:
-            case TokenKind::RotRight:
-            case TokenKind::Ampersand:
-            case TokenKind::Caret:
-            case TokenKind::Pipe:
-            case TokenKind::Pow:
-                break;
+                case TokenKind::Star:
+                case TokenKind::Slash:
+                case TokenKind::Percent:
+                case TokenKind::Plus:
+                case TokenKind::Minus:
+                case TokenKind::ShiftLeft:
+                case TokenKind::ShiftRight:
+                case TokenKind::RotLeft:
+                case TokenKind::RotRight:
+                case TokenKind::Ampersand:
+                case TokenKind::Caret:
+                case TokenKind::Pipe:
+                case TokenKind::Pow:
+                    break;
 
-            default:
-                if (!IsMulAliasXToken(lookahead))
-                    return left;
+                default:
+                    if (!IsMulAliasXToken(lookahead))
+                        return left;
 
-                isMulAliasX = true;
-                break;
+                    isMulAliasX = true;
+                    break;
             }
 
             const OpType op = isMulAliasX ? OpType::Mul : TokenToOp(lookahead.kind);
@@ -238,29 +238,30 @@ class PrattParser {
 
     ExprId ParsePrefix(const Token& token) {
         switch (token.kind) {
-        case TokenKind::Identifier:
-            return ParseIdentifierOrCall(token);
-        case TokenKind::DecimalLiteral:
-        case TokenKind::HexLiteral:
-        case TokenKind::BinaryLiteral:
-            return ParseLiteral(token);
-        case TokenKind::LeftParen:
-            return ParseGroupedExpression(token);
-        case TokenKind::Tilde: {
-            const OpInfo* info = GetOpInfo(OpType::Not);
+            case TokenKind::Identifier:
+                return ParseIdentifierOrCall(token);
+            case TokenKind::DecimalLiteral:
+            case TokenKind::HexLiteral:
+            case TokenKind::BinaryLiteral:
+                return ParseLiteral(token);
+            case TokenKind::LeftParen:
+                return ParseGroupedExpression(token);
+            case TokenKind::Tilde:
+                {
+                    const OpInfo* info = GetOpInfo(OpType::Not);
 
-            if (!info)
-                BF_IO_THROW("Missing OpInfo for Not");
+                    if (!info)
+                        BF_IO_THROW("Missing OpInfo for Not");
 
-            ExprId inner = ParseExpression(info->precedence);
-            return CreateUnary(OpType::Not, inner);
-        }
-        case TokenKind::Plus:
-            return ParseSignedPrefixExpression(false);
-        case TokenKind::Minus:
-            return ParseSignedPrefixExpression(true);
-        default:
-            throw ParseErrorAt("Expected expression", token);
+                    ExprId inner = ParseExpression(info->precedence);
+                    return CreateUnary(OpType::Not, inner);
+                }
+            case TokenKind::Plus:
+                return ParseSignedPrefixExpression(false);
+            case TokenKind::Minus:
+                return ParseSignedPrefixExpression(true);
+            default:
+                throw ParseErrorAt("Expected expression", token);
         }
     }
 
@@ -276,16 +277,16 @@ class PrattParser {
         Types::BitWidth bitWidth = Types::ExprChunkBits;
 
         switch (op) {
-        case OpType::Shl:
-        case OpType::Shr:
-        case OpType::RotL:
-        case OpType::RotR:
-        case OpType::Pow:
-            bitWidth = leftExpr.bitWidth;
-            break;
-        default:
-            bitWidth = std::max(leftExpr.bitWidth, rightExpr.bitWidth);
-            break;
+            case OpType::Shl:
+            case OpType::Shr:
+            case OpType::RotL:
+            case OpType::RotR:
+            case OpType::Pow:
+                bitWidth = leftExpr.bitWidth;
+                break;
+            default:
+                bitWidth = std::max(leftExpr.bitWidth, rightExpr.bitWidth);
+                break;
         }
 
         return m_store->create(op, {left, right}, bitWidth).id;
@@ -430,4 +431,4 @@ ParseResult Parse(ExprStore* store, const std::string& input, IFunctionResolver*
     return result;
 }
 
-} // namespace BitFlow::IO
+} // namespace BitFlow::Engine::IO

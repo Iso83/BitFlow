@@ -1,11 +1,11 @@
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Factorize::Bitwise {
+namespace BitFlow::Engine::Core::Rules::Factorize::Bitwise {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 #pragma region Helpers
 static bool IsUnaryNot(const ExprStore* store, ExprId id) {
@@ -74,4 +74,4 @@ Rule Get_DeMorganOr_Rule() {
     return Rule{DeMorganOr, &Match_DeMorganOr, &Rewrite_DeMorganOr, {Normalize::Flatten}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize::Bitwise
+} // namespace BitFlow::Engine::Core::Rules::Factorize::Bitwise

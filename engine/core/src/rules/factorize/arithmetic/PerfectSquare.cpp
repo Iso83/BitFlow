@@ -1,11 +1,11 @@
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <cmath>
 
-namespace BitFlow::Core::Rules::Factorize::Arithmetic {
+namespace BitFlow::Engine::Core::Rules::Factorize::Arithmetic {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 namespace {
 
@@ -198,4 +198,4 @@ Rule Get_PerfectSquare_Rule() {
     return Rule{PerfectSquare, &Match_PerfectSquare, &Rewrite_PerfectSquare, {Normalize::Order}};
 }
 
-} // namespace BitFlow::Core::Rules::Factorize::Arithmetic
+} // namespace BitFlow::Engine::Core::Rules::Factorize::Arithmetic

@@ -1,11 +1,11 @@
-#include <BitFlow/core/expression/ExprStore.h>
-#include <BitFlow/core/helper/Exception.h>
+#include <BitFlow/engine/core/expression/ExprStore.h>
+#include <BitFlow/engine/core/helper/Exception.h>
 #include <iostream>
 #include <sstream>
 
-namespace BitFlow::Core::Expression {
+namespace BitFlow::Engine::Core::Expression {
 
-#ifdef BF_EXPR_LIFETIME_CHECKS
+#ifdef BitFlow_EXPR_LIFETIME_CHECKS
 
 void ExprDebug::SanityCheck() const {
     if (!m_store) {
@@ -30,4 +30,4 @@ void ExprDebug::SanityCheck() const {
 
 #endif
 
-} // namespace BitFlow::Core::Expression
+} // namespace BitFlow::Engine::Core::Expression

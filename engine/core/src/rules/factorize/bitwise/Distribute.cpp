@@ -1,13 +1,13 @@
 #include "expression/ExprUtils.h"
 
-#include <BitFlow/core/rules/RewriteContext.h>
-#include <BitFlow/core/rules/Rule.h>
+#include <BitFlow/engine/core/rules/RewriteContext.h>
+#include <BitFlow/engine/core/rules/Rule.h>
 #include <vector>
 
-namespace BitFlow::Core::Rules::Factorize::Bitwise {
+namespace BitFlow::Engine::Core::Rules::Factorize::Bitwise {
 
-using namespace BitFlow::Core::Ids;
-using namespace BitFlow::Core::Expression;
+using namespace BitFlow::Engine::Core::Ids;
+using namespace BitFlow::Engine::Core::Expression;
 
 #pragma region Helpers
 static ExprId BuildAnd(ExprStore* store, ExprId a, ExprId b) {
@@ -114,4 +114,4 @@ static ExprId Rewrite_Distribute_And_Over_Xor(RewriteContext& ctx, const ExprNam
 Rule Get_Distribute_Rule() {
     return Rule{Distribute, &Match_Distribute_And_Over_Xor, &Rewrite_Distribute_And_Over_Xor, {Normalize::Flatten}};
 }
-} // namespace BitFlow::Core::Rules::Factorize::Bitwise
+} // namespace BitFlow::Engine::Core::Rules::Factorize::Bitwise
